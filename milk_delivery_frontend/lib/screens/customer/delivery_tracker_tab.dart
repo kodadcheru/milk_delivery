@@ -66,23 +66,29 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         children: [
           // ── 1. Live Header Bar ──
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'My Bookings & Orders 📦',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Live instant orders & morning subscriptions tracking',
-                    style: TextStyle(fontSize: 11.5, color: Colors.grey),
-                  ),
-                ],
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'My Bookings & Orders 📦',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Live orders & subscriptions tracking',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   InkWell(
                     onTap: () {
@@ -95,34 +101,36 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     },
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
                       ),
                       child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.headset_mic_rounded, color: Color(0xFF0D7C66), size: 14),
-                          SizedBox(width: 4),
-                          Text('Support', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold)),
+                          Icon(Icons.headset_mic_rounded, color: Color(0xFF0D7C66), size: 13),
+                          SizedBox(width: 3),
+                          Text('Support', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9.5, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFF10B981)),
                     ),
                     child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, color: Color(0xFF10B981), size: 7),
-                        SizedBox(width: 4),
-                        Text('LIVE', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9.5, fontWeight: FontWeight.w900)),
+                        Icon(Icons.circle, color: Color(0xFF10B981), size: 6),
+                        SizedBox(width: 3),
+                        Text('LIVE', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9, fontWeight: FontWeight.w900)),
                       ],
                     ),
                   ),
@@ -253,45 +261,52 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          order.id,
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, color: Color(0xFF0284C7)),
+                        ),
                       ),
-                      child: Text(
-                        order.id,
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF0284C7)),
+                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE11D48).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flash_on_rounded, color: Color(0xFFE11D48), size: 11),
+                            Text('EXPRESS', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE11D48).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.flash_on_rounded, color: Color(0xFFE11D48), size: 12),
-                          Text('EXPRESS', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: (isDelivered ? const Color(0xFF10B981) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
                     isDelivered ? 'DELIVERED ✅' : (isOut ? 'OUT FOR DELIVERY 🛵' : 'PREPARING 👨‍🍳'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                       color: isDelivered ? const Color(0xFF0D7C66) : const Color(0xFFB45309),
                     ),
@@ -497,35 +512,47 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(product?.name ?? 'Fresh A2 Cow Milk', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text(
+                        product?.name ?? 'Fresh A2 Cow Milk',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         '${sub?.quantity ?? 1}x Unit • ${sub?.scheduleType ?? 'DAILY'} • ${task.slotTime}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Date: ${task.deliveryDate}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: (isDelivered ? const Color(0xFF10B981) : Colors.orange).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
                     isDelivered ? 'DELIVERED ✅' : 'SCHEDULED ⏰',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 9.5,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: isDelivered ? const Color(0xFF0D7C66) : Colors.orange[900],
                     ),
@@ -602,25 +629,32 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
   Widget _buildStepNode(String label, int stepNumber, int activeStep) {
     final isDone = activeStep >= stepNumber;
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 10,
-          backgroundColor: isDone ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
-          child: isDone
-              ? const Icon(Icons.check, size: 12, color: Colors.white)
-              : Text('$stepNumber', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
-            color: isDone ? const Color(0xFF0F172A) : Colors.grey,
+    return SizedBox(
+      width: 44,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 9,
+            backgroundColor: isDone ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+            child: isDone
+                ? const Icon(Icons.check, size: 10, color: Colors.white)
+                : Text('$stepNumber', style: const TextStyle(fontSize: 8.5, color: Colors.white, fontWeight: FontWeight.bold)),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
+              color: isDone ? const Color(0xFF0F172A) : Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
