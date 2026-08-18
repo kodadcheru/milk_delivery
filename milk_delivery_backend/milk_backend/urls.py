@@ -8,6 +8,10 @@ from apps.accounts.admin_views import (
     AdminConsoleHTMLView,
     AdminCreditWalletView,
     AdminCustomerListView,
+    AdminFleetListView,
+    AdminHubsView,
+    AdminSubscriptionToggleView,
+    AdminSubscriptionsListView,
 )
 from apps.accounts.phone_auth_views import (
     RegisterMobileUserView,
@@ -46,6 +50,10 @@ urlpatterns = [
     path("api/admin/customers/", AdminCustomerListView.as_view(), name="admin_customers"),
     path("api/admin/credit-wallet/", AdminCreditWalletView.as_view(), name="admin_credit_wallet"),
     path("api/admin/broadcast-notification/", AdminBroadcastNotificationView.as_view(), name="admin_broadcast"),
+    path("api/admin/hubs/", AdminHubsView.as_view(), name="admin_hubs"),
+    path("api/admin/subscriptions/", AdminSubscriptionsListView.as_view(), name="admin_subscriptions"),
+    path("api/admin/subscriptions/<int:pk>/toggle/", AdminSubscriptionToggleView.as_view(), name="admin_subscription_toggle"),
+    path("api/admin/fleet/", AdminFleetListView.as_view(), name="admin_fleet"),
     # Phone OTP & Mobile Auth endpoints
     path("api/auth/send-otp/", SendOTPView.as_view(), name="auth_send_otp"),
     path("api/auth/verify-otp/", VerifyOTPView.as_view(), name="auth_verify_otp"),
