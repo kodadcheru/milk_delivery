@@ -13,14 +13,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/requirements.txt
+# Install python dependencies
+COPY milk_delivery_backend/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY . /app/
+# Copy application source code
+COPY milk_delivery_backend/ /app/
 
 RUN mkdir -p /app/staticfiles /app/media /app/logs
 RUN chmod +x /app/entrypoint.sh
 
+# Collect static files
 RUN python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
