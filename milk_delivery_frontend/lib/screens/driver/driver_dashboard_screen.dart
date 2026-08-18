@@ -174,9 +174,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
     final totalStops = tasks.length;
 
-    // Shift earnings: Base ₹350 + ₹25 per delivery + ₹100 on-time bonus
-    final shiftEarnings = 350 + (completedCount * 25) + (completedCount > 0 ? 100 : 0);
-
     // Filter tasks
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
       if (_selectedFilterIndex == 1 && t.status != 'PENDING') return false;
@@ -392,7 +389,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ),
           const SizedBox(height: 14),
 
-          // ── 2. Today's Shift Earnings & Route Metrics ──
+          // ── 2. Today's Shift Performance & Salary Metrics ──
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -417,7 +414,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Container(width: 1, height: 28, color: Colors.white30),
                     _buildMetric('Delivered', '$completedCount'),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    _buildMetric('Today Payout', '₹$shiftEarnings'),
+                    _buildMetric('Monthly Salary', '₹15,000'),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -427,9 +424,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     color: Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    '💰 ₹350 Base + ₹${completedCount * 25} Deliveries + ₹100 On-Time Bonus',
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                  child: const Text(
+                    '🛡️ Monthly Salaried Partner • Paid by Hub Owner • Free Customer Delivery',
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],

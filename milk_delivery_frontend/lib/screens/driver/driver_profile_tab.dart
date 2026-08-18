@@ -104,13 +104,13 @@ class DriverProfileTab extends StatelessWidget {
               const SizedBox(width: 10),
               _buildMetricCard('99.2%', 'On-Time Rate', Icons.timer_rounded, const Color(0xFF10B981)),
               const SizedBox(width: 10),
-              _buildMetricCard('₹14,500', 'Month Earnings', Icons.currency_rupee_rounded, const Color(0xFF0D7C66)),
+              _buildMetricCard('₹15,000', 'Monthly Salary', Icons.payments_rounded, const Color(0xFF0D7C66)),
             ],
           ),
           const SizedBox(height: 20),
 
           // ── Shift & Route Information ──
-          _buildSectionHeader('Route & Shift Details'),
+          _buildSectionHeader('Route, Shift & Employment Details'),
           Card(
             elevation: 1,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -118,6 +118,8 @@ class DriverProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  _buildDetailRow(Icons.payments_rounded, 'Monthly Salary', '₹15,000 / month (Paid directly by Hub Owner)'),
+                  const Divider(height: 20),
                   _buildDetailRow(Icons.map_rounded, 'Assigned Route', 'Route #4 • Jubilee Hills Hub (Sector A & B)'),
                   const Divider(height: 20),
                   _buildDetailRow(Icons.schedule_rounded, 'Morning Shift Hours', '05:00 AM – 08:30 AM Daily'),

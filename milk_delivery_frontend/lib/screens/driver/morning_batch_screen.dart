@@ -724,7 +724,6 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildReconciliationStage() {
     final stops = _routeResult.orderedStops;
-    final totalEarnings = 350 + (stops.length * 25) + 100 + (_totalBottlesCollected * 5);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -768,7 +767,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Shift Earnings Breakdown Card
+          // Shift Fulfillment & Attendance Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -778,19 +777,21 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             ),
             child: Column(
               children: [
-                _buildReceiptRow('Base Morning Shift Pay', '₹350'),
+                _buildReceiptRow('Employment Type', 'Fixed Monthly Salaried Partner'),
                 const Divider(height: 16),
-                _buildReceiptRow('${stops.length} Completed Drops (₹25/drop)', '₹${stops.length * 25}'),
+                _buildReceiptRow('Monthly Salary (Paid by Hub)', '₹15,000 / Month'),
                 const Divider(height: 16),
-                _buildReceiptRow('On-Time Delivery Bonus (<07:00 AM)', '₹100'),
+                _buildReceiptRow('Morning Shift Doorsteps Completed', '${stops.length} / ${stops.length} Drops (100%)'),
                 const Divider(height: 16),
-                _buildReceiptRow('$_totalBottlesCollected Glass Bottles Collected (₹5/bottle)', '₹${_totalBottlesCollected * 5}'),
+                _buildReceiptRow('On-Time Arrival SLA', '100% On-Time (< 07:00 AM)'),
                 const Divider(height: 16),
-                Row(
+                _buildReceiptRow('Empty Glass Bottles Returned', '$_totalBottlesCollected Bottles Deposited 🍾'),
+                const Divider(height: 16),
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Shift Payout', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-                    Text('₹$totalEarnings', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0D7C66))),
+                    Text('Shift Attendance Status', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5)),
+                    Text('VERIFIED BY HUB ✅', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0D7C66))),
                   ],
                 ),
               ],

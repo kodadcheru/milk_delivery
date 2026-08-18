@@ -310,7 +310,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Container(width: 1, height: 24, color: Colors.white24),
                     _buildPartitionStat('~${(totalLitres / _activeDriverCount).toStringAsFixed(0)} Litres', 'Load per Boy'),
                     Container(width: 1, height: 24, color: Colors.white24),
-                    _buildPartitionStat('~₹${(350 + (tasks.length / _activeDriverCount).ceil() * 25 + 100).toStringAsFixed(0)}', 'Est. Pay / Boy'),
+                    _buildPartitionStat('₹15,000/mo', 'Fixed Salary / Boy'),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -324,7 +324,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: const Color(0xFF0D7C66),
-                          content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount delivery boys with zero route overlap.'),
+                          content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount salaried delivery boys with zero route overlap.'),
                         ),
                       );
                     },
@@ -366,7 +366,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text('🛵 $dName', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                                Text('${res.orderedStops.length} Stops • ${res.totalDistanceKm.toStringAsFixed(1)} km • ₹${(350 + res.orderedStops.length * 25 + 100).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600)),
+                                Text('${res.orderedStops.length} Stops • ${res.totalDistanceKm.toStringAsFixed(1)} km • Salaried Staff', style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           );
@@ -775,16 +775,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildFleetDriversSection() {
     final drivers = [
-      {'name': 'Suresh Rao', 'phone': '+91 9123456789', 'route': 'Route #4 • Jubilee Hills Sector A & B', 'stops': '12/12 Stops', 'status': '🟢 Active & Broadcasting GPS', 'payout': '₹825'},
-      {'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'route': 'Route #2 • Film Nagar Highrises', 'stops': '14/14 Stops', 'status': '🟢 Active & Broadcasting GPS', 'payout': '₹890'},
-      {'name': 'Anil Kumar', 'phone': '+91 9765432109', 'route': 'Route #1 • Madhapur Tech Enclave', 'stops': '10/10 Stops', 'status': '🟢 Completed Morning Shift', 'payout': '₹750'},
-      {'name': 'Raju Patel', 'phone': '+91 9654321098', 'route': 'Route #3 • Banjara Hills Villas', 'stops': '15/15 Stops', 'status': '🔴 Shift Ended / Depot Return', 'payout': '₹920'},
+      {'name': 'Suresh Rao', 'phone': '+91 9123456789', 'route': 'Route #4 • Jubilee Hills Sector A & B', 'stops': '12/12 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo'},
+      {'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'route': 'Route #2 • Film Nagar Highrises', 'stops': '14/14 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo'},
+      {'name': 'Anil Kumar', 'phone': '+91 9765432109', 'route': 'Route #1 • Madhapur Tech Enclave', 'stops': '10/10 Stops', 'status': '🟢 Completed Morning Shift', 'salary': '₹15,000/mo'},
+      {'name': 'Raju Patel', 'phone': '+91 9654321098', 'route': 'Route #3 • Banjara Hills Villas', 'stops': '15/15 Stops', 'status': '🔴 Shift Ended / Depot Return', 'salary': '₹15,000/mo'},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('🛵 Assigned Hub Delivery Partners:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+        const Text('🛵 Assigned Hub Salaried Fleet:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
         const SizedBox(height: 10),
 
         ListView.separated(
@@ -823,7 +823,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(drv['payout']!, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0D7C66))),
+                      Text(drv['salary']!, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0D7C66))),
                       Text(drv['stops']!, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                       const SizedBox(height: 4),
                       IconButton(
