@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
+import '../../widgets/booking_detail_sheet.dart';
 import 'help_support_screen.dart';
 import 'live_driver_tracking_screen.dart';
 
@@ -259,11 +260,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       margin: const EdgeInsets.only(bottom: 14),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: InkWell(
+        onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Order Top Bar: Order ID, Type Badge, Status Badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -486,8 +490,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── 5. Subscription Daily Delivery Card ──
   Widget _buildSubscriptionDeliveryCard(DeliveryTaskModel task) {
@@ -498,118 +503,122 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => Container(
+      child: InkWell(
+        onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
                       width: 50,
                       height: 50,
-                      color: const Color(0xFFF1F5F9),
-                      child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Container(
+                        width: 50,
+                        height: 50,
+                        color: const Color(0xFFF1F5F9),
+                        child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product?.name ?? 'Fresh A2 Cow Milk',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${sub?.quantity ?? 1}x Unit • ${sub?.scheduleType ?? 'DAILY'} • ${task.slotTime}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Date: ${task.deliveryDate}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product?.name ?? 'Fresh A2 Cow Milk',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${sub?.quantity ?? 1}x Unit • ${sub?.scheduleType ?? 'DAILY'} • ${task.slotTime}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Date: ${task.deliveryDate}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: (isDelivered ? const Color(0xFF10B981) : Colors.orange).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(7),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: (isDelivered ? const Color(0xFF10B981) : Colors.orange).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Text(
+                      isDelivered ? 'DELIVERED ✅' : 'SCHEDULED ⏰',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: isDelivered ? const Color(0xFF0D7C66) : Colors.orange[900],
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    isDelivered ? 'DELIVERED ✅' : 'SCHEDULED ⏰',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      color: isDelivered ? const Color(0xFF0D7C66) : Colors.orange[900],
+                ],
+              ),
+
+              if (isDelivered && task.proofImageUrl.isNotEmpty) ...[
+                const Divider(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.camera_alt_rounded, size: 14, color: Color(0xFF10B981)),
+                    const SizedBox(width: 4),
+                    const Text('Doorstep Photo Proof Uploaded', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                    const Spacer(),
+                    Text(task.deliveredAt ?? '06:14 AM', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                  ],
+                ),
+              ] else ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 36,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => LiveDriverTrackingScreen(
+                            state: widget.state,
+                            orderTitle: product?.name ?? 'Morning Milk Subscription',
+                            deliveryAddress: task.deliveryAddress,
+                            driverName: 'Suresh Rao (Vedic Route 4)',
+                            driverPhone: '+91 9123456789',
+                            deliveryOtp: '06AM',
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.location_searching_rounded, size: 15, color: Color(0xFF0D7C66)),
+                    label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF0D7C66)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
               ],
-            ),
-
-            if (isDelivered && task.proofImageUrl.isNotEmpty) ...[
-              const Divider(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.camera_alt_rounded, size: 14, color: Color(0xFF10B981)),
-                  const SizedBox(width: 4),
-                  const Text('Doorstep Photo Proof Uploaded', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
-                  const Spacer(),
-                  Text(task.deliveredAt ?? '06:14 AM', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                ],
-              ),
-            ] else ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 36,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (ctx) => LiveDriverTrackingScreen(
-                          state: widget.state,
-                          orderTitle: product?.name ?? 'Morning Milk Subscription',
-                          deliveryAddress: task.deliveryAddress,
-                          driverName: 'Suresh Rao (Vedic Route 4)',
-                          driverPhone: '+91 9123456789',
-                          deliveryOtp: '06AM',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.location_searching_rounded, size: 15, color: Color(0xFF0D7C66)),
-                  label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF0D7C66)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
