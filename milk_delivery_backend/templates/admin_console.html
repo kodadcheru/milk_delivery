@@ -506,11 +506,11 @@
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group" style="text-align: left;">
           <label><i class="fa-solid fa-user"></i> Username / Staff ID</label>
-          <input type="text" id="loginUsername" class="form-control" placeholder="admin or hub_manager" required>
+          <input type="text" id="loginUsername" class="form-control" value="admin" placeholder="admin or hub_manager" required>
         </div>
         <div class="form-group" style="text-align: left;">
           <label><i class="fa-solid fa-lock"></i> Password</label>
-          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+          <input type="password" id="loginPassword" class="form-control" value="admin123" placeholder="••••••••" required>
         </div>
 
         <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; margin-top: 10px;">
@@ -519,15 +519,15 @@
       </form>
 
       <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px; font-weight: 700;">⚡ Quick Demo Auto-Fill Accounts:</p>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px; font-weight: 700;">⚡ 1-Click Demo Login Accounts:</p>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="demo-pill" onclick="quickFill('admin', 'admin123')">
-            <strong style="color: white;">🔑 Super Admin</strong><br>
-            <small>admin / admin123</small>
+          <div class="demo-pill" onclick="quickFillAndLogin('admin', 'admin123')">
+            <strong style="color: #34D399;">🔑 Super Admin</strong><br>
+            <small style="color: var(--text-muted);">admin / admin123</small>
           </div>
-          <div class="demo-pill" onclick="quickFill('hub_manager', 'pass123')">
-            <strong style="color: white;">🏬 Hub Manager</strong><br>
-            <small>hub_manager / pass123</small>
+          <div class="demo-pill" onclick="quickFillAndLogin('hub_manager', 'pass123')">
+            <strong style="color: #A5B4FC;">🏬 Hub Manager</strong><br>
+            <small style="color: var(--text-muted);">hub_manager / pass123</small>
           </div>
         </div>
       </div>
@@ -1070,6 +1070,12 @@
     function quickFill(user, pass) {
       document.getElementById('loginUsername').value = user;
       document.getElementById('loginPassword').value = pass;
+    }
+
+    function quickFillAndLogin(user, pass) {
+      document.getElementById('loginUsername').value = user;
+      document.getElementById('loginPassword').value = pass;
+      document.getElementById('loginBtn').click();
     }
 
     async function handleLogin(e) {

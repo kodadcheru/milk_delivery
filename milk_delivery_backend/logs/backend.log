@@ -271,3 +271,5 @@
 [2026-08-19 01:09:02,411] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
 [2026-08-19 01:09:10,767] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/accounts/admin_views.py changed, reloading.
 [2026-08-19 01:09:11,120] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
+[2026-08-19 01:16:45,216] INFO [django.server:212] "POST /api/auth/token/ HTTP/1.1" 200 489
+[2026-08-19 01:16:51,369] INFO [django.server:212] "POST /api/auth/token/ HTTP/1.1" 200 489
