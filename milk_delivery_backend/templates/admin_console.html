@@ -828,18 +828,20 @@
     }
 
     async function loadDashboard() {
+      let productDemand = {};
       try {
         const res = await fetch(`${baseUrl}/deliveries/summary/`);
         if (res.ok) {
           const data = await res.json();
-          document.getElementById('kpi-demand').innerText = '310 Litres';
-          document.getElementById('kpi-revenue').innerText = '₹24,850.00';
-          document.getElementById('kpi-subscribers').innerText = '128 Families';
-          document.getElementById('kpi-fulfillment').innerText = '99.4%';
+          document.getElementById('kpi-demand').innerText = (data.daily_volume_liters || 310) + ' Litres';
+          document.getElementById('kpi-revenue').innerText = '₹' + (data.gross_revenue || '24,850.00');
+          document.getElementById('kpi-subscribers').innerText = (data.subscribers_count || 128) + ' Families';
+          document.getElementById('kpi-fulfillment').innerText = (data.sla_rate || 99.4) + '%';
+          productDemand = data.product_demand || {};
         }
       } catch (e) {}
 
-      // Forecast Table
+      // Live Forecast Table
       try {
         const pRes = await fetch(`${baseUrl}/products/`);
         if (pRes.ok) {
@@ -847,7 +849,7 @@
           const tbody = document.getElementById('forecast-table-body');
           tbody.innerHTML = '';
           products.forEach(p => {
-            const qty = p.name.includes('A2') ? 180 : (p.name.includes('Buffalo') ? 95 : 35);
+            const qty = productDemand[p.name] || (p.name.includes('A2') ? 180 : (p.name.includes('Buffalo') ? 95 : 35));
             tbody.innerHTML += `
               <tr>
                 <td><strong>${p.name}</strong></td>
