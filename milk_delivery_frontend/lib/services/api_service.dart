@@ -414,4 +414,40 @@ class ApiService {
     } catch (_) {}
     return null;
   }
+
+  // ── 9. Geofenced Service Areas ──
+  static Future<List<Map<String, dynamic>>> fetchServiceAreas() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/service-areas/')));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // ── 10. Location Hubs ──
+  static Future<List<Map<String, dynamic>>> fetchHubs() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/hubs/')));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // ── 11. Salaried Delivery Fleet ──
+  static Future<List<Map<String, dynamic>>> fetchFleet() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/fleet/')));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
 }

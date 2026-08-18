@@ -4,6 +4,7 @@ import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 import '../../services/route_optimizer.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
@@ -22,6 +23,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   int _crateStockA2 = 45;
   int _crateStockBuffalo = 22;
   int _crateStockEggs = 18;
+  List<Map<String, dynamic>> _liveFleet = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLiveFleet();
+  }
+
+  void _loadLiveFleet() async {
+    final fleet = await ApiService.fetchFleet();
+    if (mounted && fleet.isNotEmpty) {
+      setState(() {
+        _liveFleet = fleet;
+        _activeDriverCount = fleet.length;
+      });
+    }
+  }
 
   void _callPhone(BuildContext context, String phone) async {
     final clean = phone.replaceAll(' ', '');
@@ -774,12 +792,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // FLEET DRIVERS SECTION
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildFleetDriversSection() {
-    final drivers = [
+    final defaultDrivers = [
       {'name': 'Suresh Rao', 'phone': '+91 9123456789', 'route': 'Route #4 • Jubilee Hills Sector A & B', 'stops': '12/12 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo'},
       {'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'route': 'Route #2 • Film Nagar Highrises', 'stops': '14/14 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo'},
       {'name': 'Anil Kumar', 'phone': '+91 9765432109', 'route': 'Route #1 • Madhapur Tech Enclave', 'stops': '10/10 Stops', 'status': '🟢 Completed Morning Shift', 'salary': '₹15,000/mo'},
       {'name': 'Raju Patel', 'phone': '+91 9654321098', 'route': 'Route #3 • Banjara Hills Villas', 'stops': '15/15 Stops', 'status': '🔴 Shift Ended / Depot Return', 'salary': '₹15,000/mo'},
     ];
+
+    final drivers = _liveFleet.isNotEmpty ? _liveFleet : defaultDrivers;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

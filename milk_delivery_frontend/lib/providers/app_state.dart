@@ -321,7 +321,14 @@ class AppState extends ChangeNotifier {
     deliveries = await ApiService.fetchDeliveries();
     transactions = await ApiService.fetchWalletTransactions();
     notifications = await ApiService.fetchNotifications();
-    if (currentRole == 'ADMIN') {
+
+    final fetchedAreas = await ApiService.fetchServiceAreas();
+    if (fetchedAreas.isNotEmpty) {
+      serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
+      selectedServiceArea = serviceAreas.first;
+    }
+
+    if (currentRole == 'ADMIN' || currentRole == 'PROVIDER') {
       adminSummary = await ApiService.fetchDeliverySummary();
     }
 
@@ -333,6 +340,8 @@ class AppState extends ChangeNotifier {
       loginAndSync('customer', 'pass123', 'CUSTOMER');
     } else if (role == 'DRIVER') {
       loginAndSync('driver', 'pass123', 'DRIVER');
+    } else if (role == 'PROVIDER' || role == 'HUB_MANAGER') {
+      loginAndSync('hub_manager', 'pass123', 'PROVIDER');
     } else if (role == 'ADMIN') {
       loginAndSync('admin', 'admin123', 'ADMIN');
     }
