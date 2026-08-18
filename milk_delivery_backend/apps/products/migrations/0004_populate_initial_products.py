@@ -1,4 +1,5 @@
 from django.db import migrations
+from django.contrib.auth.hashers import make_password
 
 def create_initial_data(apps, schema_editor):
     Product = apps.get_model('products', 'Product')
@@ -6,33 +7,32 @@ def create_initial_data(apps, schema_editor):
 
     # 1. Create Default Users if not exists
     if not User.objects.filter(phone='+91 8919548905').exists():
-        admin_user = User.objects.create(
+        User.objects.create(
             username='admin_owner',
             phone='+91 8919548905',
+            password=make_password('admin123'),
             role='ADMIN',
             first_name='Admin',
             last_name='Manager',
             is_staff=True,
             is_superuser=True,
         )
-        admin_user.set_password('admin123')
-        admin_user.save()
 
     if not User.objects.filter(phone='+91 9123456789').exists():
-        driver_user = User.objects.create(
+        User.objects.create(
             username='driver_suresh',
             phone='+91 9123456789',
+            password=make_password('pass123'),
             role='DRIVER',
             first_name='Suresh',
             last_name='Rao',
         )
-        driver_user.set_password('pass123')
-        driver_user.save()
 
     if not User.objects.filter(phone='+91 9876543210').exists():
-        customer_user = User.objects.create(
+        User.objects.create(
             username='customer_ramesh',
             phone='+91 9876543210',
+            password=make_password('pass123'),
             role='CUSTOMER',
             first_name='Ramesh',
             last_name='Kumar',
@@ -43,8 +43,6 @@ def create_initial_data(apps, schema_editor):
             longitude=78.4073,
             delivery_instructions='Ring bell twice and leave near doorstep box',
         )
-        customer_user.set_password('pass123')
-        customer_user.save()
 
     # 2. Create Initial Product Catalog across 4 Core Categories
     initial_products = [
@@ -58,10 +56,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Bestseller ⭐',
             'rating': 4.9,
             'farm_origin': 'Gir Cow Vedic Farm, Shamirpet',
-            'fat_content': '4.5% Natural Fat',
-            'is_organic': True,
+            'nutrition_info': '4.5% Natural Fat • Protein Rich',
             'is_available': True,
-            'stock': 100,
             'image_url': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
         },
         {
@@ -74,10 +70,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'High Protein 💪',
             'rating': 4.8,
             'farm_origin': 'Murrah Buffalo Dairy, Medchal',
-            'fat_content': '6.8% Rich Cream',
-            'is_organic': True,
+            'nutrition_info': '6.8% Rich Cream • High Calcium',
             'is_available': True,
-            'stock': 80,
             'image_url': 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&q=80',
         },
         {
@@ -90,10 +84,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Probiotic 🥣',
             'rating': 4.9,
             'farm_origin': 'Fresh Dairy Kitchen, Kondapur',
-            'fat_content': 'Natural Probiotic',
-            'is_organic': True,
+            'nutrition_info': 'Active Probiotic Cultures',
             'is_available': True,
-            'stock': 50,
             'image_url': 'https://images.unsplash.com/photo-1588710929895-6ef7bf47e06a?w=500&q=80',
         },
         {
@@ -106,10 +98,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Fresh Cut 🍗',
             'rating': 4.9,
             'farm_origin': 'Bio-Secure Poultry Farms, Vikarabad',
-            'fat_content': 'Lean Protein',
-            'is_organic': True,
+            'nutrition_info': 'Lean Muscle Protein',
             'is_available': True,
-            'stock': 40,
             'image_url': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=500&q=80',
         },
         {
@@ -122,10 +112,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Gym Diet 💪',
             'rating': 4.8,
             'farm_origin': 'Bio-Secure Poultry Farms, Vikarabad',
-            'fat_content': 'High Protein Lean',
-            'is_organic': True,
+            'nutrition_info': '31g Protein / 100g',
             'is_available': True,
-            'stock': 35,
             'image_url': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=500&q=80',
         },
         {
@@ -138,10 +126,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Omega-3 🥚',
             'rating': 4.9,
             'farm_origin': 'Grassland Free-Range Farms, Sangareddy',
-            'fat_content': 'Natural Omega-3',
-            'is_organic': True,
+            'nutrition_info': 'Natural Omega-3 & Lutein',
             'is_available': True,
-            'stock': 120,
             'image_url': 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=500&q=80',
         },
         {
@@ -154,10 +140,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Value Pack 📦',
             'rating': 4.7,
             'farm_origin': 'Sunrise Layer Farms, Medak',
-            'fat_content': 'High Protein',
-            'is_organic': False,
+            'nutrition_info': 'High Protein Breakfast',
             'is_available': True,
-            'stock': 150,
             'image_url': 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=500&q=80',
         },
         {
@@ -170,10 +154,8 @@ def create_initial_data(apps, schema_editor):
             'badge_text': 'Doorstep Drop 💧',
             'rating': 4.9,
             'farm_origin': 'AquaDrop Purification Plant, Miyapur',
-            'fat_content': 'TDS 120 (Optimal)',
-            'is_organic': False,
+            'nutrition_info': 'TDS 120 (Optimal Balance)',
             'is_available': True,
-            'stock': 200,
             'image_url': 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500&q=80',
         },
     ]

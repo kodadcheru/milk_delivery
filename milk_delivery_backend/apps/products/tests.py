@@ -6,6 +6,7 @@ from apps.products.models import Product
 class ProductAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        Product.objects.all().delete()
         self.milk = Product.objects.create(
             name="Farm Fresh A2 Desi Cow Milk",
             category=Product.Categories.MILK,
