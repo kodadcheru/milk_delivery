@@ -4,6 +4,7 @@ import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
 import 'help_support_screen.dart';
+import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
   final AppState state;
@@ -427,6 +428,39 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+
+            // Live GPS Moving Driver Map CTA Button
+            SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (ctx) => LiveDriverTrackingScreen(
+                        state: widget.state,
+                        liveOrder: order,
+                        orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                        deliveryAddress: order.deliveryAddress,
+                        driverName: order.driverName,
+                        driverPhone: order.driverPhone,
+                        deliveryOtp: order.deliveryOtp,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.satellite_alt_rounded, size: 16),
+                label: const Text('Track Live Driver on Map 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D7C66),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -510,6 +544,35 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   const Spacer(),
                   Text(task.deliveredAt ?? '06:14 AM', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                 ],
+              ),
+            ] else ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 36,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => LiveDriverTrackingScreen(
+                          state: widget.state,
+                          orderTitle: product?.name ?? 'Morning Milk Subscription',
+                          deliveryAddress: task.deliveryAddress,
+                          driverName: 'Suresh Rao (Vedic Route 4)',
+                          driverPhone: '+91 9123456789',
+                          deliveryOtp: '06AM',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.location_searching_rounded, size: 15, color: Color(0xFF0D7C66)),
+                  label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF0D7C66)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
               ),
             ],
           ],
