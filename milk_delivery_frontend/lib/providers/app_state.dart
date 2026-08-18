@@ -167,6 +167,41 @@ class AppState extends ChangeNotifier {
     return newOrder;
   }
 
+  void updateOrderStatus(String orderId, String newStatus) {
+    final idx = liveOrders.indexWhere((o) => o.id == orderId);
+    if (idx != -1) {
+      final old = liveOrders[idx];
+      liveOrders[idx] = LiveOrderModel(
+        id: old.id,
+        orderType: old.orderType,
+        items: old.items,
+        totalAmount: old.totalAmount,
+        status: newStatus,
+        deliverySlot: old.deliverySlot,
+        deliveryAddress: old.deliveryAddress,
+        deliveryLatitude: old.deliveryLatitude,
+        deliveryLongitude: old.deliveryLongitude,
+        deliveryOtp: old.deliveryOtp,
+        driverName: old.driverName,
+        driverPhone: old.driverPhone,
+        paymentStatus: old.paymentStatus,
+        createdAt: old.createdAt,
+      );
+      notifications.insert(
+        0,
+        NotificationModel(
+          id: notifications.length + 1,
+          title: '🎉 Express Order $orderId Delivered!',
+          message: 'Your express delivery was completed successfully by driver.',
+          notificationType: 'DELIVERY',
+          isRead: false,
+          createdAt: 'Just now',
+        ),
+      );
+      notifyListeners();
+    }
+  }
+
   Future<void> checkoutCart({
     String schedule = 'DAILY',
     String slot = '05:30 AM - 07:00 AM',

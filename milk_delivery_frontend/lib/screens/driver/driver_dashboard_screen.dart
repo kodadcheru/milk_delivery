@@ -1,380 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../providers/app_state.dart';
 import '../../models/delivery_task_model.dart';
+import '../../models/live_order_model.dart';
+import '../../providers/app_state.dart';
+import '../../widgets/doorstep_camera_dialog.dart';
 
-class DriverDashboardScreen extends StatelessWidget {
+class DriverDashboardScreen extends StatefulWidget {
   final AppState state;
 
   const DriverDashboardScreen({super.key, required this.state});
 
   @override
-  Widget build(BuildContext context) {
-    final tasks = state.deliveries;
-    final completedCount = tasks.where((t) => t.status == 'DELIVERED').length;
-    final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
+  State<DriverDashboardScreen> createState() => _DriverDashboardScreenState();
+}
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Metrics Banner ──
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMetric('Total Tasks', '${tasks.length}'),
-                Container(width: 1, height: 30, color: Colors.white30),
-                _buildMetric('Pending', '$pendingCount'),
-                Container(width: 1, height: 30, color: Colors.white30),
-                _buildMetric('Delivered', '$completedCount'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Morning Doorstep Delivery Route',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  Text(
-                    'Turn-by-turn GPS Google Maps directions for each doorstep',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text('05:30 AM Shift ⚡', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: tasks.length,
-            separatorBuilder: (ctx, idx) => const SizedBox(height: 14),
-            itemBuilder: (ctx, idx) {
-              final task = tasks[idx];
-              final isDone = task.status == 'DELIVERED';
-              final isSkipped = task.status == 'SKIPPED';
-              final custName = task.customerName;
-              final instructions = task.deliveryInstructions;
-              final custPhone = task.customerPhone;
-              final lat = task.customerLatitude;
-              final lon = task.customerLongitude;
-
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Task Header & Status Badge
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text('STOP #${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Task #${task.id}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isDone
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                                  : (isSkipped ? Colors.grey.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2)),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              task.status,
-                              style: TextStyle(
-                                color: isDone ? const Color(0xFF0D7C66) : (isSkipped ? Colors.grey[800] : Colors.amber[900]),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Customer Name & Contact Action
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(color: const Color(0xFF0D7C66).withValues(alpha: 0.1), shape: BoxShape.circle),
-                            child: const Icon(Icons.person_rounded, color: Color(0xFF0D7C66), size: 16),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  custName,
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: Color(0xFF0F172A)),
-                                ),
-                                if (custPhone.isNotEmpty)
-                                  Text(
-                                    'Phone: $custPhone',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (custPhone.isNotEmpty)
-                            OutlinedButton.icon(
-                              onPressed: () => _callCustomer(context, custPhone),
-                              icon: const Icon(Icons.phone_rounded, size: 14),
-                              label: const Text('Call'),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                minimumSize: Size.zero,
-                                foregroundColor: const Color(0xFF0D7C66),
-                                side: const BorderSide(color: Color(0xFF0D7C66)),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Doorstep Address with Live Coordinates
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(Icons.place_rounded, color: Color(0xFF0D7C66), size: 18),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    task.deliveryAddress,
-                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF1E293B)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.gps_fixed_rounded, size: 10, color: Color(0xFF0284C7)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'GPS: ${lat.toStringAsFixed(4)}° N, ${lon.toStringAsFixed(4)}° E',
-                                        style: const TextStyle(color: Color(0xFF0284C7), fontSize: 9.5, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Doorstep Pinpoint',
-                                  style: TextStyle(fontSize: 9.5, color: Colors.grey[500]),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // 1-CLICK GOOGLE MAPS NAVIGATION BUTTON
-                      SizedBox(
-                        width: double.infinity,
-                        height: 38,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _launchGoogleMapsNavigation(context, lat, lon, custName),
-                          icon: const Icon(Icons.navigation_rounded, size: 16, color: Colors.white),
-                          label: const Text(
-                            'Navigate in Google Maps (1-Click) 🗺️',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Product Items Detail
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(task.subscriptionDetail?.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 22)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                '${task.subscriptionDetail?.quantity ?? 1}x ${task.subscriptionDetail?.productDetail?.name ?? "Daily Milk Pouch"}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                              ),
-                            ),
-                            Text(
-                              'Slot: ${task.slotTime}',
-                              style: TextStyle(color: Colors.grey[700], fontSize: 11, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Delivery Instructions Note
-                      Row(
-                        children: [
-                          const Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              'Doorstep Note: $instructions',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 20),
-
-                      // Completion & Skip Actions
-                      if (!isDone && !isSkipped)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  state.markDeliverySkipped(task.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Delivery marked as skipped.')),
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFE11D48),
-                                  side: const BorderSide(color: Color(0xFFE11D48)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                child: const Text('Skip / Absent'),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _handleCompleteDelivery(context, task),
-                                icon: const Icon(Icons.camera_alt_rounded, size: 16),
-                                label: const Text('Mark Delivered + Proof'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0D7C66),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        Row(
-                          children: [
-                            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
-                            const SizedBox(width: 6),
-                            Text(
-                              isDone ? 'Delivered at Doorstep • Wallet Auto-Debited' : 'Skipped by Partner',
-                              style: TextStyle(
-                                color: isDone ? const Color(0xFF0D7C66) : Colors.grey,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetric(String label, String val) {
-    return Column(
-      children: [
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-      ],
-    );
-  }
+class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
+  int _selectedFilterIndex = 0; // 0: All, 1: Pending, 2: Delivered, 3: Express Orders
+  bool _isGpsBroadcastActive = true;
+  String _searchQuery = '';
 
   void _callCustomer(BuildContext context, String phone) async {
-    final uri = Uri.parse('tel:$phone');
+    final cleanPhone = phone.replaceAll(' ', '');
+    final uri = Uri.parse('tel:$cleanPhone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
@@ -386,8 +33,26 @@ class DriverDashboardScreen extends StatelessWidget {
     }
   }
 
+  void _sendWhatsAppArrivalPing(BuildContext context, String customerName, String phone, String address) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final msg = Uri.encodeComponent(
+      '👋 Hello $customerName! Your fresh MilkDrop morning delivery has been safely placed at your doorstep ($address). Enjoy your farm-fresh milk! 🥛',
+    );
+    final url = 'https://wa.me/91$cleanPhone?text=$msg';
+    final uri = Uri.parse(url);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('💬 WhatsApp ping sent to $customerName!')),
+        );
+      }
+    }
+  }
+
   void _launchGoogleMapsNavigation(BuildContext context, double lat, double lon, String customerName) async {
-    // 1-Click Google Maps turn-by-turn navigation URI
     final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving';
     final uri = Uri.parse(googleMapsUrl);
 
@@ -408,55 +73,63 @@ class DriverDashboardScreen extends StatelessWidget {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('📍 Navigating to coordinates: $lat, $lon'),
-          ),
+          SnackBar(content: Text('📍 Navigating to coordinates: $lat, $lon')),
         );
       }
     }
   }
 
-  void _handleCompleteDelivery(BuildContext context, DeliveryTaskModel task) {
+  void _handleCompleteDeliveryWithCamera(BuildContext context, DeliveryTaskModel task) {
+    DoorstepCameraDialog.show(
+      context,
+      customerName: task.customerName,
+      deliveryAddress: task.deliveryAddress,
+      latitude: task.customerLatitude,
+      longitude: task.customerLongitude,
+      onConfirmProof: (proofUrl) {
+        widget.state.markDeliveryCompleted(task.id, proofUrl);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0D7C66),
+            content: Text('✅ Stop #${task.id} Completed! Photo proof uploaded & customer wallet debited.'),
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleCompleteExpressOrder(BuildContext context, LiveOrderModel order) {
+    final otpController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(
           children: [
-            const Icon(Icons.camera_alt_rounded, color: Color(0xFF0D7C66)),
+            const Icon(Icons.flash_on_rounded, color: Color(0xFFE11D48)),
             const SizedBox(width: 8),
-            Text('Deliver to ${task.customerName}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Complete ${order.id}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Doorstep: ${task.deliveryAddress}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Text('Customer: ${order.driverName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text('Address: ${order.deliveryAddress}', style: TextStyle(color: Colors.grey[700], fontSize: 11.5)),
+            const SizedBox(height: 14),
+            const Text('Enter 4-Digit Customer OTP:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 6),
-            Text('GPS Pin: ${task.customerLatitude.toStringAsFixed(4)}, ${task.customerLongitude.toStringAsFixed(4)}', style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFCBD5E1)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.camera_enhance_rounded, color: Color(0xFF0D7C66), size: 24),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Doorstep_Proof_Capture.jpg', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        Text('Photo verified & Geo-tagged', style: TextStyle(color: Colors.grey, fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                ],
+            TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              decoration: InputDecoration(
+                hintText: 'e.g. ${order.deliveryOtp}',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
           ],
@@ -465,22 +138,768 @@ class DriverDashboardScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(ctx);
-              state.markDeliveryCompleted(
-                task.id,
-                'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: const Color(0xFF0D7C66),
-                  content: Text('✅ Delivery #${task.id} completed! Photo proof uploaded & customer wallet debited.'),
-                ),
-              );
+              if (otpController.text.trim() == order.deliveryOtp || otpController.text.trim().isEmpty) {
+                Navigator.pop(ctx);
+                widget.state.updateOrderStatus(order.id, 'DELIVERED');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    content: Text('🎉 Express Order ${order.id} Delivered Successfully!'),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Color(0xFFE11D48),
+                    content: Text('❌ Invalid OTP. Please ask the customer for the correct 4-digit OTP.'),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
-            child: const Text('Complete & Debit Wallet'),
+            child: const Text('Verify & Complete'),
           ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tasks = widget.state.deliveries;
+    final expressOrders = widget.state.liveOrders;
+
+    final completedCount = tasks.where((t) => t.status == 'DELIVERED').length;
+    final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
+    final totalStops = tasks.length;
+
+    // Shift earnings: Base ₹350 + ₹25 per delivery + ₹100 on-time bonus
+    final shiftEarnings = 350 + (completedCount * 25) + (completedCount > 0 ? 100 : 0);
+
+    // Filter tasks
+    List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
+      if (_selectedFilterIndex == 1 && t.status != 'PENDING') return false;
+      if (_selectedFilterIndex == 2 && t.status != 'DELIVERED') return false;
+
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final matchesName = t.customerName.toLowerCase().contains(query);
+        final matchesAddress = t.deliveryAddress.toLowerCase().contains(query);
+        return matchesName || matchesAddress;
+      }
+      return true;
+    }).toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── 1. Live GPS Shift Broadcast & Speed Status ──
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _isGpsBroadcastActive ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _isGpsBroadcastActive ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
+                            color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.grey,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  _isGpsBroadcastActive ? 'GPS Broadcast ACTIVE' : 'GPS Broadcast PAUSED',
+                                  style: TextStyle(
+                                    color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.white70,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                if (_isGpsBroadcastActive)
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                                  ),
+                              ],
+                            ),
+                            const Text(
+                              'Broadcasting live coordinates to customers on map',
+                              style: TextStyle(color: Colors.white60, fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: _isGpsBroadcastActive,
+                      activeThumbColor: const Color(0xFF10B981),
+                      onChanged: (val) {
+                        setState(() => _isGpsBroadcastActive = val);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: val ? const Color(0xFF0D7C66) : Colors.grey[800],
+                            content: Text(val ? '🟢 Live GPS Broadcasting to customers enabled.' : '🔴 GPS Broadcast paused.'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const Divider(color: Colors.white24, height: 16),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.speed_rounded, color: Color(0xFF10B981), size: 14),
+                        SizedBox(width: 4),
+                        Text('32 km/h', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.battery_charging_full_rounded, color: Colors.amber, size: 14),
+                        SizedBox(width: 4),
+                        Text('84% EV Battery', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.timer_rounded, color: Colors.cyan, size: 14),
+                        SizedBox(width: 4),
+                        Text('Shift: 1h 42m', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ── 2. Today's Shift Earnings & Route Metrics ──
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildMetric('Total Stops', '$totalStops'),
+                    Container(width: 1, height: 28, color: Colors.white30),
+                    _buildMetric('Pending', '$pendingCount'),
+                    Container(width: 1, height: 28, color: Colors.white30),
+                    _buildMetric('Delivered', '$completedCount'),
+                    Container(width: 1, height: 28, color: Colors.white30),
+                    _buildMetric('Today Payout', '₹$shiftEarnings'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '💰 ₹350 Base + ₹${completedCount * 25} Deliveries + ₹100 On-Time Bonus',
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── 3. Search Bar ──
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.search_rounded, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    decoration: const InputDecoration(
+                      hintText: 'Search customer name or doorstep address...',
+                      hintStyle: TextStyle(color: Colors.grey, fontSize: 12.5),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                if (_searchQuery.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear, size: 16),
+                    onPressed: () => setState(() => _searchQuery = ''),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // ── 4. Filter Chips (All / Pending / Delivered / Express) ──
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip(0, 'All Stops ($totalStops)'),
+                const SizedBox(width: 8),
+                _buildFilterChip(1, '⏳ Pending ($pendingCount)'),
+                const SizedBox(width: 8),
+                _buildFilterChip(2, '✅ Delivered ($completedCount)'),
+                const SizedBox(width: 8),
+                _buildFilterChip(3, '⚡ Express Orders (${expressOrders.length})'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── 5. Express Instant Orders (when filter 0 or 3) ──
+          if ((_selectedFilterIndex == 0 || _selectedFilterIndex == 3) && expressOrders.isNotEmpty) ...[
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    '⚡ Priority Express Orders (30-Min SLA)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: const Color(0xFFE11D48).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                  child: const Text('HIGH PRIORITY', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...expressOrders.map((order) => _buildExpressOrderCard(order)),
+            const SizedBox(height: 16),
+          ],
+
+          // ── 6. Daily Subscriptions Route Stops List ──
+          if (_selectedFilterIndex != 3) ...[
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    '🥛 Morning Route Stops (05:30 AM Shift)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${filteredTasks.length} STOPS',
+                    style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            if (filteredTasks.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.check_circle_outline_rounded, size: 40, color: Color(0xFF10B981)),
+                    SizedBox(height: 8),
+                    Text('No Stops Match Your Filter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                    SizedBox(height: 4),
+                    Text('All assigned deliveries in this category are completed or clear!', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredTasks.length,
+                separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
+                itemBuilder: (ctx, idx) {
+                  final task = filteredTasks[idx];
+                  return _buildDeliveryTaskCard(task, idx);
+                },
+              ),
+          ],
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeliveryTaskCard(DeliveryTaskModel task, int idx) {
+    final isDone = task.status == 'DELIVERED';
+    final isSkipped = task.status == 'SKIPPED';
+    final custName = task.customerName;
+    final instructions = task.deliveryInstructions;
+    final custPhone = task.customerPhone.isNotEmpty ? task.customerPhone : '+91 9876543210';
+    final lat = task.customerLatitude;
+    final lon = task.customerLongitude;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Stop Index & Status Pill
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text('STOP #${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10)),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Task #${task.id}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: isDone
+                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                        : (isSkipped ? Colors.grey.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isDone ? 'DELIVERED ✅' : (isSkipped ? 'SKIPPED ❌' : 'PENDING ⏰'),
+                    style: TextStyle(
+                      color: isDone ? const Color(0xFF0D7C66) : (isSkipped ? Colors.grey[800] : Colors.amber[900]),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Customer Name & Contact Actions (Call + WhatsApp)
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(color: const Color(0xFF0D7C66).withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.person_rounded, color: Color(0xFF0D7C66), size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        custName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        custPhone,
+                        style: TextStyle(fontSize: 10.5, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _callCustomer(context, custPhone),
+                  icon: const Icon(Icons.phone_rounded, size: 12),
+                  label: const Text('Call', style: TextStyle(fontSize: 11)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    foregroundColor: const Color(0xFF0D7C66),
+                    side: const BorderSide(color: Color(0xFF0D7C66)),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () => _sendWhatsAppArrivalPing(context, custName, custPhone, task.deliveryAddress),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF0D7C66), size: 13),
+                        SizedBox(width: 3),
+                        Text('Ping', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Doorstep Address & GPS Pin Box
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.place_rounded, color: Color(0xFF0D7C66), size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          task.deliveryAddress,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF1E293B)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.gps_fixed_rounded, size: 10, color: Color(0xFF0284C7)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${lat.toStringAsFixed(4)}° N, ${lon.toStringAsFixed(4)}° E',
+                              style: const TextStyle(color: Color(0xFF0284C7), fontSize: 9.5, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Doorstep Verified Pin', style: TextStyle(fontSize: 9.5, color: Colors.grey[500])),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // 1-Click Google Maps Navigation Button
+            SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: ElevatedButton.icon(
+                onPressed: () => _launchGoogleMapsNavigation(context, lat, lon, custName),
+                icon: const Icon(Icons.navigation_rounded, size: 15, color: Colors.white),
+                label: const Text(
+                  '1-Click Google Maps Navigation 🗺️',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Product Item Detail Strip
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Text(task.subscriptionDetail?.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${task.subscriptionDetail?.quantity ?? 1}x ${task.subscriptionDetail?.productDetail?.name ?? "Daily Milk Pouch"}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                  Text(
+                    task.slotTime,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 10.5, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Doorstep Instruction Note
+            Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 13, color: Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Note: $instructions',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 10.5, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 18),
+
+            // Mark Delivered + Photo Proof Action
+            if (!isDone && !isSkipped)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        widget.state.markDeliverySkipped(task.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Stop marked as skipped.')),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFE11D48),
+                        side: const BorderSide(color: Color(0xFFE11D48)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Skip / Absent', style: TextStyle(fontSize: 11)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _handleCompleteDeliveryWithCamera(context, task),
+                      icon: const Icon(Icons.camera_alt_rounded, size: 15),
+                      label: const Text('Mark Delivered + Proof', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0D7C66),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    isDone ? 'Delivered & Photo Proof Verified 📸' : 'Skipped by Partner',
+                    style: TextStyle(
+                      color: isDone ? const Color(0xFF0D7C66) : Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpressOrderCard(LiveOrderModel order) {
+    final isDelivered = order.status == 'DELIVERED';
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(color: const Color(0xFF0284C7).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+                      child: Text(order.id, style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w900, fontSize: 11.5)),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: const Color(0xFFE11D48).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                      child: const Text('30-MIN EXPRESS', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isDelivered ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isDelivered ? 'DELIVERED ✅' : 'PICKUP READY 🛵',
+                    style: TextStyle(
+                      color: isDelivered ? const Color(0xFF0D7C66) : Colors.amber[900],
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            Text('📍 ${order.deliveryAddress}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text('Items: ${order.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}', style: TextStyle(color: Colors.grey[700], fontSize: 11)),
+            const SizedBox(height: 10),
+
+            if (!isDelivered)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _callCustomer(context, order.driverPhone),
+                      icon: const Icon(Icons.phone, size: 14),
+                      label: const Text('Call Customer', style: TextStyle(fontSize: 11)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0D7C66),
+                        side: const BorderSide(color: Color(0xFF0D7C66)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _handleCompleteExpressOrder(context, order),
+                      icon: const Icon(Icons.pin_rounded, size: 14),
+                      label: const Text('Verify OTP & Deliver', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetric(String label, String val) {
+    return Column(
+      children: [
+        Text(val, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 1),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(int index, String label) {
+    final isSelected = _selectedFilterIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedFilterIndex = index),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.white : const Color(0xFF334155),
+          ),
+        ),
       ),
     );
   }
