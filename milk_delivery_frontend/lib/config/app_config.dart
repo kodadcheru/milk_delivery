@@ -16,10 +16,10 @@ class AppConfig {
       case AppEnvironment.production:
         return const String.fromEnvironment(
           'API_BASE_URL',
-          defaultValue: 'http://127.0.0.1:8000/api',
+          defaultValue: 'https://milk-delivery-backend-production.up.railway.app/api',
         );
       case AppEnvironment.staging:
-        return 'https://staging-api.milkdrop.com/api';
+        return 'https://milk-delivery-backend-production.up.railway.app/api';
       case AppEnvironment.development:
         return 'http://127.0.0.1:8000/api';
     }
