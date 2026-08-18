@@ -4,6 +4,7 @@ import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import 'morning_batch_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -296,6 +297,95 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       ],
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ── Morning Batch Mode Launcher (Hub-Origin Fuel Optimized) ──
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Text('🥛', style: TextStyle(fontSize: 22)),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Morning Batch Delivery Mode',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            Text(
+                              '05:00 AM – 07:00 AM Shift • Hub-Origin TSP',
+                              style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.eco_rounded, color: Color(0xFF10B981), size: 12),
+                          SizedBox(width: 3),
+                          Text('SAVE 56% FUEL', style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.w900)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Optimizes route directly from Jubilee Hills Depot. Eliminates zig-zag backtracking and saves fuel with rapid doorstep drop mode.',
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 40,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => MorningBatchScreen(state: widget.state),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.rocket_launch_rounded, size: 16),
+                    label: const Text('Start Morning Batch Route 🚀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
                 ),
               ],
             ),
