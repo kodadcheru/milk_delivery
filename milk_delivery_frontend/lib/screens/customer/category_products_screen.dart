@@ -1,0 +1,479 @@
+import 'package:flutter/material.dart';
+import '../../providers/app_state.dart';
+import '../../widgets/floating_cart_bar.dart';
+import '../../widgets/product_detail_sheet.dart';
+
+class CategoryProductsScreen extends StatefulWidget {
+  final String categoryKey;
+  final AppState state;
+
+  const CategoryProductsScreen({
+    super.key,
+    required this.categoryKey,
+    required this.state,
+  });
+
+  @override
+  State<CategoryProductsScreen> createState() => _CategoryProductsScreenState();
+}
+
+class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
+  String _searchQuery = '';
+  String _filterTag = 'ALL';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Map<String, dynamic> _getCategoryMetadata(String catKey) {
+    switch (catKey) {
+      case 'MEAT':
+        return {
+          'title': 'Meat & Poultry',
+          'icon': '🥩',
+          'gradient': [const Color(0xFF991B1B), const Color(0xFFDC2626)],
+          'accent': const Color(0xFFDC2626),
+          'banner': '🥩 Fresh Tender Meat • 100% Antibiotic-Free',
+          'subtags': ['ALL', 'CHICKEN', 'MUTTON', 'FRESH CUT'],
+        };
+      case 'EGGS':
+        return {
+          'title': 'Farm Fresh Eggs',
+          'icon': '🥚',
+          'gradient': [const Color(0xFFB45309), const Color(0xFFD97706)],
+          'accent': const Color(0xFFD97706),
+          'banner': '🥚 Daily Dawn Harvested • Free-Range & Organic',
+          'subtags': ['ALL', 'DESI', 'BROWN', 'HIGH PROTEIN'],
+        };
+      case 'WATER_CAN':
+        return {
+          'title': 'Pure Water Cans',
+          'icon': '💧',
+          'gradient': [const Color(0xFF0F766E), const Color(0xFF0D9488)],
+          'accent': const Color(0xFF0D9488),
+          'banner': '💧 8-Stage RO + UV Purified • Mineral Rich',
+          'subtags': ['ALL', '20L CAN', 'DISPENSER', 'MINERAL'],
+        };
+      case 'MILK':
+      default:
+        return {
+          'title': 'Fresh Milk & Dairy',
+          'icon': '🥛',
+          'gradient': [const Color(0xFF0369A1), const Color(0xFF0284C7)],
+          'accent': const Color(0xFF0284C7),
+          'banner': '🥛 Pure A2 Vedic Desi Cow & Buffalo Milk',
+          'subtags': ['ALL', 'COW MILK', 'BUFFALO', 'CURD / DAHI'],
+        };
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = _getCategoryMetadata(widget.categoryKey);
+    final accent = meta['accent'] as Color;
+    final gradient = meta['gradient'] as List<Color>;
+    final subtags = meta['subtags'] as List<String>;
+
+    // Filter products strictly for this category + search + subtag
+    final categoryProducts = widget.state.products.where((p) {
+      if (p.category != widget.categoryKey) return false;
+
+      final matchesQuery = _searchQuery.isEmpty ||
+          p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          p.description.toLowerCase().contains(_searchQuery.toLowerCase());
+
+      final matchesTag = _filterTag == 'ALL' ||
+          p.name.toUpperCase().contains(_filterTag) ||
+          p.description.toUpperCase().contains(_filterTag);
+
+      return matchesQuery && matchesTag;
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(meta['icon'] as String, style: const TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Text(
+                  meta['title'] as String,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+            Text(
+              '${categoryProducts.length} Products • Tomorrow 06:00 AM Delivery',
+              style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('🔗 Sharing link to ${meta['title']} catalog!')),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Category Hero Banner
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(color: accent.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                        child: Text(meta['icon'] as String, style: const TextStyle(fontSize: 32)),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(6)),
+                              child: const Text('100% QUALITY ASSURED', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w800)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              meta['banner'] as String,
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              '⚡ Milked/Packed at 3 AM • Delivered by 6 AM',
+                              style: TextStyle(color: Colors.white70, fontSize: 10.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Search Bar
+                TextField(
+                  controller: _searchController,
+                  onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                  decoration: InputDecoration(
+                    hintText: 'Search ${meta['title']}...',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0D7C66), size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: const Color(0xFFF1F5F9),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Subtag Quick Filters
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: subtags.map((tag) {
+                      final isSelected = _filterTag == tag;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: InkWell(
+                          onTap: () => setState(() => _filterTag = tag),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isSelected ? accent : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: isSelected ? accent : const Color(0xFFE2E8F0)),
+                            ),
+                            child: Text(
+                              tag == 'ALL' ? 'All Varieties' : tag,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Products Count Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Showing ${categoryProducts.length} Items',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    ),
+                    Row(
+                      children: const [
+                        Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
+                        SizedBox(width: 4),
+                        Text('FSSAI Lab Certified', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Category Products Grid
+                if (categoryProducts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          const Text('🔍', style: TextStyle(fontSize: 40)),
+                          const SizedBox(height: 10),
+                          const Text('No products match your search', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 4),
+                          Text('Try clearing the search or filter tags', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: categoryProducts.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.62,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = categoryProducts[index];
+                      final discountPrice = item.pricePerUnit * 1.12;
+                      final inCartQty = widget.state.cartItems[item.id] ?? 0;
+
+                      return Card(
+                        child: InkWell(
+                          onTap: () => ProductDetailSheet.show(context, item, widget.state),
+                          borderRadius: BorderRadius.circular(18),
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Badge Text Strip & Rating
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          item.badgeText,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 8.5, fontWeight: FontWeight.w800),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                                        Text('${item.rating}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+
+                                // Avatar Icon
+                                Container(
+                                  height: 72,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(item.icon, style: const TextStyle(fontSize: 40)),
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Product Name
+                                Text(
+                                  item.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  item.unitQuantity,
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
+                                ),
+                                const SizedBox(height: 4),
+
+                                // Price
+                                Row(
+                                  children: [
+                                    Text(
+                                      '₹${item.pricePerUnit.toStringAsFixed(0)}',
+                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0D7C66)),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '₹${discountPrice.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        color: Colors.grey,
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+
+                                // Smart Cart Stepper or Dual CTAs
+                                if (inCartQty > 0)
+                                  Container(
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0D7C66),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        InkWell(
+                                          onTap: () => widget.state.decreaseCartQty(item.id),
+                                          child: const Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            child: Icon(Icons.remove, size: 14, color: Colors.white),
+                                          ),
+                                        ),
+                                        Text('$inCartQty in cart', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                        InkWell(
+                                          onTap: () => widget.state.addToCart(item),
+                                          child: const Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            child: Icon(Icons.add, size: 14, color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 28,
+                                          child: OutlinedButton(
+                                            onPressed: () {
+                                              widget.state.addToCart(item);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  duration: const Duration(seconds: 1),
+                                                  backgroundColor: const Color(0xFF0F172A),
+                                                  content: Text('🛒 Added 1x ${item.name} to Cart!'),
+                                                ),
+                                              );
+                                            },
+                                            style: OutlinedButton.styleFrom(
+                                              padding: EdgeInsets.zero,
+                                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            child: const Text('+ Cart', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 28,
+                                          child: ElevatedButton(
+                                            onPressed: () => ProductDetailSheet.show(context, item, widget.state),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF0D7C66),
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              padding: EdgeInsets.zero,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            child: const Text('Subscribe', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+
+          // Floating Cart Bar
+          if (widget.state.totalCartItemCount > 0)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: FloatingCartBar(state: widget.state),
+            ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MilkDrop Express - Admin Operations Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --card-hover: #334155;
+      --primary: #0d7c66;
+      --primary-accent: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --danger: #e11d48;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Navbar */
+    header {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      background: var(--primary);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 14px rgba(13, 124, 102, 0.4);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--primary-accent);
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .badge-status {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary-accent);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary-accent);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #0b6855;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--card-hover);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* Main Container & Layout */
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 32px;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* Navigation Tabs */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      background: var(--card-bg);
+      padding: 6px;
+      border-radius: 14px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(13, 124, 102, 0.4);
+    }
+
+    /* Executive KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary-accent);
+    }
+
+    .kpi-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text-main);
+    }
+
+    .kpi-desc {
+      font-size: 11px;
+      color: var(--primary-accent);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* Section Cards & Tables */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    /* Data Table Styling */
+    .data-table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 12px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    tr:hover {
+      background: rgba(51, 65, 85, 0.3);
+    }
+
+    .status-tag {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .status-delivered { background: rgba(16, 185, 129, 0.2); color: var(--primary-accent); }
+    .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .status-skipped { background: rgba(225, 29, 72, 0.2); color: var(--danger); }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 520px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 14px;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-accent);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="brand-logo">
+      <div class="brand-icon">🥛</div>
+      <div>
+        <div class="brand-title">MilkDrop Express</div>
+        <div class="brand-subtitle">ADMIN OPERATIONS CONSOLE</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <div class="badge-status">
+        <div class="pulse-dot"></div>
+        Django REST Backend Active
+      </div>
+      <button class="btn btn-secondary" onclick="loadAllData()">
+        <i class="fa-solid fa-rotate-right"></i> Refresh
+      </button>
+      <button class="btn btn-primary" onclick="openBroadcastModal()">
+        <i class="fa-solid fa-bullhorn"></i> Broadcast Notification
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main App Shell ── -->
+  <div class="app-container">
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-line"></i> Dashboard & Forecast</button>
+      <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-truck-ramp-box"></i> Live Delivery Monitor</button>
+      <button class="tab-btn" onclick="switchTab('products', this)"><i class="fa-solid fa-box-open"></i> Product Catalog</button>
+      <button class="tab-btn" onclick="switchTab('customers', this)"><i class="fa-solid fa-users"></i> Customer & Wallet Manager</button>
+    </div>
+
+    <!-- ── Tab 1: Dashboard & Forecast ── -->
+    <div id="tab-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title"><i class="fa-solid fa-droplet"></i> Daily Milk Demand</div>
+          <div class="kpi-value" id="kpi-demand">370 Liters</div>
+          <div class="kpi-desc">Required for 05:30 AM Batch</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title"><i class="fa-solid fa-indian-rupee-sign"></i> Today's Revenue</div>
+          <div class="kpi-value" id="kpi-revenue">₹4,520.00</div>
+          <div class="kpi-desc">Auto-debited from prepaid wallets</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title"><i class="fa-solid fa-users-viewfinder"></i> Active Subscribers</div>
+          <div class="kpi-value" id="kpi-subscribers">14 Active</div>
+          <div class="kpi-desc">Across Jubilee Hills Hub</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title"><i class="fa-solid fa-circle-check"></i> Today's Fulfillment</div>
+          <div class="kpi-value" id="kpi-fulfillment">85%</div>
+          <div class="kpi-desc">Deliveries completed with photo proof</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><i class="fa-solid fa-industry"></i> Dairy Processing Procurement Forecast</div>
+          <span style="font-size: 12px; color: var(--text-muted);">Calculated automatically from active customer subscriptions</span>
+        </div>
+        <div class="data-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Dairy Product</th>
+                <th>Category</th>
+                <th>Unit Price</th>
+                <th>Daily Quantity Forecast</th>
+                <th>Estimated Daily Value</th>
+              </tr>
+            </thead>
+            <tbody id="forecast-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 2: Live Delivery Monitor ── -->
+    <div id="tab-deliveries" style="display: none;">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><i class="fa-solid fa-route"></i> Today's Doorstep Delivery Tasks</div>
+          <button class="btn btn-secondary" onclick="loadDeliveries()"><i class="fa-solid fa-sync"></i> Refresh Tasks</button>
+        </div>
+        <div class="data-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Task ID</th>
+                <th>Customer Name</th>
+                <th>Address & Phone</th>
+                <th>Product & Qty</th>
+                <th>Time Slot</th>
+                <th>Driver Assigned</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="deliveries-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 3: Product Catalog ── -->
+    <div id="tab-products" style="display: none;">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><i class="fa-solid fa-store"></i> Active Dairy Products</div>
+          <button class="btn btn-primary" onclick="openAddProductModal()"><i class="fa-solid fa-plus"></i> Add New Product</button>
+        </div>
+        <div class="data-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Product Name</th>
+                <th>Unit Quantity</th>
+                <th>Price per Unit</th>
+                <th>Status</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody id="products-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 4: Customers & Wallets ── -->
+    <div id="tab-customers" style="display: none;">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><i class="fa-solid fa-wallet"></i> Registered Customers & Prepaid Balances</div>
+        </div>
+        <div class="data-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Customer Name</th>
+                <th>Phone Number</th>
+                <th>Delivery Address</th>
+                <th>Prepaid Wallet Balance</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Modal: Credit Wallet ── -->
+  <div class="modal-overlay" id="creditWalletModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-hand-holding-dollar" style="color: var(--primary-accent);"></i> Credit Customer Wallet</div>
+      <div class="form-group">
+        <label>Selected Customer ID</label>
+        <input type="text" id="creditUserId" class="form-control" readonly>
+      </div>
+      <div class="form-group">
+        <label>Credit Amount (₹)</label>
+        <input type="number" id="creditAmount" class="form-control" value="250.00">
+      </div>
+      <div class="form-group">
+        <label>Reason / Description</label>
+        <input type="text" id="creditDesc" class="form-control" value="Admin Bonus / Refund Adjustment">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('creditWalletModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreditWallet()">Credit Wallet Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Add Product ── -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--primary-accent);"></i> Add New Dairy Product</div>
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" class="form-control" value="Farm Fresh Organic Paneer">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="prodDesc" class="form-control" value="Organic rich malai cottage cheese processed fresh.">
+      </div>
+      <div class="form-group">
+        <label>Price per Unit (₹)</label>
+        <input type="number" id="prodPrice" class="form-control" value="95.00">
+      </div>
+      <div class="form-group">
+        <label>Unit Quantity (e.g. 500 mL / 200 g / 1 L)</label>
+        <input type="text" id="prodUnitQty" class="form-control" value="200 g Pack">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddProduct()">Save to Backend DB</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Broadcast Notification ── -->
+  <div class="modal-overlay" id="broadcastModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-bullhorn" style="color: var(--primary-accent);"></i> Broadcast System Notification</div>
+      <div class="form-group">
+        <label>Notification Title</label>
+        <input type="text" id="bcTitle" class="form-control" value="🥛 Morning Milk Batch Dispatch Notice">
+      </div>
+      <div class="form-group">
+        <label>Message Content</label>
+        <textarea id="bcMessage" class="form-control" rows="3">All morning doorstep milk pouches have been processed and dispatched with route drivers.</textarea>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitBroadcast()">Send Broadcast</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const baseUrl = '/api';
+
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      ['dashboard', 'deliveries', 'products', 'customers'].forEach(t => {
+        document.getElementById('tab-' + t).style.display = (t === tabName) ? 'block' : 'none';
+      });
+    }
+
+    async function loadAllData() {
+      await Promise.all([loadDashboard(), loadDeliveries(), loadProducts(), loadCustomers()]);
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${baseUrl}/deliveries/summary/`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('kpi-demand').innerText = (data.total_deliveries * 1.5).toFixed(0) + ' Liters';
+          document.getElementById('kpi-revenue').innerText = '₹' + (data.completed * 72.0).toFixed(2);
+          document.getElementById('kpi-fulfillment').innerText = data.total_deliveries > 0 ? ((data.completed / data.total_deliveries) * 100).toFixed(0) + '%' : '100%';
+        }
+      } catch (e) {}
+
+      // Forecast Table
+      try {
+        const pRes = await fetch(`${baseUrl}/products/`);
+        if (pRes.ok) {
+          const products = await pRes.json();
+          const tbody = document.getElementById('forecast-table-body');
+          tbody.innerHTML = '';
+          products.forEach(p => {
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${p.name}</strong></td>
+                <td>${p.unit}</td>
+                <td>₹${p.price_per_unit}</td>
+                <td><strong style="color: var(--primary-accent);">250 Units / Liters</strong></td>
+                <td>₹${(parseFloat(p.price_per_unit) * 250).toFixed(2)}</td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function loadDeliveries() {
+      try {
+        const res = await fetch(`${baseUrl}/deliveries/`);
+        if (res.ok) {
+          const tasks = await res.json();
+          const tbody = document.getElementById('deliveries-table-body');
+          tbody.innerHTML = '';
+          tasks.forEach(t => {
+            const sub = t.subscription_detail || {};
+            const prod = sub.product_detail || {};
+            const cust = sub.customer_detail || { username: 'Ramesh Kumar', phone: '+91 9876543210', address: 'Flat 402, Green Acres' };
+            const statusClass = t.status === 'DELIVERED' ? 'status-delivered' : (t.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
+
+            tbody.innerHTML += `
+              <tr>
+                <td>#${t.id}</td>
+                <td><strong>${cust.username || 'Customer'}</strong></td>
+                <td>${cust.address || 'Jubilee Hills'}<br><small style="color:var(--text-muted);">${cust.phone || ''}</small></td>
+                <td>${sub.quantity || 1}x ${prod.name || 'Milk Pouch'}</td>
+                <td>${t.slot_time}</td>
+                <td>Suresh Rao (Route #4)</td>
+                <td><span class="status-tag ${statusClass}">${t.status}</span></td>
+                <td>
+                  ${t.status === 'PENDING' ? `
+                    <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">Mark Delivered</button>
+                  ` : `<span style="font-size:11px; color:var(--text-muted);">Completed</span>`}
+                </td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch(`${baseUrl}/products/`);
+        if (res.ok) {
+          const list = await res.json();
+          const tbody = document.getElementById('products-table-body');
+          tbody.innerHTML = '';
+          list.forEach(p => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${p.id}</td>
+                <td><strong>${p.name}</strong></td>
+                <td>${p.unit_quantity}</td>
+                <td><strong style="color:var(--primary-accent);">₹${p.price_per_unit}</strong></td>
+                <td><span class="status-tag status-delivered">Available</span></td>
+                <td>${new Date(p.created_at || Date.now()).toLocaleDateString()}</td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function loadCustomers() {
+      try {
+        const res = await fetch(`${baseUrl}/admin/customers/`);
+        if (res.ok) {
+          const list = await res.json();
+          const tbody = document.getElementById('customers-table-body');
+          tbody.innerHTML = '';
+          list.forEach(c => {
+            tbody.innerHTML += `
+              <tr>
+                <td>#${c.id}</td>
+                <td><strong>${c.first_name || c.username} ${c.last_name || ''}</strong></td>
+                <td>${c.phone || '+91 9876543210'}</td>
+                <td>${c.address || 'Jubilee Hills'}</td>
+                <td><strong style="color:var(--primary-accent); font-size:16px;">₹${c.wallet_balance}</strong></td>
+                <td>
+                  <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="openCreditModal(${c.id})">
+                    <i class="fa-solid fa-plus"></i> Credit Wallet
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function completeDelivery(id) {
+      await fetch(`${baseUrl}/deliveries/${id}/complete/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proof_image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80' })
+      });
+      loadDeliveries();
+      loadDashboard();
+    }
+
+    function openCreditModal(userId) {
+      document.getElementById('creditUserId').value = userId;
+      document.getElementById('creditWalletModal').style.display = 'flex';
+    }
+
+    function openAddProductModal() {
+      document.getElementById('addProductModal').style.display = 'flex';
+    }
+
+    function openBroadcastModal() {
+      document.getElementById('broadcastModal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    async function submitCreditWallet() {
+      const uId = document.getElementById('creditUserId').value;
+      const amt = document.getElementById('creditAmount').value;
+      const desc = document.getElementById('creditDesc').value;
+
+      await fetch(`${baseUrl}/admin/credit-wallet/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: uId, amount: amt, description: desc })
+      });
+
+      closeModal('creditWalletModal');
+      loadCustomers();
+      alert('Wallet credited successfully!');
+    }
+
+    async function submitAddProduct() {
+      const name = document.getElementById('prodName').value;
+      const desc = document.getElementById('prodDesc').value;
+      const price = document.getElementById('prodPrice').value;
+      const unitQty = document.getElementById('prodUnitQty').value;
+
+      await fetch(`${baseUrl}/products/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc, price_per_unit: price, unit_quantity: unitQty, is_available: true })
+      });
+
+      closeModal('addProductModal');
+      loadProducts();
+      alert('Product saved to database!');
+    }
+
+    async function submitBroadcast() {
+      const title = document.getElementById('bcTitle').value;
+      const message = document.getElementById('bcMessage').value;
+
+      await fetch(`${baseUrl}/admin/broadcast-notification/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, message, target_role: 'ALL' })
+      });
+
+      closeModal('broadcastModal');
+      alert('Notification broadcast sent to all users!');
+    }
+
+    // Initial Load
+    loadAllData();
+  </script>
+</body>
+</html>

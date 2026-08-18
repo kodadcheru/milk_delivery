@@ -1,0 +1,96 @@
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from apps.subscriptions.models import Subscription, VacationPause
+from apps.subscriptions.serializers import SubscriptionSerializer, VacationPauseSerializer
+
+
+class SubscriptionListCreateView(generics.ListCreateAPIView):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "ADMIN":
+            return Subscription.objects.all()
+        return Subscription.objects.filter(customer=user)
+
+    def perform_create(self, serializer):
+        sub = serializer.save(customer=self.request.user)
+        from datetime import date
+        from apps.deliveries.models import DeliveryTask
+        DeliveryTask.objects.get_or_create(
+            subscription=sub,
+            delivery_date=date.today(),
+            defaults={
+                "slot_time": "05:30 AM - 07:00 AM",
+                "status": DeliveryTask.Statuses.PENDING,
+            },
+        )
+
+
+class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "ADMIN":
+            return Subscription.objects.all()
+        return Subscription.objects.filter(customer=user)
+
+
+class SubscriptionPauseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            sub = Subscription.objects.get(pk=pk, customer=request.user)
+        except Subscription.DoesNotExist:
+            return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        start_date = request.data.get("start_date")
+        end_date = request.data.get("end_date")
+        reason = request.data.get("reason", "Vacation")
+
+        if not start_date or not end_date:
+            return Response({"detail": "start_date and end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        pause = VacationPause.objects.create(
+            subscription=sub,
+            start_date=start_date,
+            end_date=end_date,
+            reason=reason,
+        )
+        sub.status = Subscription.Statuses.PAUSED
+        sub.save()
+
+        return Response(
+            {
+                "message": "Vacation pause created and subscription paused.",
+                "pause": VacationPauseSerializer(pause).data,
+                "subscription": SubscriptionSerializer(sub).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SubscriptionResumeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            sub = Subscription.objects.get(pk=pk, customer=request.user)
+        except Subscription.DoesNotExist:
+            return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        sub.status = Subscription.Statuses.ACTIVE
+        sub.save()
+
+        return Response(
+            {
+                "message": "Subscription resumed to active status.",
+                "subscription": SubscriptionSerializer(sub).data,
+            },
+            status=status.HTTP_200_OK,
+        )

@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: milkdrop_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: milk_delivery_prod
+      POSTGRES_USER: milk_admin
+      POSTGRES_PASSWORD: milk_secure_password_2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U milk_admin -d milk_delivery_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: milkdrop_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: production-django-super-secret-key-change-me-in-prod-2026
+      DEBUG: "False"
+      ALLOWED_HOSTS: "*"
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: milk_delivery_prod
+      DB_USER: milk_admin
+      DB_PASSWORD: milk_secure_password_2026
+      DB_HOST: postgres
+      DB_PORT: 5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_data:/app/staticfiles
+      - media_data:/app/media
+      - log_data:/app/logs
+
+volumes:
+  postgres_data:
+  static_data:
+  media_data:
+  log_data:

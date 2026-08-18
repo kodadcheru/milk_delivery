@@ -1,0 +1,542 @@
+import 'package:flutter/material.dart';
+import '../models/user_model.dart';
+import '../models/product_model.dart';
+import '../models/subscription_model.dart';
+import '../models/delivery_task_model.dart';
+import '../models/wallet_transaction_model.dart';
+import '../models/notification_model.dart';
+import '../models/live_order_model.dart';
+import '../services/api_service.dart';
+import '../services/location_service.dart';
+
+import '../services/permission_service.dart';
+
+class AppState extends ChangeNotifier {
+  UserModel? currentUser;
+  String currentRole = 'CUSTOMER';
+  bool isLoading = false;
+  String? errorMessage;
+
+  bool isVacationMode = false;
+  int currentTabIndex = 0;
+
+  // OpenStreetMap Location State
+  String currentDeliveryAddress = 'Road No. 36, Jubilee Hills, Hyderabad';
+  double currentLat = 17.4319;
+  double currentLon = 78.4073;
+  bool isDetectingLocation = false;
+  bool hasLocationPermission = false;
+  bool hasNotificationPermission = false;
+
+  List<ProductModel> products = [];
+  List<SubscriptionModel> subscriptions = [];
+  List<WalletTransactionModel> transactions = [];
+  List<DeliveryTaskModel> deliveries = [];
+  List<LiveOrderModel> liveOrders = [];
+  List<NotificationModel> notifications = [];
+  Map<String, dynamic>? adminSummary;
+
+  // In-memory Shopping Cart State
+  final Map<int, int> cartItems = {};
+
+  int get totalCartItemCount => cartItems.values.fold(0, (sum, count) => sum + count);
+
+  double get totalCartPrice {
+    double total = 0.0;
+    for (var entry in cartItems.entries) {
+      final product = products.firstWhere(
+        (p) => p.id == entry.key,
+        orElse: () => ProductModel(id: entry.key, name: 'Item', description: '', pricePerUnit: 50.0, unit: 'PACKET', unitQuantity: '1 Unit', imageUrl: ''),
+      );
+      total += product.pricePerUnit * entry.value;
+    }
+    return total;
+  }
+
+  List<MapEntry<ProductModel, int>> get cartProductsList {
+    final list = <MapEntry<ProductModel, int>>[];
+    for (var entry in cartItems.entries) {
+      final product = products.firstWhere(
+        (p) => p.id == entry.key,
+        orElse: () => ProductModel(id: entry.key, name: 'Item', description: '', pricePerUnit: 50.0, unit: 'PACKET', unitQuantity: '1 Unit', imageUrl: ''),
+      );
+      list.add(MapEntry(product, entry.value));
+    }
+    return list;
+  }
+
+  void addToCart(ProductModel product) {
+    cartItems[product.id] = (cartItems[product.id] ?? 0) + 1;
+    notifyListeners();
+  }
+
+  void decreaseCartQty(int productId) {
+    if (!cartItems.containsKey(productId)) return;
+    if (cartItems[productId]! > 1) {
+      cartItems[productId] = cartItems[productId]! - 1;
+    } else {
+      cartItems.remove(productId);
+    }
+    notifyListeners();
+  }
+
+  void updateCartQty(int productId, int qty) {
+    if (qty <= 0) {
+      cartItems.remove(productId);
+    } else {
+      cartItems[productId] = qty;
+    }
+    notifyListeners();
+  }
+
+  void removeFromCart(int productId) {
+    cartItems.remove(productId);
+    notifyListeners();
+  }
+
+  void clearCart() {
+    cartItems.clear();
+    notifyListeners();
+  }
+
+  Future<LiveOrderModel> placeExpressOrder({
+    String? deliveryAddress,
+  }) async {
+    final orderItems = cartProductsList.map((entry) {
+      return OrderItemModel(
+        product: entry.key,
+        quantity: entry.value,
+        unitPrice: entry.key.pricePerUnit,
+      );
+    }).toList();
+
+    final total = totalCartPrice;
+    final orderId = 'MD-${8000 + liveOrders.length + 1}';
+    final addr = deliveryAddress ?? currentDeliveryAddress;
+
+    final newOrder = LiveOrderModel(
+      id: orderId,
+      orderType: 'EXPRESS',
+      items: orderItems,
+      totalAmount: total,
+      status: 'OUT_FOR_DELIVERY',
+      deliverySlot: 'Express Delivery (ETA 25 Mins)',
+      deliveryAddress: addr,
+      deliveryLatitude: currentLat,
+      deliveryLongitude: currentLon,
+      deliveryOtp: '${(1000 + (orderId.hashCode % 9000)).abs()}',
+      driverName: 'Suresh Rao (Partner #4)',
+      driverPhone: '+91 9123456789',
+      paymentStatus: 'PAID (Prepaid Wallet)',
+      createdAt: 'Just now',
+    );
+
+    liveOrders.insert(0, newOrder);
+
+    // Deduct from wallet & record transaction
+    if (currentUser != null) {
+      double newBal = currentUser!.walletBalance - total;
+      currentUser = currentUser!.copyWith(walletBalance: newBal > 0 ? newBal : 0.0);
+    }
+
+    transactions.insert(
+      0,
+      WalletTransactionModel(
+        id: transactions.length + 1,
+        amount: total,
+        transactionType: 'DEBIT',
+        description: 'Express Order $orderId (${orderItems.length} items)',
+        createdAt: 'Just now',
+      ),
+    );
+
+    notifications.insert(
+      0,
+      NotificationModel(
+        id: notifications.length + 1,
+        title: '⚡ Express Order $orderId Dispatched!',
+        message: 'Your order with ${orderItems.length} items is out for delivery. ETA ~25 mins.',
+        notificationType: 'DELIVERY',
+        isRead: false,
+        createdAt: 'Just now',
+      ),
+    );
+
+    cartItems.clear();
+    notifyListeners();
+    return newOrder;
+  }
+
+  Future<void> checkoutCart({
+    String schedule = 'DAILY',
+    String slot = '05:30 AM - 07:00 AM',
+    String? deliveryAddress,
+  }) async {
+    for (var entry in cartProductsList) {
+      await createNewSubscription(entry.key, entry.value, schedule);
+    }
+    cartItems.clear();
+    notifyListeners();
+  }
+
+  int get unreadNotificationCount => notifications.where((n) => !n.isRead).length;
+
+  AppState() {
+    initApp();
+  }
+
+  Future<void> initApp() async {
+    await initDevicePermissionsAndLocation();
+    final savedToken = await ApiService.initAuthToken();
+    if (savedToken != null) {
+      await reloadAllData();
+    } else {
+      await loginAndSync('customer', 'pass123', 'CUSTOMER');
+    }
+  }
+
+  Future<void> initDevicePermissionsAndLocation() async {
+    hasNotificationPermission = await PermissionService.requestNotificationPermission();
+    await requestDeviceGPS(isStartup: true);
+  }
+
+  Future<bool> requestDeviceGPS({bool isStartup = false}) async {
+    isDetectingLocation = true;
+    notifyListeners();
+
+    try {
+      final pos = await PermissionService.getDeviceCoordinates();
+      if (pos != null) {
+        currentLat = pos.latitude;
+        currentLon = pos.longitude;
+        hasLocationPermission = true;
+
+        final loc = await LocationService.reverseGeocode(pos.latitude, pos.longitude);
+        if (loc != null && loc['short_address'] != null) {
+          currentDeliveryAddress = loc['short_address'];
+        }
+      } else {
+        final loc = await LocationService.reverseGeocode(currentLat, currentLon);
+        if (loc != null && loc['short_address'] != null) {
+          currentDeliveryAddress = loc['short_address'];
+        }
+      }
+    } catch (_) {}
+
+    isDetectingLocation = false;
+    notifyListeners();
+    return hasLocationPermission;
+  }
+
+  Future<void> updateDeliveryLocation(String newAddress, double lat, double lon) async {
+    currentDeliveryAddress = newAddress;
+    currentLat = lat;
+    currentLon = lon;
+    notifyListeners();
+
+    if (currentUser != null) {
+      await updateUserProfile(address: newAddress, latitude: lat, longitude: lon);
+    }
+  }
+
+  Future<void> loginAndSync(String username, String password, String role) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    currentRole = role;
+
+    final authRes = await ApiService.login(username, password);
+    if (authRes['success'] == true) {
+      await reloadAllData();
+    } else {
+      errorMessage = authRes['error'] ?? 'Connection error';
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> reloadAllData() async {
+    final user = await ApiService.fetchUserProfile();
+    if (user != null) {
+      currentUser = user;
+      currentRole = user.role;
+      if (user.address.isNotEmpty) {
+        currentDeliveryAddress = user.address;
+      }
+      currentLat = user.latitude;
+      currentLon = user.longitude;
+    }
+
+    products = await ApiService.fetchProducts();
+    subscriptions = await ApiService.fetchSubscriptions();
+    deliveries = await ApiService.fetchDeliveries();
+    transactions = await ApiService.fetchWalletTransactions();
+    notifications = await ApiService.fetchNotifications();
+    if (currentRole == 'ADMIN') {
+      adminSummary = await ApiService.fetchDeliverySummary();
+    }
+
+    notifyListeners();
+  }
+
+  void setRole(String role) {
+    if (role == 'CUSTOMER') {
+      loginAndSync('customer', 'pass123', 'CUSTOMER');
+    } else if (role == 'DRIVER') {
+      loginAndSync('driver', 'pass123', 'DRIVER');
+    } else if (role == 'ADMIN') {
+      loginAndSync('admin', 'admin123', 'ADMIN');
+    }
+  }
+
+  void setTab(int index) {
+    currentTabIndex = index;
+    notifyListeners();
+  }
+
+  Future<void> onUserAuthenticated(UserModel user) async {
+    currentUser = user;
+    currentRole = user.role;
+    await reloadAllData();
+  }
+
+  Future<void> updateUserProfile({
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? phone,
+    String? address,
+    String? deliveryInstructions,
+    String? slotPreference,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (firstName != null) updates['first_name'] = firstName;
+    if (lastName != null) updates['last_name'] = lastName;
+    if (email != null) updates['email'] = email;
+    if (phone != null) updates['phone'] = phone;
+    if (address != null) updates['address'] = address;
+    if (deliveryInstructions != null) updates['delivery_instructions'] = deliveryInstructions;
+    if (slotPreference != null) updates['delivery_slot_preference'] = slotPreference;
+    if (latitude != null) updates['latitude'] = latitude;
+    if (longitude != null) updates['longitude'] = longitude;
+
+    final updatedUser = await ApiService.updateUserProfile(updates);
+    if (updatedUser != null) {
+      currentUser = updatedUser;
+    } else if (currentUser != null) {
+      currentUser = currentUser!.copyWith(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        address: address,
+        deliveryInstructions: deliveryInstructions,
+        deliverySlotPreference: slotPreference,
+        latitude: latitude,
+        longitude: longitude,
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> markNotificationRead(int id) async {
+    await ApiService.markNotificationRead(id);
+    notifications = notifications.map((n) {
+      if (n.id == id) return n.copyWith(isRead: true);
+      return n;
+    }).toList();
+    notifyListeners();
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    await ApiService.markAllNotificationsRead();
+    notifications = notifications.map((n) => n.copyWith(isRead: true)).toList();
+    notifyListeners();
+  }
+
+  Future<void> toggleVacationMode(bool val) async {
+    isVacationMode = val;
+    final todayStr = DateTime.now().toString().split(' ')[0];
+    final nextMonthStr = DateTime.now().add(const Duration(days: 30)).toString().split(' ')[0];
+
+    for (var sub in subscriptions) {
+      if (val) {
+        await ApiService.pauseSubscription(sub.id, todayStr, nextMonthStr);
+      } else {
+        await ApiService.resumeSubscription(sub.id);
+      }
+    }
+    await reloadAllData();
+  }
+
+  Future<void> topUpWallet(double amount, String method) async {
+    bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method');
+    if (ok) {
+      await reloadAllData();
+    } else if (currentUser != null) {
+      double newBal = currentUser!.walletBalance + amount;
+      currentUser = currentUser!.copyWith(walletBalance: newBal);
+      transactions.insert(
+        0,
+        WalletTransactionModel(
+          id: transactions.length + 1,
+          amount: amount,
+          transactionType: 'CREDIT',
+          description: 'Recharge via $method',
+          createdAt: 'Just now',
+        ),
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> createNewSubscription(ProductModel product, int qty, String schedule) async {
+    final newSub = await ApiService.createSubscription(product.id, qty, schedule);
+    if (newSub != null) {
+      await reloadAllData();
+    } else {
+      int newId = 200 + subscriptions.length + 1;
+      final sub = SubscriptionModel(
+        id: newId,
+        customerId: currentUser?.id ?? 1,
+        productId: product.id,
+        productDetail: product,
+        quantity: qty,
+        scheduleType: schedule,
+        startDate: DateTime.now().toString().split(' ')[0],
+        status: 'ACTIVE',
+      );
+      subscriptions.add(sub);
+      deliveries.add(
+        DeliveryTaskModel(
+          id: 600 + deliveries.length + 1,
+          subscriptionId: newId,
+          subscriptionDetail: sub,
+          deliveryDate: DateTime.now().toString().split(' ')[0],
+          slotTime: '05:30 AM - 07:00 AM',
+          status: 'PENDING',
+          proofImageUrl: product.imageUrl.isNotEmpty
+              ? product.imageUrl
+              : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
+        ),
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateSubscriptionQuantity(int subId, int newQty) async {
+    bool ok = await ApiService.updateSubscription(subId, quantity: newQty);
+    if (ok) {
+      await reloadAllData();
+    } else {
+      subscriptions = subscriptions.map((s) {
+        if (s.id == subId) return s.copyWith(quantity: newQty);
+        return s;
+      }).toList();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateSubscriptionSchedule(int subId, String newSchedule) async {
+    bool ok = await ApiService.updateSubscription(subId, scheduleType: newSchedule);
+    if (ok) {
+      await reloadAllData();
+    } else {
+      subscriptions = subscriptions.map((s) {
+        if (s.id == subId) return s.copyWith(scheduleType: newSchedule);
+        return s;
+      }).toList();
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleSubscriptionStatus(int subId) async {
+    final sub = subscriptions.firstWhere((s) => s.id == subId, orElse: () => subscriptions.first);
+    bool isPaused = sub.status == 'PAUSED';
+
+    if (isPaused) {
+      await ApiService.resumeSubscription(subId);
+    } else {
+      final todayStr = DateTime.now().toString().split(' ')[0];
+      final nextMonthStr = DateTime.now().add(const Duration(days: 30)).toString().split(' ')[0];
+      await ApiService.pauseSubscription(subId, todayStr, nextMonthStr);
+    }
+    await reloadAllData();
+  }
+
+  Future<void> pauseSubscriptionWithDates(int subId, String startDate, String endDate, String reason) async {
+    await ApiService.pauseSubscription(subId, startDate, endDate);
+    await reloadAllData();
+  }
+
+  Future<void> cancelSubscription(int subId) async {
+    await ApiService.cancelSubscription(subId);
+    await reloadAllData();
+  }
+
+  Future<void> markDeliveryCompleted(int taskId, String proofUrl) async {
+    bool ok = await ApiService.completeDelivery(taskId, proofUrl);
+    if (ok) {
+      await reloadAllData();
+    } else {
+      deliveries = deliveries.map((d) {
+        if (d.id == taskId) {
+          return d.copyWith(status: 'DELIVERED', proofImageUrl: proofUrl, deliveredAt: '06:25 AM');
+        }
+        return d;
+      }).toList();
+
+      if (currentUser != null) {
+        double newBal = currentUser!.walletBalance - 72.0;
+        currentUser = currentUser!.copyWith(walletBalance: newBal > 0 ? newBal : 0.0);
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> markDeliverySkipped(int taskId) async {
+    bool ok = await ApiService.skipDelivery(taskId);
+    if (ok) {
+      await reloadAllData();
+    } else {
+      deliveries = deliveries.map((d) {
+        if (d.id == taskId) return d.copyWith(status: 'SKIPPED');
+        return d;
+      }).toList();
+      notifyListeners();
+    }
+  }
+
+  Future<void> addNewProduct(String name, String desc, double price, String unitQty, String imgUrl, {String category = 'MILK'}) async {
+    final p = await ApiService.createProduct(name, desc, price, unitQty, imgUrl, category: category);
+    if (p != null) {
+      await reloadAllData();
+    }
+  }
+
+  double get totalDailyMilkVolume {
+    double total = 0;
+    for (var d in deliveries) {
+      if (d.status != 'SKIPPED') {
+        total += (d.subscriptionDetail?.quantity ?? 1);
+      }
+    }
+    return total > 0 ? total : 250.0;
+  }
+
+  double get totalDailyRevenue {
+    double total = 0;
+    for (var d in deliveries) {
+      if (d.status == 'DELIVERED') {
+        double price = d.subscriptionDetail?.productDetail?.pricePerUnit ?? 72.0;
+        int qty = d.subscriptionDetail?.quantity ?? 1;
+        total += price * qty;
+      }
+    }
+    return total > 0 ? total : 4500.0;
+  }
+}

@@ -1,0 +1,29 @@
+# Root .gitignore
+.DS_Store
+*.log
+.env
+.env.local
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+db.sqlite3
+/milk_delivery_backend/venv/
+/milk_delivery_backend/staticfiles/
+/milk_delivery_backend/logs/
+/milk_delivery_backend/media/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+*.xcworkspace
+*.xcuserdata
