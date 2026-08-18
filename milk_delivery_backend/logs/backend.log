@@ -120,3 +120,21 @@
 [2026-08-18 22:44:41,999] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
 [2026-08-18 23:05:15,857] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/milk_backend/settings.py changed, reloading.
 [2026-08-18 23:05:16,187] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
+[2026-08-18 23:25:50,450] WARNING [django.server:212] "GET /api/auth/me/ HTTP/1.1" 401 275
+[2026-08-18 23:25:50,468] INFO [django.server:212] "GET /api/products/ HTTP/1.1" 200 9112
+[2026-08-18 23:25:50,479] WARNING [django.server:212] "GET /api/subscriptions/ HTTP/1.1" 401 275
+[2026-08-18 23:25:50,480] WARNING [django.server:212] "GET /api/deliveries/ HTTP/1.1" 401 275
+[2026-08-18 23:25:50,482] WARNING [django.server:212] "GET /api/wallet/transactions/ HTTP/1.1" 401 275
+[2026-08-18 23:25:50,483] WARNING [django.server:212] "GET /api/notifications/ HTTP/1.1" 401 275
+[2026-08-18 23:27:10,954] WARNING [django.server:212] "GET /api/auth/me/ HTTP/1.1" 401 275
+[2026-08-18 23:27:10,960] INFO [django.server:212] "GET /api/products/ HTTP/1.1" 200 9112
+[2026-08-18 23:27:11,062] WARNING [django.server:212] "GET /api/subscriptions/ HTTP/1.1" 401 275
+[2026-08-18 23:27:11,175] WARNING [django.server:212] "GET /api/deliveries/ HTTP/1.1" 401 275
+[2026-08-18 23:27:11,183] WARNING [django.server:212] "GET /api/wallet/transactions/ HTTP/1.1" 401 275
+[2026-08-18 23:27:11,185] WARNING [django.server:212] "GET /api/notifications/ HTTP/1.1" 401 275
+[2026-08-18 23:30:28,507] WARNING [django.server:212] "GET /api/auth/me/ HTTP/1.1" 401 275
+[2026-08-18 23:30:28,536] INFO [django.server:212] "GET /api/products/ HTTP/1.1" 200 9112
+[2026-08-18 23:30:28,550] WARNING [django.server:212] "GET /api/subscriptions/ HTTP/1.1" 401 275
+[2026-08-18 23:30:28,553] WARNING [django.server:212] "GET /api/deliveries/ HTTP/1.1" 401 275
+[2026-08-18 23:30:28,554] WARNING [django.server:212] "GET /api/wallet/transactions/ HTTP/1.1" 401 275
+[2026-08-18 23:30:28,556] WARNING [django.server:212] "GET /api/notifications/ HTTP/1.1" 401 275
