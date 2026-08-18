@@ -1,0 +1,196 @@
+from django.db import migrations
+
+def create_initial_data(apps, schema_editor):
+    Product = apps.get_model('products', 'Product')
+    User = apps.get_model('accounts', 'User')
+
+    # 1. Create Default Users if not exists
+    if not User.objects.filter(phone='+91 8919548905').exists():
+        admin_user = User.objects.create(
+            username='admin_owner',
+            phone='+91 8919548905',
+            role='ADMIN',
+            first_name='Admin',
+            last_name='Manager',
+            is_staff=True,
+            is_superuser=True,
+        )
+        admin_user.set_password('admin123')
+        admin_user.save()
+
+    if not User.objects.filter(phone='+91 9123456789').exists():
+        driver_user = User.objects.create(
+            username='driver_suresh',
+            phone='+91 9123456789',
+            role='DRIVER',
+            first_name='Suresh',
+            last_name='Rao',
+        )
+        driver_user.set_password('pass123')
+        driver_user.save()
+
+    if not User.objects.filter(phone='+91 9876543210').exists():
+        customer_user = User.objects.create(
+            username='customer_ramesh',
+            phone='+91 9876543210',
+            role='CUSTOMER',
+            first_name='Ramesh',
+            last_name='Kumar',
+            address='Flat 402, Green Acres, Road No. 36, Jubilee Hills',
+            city='Hyderabad',
+            wallet_balance=650.00,
+            latitude=17.4319,
+            longitude=78.4073,
+            delivery_instructions='Ring bell twice and leave near doorstep box',
+        )
+        customer_user.set_password('pass123')
+        customer_user.save()
+
+    # 2. Create Initial Product Catalog across 4 Core Categories
+    initial_products = [
+        {
+            'name': 'Farm Fresh A2 Desi Cow Milk',
+            'description': '100% pure raw unadulterated Vedic A2 cow milk, pasteurized & chilled under 4°C within 1 hour of morning milking.',
+            'category': 'MILK',
+            'price_per_unit': 85.00,
+            'unit': 'LITER',
+            'unit_quantity': '1 Litre Glass Bottle',
+            'badge_text': 'Bestseller ⭐',
+            'rating': 4.9,
+            'farm_origin': 'Gir Cow Vedic Farm, Shamirpet',
+            'fat_content': '4.5% Natural Fat',
+            'is_organic': True,
+            'is_available': True,
+            'stock': 100,
+            'image_url': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
+        },
+        {
+            'name': 'Rich Cream Pure Buffalo Milk',
+            'description': 'Thick high-fat creamy buffalo milk ideal for morning tea, coffee, and homemade paneer & rich curd.',
+            'category': 'MILK',
+            'price_per_unit': 78.00,
+            'unit': 'LITER',
+            'unit_quantity': '1 Litre Packet',
+            'badge_text': 'High Protein 💪',
+            'rating': 4.8,
+            'farm_origin': 'Murrah Buffalo Dairy, Medchal',
+            'fat_content': '6.8% Rich Cream',
+            'is_organic': True,
+            'is_available': True,
+            'stock': 80,
+            'image_url': 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&q=80',
+        },
+        {
+            'name': 'Natural Traditional Clay Pot Curd (Dahi)',
+            'description': 'Slow-fermented probiotic rich thick natural curd prepared traditionally in hygienic earthen pots.',
+            'category': 'MILK',
+            'price_per_unit': 60.00,
+            'unit': 'PACKET',
+            'unit_quantity': '500g Clay Pot',
+            'badge_text': 'Probiotic 🥣',
+            'rating': 4.9,
+            'farm_origin': 'Fresh Dairy Kitchen, Kondapur',
+            'fat_content': 'Natural Probiotic',
+            'is_organic': True,
+            'is_available': True,
+            'stock': 50,
+            'image_url': 'https://images.unsplash.com/photo-1588710929895-6ef7bf47e06a?w=500&q=80',
+        },
+        {
+            'name': 'Antibiotic-Free Tender Chicken Curry Cut',
+            'description': 'Freshly processed healthy broiler chicken curry cuts (with bone), 100% antibiotic and hormone free, vacuum-sealed.',
+            'category': 'MEAT',
+            'price_per_unit': 160.00,
+            'unit': 'KG',
+            'unit_quantity': '500g Vacuum Pack',
+            'badge_text': 'Fresh Cut 🍗',
+            'rating': 4.9,
+            'farm_origin': 'Bio-Secure Poultry Farms, Vikarabad',
+            'fat_content': 'Lean Protein',
+            'is_organic': True,
+            'is_available': True,
+            'stock': 40,
+            'image_url': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=500&q=80',
+        },
+        {
+            'name': 'Boneless Tender Chicken Breast',
+            'description': 'Premium lean boneless chicken breast fillets, perfectly trimmed and hygienic for fitness & keto meals.',
+            'category': 'MEAT',
+            'price_per_unit': 210.00,
+            'unit': 'KG',
+            'unit_quantity': '500g Fillet Pack',
+            'badge_text': 'Gym Diet 💪',
+            'rating': 4.8,
+            'farm_origin': 'Bio-Secure Poultry Farms, Vikarabad',
+            'fat_content': 'High Protein Lean',
+            'is_organic': True,
+            'is_available': True,
+            'stock': 35,
+            'image_url': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=500&q=80',
+        },
+        {
+            'name': 'Farm Fresh Country Desi Brown Eggs',
+            'description': 'Free-range pasture-raised Desi hen brown eggs, rich in natural omega-3 and bright golden yolks.',
+            'category': 'EGGS',
+            'price_per_unit': 85.00,
+            'unit': 'PACKET',
+            'unit_quantity': '6 Eggs Bio-Carton',
+            'badge_text': 'Omega-3 🥚',
+            'rating': 4.9,
+            'farm_origin': 'Grassland Free-Range Farms, Sangareddy',
+            'fat_content': 'Natural Omega-3',
+            'is_organic': True,
+            'is_available': True,
+            'stock': 120,
+            'image_url': 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=500&q=80',
+        },
+        {
+            'name': 'Classic Farm White Table Eggs',
+            'description': 'Clean, sanitized high-protein white eggs harvested daily at dawn for your breakfast needs.',
+            'category': 'EGGS',
+            'price_per_unit': 120.00,
+            'unit': 'PACKET',
+            'unit_quantity': '12 Eggs Pack',
+            'badge_text': 'Value Pack 📦',
+            'rating': 4.7,
+            'farm_origin': 'Sunrise Layer Farms, Medak',
+            'fat_content': 'High Protein',
+            'is_organic': False,
+            'is_available': True,
+            'stock': 150,
+            'image_url': 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=500&q=80',
+        },
+        {
+            'name': '8-Stage Purified 20L Mineral Water Can',
+            'description': 'BIS certified 20 Litre mineral water jar with tamper-proof security seal and 8-stage RO+UV filtration.',
+            'category': 'WATER_CAN',
+            'price_per_unit': 60.00,
+            'unit': 'CAN',
+            'unit_quantity': '20 Litre Can',
+            'badge_text': 'Doorstep Drop 💧',
+            'rating': 4.9,
+            'farm_origin': 'AquaDrop Purification Plant, Miyapur',
+            'fat_content': 'TDS 120 (Optimal)',
+            'is_organic': False,
+            'is_available': True,
+            'stock': 200,
+            'image_url': 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500&q=80',
+        },
+    ]
+
+    for p in initial_products:
+        Product.objects.get_or_create(name=p['name'], defaults=p)
+
+def remove_initial_data(apps, schema_editor):
+    pass
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('products', '0003_alter_product_category_alter_product_farm_origin_and_more'),
+        ('accounts', '0003_user_latitude_user_longitude'),
+    ]
+
+    operations = [
+        migrations.RunPython(create_initial_data, remove_initial_data),
+    ]
