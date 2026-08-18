@@ -4,6 +4,9 @@ set -e
 echo "🚀 Running database migrations on Railway PostgreSQL..."
 python manage.py migrate --noinput || true
 
+echo "🌱 Seeding default superusers, hubs, and catalog..."
+python seed_railway.py || true
+
 echo "📦 Collecting static files..."
 python manage.py collectstatic --noinput || true
 
