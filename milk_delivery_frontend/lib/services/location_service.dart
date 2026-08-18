@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class LocationService {
-  // Google Maps API Key - optionally set or pass your key here
-  static String googleMapsApiKey = '';
+  // Google Maps API Key for high-precision Geocoding and Places Lookup
+  static String googleMapsApiKey = 'AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg';
 
   static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
   static const Map<String, String> _headers = {
