@@ -41,6 +41,8 @@ dependencies:
   url_launcher: ^6.3.2
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  web_socket_channel: ^3.0.1
+
 
 dev_dependencies:
   flutter_test:

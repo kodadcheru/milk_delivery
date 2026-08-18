@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
+import 'help_support_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
   final AppState state;
@@ -80,20 +81,51 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF10B981)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.circle, color: Color(0xFF10B981), size: 8),
-                    SizedBox(width: 4),
-                    Text('LIVE 🟢', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => HelpSupportScreen(state: widget.state, initialTopic: 'I need help tracking my live order'),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.headset_mic_rounded, color: Color(0xFF0D7C66), size: 14),
+                          SizedBox(width: 4),
+                          Text('Support', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF10B981)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.circle, color: Color(0xFF10B981), size: 7),
+                        SizedBox(width: 4),
+                        Text('LIVE', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9.5, fontWeight: FontWeight.w900)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

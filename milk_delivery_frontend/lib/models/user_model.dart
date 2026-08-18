@@ -31,6 +31,8 @@ class UserModel {
     this.longitude = 78.4073,
   });
 
+  String get fullName => '$firstName $lastName'.trim().isEmpty ? (username.isNotEmpty ? username : 'Customer') : '$firstName $lastName'.trim();
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] ?? 0,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import 'map_location_picker_screen.dart';
+import 'help_support_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   final AppState state;
@@ -255,12 +256,15 @@ class ProfileTab extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.support_agent_rounded, color: Color(0xFF0D7C66)),
-                  title: const Text('24x7 Customer Support', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  subtitle: const Text('Toll Free: 1800-MILK-DROP (1800-6455-3767)', style: TextStyle(fontSize: 10.5)),
-                  trailing: const Icon(Icons.phone, color: Color(0xFF0D7C66), size: 18),
+                  title: const Text('24x7 Priority Support & Live Chat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text('Live WebSocket Chat • Toll-Free Hotline • FAQs', style: TextStyle(fontSize: 10.5, color: Color(0xFF0D7C66))),
+                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF0D7C66), size: 20),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('📞 Dialing MilkDrop Support Hotline: 1800-6455-3767...')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => HelpSupportScreen(state: state),
+                      ),
                     );
                   },
                 ),

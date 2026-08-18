@@ -138,3 +138,9 @@
 [2026-08-18 23:30:28,553] WARNING [django.server:212] "GET /api/deliveries/ HTTP/1.1" 401 275
 [2026-08-18 23:30:28,554] WARNING [django.server:212] "GET /api/wallet/transactions/ HTTP/1.1" 401 275
 [2026-08-18 23:30:28,556] WARNING [django.server:212] "GET /api/notifications/ HTTP/1.1" 401 275
+[2026-08-18 23:35:24,904] WARNING [django.server:212] "GET /api/auth/me/ HTTP/1.1" 401 275
+[2026-08-18 23:35:24,911] INFO [django.server:212] "GET /api/products/ HTTP/1.1" 200 9112
+[2026-08-18 23:35:24,932] WARNING [django.server:212] "GET /api/subscriptions/ HTTP/1.1" 401 275
+[2026-08-18 23:35:24,936] WARNING [django.server:212] "GET /api/deliveries/ HTTP/1.1" 401 275
+[2026-08-18 23:35:24,937] WARNING [django.server:212] "GET /api/wallet/transactions/ HTTP/1.1" 401 275
+[2026-08-18 23:35:24,938] WARNING [django.server:212] "GET /api/notifications/ HTTP/1.1" 401 275
