@@ -407,6 +407,7 @@
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Overview & Milk Demand</button>
       <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-store"></i> Location Hubs & Load Balancer</button>
+      <button class="tab-btn" onclick="switchTab('service-areas', this)"><i class="fa-solid fa-map-location-dot"></i> Service Areas & Geofencing</button>
       <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-truck-ramp-box"></i> Live Deliveries & Proofs</button>
       <button class="tab-btn" onclick="switchTab('subscriptions', this)"><i class="fa-solid fa-repeat"></i> Subscriptions Manager</button>
       <button class="tab-btn" onclick="switchTab('fleet', this)"><i class="fa-solid fa-motorcycle"></i> Salaried Fleet Partners</button>
@@ -488,6 +489,34 @@
               </tr>
             </thead>
             <tbody id="hubs-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Service Areas & Geofencing ── -->
+    <div id="tab-service-areas" style="display: none;">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Geofenced Service Areas & Micro-Clusters</div>
+          <button class="btn btn-primary" onclick="openAddServiceAreaModal()"><i class="fa-solid fa-plus"></i> Add New Service Area</button>
+        </div>
+        <div class="data-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Service Area Name</th>
+                <th>City & Pincodes</th>
+                <th>Assigned Depot Hub</th>
+                <th>Coverage Radius</th>
+                <th>Active Households</th>
+                <th>Popular Gated Societies</th>
+                <th>Delivery Status</th>
+              </tr>
+            </thead>
+            <tbody id="service-areas-table-body">
               <!-- Rendered dynamically -->
             </tbody>
           </table>
@@ -715,6 +744,49 @@
     </div>
   </div>
 
+  <!-- ── Modal: Add Service Area ── -->
+  <div class="modal-overlay" id="addServiceAreaModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Add New Geofenced Service Area</div>
+      <div class="form-group">
+        <label>Service Area Name</label>
+        <input type="text" id="saName" class="form-control" value="Gachibowli Outer Ring Cluster">
+      </div>
+      <div class="form-group">
+        <label>Serviceable Pincodes (Comma separated)</label>
+        <input type="text" id="saPincodes" class="form-control" value="500032, 500075">
+      </div>
+      <div class="form-group">
+        <label>Assigned Fulfillment Depot Hub</label>
+        <select id="saHubId" class="form-control">
+          <option value="1">Jubilee Hills Central Depot #1</option>
+          <option value="2">Banjara Hills Micro-Depot #2</option>
+          <option value="3" selected>Madhapur Tech Enclave Depot #3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Coverage Radius (km)</label>
+        <input type="number" id="saRadius" class="form-control" value="5.0">
+      </div>
+      <div class="form-group">
+        <label>Popular Gated Societies & Communities</label>
+        <input type="text" id="saSocieties" class="form-control" value="Aparna Sarovar Zenith, Golf View Enclave, Jayabheri Orange">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="saStatus" class="form-control">
+          <option value="ACTIVE" selected>ACTIVE & Delivering</option>
+          <option value="EXPANDING">EXPANDING Soon</option>
+          <option value="WAITLIST">WAITLIST Only</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addServiceAreaModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddServiceArea()">Save Service Area</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Doorstep Photo Proof Viewer ── -->
   <div class="modal-overlay" id="proofModal">
     <div class="modal-card" style="max-width: 480px; text-align: center;">
@@ -736,7 +808,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers'].forEach(t => {
+      ['dashboard', 'hubs', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -746,6 +818,7 @@
       await Promise.all([
         loadDashboard(),
         loadHubs(),
+        loadServiceAreas(),
         loadDeliveries(),
         loadSubscriptions(),
         loadFleet(),
@@ -813,6 +886,62 @@
           });
         }
       } catch (e) {}
+    }
+
+    async function loadServiceAreas() {
+      try {
+        const res = await fetch(`${baseUrl}/service-areas/`);
+        if (res.ok) {
+          const areas = await res.json();
+          const tbody = document.getElementById('service-areas-table-body');
+          tbody.innerHTML = '';
+          areas.forEach(a => {
+            const hub = a.hub_detail || { name: 'Central Distribution Hub', hub_code: 'HUB-HYD-01' };
+            const statusClass = a.status === 'ACTIVE' ? 'status-active' : (a.status === 'EXPANDING' ? 'status-pending' : 'status-paused');
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${a.name}</strong></td>
+                <td>${a.city} • <span style="color:var(--primary-accent); font-weight:bold;">${a.pincodes}</span></td>
+                <td><span class="status-tag status-hub">${hub.name || 'Depot'}</span></td>
+                <td><strong>${a.radius_km} km Radius</strong></td>
+                <td><strong>${a.active_households} Households</strong></td>
+                <td><small style="color:var(--text-muted);">${a.popular_societies || 'Gated Societies'}</small></td>
+                <td><span class="status-tag ${statusClass}">${a.status}</span></td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {}
+    }
+
+    function openAddServiceAreaModal() {
+      document.getElementById('addServiceAreaModal').style.display = 'flex';
+    }
+
+    async function submitAddServiceArea() {
+      const name = document.getElementById('saName').value;
+      const pincodes = document.getElementById('saPincodes').value;
+      const hubId = document.getElementById('saHubId').value;
+      const radius = document.getElementById('saRadius').value;
+      const societies = document.getElementById('saSocieties').value;
+      const saStatus = document.getElementById('saStatus').value;
+
+      await fetch(`${baseUrl}/admin/service-areas/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          pincodes: pincodes,
+          hub_id: hubId,
+          radius_km: radius,
+          popular_societies: societies,
+          status: saStatus
+        })
+      });
+
+      closeModal('addServiceAreaModal');
+      loadServiceAreas();
+      alert('Geofenced Service Area saved successfully!');
     }
 
     async function loadDeliveries() {

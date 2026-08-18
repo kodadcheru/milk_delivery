@@ -257,3 +257,11 @@
 [2026-08-19 00:39:45,865] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
 [2026-08-19 00:39:55,201] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/milk_backend/urls.py changed, reloading.
 [2026-08-19 00:39:55,617] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
+[2026-08-19 00:43:48,821] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/models.py changed, reloading.
+[2026-08-19 00:43:49,256] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
+[2026-08-19 00:44:24,166] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/serializers.py changed, reloading.
+[2026-08-19 00:44:24,616] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
+[2026-08-19 00:44:42,163] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/accounts/admin_views.py changed, reloading.
+[2026-08-19 00:44:42,614] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader
+[2026-08-19 00:44:50,914] INFO [django.utils.autoreload:265] /Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/milk_backend/urls.py changed, reloading.
+[2026-08-19 00:44:51,278] INFO [django.utils.autoreload:667] Watching for file changes with StatReloader

@@ -1,7 +1,21 @@
 from rest_framework import serializers
 from apps.accounts.serializers import UserSerializer
-from apps.deliveries.models import DeliveryTask
+from apps.deliveries.models import DeliveryTask, LocationHub, ServiceArea
 from apps.subscriptions.serializers import SubscriptionSerializer
+
+
+class LocationHubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationHub
+        fields = "__all__"
+
+
+class ServiceAreaSerializer(serializers.ModelSerializer):
+    hub_detail = LocationHubSerializer(source="hub", read_only=True)
+
+    class Meta:
+        model = ServiceArea
+        fields = "__all__"
 
 
 class DeliveryTaskSerializer(serializers.ModelSerializer):

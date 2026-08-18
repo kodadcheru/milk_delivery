@@ -260,3 +260,76 @@ class AdminFleetListView(APIView):
             },
         ]
         return Response(fleet)
+
+
+class ServiceAreaListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from apps.deliveries.models import ServiceArea
+        from apps.deliveries.serializers import ServiceAreaSerializer
+        areas = ServiceArea.objects.all().select_related("hub")
+        return Response(ServiceAreaSerializer(areas, many=True).data)
+
+
+class ServiceAreaCheckView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from apps.deliveries.models import ServiceArea
+        from apps.deliveries.serializers import ServiceAreaSerializer
+        pincode = request.data.get("pincode", "").strip()
+        address = request.data.get("address", "").strip().lower()
+
+        areas = ServiceArea.objects.filter(status=ServiceArea.Statuses.ACTIVE)
+
+        matched_area = None
+        for a in areas:
+            if pincode and pincode in a.pincodes:
+                matched_area = a
+                break
+            if address and (a.name.lower() in address or any(pin.strip() in address for pin in a.pincodes.split(","))):
+                matched_area = a
+                break
+
+        if matched_area:
+            return Response({
+                "serviceable": True,
+                "message": f"🎉 Great news! We deliver 100% fresh morning milk to {matched_area.name} from {matched_area.hub.name if matched_area.hub else 'Central Depot'}.",
+                "area": ServiceAreaSerializer(matched_area).data,
+            })
+
+        return Response({
+            "serviceable": False,
+            "message": "We are currently expanding to your neighborhood! Join our priority waitlist to get ₹500 free milk credits upon launch.",
+            "nearby_active_hubs": ["Jubilee Hills Depot #1 (500033)", "Banjara Hills Depot #2 (500034)", "Madhapur Tech Enclave #3 (500081)"],
+        })
+
+
+class AdminServiceAreaManageView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from apps.deliveries.models import LocationHub, ServiceArea
+        from apps.deliveries.serializers import ServiceAreaSerializer
+
+        name = request.data.get("name")
+        pincodes = request.data.get("pincodes")
+        hub_id = request.data.get("hub_id")
+        radius = float(request.data.get("radius_km", 5.0))
+        status_val = request.data.get("status", "ACTIVE")
+        popular = request.data.get("popular_societies", "Residential Gated Enclaves")
+
+        hub = LocationHub.objects.filter(id=hub_id).first() if hub_id else None
+
+        area = ServiceArea.objects.create(
+            name=name,
+            pincodes=pincodes,
+            hub=hub,
+            radius_km=radius,
+            status=status_val,
+            popular_societies=popular,
+        )
+
+        return Response(ServiceAreaSerializer(area).data, status=status.HTTP_201_CREATED)
+

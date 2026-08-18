@@ -6,6 +6,7 @@ import '../../models/subscription_model.dart';
 import '../../services/location_service.dart';
 import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/product_detail_sheet.dart';
+import '../../widgets/service_area_sheet.dart';
 import '../../widgets/shimmer_loading.dart';
 import 'category_products_screen.dart';
 import 'map_location_picker_screen.dart';
@@ -1345,6 +1346,24 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                       builder: (c) => MapLocationPickerScreen(state: widget.state),
                     ),
                   );
+                },
+              ),
+              const Divider(height: 12),
+
+              // 1b. Geofenced Service Areas Modal Trigger
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), shape: BoxShape.circle),
+                  child: const Icon(Icons.map_rounded, color: Color(0xFF10B981), size: 20),
+                ),
+                title: const Text('Browse Geofenced Service Areas 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: Text('Current Zone: ${widget.state.selectedServiceArea.name}', style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF10B981)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ServiceAreaSheet.show(context, widget.state);
                 },
               ),
               const Divider(height: 12),

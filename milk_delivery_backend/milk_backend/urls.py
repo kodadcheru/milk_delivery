@@ -10,8 +10,11 @@ from apps.accounts.admin_views import (
     AdminCustomerListView,
     AdminFleetListView,
     AdminHubsView,
+    AdminServiceAreaManageView,
     AdminSubscriptionToggleView,
     AdminSubscriptionsListView,
+    ServiceAreaCheckView,
+    ServiceAreaListView,
 )
 from apps.accounts.phone_auth_views import (
     RegisterMobileUserView,
@@ -54,6 +57,10 @@ urlpatterns = [
     path("api/admin/subscriptions/", AdminSubscriptionsListView.as_view(), name="admin_subscriptions"),
     path("api/admin/subscriptions/<int:pk>/toggle/", AdminSubscriptionToggleView.as_view(), name="admin_subscription_toggle"),
     path("api/admin/fleet/", AdminFleetListView.as_view(), name="admin_fleet"),
+    # Service Area endpoints
+    path("api/service-areas/", ServiceAreaListView.as_view(), name="service_areas_list"),
+    path("api/service-areas/check/", ServiceAreaCheckView.as_view(), name="service_areas_check"),
+    path("api/admin/service-areas/", AdminServiceAreaManageView.as_view(), name="admin_service_areas_manage"),
     # Phone OTP & Mobile Auth endpoints
     path("api/auth/send-otp/", SendOTPView.as_view(), name="auth_send_otp"),
     path("api/auth/verify-otp/", VerifyOTPView.as_view(), name="auth_verify_otp"),

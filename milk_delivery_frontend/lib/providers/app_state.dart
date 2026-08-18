@@ -6,6 +6,7 @@ import '../models/delivery_task_model.dart';
 import '../models/wallet_transaction_model.dart';
 import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
+import '../models/service_area_model.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 
@@ -20,13 +21,24 @@ class AppState extends ChangeNotifier {
   bool isVacationMode = false;
   int currentTabIndex = 0;
 
-  // OpenStreetMap Location State
+  // OpenStreetMap Location & Service Area State
   String currentDeliveryAddress = 'Road No. 36, Jubilee Hills, Hyderabad';
   double currentLat = 17.4319;
   double currentLon = 78.4073;
   bool isDetectingLocation = false;
   bool hasLocationPermission = false;
   bool hasNotificationPermission = false;
+
+  List<ServiceAreaModel> serviceAreas = ServiceAreaModel.defaultAreas;
+  ServiceAreaModel selectedServiceArea = ServiceAreaModel.defaultAreas.first;
+
+  void selectServiceArea(ServiceAreaModel area) {
+    selectedServiceArea = area;
+    currentDeliveryAddress = '${area.popularSocieties.split(",").first.trim()}, ${area.name}, ${area.city} - ${area.pincodes.split(",").first.trim()}';
+    currentLat = area.latitude;
+    currentLon = area.longitude;
+    notifyListeners();
+  }
 
   List<ProductModel> products = [];
   List<SubscriptionModel> subscriptions = [];
