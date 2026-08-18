@@ -86,5 +86,18 @@ void main() {
       expect(result.fuelCostSavedRupees > 0, isTrue);
       expect(result.co2SavedKg > 0, isTrue);
     });
+
+    test('partitionEquallyForDrivers partitions tasks equally across N delivery boys', () {
+      final partitions = RouteOptimizer.partitionEquallyForDrivers(
+        hub: hub,
+        allTasks: mockTasks,
+        numberOfDrivers: 2,
+      );
+
+      expect(partitions.length, equals(2));
+      // Total 3 tasks split across 2 drivers -> Driver 1 gets 2, Driver 2 gets 1
+      expect(partitions[0].orderedStops.length + partitions[1].orderedStops.length, equals(3));
+      expect((partitions[0].orderedStops.length - partitions[1].orderedStops.length).abs() <= 1, isTrue);
+    });
   });
 }

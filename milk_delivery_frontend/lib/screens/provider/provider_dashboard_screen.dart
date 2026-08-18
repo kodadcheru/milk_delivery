@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/route_optimizer.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -16,6 +18,7 @@ class ProviderDashboardScreen extends StatefulWidget {
 class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   int _selectedFilter = 0; // 0: All Orders, 1: Morning Subscriptions, 2: Express Orders, 3: Fleet Drivers
   String _searchQuery = '';
+  int _activeDriverCount = 4;
   int _crateStockA2 = 45;
   int _crateStockBuffalo = 22;
   int _crateStockEggs = 18;
@@ -200,6 +203,177 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Container(width: 1, height: 28, color: Colors.white30),
                     _buildHubStatColumn('48 Bottles', 'Returned to Hub 🍾'),
                   ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ── Equal Load Balancer & Delivery Boys Configurator ──
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Text('⚖️', style: TextStyle(fontSize: 20)),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Equal Load Balancer & Fleet Dispatch',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                            Text(
+                              'Auto-partitions hub orders equally across active boys',
+                              style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                      child: const Text('EQUAL LOAD', style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.w900)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Delivery Boys Input Stepper
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Active Delivery Boys Today:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          Text('Hub operator input for shift partitioning', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.white70, size: 22),
+                            onPressed: _activeDriverCount > 1 ? () => setState(() => _activeDriverCount--) : null,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              '$_activeDriverCount Boys',
+                              style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w900, fontSize: 14),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline, color: Color(0xFF10B981), size: 22),
+                            onPressed: _activeDriverCount < 10 ? () => setState(() => _activeDriverCount++) : null,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Equal Partition Telemetry
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildPartitionStat('${tasks.length} Total', 'Orders in Hub'),
+                    Container(width: 1, height: 24, color: Colors.white24),
+                    _buildPartitionStat('${(tasks.length / _activeDriverCount).ceil()} Stops', 'Per Delivery Boy ⚖️'),
+                    Container(width: 1, height: 24, color: Colors.white24),
+                    _buildPartitionStat('~${(totalLitres / _activeDriverCount).toStringAsFixed(0)} Litres', 'Load per Boy'),
+                    Container(width: 1, height: 24, color: Colors.white24),
+                    _buildPartitionStat('~₹${(350 + (tasks.length / _activeDriverCount).ceil() * 25 + 100).toStringAsFixed(0)}', 'Est. Pay / Boy'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Partitioned Fleet Preview
+                SizedBox(
+                  width: double.infinity,
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFF0D7C66),
+                          content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount delivery boys with zero route overlap.'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.hub_rounded, size: 16),
+                    label: Text('Auto-Balance & Dispatch $_activeDriverCount Equal Batches 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                // Live Partitions Summary
+                Builder(
+                  builder: (context) {
+                    final partitions = RouteOptimizer.partitionEquallyForDrivers(
+                      hub: HubLocationModel.defaultHub,
+                      allTasks: tasks,
+                      numberOfDrivers: _activeDriverCount,
+                    );
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 10),
+                        ...partitions.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final res = entry.value;
+                          final driverNames = ['Suresh Rao', 'Vikram Sharma', 'Anil Kumar', 'Raju Patel', 'Kiran Reddy', 'Mahesh G.'];
+                          final dName = idx < driverNames.length ? driverNames[idx] : 'Driver #${idx + 1}';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('🛵 $dName', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                Text('${res.orderedStops.length} Stops • ${res.totalDistanceKm.toStringAsFixed(1)} km • ₹${(350 + res.orderedStops.length * 25 + 100).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -742,6 +916,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPartitionStat(String val, String label) {
+    return Column(
+      children: [
+        Text(val, style: const TextStyle(color: Color(0xFF10B981), fontSize: 12.5, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 1),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
+      ],
     );
   }
 

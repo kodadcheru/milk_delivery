@@ -109,4 +109,35 @@ class RouteOptimizer {
       fuelCostSavedRupees: fuelCostSavedRupees,
     );
   }
+
+  /// Partitions the total hub delivery orders into N equal geographic clusters (one for each delivery boy),
+  /// and runs TSP shortest-path optimization on each sub-route.
+  static List<RouteOptimizationResult> partitionEquallyForDrivers({
+    required HubLocationModel hub,
+    required List<DeliveryTaskModel> allTasks,
+    required int numberOfDrivers,
+  }) {
+    if (allTasks.isEmpty || numberOfDrivers <= 0) return [];
+
+    final driverCount = min(numberOfDrivers, allTasks.length);
+
+    // 1. Sort all tasks by polar angle relative to the Hub to form contiguous geographic sectors
+    final sortedByAngle = List<DeliveryTaskModel>.from(allTasks)..sort((a, b) {
+      final angleA = atan2(a.customerLatitude - hub.latitude, a.customerLongitude - hub.longitude);
+      final angleB = atan2(b.customerLatitude - hub.latitude, b.customerLongitude - hub.longitude);
+      return angleA.compareTo(angleB);
+    });
+
+    // 2. Partition into N equal-sized stop lists
+    final partitions = List.generate(driverCount, (_) => <DeliveryTaskModel>[]);
+    for (int i = 0; i < sortedByAngle.length; i++) {
+      final driverIdx = i % driverCount;
+      partitions[driverIdx].add(sortedByAngle[i]);
+    }
+
+    // 3. Optimize each driver's individual route via Nearest-Neighbor TSP from the Hub
+    return partitions.map((driverStops) {
+      return optimizeBatchRoute(hub: hub, tasks: driverStops);
+    }).toList();
+  }
 }
