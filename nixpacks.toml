@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["python311", "libpqxx"]
+
+[phases.install]
+cmds = [
+  "pip install -r milk_delivery_backend/requirements.txt"
+]
+
+[phases.build]
+cmds = [
+  "cd milk_delivery_backend && python manage.py collectstatic --noinput"
+]
+
+[start]
+cmd = "cd milk_delivery_backend && sh ./entrypoint.sh"

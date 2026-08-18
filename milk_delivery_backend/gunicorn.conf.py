@@ -1,9 +1,11 @@
-# Gunicorn production configuration file
+# Gunicorn production configuration for Railway
+import os
 import multiprocessing
 
-bind = "0.0.0.0:8000"
-workers = multiprocessing.cpu_count() * 2 + 1
-threads = 2
+port = os.environ.get("PORT", "8000")
+bind = f"0.0.0.0:{port}"
+workers = min(multiprocessing.cpu_count() * 2 + 1, 4)
+threads = 4
 worker_class = "gthread"
 timeout = 120
 keepalive = 5

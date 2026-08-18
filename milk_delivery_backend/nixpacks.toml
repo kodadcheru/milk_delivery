@@ -1,0 +1,13 @@
+[phases.setup]
+nixPkgs = ["python311", "libpqxx"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.build]
+cmds = [
+  "python manage.py collectstatic --noinput"
+]
+
+[start]
+cmd = "sh ./entrypoint.sh"
