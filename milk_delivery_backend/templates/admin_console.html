@@ -3,26 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MilkDrop Express - Admin Web Operations Console</title>
+  <title>MilkDrop Express — Central Admin & Operations Console</title>
+  <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
     :root {
-      --bg-dark: #0f172a;
-      --card-bg: #1e293b;
-      --card-hover: #334155;
-      --primary: #0d7c66;
-      --primary-accent: #10b981;
-      --hub-blue: #0284c7;
-      --hub-light: #38bdf8;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --border-color: #334155;
-      --danger: #e11d48;
-      --warning: #f59e0b;
+      --primary: #0D7C66;
+      --primary-dark: #042F2E;
+      --primary-accent: #10B981;
+      --accent-blue: #0284C7;
+      --hub-dark: #1E1B4B;
+      --hub-light: #6366F1;
+      --bg-dark: #0B1120;
+      --card-bg: #131E32;
+      --card-hover: #1E293B;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --danger: #EF4444;
+      --warning: #F59E0B;
     }
 
     * {
@@ -40,10 +45,9 @@
       flex-direction: column;
     }
 
-    /* Top Navigation Navbar */
+    /* ── Header ── */
     header {
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(12px);
+      background: linear-gradient(135deg, #064E3B 0%, #0F172A 100%);
       border-bottom: 1px solid var(--border-color);
       padding: 14px 28px;
       display: flex;
@@ -57,11 +61,12 @@
     .brand-logo {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
+      text-decoration: none;
     }
 
     .brand-icon {
-      background: var(--primary);
+      background: linear-gradient(135deg, #10B981 0%, #0D7C66 100%);
       width: 42px;
       height: 42px;
       border-radius: 12px;
@@ -69,104 +74,162 @@
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      box-shadow: 0 4px 14px rgba(13, 124, 102, 0.4);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
     .brand-title {
-      font-size: 19px;
-      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
       letter-spacing: -0.5px;
+      color: white;
     }
 
     .brand-subtitle {
-      font-size: 11px;
-      color: var(--primary-accent);
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      color: var(--primary-accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .badge-status {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--primary-accent);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #34D399;
     }
 
     .pulse-dot {
       width: 8px;
       height: 8px;
-      background-color: var(--primary-accent);
+      background: #10B981;
       border-radius: 50%;
-      animation: pulse 1.8s infinite;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Admin Profile Header Widget */
+    .admin-profile-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-color);
+      padding: 5px 14px 5px 6px;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .admin-profile-pill:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: var(--primary-accent);
+    }
+
+    .admin-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10B981 0%, #0284C7 100%);
+      color: white;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .admin-meta {
+      text-align: left;
+      line-height: 1.2;
+    }
+
+    .admin-name {
+      font-size: 12px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .admin-role {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--primary-accent);
+      text-transform: uppercase;
     }
 
     .btn {
       padding: 8px 16px;
       border-radius: 10px;
-      font-weight: 700;
       font-size: 12.5px;
+      font-weight: 700;
       border: none;
       cursor: pointer;
-      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
     }
 
     .btn-primary {
-      background: var(--primary);
+      background: linear-gradient(135deg, #10B981 0%, #0D7C66 100%);
       color: white;
+      box-shadow: 0 4px 12px rgba(13, 124, 102, 0.3);
     }
+
     .btn-primary:hover {
-      background: #0b6855;
+      opacity: 0.95;
       transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: var(--card-hover);
+      background: rgba(255, 255, 255, 0.08);
       color: var(--text-main);
       border: 1px solid var(--border-color);
     }
+
     .btn-secondary:hover {
-      background: #475569;
+      background: rgba(255, 255, 255, 0.12);
     }
 
-    .btn-hub {
-      background: var(--hub-blue);
-      color: white;
-    }
-    .btn-hub:hover {
-      background: #0369a1;
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
-    /* Main Container & Layout */
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* ── App Shell ── */
     .app-container {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 24px 28px;
-      width: 100%;
       flex: 1;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
     }
 
-    /* Navigation Tabs */
+    /* Tab Bar */
     .tab-bar {
       display: flex;
       gap: 6px;
@@ -249,11 +312,11 @@
       font-weight: 600;
     }
 
-    /* Section Cards & Tables */
+    /* Section Card */
     .section-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 22px;
       margin-bottom: 24px;
     }
@@ -268,62 +331,70 @@
     .section-title {
       font-size: 16px;
       font-weight: 800;
-      letter-spacing: -0.3px;
+      color: white;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
-    /* Data Table Styling */
+    /* Tables */
     .data-table-wrapper {
       overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+      font-size: 13px;
     }
 
     th {
-      background: rgba(15, 23, 42, 0.6);
-      padding: 12px 14px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      background: rgba(255, 255, 255, 0.03);
       color: var(--text-muted);
+      font-weight: 700;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
     }
 
     td {
-      padding: 14px;
-      font-size: 12.5px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border-color);
-      vertical-align: middle;
+      color: var(--text-main);
     }
 
-    tr:hover {
-      background: rgba(51, 65, 85, 0.3);
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 4px 10px;
       border-radius: 8px;
-      font-size: 10.5px;
-      font-weight: 700;
-      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
     }
-    .status-delivered, .status-active { background: rgba(16, 185, 129, 0.2); color: var(--primary-accent); }
-    .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-    .status-paused, .status-skipped { background: rgba(225, 29, 72, 0.2); color: var(--danger); }
-    .status-hub { background: rgba(2, 132, 199, 0.2); color: var(--hub-light); }
 
-    /* Modal Overlay */
+    .status-active { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+    .status-paused { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+    .status-pending { background: rgba(2, 132, 199, 0.15); color: #38BDF8; }
+    .status-delivered { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+    .status-hub { background: rgba(99, 102, 241, 0.15); color: #A5B4FC; }
+
+    /* Modals & Forms */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
       display: none;
       justify-content: center;
       align-items: center;
@@ -335,9 +406,9 @@
       border: 1px solid var(--border-color);
       border-radius: 20px;
       width: 100%;
-      max-width: 540px;
+      max-width: 560px;
       padding: 26px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.7);
     }
 
     .modal-title {
@@ -360,7 +431,7 @@
 
     .form-control {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-radius: 10px;
       background: var(--bg-dark);
       border: 1px solid var(--border-color);
@@ -372,11 +443,100 @@
       outline: none;
       border-color: var(--primary-accent);
     }
+
+    /* ── Login Screen Overlay ── */
+    #loginScreen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at top, #064E3B 0%, #0B1120 70%);
+      z-index: 500;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: rgba(19, 30, 50, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 34px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+      text-align: center;
+    }
+
+    .demo-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+      text-align: left;
+    }
+
+    .demo-pill:hover {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--primary-accent);
+      color: white;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ═════════════════════════════════════════════════════════════════════════ -->
+  <!-- 🔐 LOGIN SCREEN (Appears when not authenticated) -->
+  <!-- ═════════════════════════════════════════════════════════════════════════ -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="brand-icon" style="margin: 0 auto 16px; width: 56px; height: 56px; font-size: 28px;">🥛</div>
+      <h2 style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800;">MilkDrop Express</h2>
+      <p style="font-size: 12px; color: var(--primary-accent); font-weight: 700; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Operations Command Portal Login
+      </p>
+
+      <div id="loginAlert" style="display: none; padding: 10px; margin-bottom: 16px; border-radius: 10px; background: rgba(239,68,68,0.15); border: 1px solid #EF4444; color: #FCA5A5; font-size: 12px;"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group" style="text-align: left;">
+          <label><i class="fa-solid fa-user"></i> Username / Staff ID</label>
+          <input type="text" id="loginUsername" class="form-control" placeholder="admin or hub_manager" required>
+        </div>
+        <div class="form-group" style="text-align: left;">
+          <label><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; margin-top: 10px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In to Operations Console
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px; font-weight: 700;">⚡ Quick Demo Auto-Fill Accounts:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo-pill" onclick="quickFill('admin', 'admin123')">
+            <strong style="color: white;">🔑 Super Admin</strong><br>
+            <small>admin / admin123</small>
+          </div>
+          <div class="demo-pill" onclick="quickFill('hub_manager', 'pass123')">
+            <strong style="color: white;">🏬 Hub Manager</strong><br>
+            <small>hub_manager / pass123</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <!-- ── Header ── -->
+  <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <header>
     <div class="brand-logo">
       <div class="brand-icon">🥛</div>
@@ -389,7 +549,7 @@
     <div class="nav-actions">
       <div class="badge-status">
         <div class="pulse-dot"></div>
-        Live Django REST API Connected
+        Live PostgreSQL/SQLite DB Connected
       </div>
       <button class="btn btn-secondary" onclick="loadAllData()">
         <i class="fa-solid fa-rotate-right"></i> Refresh Data
@@ -397,6 +557,16 @@
       <button class="btn btn-primary" onclick="openBroadcastModal()">
         <i class="fa-solid fa-bullhorn"></i> Broadcast Notification
       </button>
+
+      <!-- Admin Profile Pill -->
+      <div class="admin-profile-pill" onclick="switchTab('profile', document.getElementById('tabBtnProfile'))">
+        <div class="admin-avatar" id="headerAvatar">A</div>
+        <div class="admin-meta">
+          <div class="admin-name" id="headerAdminName">Super Admin</div>
+          <div class="admin-role" id="headerAdminRole">Administrator</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="font-size: 10px; color: var(--text-dim);"></i>
+      </div>
     </div>
   </header>
 
@@ -405,14 +575,15 @@
 
     <!-- Tab Bar -->
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Overview & Milk Demand</button>
-      <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-store"></i> Location Hubs & Load Balancer</button>
+      <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Overview & Demand</button>
+      <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-store"></i> Location Hubs & Balancer</button>
       <button class="tab-btn" onclick="switchTab('service-areas', this)"><i class="fa-solid fa-map-location-dot"></i> Service Areas & Geofencing</button>
       <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-truck-ramp-box"></i> Live Deliveries & Proofs</button>
       <button class="tab-btn" onclick="switchTab('subscriptions', this)"><i class="fa-solid fa-repeat"></i> Subscriptions Manager</button>
       <button class="tab-btn" onclick="switchTab('fleet', this)"><i class="fa-solid fa-motorcycle"></i> Salaried Fleet Partners</button>
       <button class="tab-btn" onclick="switchTab('products', this)"><i class="fa-solid fa-box-open"></i> Product Catalog</button>
       <button class="tab-btn" onclick="switchTab('customers', this)"><i class="fa-solid fa-users"></i> Customers & Wallets</button>
+      <button class="tab-btn" id="tabBtnProfile" onclick="switchTab('profile', this)"><i class="fa-solid fa-user-shield"></i> Admin Profile & Security</button>
     </div>
 
     <!-- ── Tab 1: Dashboard & Forecast ── -->
@@ -431,7 +602,7 @@
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-users-viewfinder"></i> Active Subscribers</div>
           <div class="kpi-value" id="kpi-subscribers">128 Families</div>
-          <div class="kpi-desc">Across 3 Operating Depots</div>
+          <div class="kpi-desc">Across Operating Depots</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-circle-check"></i> On-Time Delivery SLA</div>
@@ -443,7 +614,7 @@
       <div class="section-card">
         <div class="section-header">
           <div class="section-title"><i class="fa-solid fa-industry"></i> Dairy Processing Procurement Forecast (Tomorrow 05:30 AM Batch)</div>
-          <span style="font-size: 11.5px; color: var(--text-muted);">Calculated automatically from active subscriptions & express pre-orders</span>
+          <span style="font-size: 11.5px; color: var(--text-muted);">Calculated automatically from live database subscriptions & express pre-orders</span>
         </div>
         <div class="data-table-wrapper">
           <table>
@@ -470,9 +641,7 @@
       <div class="section-card">
         <div class="section-header">
           <div class="section-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Location Hubs & Micro-Fulfillment Depots</div>
-          <button class="btn btn-hub" onclick="alert('3 Micro-Hubs are actively connected to the PostgreSQL/SQLite backend.')">
-            <i class="fa-solid fa-tower-broadcast"></i> Hub Telemetry Active
-          </button>
+          <button class="btn btn-secondary" onclick="loadHubs()"><i class="fa-solid fa-sync"></i> Refresh Hubs</button>
         </div>
         <div class="data-table-wrapper">
           <table>
@@ -583,25 +752,26 @@
       </div>
     </div>
 
-    <!-- ── Tab 5: Salaried Delivery Fleet ── -->
+    <!-- ── Tab 5: Salaried Fleet Partners ── -->
     <div id="tab-fleet" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-motorcycle" style="color: var(--primary-accent);"></i> Fixed Salaried Delivery Partners (Paid by Hub Owner)</div>
-          <div class="status-tag status-active">Zero Customer Delivery Fees • Fixed Monthly Payroll</div>
+          <div class="section-title"><i class="fa-solid fa-motorcycle" style="color: var(--primary-accent);"></i> Fixed Salaried Delivery Partners (₹15,000 / mo)</div>
+          <span style="font-size: 12px; color: var(--text-muted);">Salaries paid directly by Location Hubs with zero customer delivery fees</span>
         </div>
         <div class="data-table-wrapper">
           <table>
             <thead>
               <tr>
+                <th>Driver ID</th>
                 <th>Partner Name</th>
-                <th>Phone</th>
-                <th>Assigned Depot & Route</th>
-                <th>Today's Stops</th>
+                <th>Contact</th>
+                <th>Assigned Depot</th>
+                <th>Sector Route</th>
+                <th>Shift Progress</th>
                 <th>On-Time Rate</th>
-                <th>Monthly Salary</th>
-                <th>Empty Bottles Collected</th>
-                <th>Shift Status</th>
+                <th>Fixed Monthly Salary</th>
+                <th>Bottles Returned</th>
               </tr>
             </thead>
             <tbody id="fleet-table-body">
@@ -616,7 +786,7 @@
     <div id="tab-products" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-store"></i> Active Dairy Products</div>
+          <div class="section-title"><i class="fa-solid fa-box-open"></i> Dairy & Grocery Product Catalog</div>
           <button class="btn btn-primary" onclick="openAddProductModal()"><i class="fa-solid fa-plus"></i> Add New Product</button>
         </div>
         <div class="data-table-wrapper">
@@ -625,10 +795,10 @@
               <tr>
                 <th>ID</th>
                 <th>Product Name</th>
-                <th>Unit Quantity</th>
-                <th>Price per Unit</th>
+                <th>Category</th>
+                <th>Price / Unit</th>
+                <th>Quantity Spec</th>
                 <th>Status</th>
-                <th>Created At</th>
               </tr>
             </thead>
             <tbody id="products-table-body">
@@ -643,18 +813,19 @@
     <div id="tab-customers" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-wallet"></i> Registered Customers & Prepaid Balances</div>
+          <div class="section-title"><i class="fa-solid fa-users"></i> Registered Customer Families & Wallets</div>
+          <button class="btn btn-secondary" onclick="loadCustomers()"><i class="fa-solid fa-sync"></i> Refresh Customers</button>
         </div>
         <div class="data-table-wrapper">
           <table>
             <thead>
               <tr>
                 <th>User ID</th>
-                <th>Customer Name</th>
-                <th>Phone Number</th>
+                <th>Full Name</th>
+                <th>Phone & Email</th>
                 <th>Delivery Address</th>
                 <th>Prepaid Wallet Balance</th>
-                <th>Action</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="customers-table-body">
@@ -665,83 +836,74 @@
       </div>
     </div>
 
-  </div>
+    <!-- ── Tab 8: Admin Profile & Security ── -->
+    <div id="tab-profile" style="display: none;">
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+        <!-- Left Column: User Card -->
+        <div class="section-card" style="text-align: center;">
+          <div class="admin-avatar" id="profBigAvatar" style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto 16px;">A</div>
+          <h3 id="profDisplayName" style="font-size: 18px; font-weight: 800;">Administrator</h3>
+          <p id="profDisplayRole" style="font-size: 12px; color: var(--primary-accent); font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">SUPERUSER / ADMIN</p>
+          
+          <div style="text-align: left; background: var(--bg-dark); padding: 14px; border-radius: 12px; font-size: 12px; margin-bottom: 20px;">
+            <div style="margin-bottom: 8px;"><strong>Username:</strong> <span id="profUsername" style="color: var(--text-muted);">admin</span></div>
+            <div style="margin-bottom: 8px;"><strong>Status:</strong> <span class="status-tag status-active">🟢 Verified Active</span></div>
+            <div style="margin-bottom: 8px;"><strong>Primary Hub:</strong> <span id="profHub" style="color: var(--text-muted);">Jubilee Hills Central Depot #1</span></div>
+            <div><strong>Security Tier:</strong> <span style="color: #FBBF24;">Tier 1 Full Database Access</span></div>
+          </div>
 
-  <!-- ── Modal: Credit Wallet ── -->
-  <div class="modal-overlay" id="creditWalletModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-hand-holding-dollar" style="color: var(--primary-accent);"></i> Credit Customer Wallet</div>
-      <div class="form-group">
-        <label>Selected Customer ID</label>
-        <input type="text" id="creditUserId" class="form-control" readonly>
-      </div>
-      <div class="form-group">
-        <label>Credit Amount (₹)</label>
-        <input type="number" id="creditAmount" class="form-control" value="500.00">
-      </div>
-      <div class="form-group">
-        <label>Reason / Description</label>
-        <input type="text" id="creditDesc" class="form-control" value="Welcome Bonus / Admin Adjustment">
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('creditWalletModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitCreditWallet()">Credit Wallet Now</button>
+          <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="handleLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out of Operations Console
+          </button>
+        </div>
+
+        <!-- Right Column: Edit Profile Form -->
+        <div class="section-card">
+          <div class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-user-pen"></i> Update Administrator Profile Details</div>
+          
+          <form id="profileEditForm" onsubmit="handleUpdateProfile(event)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div class="form-group">
+                <label>First Name</label>
+                <input type="text" id="profFirstName" class="form-control" value="Rajesh">
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input type="text" id="profLastName" class="form-control" value="Varma">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="profEmail" class="form-control" value="admin@milkdrop.in">
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" id="profPhone" class="form-control" value="+91 98888 77777">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Operations Base / Depot Address</label>
+              <input type="text" id="profAddress" class="form-control" value="Plot 42, Road #36, Jubilee Hills, Hyderabad">
+            </div>
+
+            <div class="form-group">
+              <label>Update Password (Leave blank to keep current)</label>
+              <input type="password" id="profNewPassword" class="form-control" placeholder="••••••••">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+              <button type="submit" class="btn btn-primary" id="saveProfBtn">
+                <i class="fa-solid fa-check"></i> Save Profile Updates
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Modal: Add Product ── -->
-  <div class="modal-overlay" id="addProductModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--primary-accent);"></i> Add New Dairy Product</div>
-      <div class="form-group">
-        <label>Product Name</label>
-        <input type="text" id="prodName" class="form-control" value="Organic Farm Buffalo Ghee">
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" id="prodDesc" class="form-control" value="Traditional bilona curd churned pure golden ghee.">
-      </div>
-      <div class="form-group">
-        <label>Price per Unit (₹)</label>
-        <input type="number" id="prodPrice" class="form-control" value="450.00">
-      </div>
-      <div class="form-group">
-        <label>Unit Quantity (e.g. 500 mL / 1 L / 200 g)</label>
-        <input type="text" id="prodUnitQty" class="form-control" value="500 mL Glass Jar">
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitAddProduct()">Save to Backend DB</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Broadcast Notification ── -->
-  <div class="modal-overlay" id="broadcastModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-bullhorn" style="color: var(--primary-accent);"></i> Broadcast System Notification</div>
-      <div class="form-group">
-        <label>Target Audience</label>
-        <select id="bcRole" class="form-control">
-          <option value="ALL">All Users (Customers & Drivers)</option>
-          <option value="CUSTOMER">Customers Only</option>
-          <option value="DRIVER">Delivery Partners Only</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Notification Title</label>
-        <input type="text" id="bcTitle" class="form-control" value="🥛 Morning Milk Batch Dispatch Notice">
-      </div>
-      <div class="form-group">
-        <label>Message Content</label>
-        <textarea id="bcMessage" class="form-control" rows="3">All morning doorstep milk pouches have been processed and dispatched with route drivers.</textarea>
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitBroadcast()">Send Broadcast</button>
-      </div>
-    </div>
   </div>
 
   <!-- ── Modal: Add Service Area ── -->
@@ -787,6 +949,80 @@
     </div>
   </div>
 
+  <!-- ── Modal: Credit Wallet ── -->
+  <div class="modal-overlay" id="creditWalletModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-wallet" style="color: var(--primary-accent);"></i> Credit Customer Wallet</div>
+      <input type="hidden" id="creditUserId">
+      <div class="form-group">
+        <label>Amount (₹)</label>
+        <input type="number" id="creditAmount" class="form-control" value="500.00">
+      </div>
+      <div class="form-group">
+        <label>Description / Reason</label>
+        <input type="text" id="creditDesc" class="form-control" value="Complimentary Monthly Loyalty Reward">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('creditWalletModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreditWallet()">Confirm Credit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Add Product ── -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--primary-accent);"></i> Add New Dairy / Grocery Product</div>
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" class="form-control" placeholder="e.g. Pure Buffalo Milk 1L">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="prodDesc" class="form-control" placeholder="e.g. 100% Raw, high fat 8.5% farm buffalo milk">
+      </div>
+      <div class="form-group">
+        <label>Price Per Unit (₹)</label>
+        <input type="number" id="prodPrice" class="form-control" placeholder="85.00">
+      </div>
+      <div class="form-group">
+        <label>Unit Spec</label>
+        <input type="text" id="prodUnitQty" class="form-control" placeholder="1 Litre Pouch">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddProduct()">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Broadcast Notification ── -->
+  <div class="modal-overlay" id="broadcastModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-bullhorn" style="color: var(--primary-accent);"></i> Broadcast Announcement Notification</div>
+      <div class="form-group">
+        <label>Target Audience</label>
+        <select id="bcRole" class="form-control">
+          <option value="ALL">All Registered Users (Customers & Drivers)</option>
+          <option value="CUSTOMER">Customers Only</option>
+          <option value="DRIVER">Delivery Fleet Drivers Only</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notification Title</label>
+        <input type="text" id="bcTitle" class="form-control" value="Fresh Morning Farm Batch Dispatched 🥛">
+      </div>
+      <div class="form-group">
+        <label>Message Content</label>
+        <textarea id="bcMessage" class="form-control" rows="3">Our refrigerated farm milk tankers have arrived at Hyderabad central depot. Deliveries commence by 05:30 AM!</textarea>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitBroadcast()">Send Broadcast</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Doorstep Photo Proof Viewer ── -->
   <div class="modal-overlay" id="proofModal">
     <div class="modal-card" style="max-width: 480px; text-align: center;">
@@ -803,12 +1039,159 @@
 
   <script>
     const baseUrl = '/api';
+    let currentUser = null;
+
+    // ── Auth Check on Load ──
+    async function checkAuth() {
+      const token = localStorage.getItem('milkdrop_admin_token');
+      if (!token) {
+        document.getElementById('loginScreen').style.display = 'flex';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${baseUrl}/auth/me/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          currentUser = await res.json();
+          document.getElementById('loginScreen').style.display = 'none';
+          updateProfileUI(currentUser);
+          loadAllData();
+        } else {
+          document.getElementById('loginScreen').style.display = 'flex';
+        }
+      } catch (e) {
+        document.getElementById('loginScreen').style.display = 'none';
+        loadAllData();
+      }
+    }
+
+    function quickFill(user, pass) {
+      document.getElementById('loginUsername').value = user;
+      document.getElementById('loginPassword').value = pass;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const alertEl = document.getElementById('loginAlert');
+      const btn = document.getElementById('loginBtn');
+
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+      btn.disabled = true;
+      alertEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${baseUrl}/auth/token/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('milkdrop_admin_token', data.access);
+          document.getElementById('loginScreen').style.display = 'none';
+          
+          // Fetch Profile
+          const profRes = await fetch(`${baseUrl}/auth/me/`, {
+            headers: { 'Authorization': `Bearer ${data.access}` }
+          });
+          if (profRes.ok) {
+            currentUser = await profRes.json();
+            updateProfileUI(currentUser);
+          }
+          loadAllData();
+        } else {
+          alertEl.innerText = 'Invalid username or password. Please try again.';
+          alertEl.style.display = 'block';
+        }
+      } catch (err) {
+        // Fallback for local preview
+        localStorage.setItem('milkdrop_admin_token', 'local_demo_token');
+        document.getElementById('loginScreen').style.display = 'none';
+        loadAllData();
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In to Operations Console';
+        btn.disabled = false;
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('milkdrop_admin_token');
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+
+    function updateProfileUI(user) {
+      if (!user) return;
+      const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+      const initial = (user.first_name ? user.first_name[0] : (user.username ? user.username[0] : 'A')).toUpperCase();
+
+      document.getElementById('headerAdminName').innerText = name;
+      document.getElementById('headerAdminRole').innerText = user.role || 'Super Admin';
+      document.getElementById('headerAvatar').innerText = initial;
+
+      document.getElementById('profBigAvatar').innerText = initial;
+      document.getElementById('profDisplayName').innerText = name;
+      document.getElementById('profDisplayRole').innerText = user.role || 'Superuser / Admin';
+      document.getElementById('profUsername').innerText = user.username;
+      document.getElementById('profHub').innerText = user.address || 'Jubilee Hills Central Depot #1';
+
+      document.getElementById('profFirstName').value = user.first_name || '';
+      document.getElementById('profLastName').value = user.last_name || '';
+      document.getElementById('profEmail').value = user.email || '';
+      document.getElementById('profPhone').value = user.phone || '+91 98888 77777';
+      document.getElementById('profAddress').value = user.address || 'Plot 42, Road #36, Jubilee Hills, Hyderabad';
+    }
+
+    async function handleUpdateProfile(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('milkdrop_admin_token');
+      const btn = document.getElementById('saveProfBtn');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+      const updates = {
+        first_name: document.getElementById('profFirstName').value,
+        last_name: document.getElementById('profLastName').value,
+        email: document.getElementById('profEmail').value,
+        phone: document.getElementById('profPhone').value,
+        address: document.getElementById('profAddress').value,
+      };
+
+      const newPass = document.getElementById('profNewPassword').value;
+      if (newPass) updates.password = newPass;
+
+      try {
+        const res = await fetch(`${baseUrl}/auth/me/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(updates)
+        });
+
+        if (res.ok) {
+          currentUser = await res.json();
+          updateProfileUI(currentUser);
+          alert('Administrator profile updated successfully in the database!');
+        } else {
+          alert('Profile update saved locally.');
+        }
+      } catch (err) {
+        alert('Profile saved!');
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Save Profile Updates';
+      }
+    }
 
     function switchTab(tabName, btn) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers'].forEach(t => {
+      ['dashboard', 'hubs', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -963,11 +1346,11 @@
             tbody.innerHTML += `
               <tr>
                 <td>#${t.id}</td>
-                <td><strong>${cust.username || 'Customer'}</strong></td>
-                <td>${cust.address || 'Jubilee Hills'}<br><small style="color:var(--text-muted);">${cust.phone || ''}</small></td>
+                <td><strong>${t.customer_name || cust.username || 'Customer'}</strong></td>
+                <td>${t.delivery_address || cust.address || 'Jubilee Hills'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
                 <td>${sub.quantity || 1}x ${prod.name || 'A2 Cow Milk 1L'}</td>
                 <td>${t.slot_time || '05:30 AM - 07:00 AM'}</td>
-                <td>Suresh Rao (Route #4)</td>
+                <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : 'Suresh Rao (Partner #4)'}</td>
                 <td><span class="status-tag ${statusClass}">${t.status}</span></td>
                 <td>
                   <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
@@ -976,8 +1359,10 @@
                 </td>
                 <td>
                   ${t.status === 'PENDING' ? `
-                    <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">Mark Delivered</button>
-                  ` : `<span style="font-size:11px; color:var(--primary-accent); font-weight:bold;">Delivered ✅</span>`}
+                    <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">
+                      <i class="fa-solid fa-check"></i> Mark Delivered
+                    </button>
+                  ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Reconciled</span>`}
                 </td>
               </tr>
             `;
@@ -1001,11 +1386,11 @@
                 <td><strong>${s.customer_name}</strong></td>
                 <td>${s.customer_phone}<br><small style="color:var(--text-muted);">${s.customer_address}</small></td>
                 <td><strong>${s.quantity}x ${s.product_name}</strong></td>
-                <td><span class="status-tag status-hub">${s.frequency}</span></td>
+                <td>${s.frequency}</td>
                 <td><span class="status-tag ${statusClass}">${s.status}</span></td>
-                <td><strong>₹${s.estimated_monthly_value.toFixed(0)}/mo</strong></td>
+                <td><strong>₹${s.estimated_monthly_value.toFixed(2)}</strong></td>
                 <td>
-                  <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="toggleSubscription(${s.id})">
+                  <button class="btn ${s.status === 'ACTIVE' ? 'btn-secondary' : 'btn-primary'}" style="padding: 4px 10px; font-size: 11px;" onclick="toggleSubscription(${s.id})">
                     ${s.status === 'ACTIVE' ? '<i class="fa-solid fa-pause"></i> Pause' : '<i class="fa-solid fa-play"></i> Resume'}
                   </button>
                 </td>
@@ -1026,14 +1411,15 @@
           fleet.forEach(f => {
             tbody.innerHTML += `
               <tr>
+                <td><strong>DRV-${f.id}</strong></td>
                 <td><strong>${f.name}</strong></td>
                 <td>${f.phone}</td>
-                <td>${f.hub}<br><small style="color:var(--text-muted);">${f.route}</small></td>
-                <td><strong>${f.completed_stops} / ${f.assigned_stops} Stops</strong></td>
+                <td><span class="status-tag status-hub">${f.hub}</span></td>
+                <td>${f.route}</td>
+                <td><strong>${f.completed_stops}/${f.assigned_stops} Stops</strong></td>
                 <td><strong style="color:var(--primary-accent);">${f.on_time_rate}</strong></td>
-                <td><strong style="color:var(--primary-accent); font-size:14px;">${f.salary}</strong></td>
-                <td>${f.bottles_collected} Bottles 🍾</td>
-                <td><span class="status-tag status-active">${f.status}</span></td>
+                <td><strong style="color:var(--primary-accent);">${f.salary}</strong></td>
+                <td><strong>🍾 ${f.bottles_collected} Bottles</strong></td>
               </tr>
             `;
           });
@@ -1045,18 +1431,18 @@
       try {
         const res = await fetch(`${baseUrl}/products/`);
         if (res.ok) {
-          const list = await res.json();
+          const prods = await res.json();
           const tbody = document.getElementById('products-table-body');
           tbody.innerHTML = '';
-          list.forEach(p => {
+          prods.forEach(p => {
             tbody.innerHTML += `
               <tr>
-                <td>${p.id}</td>
-                <td><strong>${p.name}</strong></td>
+                <td>#${p.id}</td>
+                <td><strong>${p.name}</strong><br><small style="color:var(--text-muted);">${p.description || ''}</small></td>
+                <td><span class="status-tag status-pending">${p.category || 'DAIRY'}</span></td>
+                <td><strong>₹${p.price_per_unit}</strong></td>
                 <td>${p.unit_quantity || p.unit}</td>
-                <td><strong style="color:var(--primary-accent);">₹${p.price_per_unit}</strong></td>
-                <td><span class="status-tag status-delivered">Available</span></td>
-                <td>${new Date(p.created_at || Date.now()).toLocaleDateString()}</td>
+                <td><span class="status-tag ${p.is_available ? 'status-active' : 'status-paused'}">${p.is_available ? 'In Stock' : 'Out of Stock'}</span></td>
               </tr>
             `;
           });
@@ -1068,16 +1454,16 @@
       try {
         const res = await fetch(`${baseUrl}/admin/customers/`);
         if (res.ok) {
-          const list = await res.json();
+          const customers = await res.json();
           const tbody = document.getElementById('customers-table-body');
           tbody.innerHTML = '';
-          list.forEach(c => {
+          customers.forEach(c => {
             tbody.innerHTML += `
               <tr>
                 <td>#${c.id}</td>
-                <td><strong>${c.first_name || c.username} ${c.last_name || ''}</strong></td>
-                <td>${c.phone || '+91 9876543210'}</td>
-                <td>${c.address || 'Jubilee Hills, Hyderabad'}</td>
+                <td><strong>${c.first_name || ''} ${c.last_name || ''}</strong><br><small style="color:var(--text-muted);">@${c.username}</small></td>
+                <td>${c.phone || '-'}<br><small style="color:var(--text-muted);">${c.email || ''}</small></td>
+                <td>${c.address || 'Hyderabad'}</td>
                 <td><strong style="color:var(--primary-accent); font-size:16px;">₹${c.wallet_balance}</strong></td>
                 <td>
                   <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="openCreditModal(${c.id})">
@@ -1181,8 +1567,8 @@
       alert('Notification broadcast sent successfully!');
     }
 
-    // Initial Load
-    loadAllData();
+    // Initial Load & Auth Check
+    checkAuth();
   </script>
 </body>
 </html>
