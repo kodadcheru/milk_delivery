@@ -278,6 +278,46 @@ class ProfileTab extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+
+          // ── Operations & Hub Switcher ──
+          _buildSectionTitle('Partner & Operations Portals'),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.storefront_rounded, color: Color(0xFF0284C7)),
+                  title: const Text('Location Hub & Provider Portal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text('Who Ordered Roster • Fleet Dispatch • Crate Stock & Payouts', style: TextStyle(fontSize: 10.5, color: Color(0xFF0284C7))),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    state.setRole('PROVIDER');
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.two_wheeler_rounded, color: Color(0xFF10B981)),
+                  title: const Text('Delivery Partner App (Driver)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text('Morning Batch Routing • Doorstep Drop Mode • Earnings', style: TextStyle(fontSize: 10.5, color: Color(0xFF10B981))),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    state.setRole('DRIVER');
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.admin_panel_settings_rounded, color: Colors.purple),
+                  title: const Text('Admin Operations Console', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text('Demand Forecasting • City-Wide Analytics • Catalog', style: TextStyle(fontSize: 10.5, color: Colors.purple)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    state.setRole('ADMIN');
+                  },
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
 
           // Log Out Button

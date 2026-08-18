@@ -12,6 +12,8 @@ import 'screens/customer/profile_tab.dart';
 import 'screens/customer/notifications_screen.dart';
 import 'screens/driver/driver_dashboard_screen.dart';
 import 'screens/driver/driver_profile_tab.dart';
+import 'screens/provider/provider_dashboard_screen.dart';
+import 'screens/provider/provider_profile_tab.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_profile_tab.dart';
 
@@ -233,6 +235,7 @@ class MainAppShell extends StatefulWidget {
 
 class _MainAppShellState extends State<MainAppShell> {
   int _driverTab = 0;
+  int _providerTab = 0;
   int _adminTab = 0;
 
   @override
@@ -302,7 +305,72 @@ class _MainAppShellState extends State<MainAppShell> {
       );
     }
 
-    // ── 2. ADMIN ROLE APP SHELL ──
+    // ── 2. PROVIDER / LOCATION HUB ROLE APP SHELL ──
+    if (widget.state.currentRole == 'PROVIDER' || widget.state.currentRole == 'HUB_MANAGER') {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('🏬', style: TextStyle(fontSize: 20)),
+              ),
+              const SizedBox(width: 10),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text(
+                    'Jubilee Hills Central Depot #1 • 128 Subscribers',
+                    style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              tooltip: 'Refresh Hub Data',
+              onPressed: () async {
+                await widget.state.reloadAllData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Hub orders and stats refreshed!')),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+        body: _providerTab == 0
+            ? ProviderDashboardScreen(state: widget.state)
+            : ProviderProfileTab(state: widget.state, onLogout: widget.onLogout),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _providerTab,
+          onDestinationSelected: (idx) => setState(() => _providerTab = idx),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.storefront_outlined),
+              selectedIcon: Icon(Icons.storefront_rounded),
+              label: 'Hub Command',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.business_center_outlined),
+              selectedIcon: Icon(Icons.business_center_rounded),
+              label: 'Hub Profile',
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── 3. ADMIN ROLE APP SHELL ──
     if (widget.state.currentRole == 'ADMIN') {
       return Scaffold(
         appBar: AppBar(

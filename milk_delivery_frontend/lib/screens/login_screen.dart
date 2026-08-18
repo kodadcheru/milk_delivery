@@ -101,6 +101,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
 
+                // Provider / Location Hub Option
+                _buildRoleCard(
+                  title: 'Provider / Location Hub Manager',
+                  subtitle: 'Who Ordered Roster, Fleet Dispatch, Inventory & Payouts',
+                  icon: '🏬',
+                  badgeColor: const Color(0xFF0284C7),
+                  onTap: () => _handleLogin('PROVIDER', 'hub_manager', 'pass123'),
+                ),
+                const SizedBox(height: 12),
+
                 // Admin Option
                 _buildRoleCard(
                   title: 'Admin / Operations Console',

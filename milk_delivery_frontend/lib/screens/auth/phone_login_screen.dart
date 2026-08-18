@@ -313,6 +313,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             runSpacing: 6,
             children: [
               _buildDemoPhoneChip('🛡️ Admin (Fixed)', '8919548905', const Color(0xFF10B981)),
+              _buildDemoPhoneChip('🏬 Hub Provider', '9888877777', const Color(0xFF0284C7)),
               _buildDemoPhoneChip('🛵 Driver', '9123456789', const Color(0xFF38BDF8)),
               _buildDemoPhoneChip('🏡 Customer', '9876543210', const Color(0xFFF59E0B)),
             ],
