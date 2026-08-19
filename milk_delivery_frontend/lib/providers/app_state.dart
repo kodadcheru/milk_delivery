@@ -115,6 +115,8 @@ class AppState extends ChangeNotifier {
   }
 
   Future<LiveOrderModel> placeExpressOrder({
+    String? deliveryDate,
+    String? deliverySlot,
     String? deliveryAddress,
   }) async {
     final orderItems = cartProductsList.map((entry) {
@@ -128,14 +130,17 @@ class AppState extends ChangeNotifier {
     final total = totalCartPrice;
     final orderId = 'MD-${8000 + liveOrders.length + 1}';
     final addr = deliveryAddress ?? currentDeliveryAddress;
+    final dateStr = deliveryDate ?? 'Tomorrow';
+    final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
 
     final newOrder = LiveOrderModel(
       id: orderId,
-      orderType: 'EXPRESS',
+      orderType: 'ONE_TIME',
       items: orderItems,
       totalAmount: total,
-      status: 'OUT_FOR_DELIVERY',
-      deliverySlot: 'Express Delivery (ETA 25 Mins)',
+      status: 'PREPARING',
+      deliveryDate: dateStr,
+      deliverySlot: slotStr,
       deliveryAddress: addr,
       deliveryLatitude: currentLat,
       deliveryLongitude: currentLon,

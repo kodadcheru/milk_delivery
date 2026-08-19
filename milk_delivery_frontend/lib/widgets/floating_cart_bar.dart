@@ -116,8 +116,24 @@ class FloatingCartBar extends StatelessWidget {
   }
 
   void _showCheckoutSheet(BuildContext context) {
-    String schedule = 'DAILY';
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 1)); // Default Tomorrow
     String slot = '05:30 AM - 07:00 AM';
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    String formatDate(DateTime d) {
+      return '${d.day} ${monthNames[d.month - 1]} ${d.year}';
+    }
+
+    String formatDateBadge(DateTime d) {
+      final now = DateTime.now();
+      final diff = DateTime(d.year, d.month, d.day).difference(DateTime(now.year, now.month, now.day)).inDays;
+      if (diff == 0) return 'Today';
+      if (diff == 1) return 'Tomorrow';
+      if (diff == 2) return 'Day After';
+      return weekdayNames[d.weekday - 1];
+    }
 
     showModalBottomSheet(
       context: context,
@@ -130,7 +146,7 @@ class FloatingCartBar extends StatelessWidget {
           final total = state.totalCartPrice;
 
           return SizedBox(
-            height: MediaQuery.of(ctx).size.height * 0.82,
+            height: MediaQuery.of(ctx).size.height * 0.85,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               child: Column(
@@ -154,7 +170,7 @@ class FloatingCartBar extends StatelessWidget {
                           const Text('🛍️', style: TextStyle(fontSize: 22)),
                           const SizedBox(width: 8),
                           Text(
-                            'Express Checkout (${state.totalCartItemCount} items)',
+                            'Schedule Delivery (${state.totalCartItemCount} items)',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
@@ -255,33 +271,131 @@ class FloatingCartBar extends StatelessWidget {
                             );
                           }),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
 
-                          // ── Delivery Schedule Frequency ──
-                          const Text('Delivery Frequency:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          const SizedBox(height: 6),
+                          // ── 1. Select Scheduled Delivery Date ──
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildScheduleChip('DAILY', 'Everyday 🥛', schedule, (val) => setSheetState(() => schedule = val)),
-                              const SizedBox(width: 6),
-                              _buildScheduleChip('ALTERNATE', 'Alternate 🟡', schedule, (val) => setSheetState(() => schedule = val)),
-                              const SizedBox(width: 6),
-                              _buildScheduleChip('WEEKDAYS', 'Weekdays 💼', schedule, (val) => setSheetState(() => schedule = val)),
+                              const Text(
+                                '1. Select Delivery Date 📅:',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(const Duration(days: 14)),
+                                    builder: (context, child) {
+                                      return Theme(
+                                        data: Theme.of(context).copyWith(
+                                          colorScheme: const ColorScheme.light(
+                                            primary: Color(0xFF0D7C66),
+                                            onPrimary: Colors.white,
+                                            onSurface: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (picked != null) {
+                                    setSheetState(() => selectedDate = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.calendar_month_rounded, size: 14, color: Color(0xFF0D7C66)),
+                                      SizedBox(width: 4),
+                                      Text('Custom Date', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Horizontal Date Selection Cards
+                          SizedBox(
+                            height: 62,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 5,
+                              separatorBuilder: (_, __) => const SizedBox(width: 8),
+                              itemBuilder: (context, idx) {
+                                final date = DateTime.now().add(Duration(days: idx + 1));
+                                final isSelected = selectedDate.year == date.year && selectedDate.month == date.month && selectedDate.day == date.day;
+
+                                return InkWell(
+                                  onTap: () => setSheetState(() => selectedDate = date),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: 82,
+                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                                          : [],
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          formatDateBadge(date),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected ? Colors.white70 : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${date.day} ${monthNames[date.month - 1]}',
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w900,
+                                            color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                           const SizedBox(height: 14),
 
-                          // ── Delivery Slot Preference ──
-                          const Text('Morning Delivery Time Slot:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          // ── 2. Delivery Slot Preference ──
+                          const Text('2. Delivery Time Slot ⏰:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               Expanded(
-                                child: _buildSlotTile('05:30 AM - 07:00 AM', '⚡ Express Slot', slot, (val) => setSheetState(() => slot = val)),
+                                child: _buildSlotTile('05:30 AM - 07:00 AM', '⚡ Morning Peak', slot, (val) => setSheetState(() => slot = val)),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: _buildSlotTile('07:00 AM - 08:30 AM', '🌅 Standard Slot', slot, (val) => setSheetState(() => slot = val)),
+                                child: _buildSlotTile('07:00 AM - 08:30 AM', '🌅 Morning Std', slot, (val) => setSheetState(() => slot = val)),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildSlotTile('05:00 PM - 07:00 PM', '🌇 Evening', slot, (val) => setSheetState(() => slot = val)),
                               ),
                             ],
                           ),
@@ -320,7 +434,7 @@ class FloatingCartBar extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
 
                           // ── Bill Breakdown ──
                           Container(
@@ -333,7 +447,7 @@ class FloatingCartBar extends StatelessWidget {
                             child: Column(
                               children: [
                                 _buildBillRow('Item Subtotal', '₹${total.toStringAsFixed(0)}'),
-                                _buildBillRow('Doorstep Morning Delivery', 'FREE', isHighlight: true),
+                                _buildBillRow('Doorstep Delivery (${formatDate(selectedDate)})', 'FREE', isHighlight: true),
                                 _buildBillRow('Handling & Quality Assurance', '₹0 (Waived)'),
                                 const Divider(height: 16),
                                 _buildBillRow('To Pay', '₹${total.toStringAsFixed(0)}', isBold: true),
@@ -346,66 +460,45 @@ class FloatingCartBar extends StatelessWidget {
                     ),
                   ),
 
-                  // Checkout CTAs: Express Live Order vs Daily Subscription
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            Navigator.pop(ctx);
-                            await state.checkoutCart(schedule: schedule, slot: slot);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: const Color(0xFF0D7C66),
-                                  content: Text('🥛 Daily subscription created! ($schedule schedule)'),
-                                ),
-                              );
-                              state.setTab(1); // Subscriptions Tab
-                            }
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF0D7C66),
-                            side: const BorderSide(color: Color(0xFF0D7C66)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('🥛 Subscribe Daily', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                        ),
+                  // Scheduled Checkout CTA Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final order = await state.placeExpressOrder(
+                          deliveryDate: formatDate(selectedDate),
+                          deliverySlot: slot,
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFF0D7C66),
+                              content: Text('🎉 Order ${order.id} Scheduled for ${formatDate(selectedDate)} ($slot)!'),
+                            ),
+                          );
+                          state.setTab(3); // Bookings Tab
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0D7C66),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            Navigator.pop(ctx);
-                            final order = await state.placeExpressOrder();
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: const Color(0xFF0D7C66),
-                                  content: Text('⚡ Express Order ${order.id} Placed! Tracking live delivery...'),
-                                ),
-                              );
-                              state.setTab(3); // Bookings Tab!
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0D7C66),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.event_available_rounded, color: Colors.white, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Schedule Order (${formatDateBadge(selectedDate)}) • ₹${total.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text('⚡ Express Order ➔ ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                              Text('₹${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900)),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),

@@ -325,6 +325,29 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+
+            // Scheduled Date & Time Slot Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D7C66).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.event_available_rounded, size: 14, color: Color(0xFF0D7C66)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '📅 Scheduled: ${order.deliveryDate} • ⏰ ${order.deliverySlot}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 10),
 
             // Live Stepper Bar

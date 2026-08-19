@@ -36,6 +36,7 @@ class LiveOrderModel {
   final List<OrderItemModel> items;
   final double totalAmount;
   final String status; // PLACED, PREPARING, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+  final String deliveryDate;
   final String deliverySlot;
   final String deliveryAddress;
   final double deliveryLatitude;
@@ -50,11 +51,12 @@ class LiveOrderModel {
 
   LiveOrderModel({
     required this.id,
-    this.orderType = 'EXPRESS',
+    this.orderType = 'ONE_TIME',
     required this.items,
     required this.totalAmount,
     required this.status,
-    this.deliverySlot = 'Express Delivery (~35 Mins)',
+    this.deliveryDate = 'Tomorrow',
+    this.deliverySlot = '05:30 AM - 07:00 AM',
     this.deliveryAddress = 'Jubilee Hills, Hyderabad',
     this.deliveryLatitude = 17.4319,
     this.deliveryLongitude = 78.4073,
@@ -71,6 +73,8 @@ class LiveOrderModel {
 
   LiveOrderModel copyWith({
     String? status,
+    String? deliveryDate,
+    String? deliverySlot,
     String? deliveredAt,
     String? proofImageUrl,
   }) {
@@ -80,7 +84,8 @@ class LiveOrderModel {
       items: items,
       totalAmount: totalAmount,
       status: status ?? this.status,
-      deliverySlot: deliverySlot,
+      deliveryDate: deliveryDate ?? this.deliveryDate,
+      deliverySlot: deliverySlot ?? this.deliverySlot,
       deliveryAddress: deliveryAddress,
       deliveryLatitude: deliveryLatitude,
       deliveryLongitude: deliveryLongitude,
@@ -102,11 +107,12 @@ class LiveOrderModel {
 
     return LiveOrderModel(
       id: json['id']?.toString() ?? 'MD-101',
-      orderType: json['order_type'] ?? 'EXPRESS',
+      orderType: json['order_type'] ?? 'ONE_TIME',
       items: itemList,
       totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0.0,
       status: json['status'] ?? 'PLACED',
-      deliverySlot: json['delivery_slot'] ?? 'Express Delivery (~35 Mins)',
+      deliveryDate: json['delivery_date'] ?? 'Tomorrow',
+      deliverySlot: json['delivery_slot'] ?? '05:30 AM - 07:00 AM',
       deliveryAddress: json['delivery_address'] ?? 'Jubilee Hills, Hyderabad',
       deliveryLatitude: double.tryParse(json['delivery_latitude']?.toString() ?? '17.4319') ?? 17.4319,
       deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '78.4073') ?? 78.4073,

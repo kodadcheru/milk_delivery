@@ -154,9 +154,13 @@ void main() {
       state.products = [p1];
       state.addToCart(p1);
 
-      final order = await state.placeExpressOrder();
+      final order = await state.placeExpressOrder(
+        deliveryDate: '21 Aug 2026',
+        deliverySlot: '05:30 AM - 07:00 AM',
+      );
       expect(order.id.startsWith('MD-'), true);
-      expect(order.status, 'OUT_FOR_DELIVERY');
+      expect(order.deliveryDate, '21 Aug 2026');
+      expect(order.deliverySlot, '05:30 AM - 07:00 AM');
       expect(order.totalAmount, 220.0);
       expect(order.items.length, 1);
       expect(state.liveOrders.first.id, order.id);
