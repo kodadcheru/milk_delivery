@@ -63,9 +63,15 @@ class BookingDetailSheet extends StatelessWidget {
     final title = isExpress ? 'Express Order #${liveOrder!.id}' : 'Morning Delivery #${subscriptionTask!.id}';
     final status = isExpress ? liveOrder!.status : subscriptionTask!.status;
     final isDelivered = status == 'DELIVERED';
-    final address = isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress;
+    final activeAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
+    final rawAddress = isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress;
+    final displayAddress = (rawAddress.isNotEmpty && rawAddress != 'Doorstep Delivery Location' && rawAddress != 'Jubilee Hills, Hyderabad')
+        ? rawAddress
+        : (activeAddr.isNotEmpty ? activeAddr : 'Doorstep Delivery Location');
+
     final driverName = isExpress ? liveOrder!.driverName : (subscriptionTask!.driverDetail?.fullName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Assigning Delivery Partner...');
     final driverPhone = isExpress ? liveOrder!.driverPhone : (subscriptionTask!.driverDetail?.phone.isNotEmpty == true ? subscriptionTask!.driverDetail!.phone : '');
+    final isDriverAssigned = driverPhone.isNotEmpty && !driverName.startsWith('Assigning');
     final slot = isExpress ? liveOrder!.deliverySlot : subscriptionTask!.slotTime;
     final proofUrl = isExpress ? '' : subscriptionTask!.proofImageUrl;
     final otp = isExpress ? liveOrder!.deliveryOtp : '06AM';
@@ -193,7 +199,7 @@ class BookingDetailSheet extends StatelessWidget {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.15),
-                          child: const Text('👨‍🌾', style: TextStyle(fontSize: 24)),
+                          child: Text(isDriverAssigned ? '👨‍🌾' : '🛵', style: const TextStyle(fontSize: 24)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -204,27 +210,32 @@ class BookingDetailSheet extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      driverName,
+                                      isDriverAssigned ? driverName : '⌛ Partner Assignment in Progress',
                                       maxLines: 2,
                                       style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
+                                  if (isDriverAssigned) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: 2),
-                              Text('EV Scooter • TS 09 EQ 4821 • ⭐ 4.9', style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+                              Text(
+                                isDriverAssigned ? 'EV Scooter • TS 09 EQ 4821 • ⭐ 4.9' : 'Nearest Depot Hub assigning morning route partner',
+                                style: TextStyle(fontSize: 10.5, color: Colors.grey[600]),
+                              ),
                             ],
                           ),
                         ),
-                        // Direct 2-Way Calling Button
+                        // Direct 2-Way Calling Button / Support
                         ElevatedButton.icon(
-                          onPressed: () => _callPhone(context, driverPhone),
+                          onPressed: () => _callPhone(context, isDriverAssigned ? driverPhone : '+918919548905'),
                           icon: const Icon(Icons.phone_rounded, size: 14),
-                          label: const Text('Call'),
+                          label: Text(isDriverAssigned ? 'Call' : 'Support'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
+                            backgroundColor: isDriverAssigned ? const Color(0xFF10B981) : const Color(0xFF0D7C66),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -256,7 +267,7 @@ class BookingDetailSheet extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(address, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF1E293B))),
+                              Text(displayAddress, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF1E293B))),
                               const SizedBox(height: 4),
                               Text(
                                 'Timeslot: $slot',
@@ -518,7 +529,7 @@ class BookingDetailSheet extends StatelessWidget {
                             state: state,
                             liveOrder: liveOrder,
                             orderTitle: isExpress ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order') : 'Morning Milk Delivery',
-                            deliveryAddress: address,
+                            deliveryAddress: displayAddress,
                             driverName: driverName,
                             driverPhone: driverPhone,
                             deliveryOtp: otp,

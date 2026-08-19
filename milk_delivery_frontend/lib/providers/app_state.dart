@@ -162,12 +162,11 @@ class AppState extends ChangeNotifier {
 
     final total = totalCartPrice;
     final orderId = 'MD-${8000 + liveOrders.length + 1}';
-    final addr = deliveryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop');
+    final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
     final dateStr = deliveryDate ?? 'Tomorrow';
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
 
     final hub = nearestCoveringHub;
-    final hubTag = hub != null ? ' (${hub['hub_code']} - ${hub['name']})' : '';
     final driverPlaceholder = hub != null ? 'Assigning Partner (${hub['name']})...' : 'Assigning Delivery Partner...';
 
     final newOrder = LiveOrderModel(
@@ -178,7 +177,7 @@ class AppState extends ChangeNotifier {
       status: 'PREPARING',
       deliveryDate: dateStr,
       deliverySlot: slotStr,
-      deliveryAddress: '$addr$hubTag',
+      deliveryAddress: addr,
       deliveryLatitude: currentLat,
       deliveryLongitude: currentLon,
       deliveryOtp: '${(1000 + (orderId.hashCode % 9000)).abs()}',
@@ -612,6 +611,7 @@ class AppState extends ChangeNotifier {
           deliveryDate: DateTime.now().toString().split(' ')[0],
           slotTime: '05:30 AM - 07:00 AM',
           status: 'PENDING',
+          deliveryAddress: activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'),
           proofImageUrl: product.imageUrl.isNotEmpty
               ? product.imageUrl
               : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
