@@ -30,6 +30,64 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   SubscriptionPlanType _planType = SubscriptionPlanType.weekly;
   int _selectedWeeks = 1; // 1, 2, 3 weeks
   int _selectedMonths = 1; // 1, 2, 3 months
+  String _selectedPackSize = '1 Litre';
+
+  @override
+  void initState() {
+    super.initState();
+    _initDefaultPackSize();
+  }
+
+  void _initDefaultPackSize() {
+    final name = widget.product.name.toLowerCase();
+    final cat = widget.product.category.toUpperCase();
+    final uq = widget.product.unitQuantity.toLowerCase();
+
+    if (cat == 'MILK' || name.contains('milk')) {
+      _selectedPackSize = uq.contains('500') ? '500 ml' : '1 Litre';
+    } else if (cat == 'EGGS' || name.contains('egg')) {
+      _selectedPackSize = '6 Eggs';
+    } else if (cat == 'WATER_CAN' || name.contains('water')) {
+      _selectedPackSize = '20 Litres';
+    } else if (uq.contains('500')) {
+      _selectedPackSize = '500g';
+    } else {
+      _selectedPackSize = '1 Litre';
+    }
+  }
+
+  List<String> get _availablePackSizes {
+    final name = widget.product.name.toLowerCase();
+    final cat = widget.product.category.toUpperCase();
+
+    if (cat == 'MILK' || name.contains('milk')) {
+      return ['500 ml', '1 Litre', '2 Litres'];
+    } else if (cat == 'EGGS' || name.contains('egg')) {
+      return ['6 Eggs', '12 Eggs', '30 Tray'];
+    } else if (cat == 'WATER_CAN' || name.contains('water')) {
+      return ['10 Litres', '20 Litres'];
+    } else if (cat == 'MEAT' || name.contains('chicken') || name.contains('curd') || name.contains('dahi')) {
+      return ['500g', '1 kg'];
+    } else {
+      return ['500 ml', '1 Litre'];
+    }
+  }
+
+  double get _effectiveUnitPrice {
+    final basePrice = widget.product.pricePerUnit;
+    if (_selectedPackSize == '500 ml' || _selectedPackSize == '500g') {
+      return (basePrice * 0.55).roundToDouble();
+    } else if (_selectedPackSize == '2 Litres' || _selectedPackSize == '1 kg') {
+      return (basePrice * 1.95).roundToDouble();
+    } else if (_selectedPackSize == '12 Eggs') {
+      return (basePrice * 1.9).roundToDouble();
+    } else if (_selectedPackSize == '30 Tray') {
+      return (basePrice * 4.5).roundToDouble();
+    } else if (_selectedPackSize == '10 Litres') {
+      return (basePrice * 0.6).roundToDouble();
+    }
+    return basePrice;
+  }
 
   int get _totalDeliveryDays {
     int totalCalendarDays;
@@ -49,9 +107,9 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     }
   }
 
-  double get _totalSubscriptionCost {
-    return widget.product.pricePerUnit * _qty * _totalDeliveryDays;
-  }
+  double get _singleDeliveryCost => _effectiveUnitPrice * _qty;
+
+  double get _totalSubscriptionCost => _singleDeliveryCost * _totalDeliveryDays;
 
   String get _durationLabel {
     if (_planType == SubscriptionPlanType.weekly) {
@@ -64,7 +122,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final item = widget.product;
-    final singleDeliveryCost = item.pricePerUnit * _qty;
+    final singleDeliveryCost = _singleDeliveryCost;
 
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.90,
@@ -150,7 +208,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                           const SizedBox(height: 8),
                           Text(item.name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
                           const SizedBox(height: 2),
-                          Text('${item.unitQuantity} • ₹${item.pricePerUnit.toStringAsFixed(0)} / unit', style: TextStyle(color: Colors.grey[700], fontSize: 12.5, fontWeight: FontWeight.w600)),
+                          Text('$_selectedPackSize • ₹${_effectiveUnitPrice.toStringAsFixed(0)} / unit', style: TextStyle(color: Colors.grey[700], fontSize: 12.5, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -273,7 +331,68 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ],
                     const SizedBox(height: 16),
 
-                    // ── 3. Quantity per Morning ──
+                    // ── 3. Pack Size / Volume Selection Chips (500ml & 1 Litre) ──
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('3. Select Pack Size / Volume:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                        Text('Portion Size 🥛', style: TextStyle(fontSize: 10.5, color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: _availablePackSizes.map((size) {
+                        final isSelected = _selectedPackSize == size;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: InkWell(
+                              onTap: () => setState(() => _selectedPackSize = size),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.15), blurRadius: 4, offset: const Offset(0, 2))]
+                                      : [],
+                                ),
+                                alignment: Alignment.center,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      size,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 12.5,
+                                        color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      isSelected ? 'Selected' : 'Tap to pick',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected ? Colors.white70 : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── 4. Quantity per Morning ──
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
@@ -289,12 +408,12 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  '3. Quantity per Delivery:',
+                                  '4. Quantity per Delivery:',
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '$_qty × ${item.unitQuantity} (₹${singleDeliveryCost.toStringAsFixed(0)} / day)',
+                                  '$_qty × $_selectedPackSize (₹${singleDeliveryCost.toStringAsFixed(0)} / day)',
                                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF0D7C66), fontWeight: FontWeight.w700),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -342,8 +461,8 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── 4. Delivery Schedule ──
-                    const Text('4. Delivery Frequency:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    // ── 5. Delivery Schedule ──
+                    const Text('5. Delivery Frequency:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -418,13 +537,29 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         height: 48,
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            widget.state.addToCart(item);
+                            final customProduct = ProductModel(
+                              id: item.id,
+                              name: item.name,
+                              category: item.category,
+                              description: item.description,
+                              pricePerUnit: _effectiveUnitPrice,
+                              unit: item.unit,
+                              unitQuantity: _selectedPackSize,
+                              imageUrl: item.imageUrl,
+                              badgeText: item.badgeText,
+                              nutritionInfo: item.nutritionInfo,
+                              farmOrigin: item.farmOrigin,
+                              isAvailable: item.isAvailable,
+                              rating: item.rating,
+                              icon: item.icon,
+                            );
+                            widget.state.addToCart(customProduct);
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 1),
                                 backgroundColor: const Color(0xFF0F172A),
-                                content: Text('🛒 Added 1x ${item.name} to Cart!'),
+                                content: Text('🛒 Added 1x ${item.name} ($_selectedPackSize) to Cart!'),
                               ),
                             );
                           },
@@ -444,12 +579,28 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         height: 48,
                         child: ElevatedButton(
                           onPressed: () {
+                            final customProduct = ProductModel(
+                              id: item.id,
+                              name: item.name,
+                              category: item.category,
+                              description: item.description,
+                              pricePerUnit: _effectiveUnitPrice,
+                              unit: item.unit,
+                              unitQuantity: _selectedPackSize,
+                              imageUrl: item.imageUrl,
+                              badgeText: item.badgeText,
+                              nutritionInfo: item.nutritionInfo,
+                              farmOrigin: item.farmOrigin,
+                              isAvailable: item.isAvailable,
+                              rating: item.rating,
+                              icon: item.icon,
+                            );
                             Navigator.pop(context);
-                            widget.state.createNewSubscription(item, _qty, _schedule);
+                            widget.state.createNewSubscription(customProduct, _qty, _schedule);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: const Color(0xFF0D7C66),
-                                content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries)! First delivery tomorrow 06:00 AM.'),
+                                content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries of $_selectedPackSize)! First delivery tomorrow 06:00 AM.'),
                               ),
                             );
                             widget.state.setTab(1);
