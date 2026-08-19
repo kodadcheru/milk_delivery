@@ -173,30 +173,13 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
         ),
       ),
       builder: (context, child) {
-        // Global Error Boundary
+        // Global Error Boundary - Safe Inline Fallback
         ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF8FAFC),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('🥛', style: TextStyle(fontSize: 48)),
-                    const SizedBox(height: 12),
-                    const Text('Something went wrong', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    const Text('We recovered safely. Tap below to reload the screen.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => _appState.reloadAllData(),
-                      child: const Text('Reload App'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          debugPrint('🚨 [MilkDrop FlutterError]: ${errorDetails.exceptionAsString()}');
+          return Container(
+            padding: const EdgeInsets.all(8),
+            alignment: Alignment.center,
+            child: const Text('🥛 Loading element...', style: TextStyle(fontSize: 11, color: Colors.grey)),
           );
         };
         return child!;

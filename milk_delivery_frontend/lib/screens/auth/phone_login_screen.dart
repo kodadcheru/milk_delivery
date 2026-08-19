@@ -342,7 +342,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Get OTP & Continue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                        Text('Get OTP & Continue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, inherit: true)),
                         SizedBox(width: 8),
                         Icon(Icons.arrow_forward_rounded, size: 18),
                       ],
