@@ -144,6 +144,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       return true;
     }).toList();
 
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+    final hubName = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
+    final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-01') : 'HUB-01';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -168,32 +172,41 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text('🏬', style: TextStyle(fontSize: 22)),
                           ),
-                          child: const Text('🏬', style: TextStyle(fontSize: 22)),
-                        ),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Jubilee Hills Central Depot #1',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  hubName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                                ),
+                                Text(
+                                  'Operating Zone • ID #$hubCode',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Operating Zone: Sector A, B & C • ID #HUB-HYD-01',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -212,15 +225,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 ),
                 const Divider(color: Colors.white24, height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildHubStatColumn('128 Families', 'Active Subscribers'),
+                    Expanded(child: _buildHubStatColumn('128 Families', 'Active Subscribers')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Litres', 'Daily Milk Volume'),
+                    Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Litres', 'Daily Milk Volume')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    _buildHubStatColumn('4 Drivers', 'Active Fleet'),
+                    Expanded(child: _buildHubStatColumn('4 Drivers', 'Active Fleet')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    _buildHubStatColumn('48 Bottles', 'Returned to Hub 🍾'),
+                    Expanded(child: _buildHubStatColumn('48 Bottles', 'Returned Hub')),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -269,27 +281,35 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Text('⚖️', style: TextStyle(fontSize: 20)),
-                        SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Equal Load Balancer & Fleet Dispatch',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Text('⚖️', style: TextStyle(fontSize: 20)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Equal Load Balancer & Fleet Dispatch',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                const Text(
+                                  'Auto-partitions hub orders equally across active boys',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Auto-partitions hub orders equally across active boys',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
@@ -308,14 +328,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     border: Border.all(color: Colors.white24),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Active Delivery Boys Today:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
-                          Text('Hub operator input for shift partitioning', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                        ],
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Active Delivery Boys Today:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                            Text('Hub operator input for shift partitioning', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                          ],
+                        ),
                       ),
                       Row(
                         children: [
@@ -347,15 +368,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
                 // Equal Partition Telemetry
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildPartitionStat('${tasks.length} Total', 'Orders in Hub'),
+                    Expanded(child: _buildPartitionStat('${tasks.length} Total', 'Hub Orders')),
                     Container(width: 1, height: 24, color: Colors.white24),
-                    _buildPartitionStat('${(tasks.length / _activeDriverCount).ceil()} Stops', 'Per Delivery Boy ⚖️'),
+                    Expanded(child: _buildPartitionStat('${(tasks.length / _activeDriverCount).ceil()} Stops', 'Per Driver ⚖️')),
                     Container(width: 1, height: 24, color: Colors.white24),
-                    _buildPartitionStat('~${(totalLitres / _activeDriverCount).toStringAsFixed(0)} Litres', 'Load per Boy'),
+                    Expanded(child: _buildPartitionStat('~${(totalLitres / _activeDriverCount).toStringAsFixed(0)}L', 'Load / Driver')),
                     Container(width: 1, height: 24, color: Colors.white24),
-                    _buildPartitionStat('₹15,000/mo', 'Fixed Salary / Boy'),
+                    Expanded(child: _buildPartitionStat('₹15k/mo', 'Fixed Salary')),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -559,9 +579,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('📋 Customer Orders & Deliveries in Hub Zone:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            const Expanded(
+              child: Text(
+                '📋 Customer Orders in Hub Zone:',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+              ),
+            ),
+            const SizedBox(width: 6),
             Text('${subscriptions.length + express.length} Active Orders', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66))),
           ],
         ),
@@ -691,14 +718,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               children: [
                 const Icon(Icons.two_wheeler_rounded, size: 14, color: Color(0xFF0D7C66)),
                 const SizedBox(width: 4),
-                Text(
+                const Text(
                   'Driver: Suresh Rao (Route #4)',
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
                 ),
-                const Spacer(),
-                Text(
-                  'Payment: Prepaid Wallet (Auto-Debited)',
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Prepaid Wallet (Auto)',
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
                 ),
               ],
             ),

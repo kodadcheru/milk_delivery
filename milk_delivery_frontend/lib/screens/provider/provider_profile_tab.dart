@@ -13,11 +13,17 @@ class ProviderProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
+    final hubName = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
+    final hubAddress = activeHub != null ? (activeHub['address'] ?? 'Central Depot Operations') : 'Central Depot Operations';
+    final fssai = activeHub != null ? (activeHub['fssai_license'] ?? '13621014000342') : '13621014000342';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Provider Hub Hero Card ──
+          // ── Header Card ──
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -29,7 +35,7 @@ class ProviderProfileTab extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 8)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4)),
               ],
             ),
             child: Column(
@@ -43,10 +49,10 @@ class ProviderProfileTab extends StatelessWidget {
                   child: const Text('🏬', style: TextStyle(fontSize: 40)),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'Jubilee Hills Central Dairy Depot #1',
+                Text(
+                  hubName,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -62,9 +68,9 @@ class ProviderProfileTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFF10B981)),
                   ),
-                  child: const Text(
-                    '🛡️ Verified FSSAI License #13621014000342',
-                    style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
+                  child: Text(
+                    '🛡️ Verified FSSAI License #$fssai',
+                    style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                 ),
               ],
@@ -81,7 +87,7 @@ class ProviderProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildDetailRow(Icons.place_rounded, 'Depot Address', 'Plot 42, Road #36, Jubilee Hills, Hyderabad'),
+                  _buildDetailRow(Icons.place_rounded, 'Depot Address', hubAddress),
                   const Divider(height: 20),
                   _buildDetailRow(Icons.radar_rounded, 'Delivery Service Radius', '5.0 km Urban Micro-Cluster Coverage'),
                   const Divider(height: 20),
@@ -92,7 +98,7 @@ class ProviderProfileTab extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 20), const SizedBox(height: 20),
 
           // ── Switch to Customer / Logout ──
           SizedBox(

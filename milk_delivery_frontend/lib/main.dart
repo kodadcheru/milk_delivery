@@ -283,6 +283,9 @@ class _MainAppShellState extends State<MainAppShell> {
 
     // ── 2. PROVIDER / LOCATION HUB ROLE APP SHELL ──
     if (widget.state.currentRole == 'PROVIDER' || widget.state.currentRole == 'HUB_MANAGER') {
+      final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+      final hubTitle = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
+
       return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
@@ -297,13 +300,13 @@ class _MainAppShellState extends State<MainAppShell> {
                 child: const Text('🏬', style: TextStyle(fontSize: 20)),
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                   Text(
-                    'Jubilee Hills Central Depot #1 • 128 Subscribers',
-                    style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
+                    '$hubTitle • 128 Subscribers',
+                    style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),

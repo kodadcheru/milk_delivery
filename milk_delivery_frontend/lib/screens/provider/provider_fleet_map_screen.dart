@@ -22,33 +22,30 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
   late final MapController _mapController;
   Map<String, dynamic>? _selectedDriver;
 
-  // Hyderabad Location Hubs
-  final List<Map<String, dynamic>> _hubs = [
-    {
-      'name': 'Jubilee Hills Central Depot #1',
-      'code': 'HUB-HYD-01',
-      'lat': 17.4320,
-      'lng': 78.4070,
-      'color': const Color(0xFF10B981),
-      'radiusKm': 4.0,
-    },
-    {
-      'name': 'Banjara Hills Micro-Depot #2',
-      'code': 'HUB-HYD-02',
-      'lat': 17.4156,
-      'lng': 78.4350,
-      'color': const Color(0xFF6366F1),
-      'radiusKm': 4.0,
-    },
-    {
-      'name': 'Madhapur Tech Enclave Depot #3',
-      'code': 'HUB-HYD-03',
-      'lat': 17.4483,
-      'lng': 78.3915,
-      'color': const Color(0xFF0284C7),
-      'radiusKm': 4.0,
-    },
-  ];
+  List<Map<String, dynamic>> get _hubs {
+    if (widget.state.locationHubs.isNotEmpty) {
+      return widget.state.locationHubs.map((h) {
+        return {
+          'name': h['name'] ?? 'Location Hub',
+          'code': h['hub_code'] ?? 'HUB',
+          'lat': (h['latitude'] as num?)?.toDouble() ?? 17.4320,
+          'lng': (h['longitude'] as num?)?.toDouble() ?? 78.4070,
+          'color': const Color(0xFF10B981),
+          'radiusKm': (h['coverage_radius_km'] as num?)?.toDouble() ?? 5.0,
+        };
+      }).toList();
+    }
+    return [
+      {
+        'name': 'Kodad Central Dairy Depot',
+        'code': 'HUB-KDD-01',
+        'lat': 17.4320,
+        'lng': 78.4070,
+        'color': const Color(0xFF10B981),
+        'radiusKm': 5.0,
+      },
+    ];
+  }
 
   @override
   void initState() {
