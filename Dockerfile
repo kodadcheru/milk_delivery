@@ -23,9 +23,6 @@ COPY milk_delivery_backend/ /app/
 RUN mkdir -p /app/staticfiles /app/media /app/logs
 RUN chmod +x /app/entrypoint.sh
 
-# Collect static files
-RUN python manage.py collectstatic --noinput || true
-
 EXPOSE 8000
 
 CMD ["sh", "/app/entrypoint.sh"]

@@ -1,15 +1,21 @@
 #!/bin/sh
 set -e
 
-echo "🚀 Running database migrations on Railway PostgreSQL..."
-python manage.py migrate --noinput || true
+echo "🚀 [1/4] Running database migrations..."
+python manage.py migrate --noinput
 
-echo "🌱 Seeding default superusers, hubs, and catalog..."
+echo "🌱 [2/4] Seeding default superusers and hub catalogs..."
 python seed_railway.py || true
 
-echo "📦 Collecting static files..."
-python manage.py collectstatic --noinput || true
+echo "📦 [3/4] Collecting static assets..."
+python manage.py collectstatic --noinput --clear || true
 
-PORT_VAL="${PORT:-8000}"
-echo "🌟 Starting Gunicorn on port $PORT_VAL..."
-exec gunicorn milk_backend.wsgi:application --bind "0.0.0.0:$PORT_VAL" --workers 3 --timeout 120
+APP_PORT="${PORT:-8000}"
+echo "🌟 [4/4] Starting Gunicorn production server on port $APP_PORT..."
+exec gunicorn milk_backend.wsgi:application \
+    --bind 0.0.0.0:$APP_PORT \
+    --workers 2 \
+    --threads 4 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -

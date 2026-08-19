@@ -21,8 +21,6 @@ COPY . /app/
 RUN mkdir -p /app/staticfiles /app/media /app/logs
 RUN chmod +x /app/entrypoint.sh
 
-RUN python manage.py collectstatic --noinput || true
-
 EXPOSE 8000
 
 CMD ["sh", "/app/entrypoint.sh"]
