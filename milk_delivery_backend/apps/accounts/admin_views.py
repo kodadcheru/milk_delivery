@@ -29,6 +29,92 @@ class AdminCustomerListView(APIView):
         return Response(UserSerializer(customers, many=True).data)
 
 
+class AdminCustomerDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        from apps.accounts.models import User
+        from apps.subscriptions.models import Subscription
+        from apps.deliveries.models import DeliveryTask
+
+        customer = User.objects.filter(pk=pk, role=User.Roles.CUSTOMER).first()
+        if not customer:
+            return Response({"detail": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        subs = Subscription.objects.filter(customer=customer).select_related("product").order_by("-created_at")
+        subs_data = []
+        for s in subs:
+            subs_data.append({
+                "id": s.id,
+                "product_name": s.product.name,
+                "product_image": s.product.image_url,
+                "product_price": float(s.product.price_per_unit),
+                "unit_quantity": s.product.unit_quantity or s.product.unit,
+                "quantity": s.quantity,
+                "frequency": s.frequency,
+                "status": s.status,
+                "start_date": str(s.start_date),
+                "monthly_value": float(s.product.price_per_unit * s.quantity * 30),
+                "created_at": s.created_at.strftime("%d %b %Y"),
+            })
+
+        tasks = DeliveryTask.objects.filter(subscription__customer=customer).select_related("subscription__product", "driver").order_by("-delivery_date")[:15]
+        tasks_data = []
+        for t in tasks:
+            driver_name = f"{t.driver.first_name} {t.driver.last_name}".strip() if t.driver else "Unassigned"
+            tasks_data.append({
+                "id": t.id,
+                "delivery_date": str(t.delivery_date),
+                "slot_time": t.slot_time,
+                "status": t.status,
+                "product_name": t.subscription.product.name if t.subscription else "Dairy Item",
+                "quantity": t.subscription.quantity if t.subscription else 1,
+                "driver_name": driver_name,
+                "proof_image_url": t.proof_image_url,
+                "delivered_at": t.delivered_at.strftime("%I:%M %p") if t.delivered_at else "",
+            })
+
+        return Response({
+            "customer": {
+                "id": customer.id,
+                "username": customer.username,
+                "first_name": customer.first_name,
+                "last_name": customer.last_name,
+                "full_name": f"{customer.first_name} {customer.last_name}".strip() or customer.username,
+                "phone": customer.phone,
+                "email": customer.email,
+                "address": customer.address,
+                "city": customer.city,
+                "wallet_balance": str(customer.wallet_balance),
+                "delivery_instructions": customer.delivery_instructions,
+                "delivery_slot_preference": customer.delivery_slot_preference,
+                "latitude": float(customer.latitude) if customer.latitude else 16.9950,
+                "longitude": float(customer.longitude) if customer.longitude else 79.9670,
+                "date_joined": customer.date_joined.strftime("%d %b %Y"),
+            },
+            "subscriptions": subs_data,
+            "deliveries": tasks_data,
+        })
+
+    def patch(self, request, pk):
+        from apps.accounts.models import User
+        customer = User.objects.filter(pk=pk, role=User.Roles.CUSTOMER).first()
+        if not customer:
+            return Response({"detail": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if "first_name" in request.data: customer.first_name = request.data["first_name"].strip()
+        if "last_name" in request.data: customer.last_name = request.data["last_name"].strip()
+        if "phone" in request.data: customer.phone = request.data["phone"].strip()
+        if "email" in request.data: customer.email = request.data["email"].strip()
+        if "address" in request.data: customer.address = request.data["address"].strip()
+        if "city" in request.data: customer.city = request.data["city"].strip()
+        if "delivery_instructions" in request.data: customer.delivery_instructions = request.data["delivery_instructions"].strip()
+        if "delivery_slot_preference" in request.data: customer.delivery_slot_preference = request.data["delivery_slot_preference"].strip()
+        customer.save()
+
+        return Response({"message": f"Customer profile for '{customer.first_name} {customer.last_name}' updated successfully!"})
+
+
 class AdminCreditWalletView(APIView):
     permission_classes = [permissions.AllowAny]
 

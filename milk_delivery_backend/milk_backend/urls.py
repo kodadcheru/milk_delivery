@@ -7,6 +7,7 @@ from apps.accounts.admin_views import (
     AdminBroadcastNotificationView,
     AdminConsoleHTMLView,
     AdminCreditWalletView,
+    AdminCustomerDetailView,
     AdminCustomerListView,
     AdminCustomerTransactionsView,
     AdminFleetDetailView,
@@ -71,6 +72,7 @@ urlpatterns = [
     # Dedicated Admin Web Console
     path("admin-console/", AdminConsoleHTMLView.as_view(), name="admin_console"),
     path("api/admin/customers/", AdminCustomerListView.as_view(), name="admin_customers"),
+    path("api/admin/customers/<int:pk>/", AdminCustomerDetailView.as_view(), name="admin_customer_detail"),
     path("api/admin/customers/<int:user_id>/transactions/", AdminCustomerTransactionsView.as_view(), name="admin_customer_txs"),
     path("api/admin/credit-wallet/", AdminCreditWalletView.as_view(), name="admin_credit_wallet"),
     path("api/admin/broadcast-notification/", AdminBroadcastNotificationView.as_view(), name="admin_broadcast"),
