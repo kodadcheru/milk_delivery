@@ -218,5 +218,32 @@ void main() {
       expect(presets[0]['id'], 'bag_doorstep');
       expect(presets[1]['icon'], '📦');
     });
+
+    test('DRF Paginated Response Unwrapping Test', () {
+      // 1. Paginated response object
+      final paginatedPayload = {
+        'count': 2,
+        'next': null,
+        'previous': null,
+        'results': [
+          {'id': 1, 'name': 'A2 Desi Cow Milk', 'price_per_unit': '75.00', 'category': 'MILK', 'unit_quantity': '1 Litre'},
+          {'id': 2, 'name': 'Farm Fresh Eggs', 'price_per_unit': '120.00', 'category': 'EGGS', 'unit_quantity': '6 Pack'},
+        ],
+      };
+
+      final results = paginatedPayload['results'] as List;
+      expect(results.length, 2);
+      final p1 = ProductModel.fromJson(results[0]);
+      expect(p1.name, 'A2 Desi Cow Milk');
+      expect(p1.pricePerUnit, 75.0);
+
+      // 2. Legacy flat list
+      final flatPayload = [
+        {'id': 3, 'name': '20L Mineral Water Can', 'price_per_unit': '90.00', 'category': 'WATER_CAN', 'unit_quantity': '20 Litres'},
+      ];
+      final p2 = ProductModel.fromJson(flatPayload[0]);
+      expect(p2.name, '20L Mineral Water Can');
+      expect(p2.pricePerUnit, 90.0);
+    });
   });
 }

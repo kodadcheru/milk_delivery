@@ -7,6 +7,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.pagination import StandardResultsSetPagination
 from apps.accounts.models import Notification, User, WalletTransaction
 from apps.deliveries.models import DeliveryTask, LiveOrder, LiveOrderItem, LocationHub
 from apps.deliveries.serializers import LiveOrderSerializer
@@ -18,7 +19,7 @@ class ExpressOrderListCreateView(APIView):
 
     def get(self, request):
         user = request.user
-        orders = LiveOrder.objects.all().prefetch_related("items__product").select_related("customer", "hub", "driver")
+        orders = LiveOrder.objects.all().prefetch_related("items__product").select_related("customer", "hub", "driver").order_by("-created_at")
         if user and user.is_authenticated:
             if user.role == User.Roles.CUSTOMER:
                 orders = orders.filter(customer=user)
@@ -26,6 +27,13 @@ class ExpressOrderListCreateView(APIView):
                 orders = orders.filter(driver=user)
             elif user.role in [User.Roles.HUB_MANAGER, "PROVIDER"] and user.assigned_hub:
                 orders = orders.filter(hub=user.assigned_hub)
+
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(orders, request)
+        if page is not None:
+            serializer = LiveOrderSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
         return Response(LiveOrderSerializer(orders, many=True).data)
 
     def post(self, request):

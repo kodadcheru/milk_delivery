@@ -258,12 +258,28 @@ class ApiService {
     return null;
   }
 
+  static List _extractList(dynamic decoded) {
+    if (decoded is List) return decoded;
+    if (decoded is Map && decoded['results'] is List) {
+      return decoded['results'] as List;
+    }
+    return [];
+  }
+
   // ── 3. Notifications ──
-  static Future<List<NotificationModel>> fetchNotifications() async {
+  static Future<List<NotificationModel>> fetchNotifications({int? page, int? pageSize}) async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/notifications/'), headers: _headers));
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (pageSize != null) queryParams['page_size'] = pageSize.toString();
+
+      final uri = Uri.parse('$baseUrl/notifications/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final list = _extractList(jsonDecode(res.body));
         return list.map((e) => NotificationModel.fromJson(e)).toList();
       }
     } catch (_) {}
@@ -286,12 +302,27 @@ class ApiService {
     return false;
   }
 
-  // ── 4. Products ──
-  static Future<List<ProductModel>> fetchProducts() async {
+  // ── 4. Products & Categories ──
+  static Future<List<ProductModel>> fetchProducts({
+    int? page,
+    int? pageSize,
+    String? category,
+    String? search,
+  }) async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/products/')));
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (pageSize != null) queryParams['page_size'] = pageSize.toString();
+      if (category != null && category != 'ALL') queryParams['category'] = category;
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+      final uri = Uri.parse('$baseUrl/products/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      final res = await _executeWithRetry(() => http.get(uri));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final list = _extractList(jsonDecode(res.body));
         return list.map((e) => ProductModel.fromJson(e)).toList();
       }
     } catch (_) {}
@@ -325,7 +356,7 @@ class ApiService {
     try {
       final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/subscriptions/'), headers: _headers));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final list = _extractList(jsonDecode(res.body));
         return list.map((e) => SubscriptionModel.fromJson(e)).toList();
       }
     } catch (_) {}
@@ -409,11 +440,19 @@ class ApiService {
     return false;
   }
 
-  static Future<List<WalletTransactionModel>> fetchWalletTransactions() async {
+  static Future<List<WalletTransactionModel>> fetchWalletTransactions({int? page, int? pageSize}) async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/wallet/transactions/'), headers: _headers));
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (pageSize != null) queryParams['page_size'] = pageSize.toString();
+
+      final uri = Uri.parse('$baseUrl/wallet/transactions/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final list = _extractList(jsonDecode(res.body));
         return list.map((e) => WalletTransactionModel.fromJson(e)).toList();
       }
     } catch (_) {}
@@ -421,11 +460,20 @@ class ApiService {
   }
 
   // ── 7. Delivery Tasks ──
-  static Future<List<DeliveryTaskModel>> fetchDeliveries() async {
+  static Future<List<DeliveryTaskModel>> fetchDeliveries({int? page, int? pageSize, String? date}) async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/deliveries/'), headers: _headers));
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (pageSize != null) queryParams['page_size'] = pageSize.toString();
+      if (date != null) queryParams['date'] = date;
+
+      final uri = Uri.parse('$baseUrl/deliveries/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final list = _extractList(jsonDecode(res.body));
         return list.map((e) => DeliveryTaskModel.fromJson(e)).toList();
       }
     } catch (_) {}
@@ -590,14 +638,23 @@ class ApiService {
   }
 
   // ── 13. Express / Live Orders APIs ──
-  static Future<List<LiveOrderModel>> fetchLiveOrders() async {
+  static Future<List<LiveOrderModel>> fetchLiveOrders({int? page, int? pageSize, String? status}) async {
     try {
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (pageSize != null) queryParams['page_size'] = pageSize.toString();
+      if (status != null) queryParams['status'] = status;
+
+      final uri = Uri.parse('$baseUrl/orders/express/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
       final res = await _executeWithRetry(() => http.get(
-            Uri.parse('$baseUrl/orders/express/'),
+            uri,
             headers: _headers,
           ));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final list = _extractList(jsonDecode(res.body));
         return list.map((item) => LiveOrderModel.fromJson(item)).toList();
       }
     } catch (_) {}

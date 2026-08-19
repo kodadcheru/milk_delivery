@@ -3,6 +3,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.pagination import StandardResultsSetPagination
 from apps.accounts.models import Notification, User, WalletTransaction
 from apps.accounts.serializers import (
     NotificationSerializer,
@@ -81,17 +82,19 @@ class WalletTopUpView(APIView):
 class WalletTransactionListView(generics.ListAPIView):
     serializer_class = WalletTransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return WalletTransaction.objects.filter(user=self.request.user)
+        return WalletTransaction.objects.filter(user=self.request.user).order_by("-created_at")
 
 
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at")
 
 
 class NotificationMarkReadView(APIView):

@@ -5,6 +5,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.pagination import LargeResultsSetPagination
 from apps.accounts.models import User, WalletTransaction, Notification
 from apps.deliveries.models import DeliveryTask
 from apps.deliveries.serializers import DeliveryTaskSerializer
@@ -15,12 +16,13 @@ from apps.products.models import Product
 class DeliveryTaskListView(generics.ListAPIView):
     serializer_class = DeliveryTaskSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = LargeResultsSetPagination
 
     def get_queryset(self):
         user = self.request.user
         req_date = self.request.query_params.get("date", None)
 
-        qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "driver")
+        qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "driver").order_by("-delivery_date", "-id")
         if req_date:
             qs = qs.filter(delivery_date=req_date)
 

@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
+from apps.core.pagination import StandardResultsSetPagination
 from apps.products.models import Category, Product
 from apps.products.serializers import CategorySerializer, ProductSerializer
 
@@ -27,6 +28,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ProductListView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         show_all = self.request.query_params.get("all") == "true"
