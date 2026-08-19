@@ -20,11 +20,9 @@ class PhoneLoginScreen extends StatefulWidget {
 
 class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   int _step = 1; // 1: Phone Input, 2: OTP Verification, 3: New Customer Registration
-  bool _isPasswordLoginMode = false;
   bool _isLoading = false;
   String _phoneNumber = '';
   String _selectedGender = 'Male';
-  bool _obscurePassword = true;
 
   // Timer for OTP resend
   Timer? _resendTimer;
@@ -36,8 +34,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   final _otpController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -46,8 +42,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     _otpController.dispose();
     _nameController.dispose();
     _emailController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -186,47 +180,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     }
   }
 
-  // Password Login Handler (for Admin & Staff)
-  void _handlePasswordLogin() async {
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter username and password')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    final res = await ApiService.login(username, password);
-    setState(() => _isLoading = false);
-
-    if (res['success'] == true) {
-      final profile = await ApiService.fetchUserProfile();
-      if (profile != null) {
-        await widget.state.onUserAuthenticated(profile);
-      } else {
-        await widget.state.reloadAllData();
-      }
-      widget.onLoginSuccess();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF0D7C66),
-            content: Text('👋 Welcome back, ${profile?.firstName ?? username}!'),
-          ),
-        );
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['error'] ?? 'Invalid username or password')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -289,77 +242,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          children: [
-                            // Dual-Mode Login Switcher Tabs
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () => setState(() {
-                                        _isPasswordLoginMode = false;
-                                        _step = 1;
-                                      }),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: !_isPasswordLoginMode ? const Color(0xFF0D7C66) : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '📱 Phone OTP',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: !_isPasswordLoginMode ? Colors.white : Colors.grey[400],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () => setState(() => _isPasswordLoginMode = true),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: _isPasswordLoginMode ? const Color(0xFF0D7C66) : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '🔑 Password Login',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: _isPasswordLoginMode ? Colors.white : Colors.grey[400],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            if (_isPasswordLoginMode)
-                              _buildPasswordLoginView()
-                            else
-                              _buildCurrentStepView(),
-                          ],
-                        ),
+                        child: _buildCurrentStepView(),
                       ),
                     ],
                   ),
@@ -379,88 +262,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPasswordLoginView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Staff & Admin Login', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 2),
-        Text('Sign in with your username & password credentials', style: TextStyle(color: Colors.grey[400], fontSize: 11.5)),
-        const SizedBox(height: 18),
-
-        // Username Field
-        _buildTextField(_usernameController, 'Username or Mobile', Icons.person_outline),
-        const SizedBox(height: 12),
-
-        // Password Field
-        TextField(
-          controller: _passwordController,
-          obscureText: _obscurePassword,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-          decoration: InputDecoration(
-            hintText: 'Enter Password',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
-            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF10B981), size: 18),
-            suffixIcon: IconButton(
-              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey[400], size: 18),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-            ),
-            filled: true,
-            fillColor: const Color(0xFF0F172A),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // Quick Fill for Admin
-        InkWell(
-          onTap: () {
-            setState(() {
-              _usernameController.text = 'admin';
-              _passwordController.text = 'admin123';
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-            ),
-            child: const Text('🛡️ Fill Admin: admin / admin123', style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.bold)),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Prominent Sign In Button
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _handlePasswordLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D7C66),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              elevation: 4,
-            ),
-            child: _isLoading
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.login_rounded, size: 18),
-                      SizedBox(width: 8),
-                      Text('Sign In to Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
-                    ],
-                  ),
-          ),
-        ),
-      ],
     );
   }
 
