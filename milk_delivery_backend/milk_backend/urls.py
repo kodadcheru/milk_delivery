@@ -45,7 +45,12 @@ from apps.deliveries.views import (
     DeliveryTaskListView,
     DeliveryTaskSkipView,
 )
-from apps.products.views import ProductDetailView, ProductListView
+from apps.products.views import (
+    CategoryDetailView,
+    CategoryListCreateView,
+    ProductDetailView,
+    ProductListView,
+)
 from apps.subscriptions.views import (
     SubscriptionDetailView,
     SubscriptionListCreateView,
@@ -91,7 +96,9 @@ urlpatterns = [
     path("api/notifications/", NotificationListView.as_view(), name="notification_list"),
     path("api/notifications/<int:pk>/read/", NotificationMarkReadView.as_view(), name="notification_mark_read"),
     path("api/notifications/read-all/", NotificationMarkReadView.as_view(), name="notification_read_all"),
-    # Product endpoints
+    # Category & Product endpoints
+    path("api/categories/", CategoryListCreateView.as_view(), name="category_list"),
+    path("api/categories/<int:pk>/", CategoryDetailView.as_view(), name="category_detail"),
     path("api/products/", ProductListView.as_view(), name="product_list"),
     path("api/products/<int:pk>/", ProductDetailView.as_view(), name="product_detail"),
     # Subscription endpoints

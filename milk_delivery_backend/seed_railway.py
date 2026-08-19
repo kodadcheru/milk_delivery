@@ -139,16 +139,65 @@ def seed():
         "wallet_balance": 1500.0,
     })
 
-    # 5. Products
+    # 5. Categories & Products
+    from apps.products.models import Category
+
+    cat_milk, _ = Category.objects.get_or_create(
+        slug="milk",
+        defaults={"name": "Milk & Dairy", "icon": "🥛", "display_order": 1, "description": "Farm Fresh A2, Buffalo, and Whole Cow Milk"}
+    )
+    cat_meat, _ = Category.objects.get_or_create(
+        slug="meat",
+        defaults={"name": "Meat & Poultry", "icon": "🥩", "display_order": 2, "description": "Fresh Country Chicken & Mutton cuts"}
+    )
+    cat_eggs, _ = Category.objects.get_or_create(
+        slug="eggs",
+        defaults={"name": "Country Eggs", "icon": "🥚", "display_order": 3, "description": "Organic Free-Range Brown & White Eggs"}
+    )
+    cat_water, _ = Category.objects.get_or_create(
+        slug="water-can",
+        defaults={"name": "Water Cans", "icon": "💧", "display_order": 4, "description": "20L RO Purified Mineral Water Can Drops"}
+    )
+
     p1, _ = Product.objects.get_or_create(
         name="A2 Vedic Desi Cow Milk",
         defaults={
             "description": "100% Raw, Unprocessed, Pure Vedic Gir Cow Milk in Glass Bottle",
-            "category": "MILK",
+            "category": "Milk & Dairy",
+            "category_ref": cat_milk,
             "price_per_unit": 90.00,
             "unit_quantity": "1 Litre Glass Bottle",
             "is_available": True,
             "image_url": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80",
+        },
+    )
+    if not p1.category_ref:
+        p1.category_ref = cat_milk
+        p1.save()
+
+    p2, _ = Product.objects.get_or_create(
+        name="Organic Country Eggs (Pack of 6)",
+        defaults={
+            "description": "Antibiotic-free Free-Range Country Eggs",
+            "category": "Country Eggs",
+            "category_ref": cat_eggs,
+            "price_per_unit": 75.00,
+            "unit_quantity": "6 Eggs Pack",
+            "is_available": True,
+            "image_url": "https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=500&q=80",
+        },
+    )
+
+    p3, _ = Product.objects.get_or_create(
+        name="Bisleri 20L Mineral Water Can",
+        defaults={
+            "description": "Purified 20 Litre Mineral Drinking Water Can Doorstep Drop",
+            "category": "Water Cans",
+            "category_ref": cat_water,
+            "price_per_unit": 90.00,
+            "unit_quantity": "20L Can",
+            "is_available": True,
+            "image_url": "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500&q=80",
         },
     )
 
