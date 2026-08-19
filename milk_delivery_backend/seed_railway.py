@@ -12,6 +12,22 @@ from apps.deliveries.models import LocationHub, ServiceArea, DeliveryTask
 from datetime import date
 
 
+def safe_upsert_user(uname, defaults):
+    user = User.objects.filter(username=uname).first()
+    if not user:
+        ph = defaults.get("phone")
+        if ph:
+            user = User.objects.filter(phone=ph).first()
+
+    if not user:
+        user = User.objects.create(username=uname, **defaults)
+    else:
+        for k, v in defaults.items():
+            setattr(user, k, v)
+        user.save()
+    return user
+
+
 def seed():
     print("🌱 [Railway DB Seeder] Checking database records...")
 
@@ -56,49 +72,33 @@ def seed():
     )
 
     # 2. Admin & Staff Users
-    admin, _ = User.objects.get_or_create(
-        username="admin",
-        defaults={
-            "password": make_password("admin123"),
-            "email": "admin@milkdrop.in",
-            "first_name": "Rajesh",
-            "last_name": "Varma",
-            "role": "ADMIN",
-            "phone": "+91 98888 77777",
-            "address": "Plot 42, Road #36, Jubilee Hills, Hyderabad",
-            "assigned_hub": hub1,
-            "is_staff": True,
-            "is_superuser": True,
-            "wallet_balance": 10000.0,
-        },
-    )
-    admin.set_password("admin123")
-    admin.assigned_hub = hub1
-    admin.is_staff = True
-    admin.is_superuser = True
-    admin.role = "ADMIN"
-    admin.save()
+    admin = safe_upsert_user("admin", {
+        "password": make_password("admin123"),
+        "email": "admin@milkdrop.in",
+        "first_name": "Rajesh",
+        "last_name": "Varma",
+        "role": User.Roles.ADMIN,
+        "phone": "+91 98888 77777",
+        "address": "Plot 42, Road #36, Jubilee Hills, Hyderabad",
+        "assigned_hub": hub1,
+        "is_staff": True,
+        "is_superuser": True,
+        "wallet_balance": 10000.0,
+    })
     print("✅ Super Admin verified: admin / admin123")
 
-    hub_mgr, _ = User.objects.get_or_create(
-        username="hub_manager",
-        defaults={
-            "password": make_password("pass123"),
-            "email": "hubmanager@milkdrop.in",
-            "first_name": "Sanjay",
-            "last_name": "Rao",
-            "role": "ADMIN",
-            "phone": "+91 97654 32100",
-            "address": "Madhapur Tech Enclave Depot #3",
-            "assigned_hub": hub3,
-            "is_staff": True,
-            "wallet_balance": 5000.0,
-        },
-    )
-    hub_mgr.set_password("pass123")
-    hub_mgr.assigned_hub = hub3
-    hub_mgr.is_staff = True
-    hub_mgr.save()
+    hub_mgr = safe_upsert_user("hub_manager", {
+        "password": make_password("pass123"),
+        "email": "hubmanager@milkdrop.in",
+        "first_name": "Sanjay",
+        "last_name": "Rao",
+        "role": User.Roles.ADMIN,
+        "phone": "+91 97654 32100",
+        "address": "Madhapur Tech Enclave Depot #3",
+        "assigned_hub": hub3,
+        "is_staff": True,
+        "wallet_balance": 5000.0,
+    })
     print("✅ Hub Manager verified: hub_manager / pass123")
 
     # 3. Delivery Boys Assigned to Specific Hubs
@@ -111,46 +111,33 @@ def seed():
     ]
 
     for uname, fn, ln, ph, hub in hub_drivers:
-        d_user, _ = User.objects.get_or_create(
-            username=uname,
-            defaults={
-                "password": make_password("pass123"),
-                "email": f"{uname}@milkdrop.in",
-                "first_name": fn,
-                "last_name": ln,
-                "role": "DRIVER",
-                "phone": ph,
-                "address": hub.address,
-                "assigned_hub": hub,
-                "monthly_salary": 15000.0,
-                "driver_status": "ACTIVE",
-                "wallet_balance": 0.0,
-            }
-        )
-        d_user.set_password("pass123")
-        d_user.assigned_hub = hub
-        d_user.monthly_salary = 15000.0
-        d_user.save()
+        safe_upsert_user(uname, {
+            "password": make_password("pass123"),
+            "email": f"{uname}@milkdrop.in",
+            "first_name": fn,
+            "last_name": ln,
+            "role": User.Roles.DELIVERY_PARTNER,
+            "phone": ph,
+            "address": hub.address,
+            "assigned_hub": hub,
+            "monthly_salary": 15000.0,
+            "driver_status": "ACTIVE",
+            "wallet_balance": 0.0,
+        })
     print(f"✅ {len(hub_drivers)} Delivery Boys assigned to Hubs (#1, #2, #3)")
 
     # 4. Customer
-    cust, _ = User.objects.get_or_create(
-        username="customer",
-        defaults={
-            "password": make_password("pass123"),
-            "email": "customer@milkdrop.in",
-            "first_name": "Ramesh",
-            "last_name": "Kumar",
-            "role": "CUSTOMER",
-            "phone": "+91 98765 43210",
-            "address": "Flat 402, Road No. 36, Jubilee Hills, Hyderabad",
-            "assigned_hub": hub1,
-            "wallet_balance": 1500.0,
-        },
-    )
-    cust.set_password("pass123")
-    cust.assigned_hub = hub1
-    cust.save()
+    cust = safe_upsert_user("customer", {
+        "password": make_password("pass123"),
+        "email": "customer@milkdrop.in",
+        "first_name": "Ramesh",
+        "last_name": "Kumar",
+        "role": User.Roles.CUSTOMER,
+        "phone": "+91 98765 43210",
+        "address": "Flat 402, Road No. 36, Jubilee Hills, Hyderabad",
+        "assigned_hub": hub1,
+        "wallet_balance": 1500.0,
+    })
 
     # 5. Products
     p1, _ = Product.objects.get_or_create(
@@ -177,7 +164,7 @@ def seed():
         },
     )
 
-    suresh = User.objects.get(username="driver")
+    suresh = User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
     DeliveryTask.objects.get_or_create(
         subscription=sub,
         delivery_date=date.today(),
