@@ -17,6 +17,7 @@ class ApiService {
   static String get baseUrl => AppConfig.apiBaseUrl;
   static String? authToken;
   static String? refreshToken;
+  static final http.Client _client = http.Client();
 
   static const String _prefTokenKey = 'milkdrop_auth_token';
   static const String _prefRefreshTokenKey = 'milkdrop_refresh_token';
@@ -56,7 +57,7 @@ class ApiService {
   static Future<bool> refreshAuthToken() async {
     if (refreshToken == null || refreshToken!.isEmpty) return false;
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/auth/token/refresh/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refresh': refreshToken}),
@@ -124,7 +125,7 @@ class ApiService {
   // ── 1. Phone OTP & Mobile Auth ──
   static Future<Map<String, dynamic>> sendOTP(String phone) async {
     try {
-      final res = await _executeWithRetry(() => http.post(
+      final res = await _executeWithRetry(() => _client.post(
             Uri.parse('$baseUrl/auth/send-otp/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'phone': phone}),
@@ -143,7 +144,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> verifyOTP(String phone, String otp) async {
     try {
-      final res = await _executeWithRetry(() => http.post(
+      final res = await _executeWithRetry(() => _client.post(
             Uri.parse('$baseUrl/auth/verify-otp/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'phone': phone, 'otp': otp}),
@@ -173,7 +174,7 @@ class ApiService {
     String deliveryInstructions = '',
   }) async {
     try {
-      final res = await _executeWithRetry(() => http.post(
+      final res = await _executeWithRetry(() => _client.post(
             Uri.parse('$baseUrl/auth/register-mobile/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
@@ -206,7 +207,7 @@ class ApiService {
       final uri = hubId != null
           ? Uri.parse('$baseUrl/admin/drivers/?hub_id=$hubId')
           : Uri.parse('$baseUrl/admin/drivers/');
-      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      final res = await _executeWithRetry(() => _client.get(uri, headers: _headers));
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
         return list.map((e) => Map<String, dynamic>.from(e)).toList();
@@ -218,7 +219,7 @@ class ApiService {
   // ── 2. Standard Auth & Profile ──
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {
-      final res = await _executeWithRetry(() => http.post(
+      final res = await _executeWithRetry(() => _client.post(
             Uri.parse('$baseUrl/auth/token/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'username': username, 'password': password}),
@@ -236,7 +237,7 @@ class ApiService {
   static Future<UserModel?> fetchUserProfile() async {
     if (authToken == null) return null;
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/auth/me/'), headers: _headers));
+      final res = await _executeWithRetry(() => _client.get(Uri.parse('$baseUrl/auth/me/'), headers: _headers));
       if (res.statusCode == 200) {
         return UserModel.fromJson(jsonDecode(res.body));
       }
@@ -246,7 +247,7 @@ class ApiService {
 
   static Future<UserModel?> updateUserProfile(Map<String, dynamic> updates) async {
     try {
-      final res = await _executeWithRetry(() => http.patch(
+      final res = await _executeWithRetry(() => _client.patch(
             Uri.parse('$baseUrl/auth/me/'),
             headers: _headers,
             body: jsonEncode(updates),

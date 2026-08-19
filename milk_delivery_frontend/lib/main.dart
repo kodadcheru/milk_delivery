@@ -267,6 +267,37 @@ class _MainAppShellState extends State<MainAppShell> {
           ),
           actions: [
             IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+                  if (widget.state.unreadNotificationCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Text(
+                          '${widget.state.unreadNotificationCount}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => NotificationsScreen(state: widget.state),
+                  ),
+                );
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               tooltip: 'Refresh Deliveries',
               onPressed: () async {
@@ -335,6 +366,37 @@ class _MainAppShellState extends State<MainAppShell> {
           ),
           actions: [
             IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+                  if (widget.state.unreadNotificationCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Text(
+                          '${widget.state.unreadNotificationCount}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => NotificationsScreen(state: widget.state),
+                  ),
+                );
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               tooltip: 'Refresh Hub Data',
               onPressed: () async {
@@ -399,6 +461,37 @@ class _MainAppShellState extends State<MainAppShell> {
             ],
           ),
           actions: [
+            IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+                  if (widget.state.unreadNotificationCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Text(
+                          '${widget.state.unreadNotificationCount}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => NotificationsScreen(state: widget.state),
+                  ),
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               tooltip: 'Refresh Operations Data',

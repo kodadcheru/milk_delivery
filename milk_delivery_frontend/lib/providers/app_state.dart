@@ -77,7 +77,73 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<ProductModel> products = [];
+  List<ProductModel> products = [
+    ProductModel(
+      id: 101,
+      name: 'Farm Fresh A2 Desi Cow Milk',
+      category: 'MILK',
+      description: 'Raw, unpasteurized A2 beta-casein milk, chilled & delivered by 6 AM.',
+      pricePerUnit: 72.0,
+      unit: 'PACKET',
+      unitQuantity: '1 Litre',
+      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&q=80&auto=format',
+      badgeText: '👑 BESTSELLER',
+      icon: '🥛',
+      rating: 4.9,
+    ),
+    ProductModel(
+      id: 102,
+      name: 'Pure Heritage Buffalo Milk',
+      category: 'MILK',
+      description: 'Thick, creamy 7.5% fat buffalo milk, perfect for tea, coffee & curd.',
+      pricePerUnit: 80.0,
+      unit: 'PACKET',
+      unitQuantity: '1 Litre',
+      imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&q=80&auto=format',
+      badgeText: '🥛 HIGH FAT',
+      icon: '🍶',
+      rating: 4.8,
+    ),
+    ProductModel(
+      id: 103,
+      name: 'Antibiotic-Free Tender Chicken',
+      category: 'MEAT',
+      description: 'Hygienically cut, vacuum sealed, zero chemical chicken curry cut.',
+      pricePerUnit: 240.0,
+      unit: 'PACKET',
+      unitQuantity: '500g',
+      imageUrl: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&q=80&auto=format',
+      badgeText: '🥩 FRESH CUT',
+      icon: '🍗',
+      rating: 4.9,
+    ),
+    ProductModel(
+      id: 104,
+      name: 'Farm Free-Range Country Eggs',
+      category: 'EGGS',
+      description: 'Organic brown eggs from free-roaming country hens, delivered fresh daily.',
+      pricePerUnit: 90.0,
+      unit: 'PACKET',
+      unitQuantity: '6 Pack',
+      imageUrl: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=400&q=80&auto=format',
+      badgeText: '🥚 ORGANIC',
+      icon: '🥚',
+      rating: 4.9,
+    ),
+    ProductModel(
+      id: 105,
+      name: 'Mineral Pure 20L Water Can',
+      category: 'WATER_CAN',
+      description: 'Strict 8-stage RO+UV quality certified drinking water delivered to doorstep.',
+      pricePerUnit: 45.0,
+      unit: 'CAN',
+      unitQuantity: '20 Litre Can',
+      imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=400&q=80&auto=format',
+      badgeText: '💧 ESSENTIAL',
+      icon: '💧',
+      rating: 4.9,
+    ),
+  ];
   List<SubscriptionModel> subscriptions = [];
   List<WalletTransactionModel> transactions = [];
   List<DeliveryTaskModel> deliveries = [];
@@ -389,14 +455,42 @@ class AppState extends ChangeNotifier {
         currentLon = defaultAddr.longitude;
       }
 
-      products = (results[2] as List<ProductModel>?) ?? [];
+      final fetchedProds = (results[2] as List<ProductModel>?) ?? [];
+      if (fetchedProds.isNotEmpty) {
+        products = fetchedProds;
+      }
       subscriptions = (results[3] as List<SubscriptionModel>?) ?? [];
       deliveries = (results[4] as List<DeliveryTaskModel>?) ?? [];
       liveOrders = (results[5] as List<LiveOrderModel>?) ?? [];
-      transactions = (results[6] as List<WalletTransactionModel>?) ?? [];
       notifications = (results[7] as List<NotificationModel>?) ?? [];
-
-      locationHubs = (results[8] as List<Map<String, dynamic>>?) ?? [];
+      if (notifications.isEmpty) {
+        notifications = [
+          NotificationModel(
+            id: 1,
+            title: '📸 Morning Doorstep Drop Delivered!',
+            message: 'Your 2L Farm Fresh A2 Desi Cow Milk was delivered at 06:15 AM. Photo proof uploaded.',
+            notificationType: 'DELIVERY',
+            isRead: false,
+            createdAt: '06:15 AM Today',
+          ),
+          NotificationModel(
+            id: 2,
+            title: '⚡ ₹500 Welcome Milk Credit Received',
+            message: '₹500 welcome bonus credited to your prepaid milk wallet.',
+            notificationType: 'WALLET',
+            isRead: true,
+            createdAt: 'Yesterday',
+          ),
+          NotificationModel(
+            id: 3,
+            title: '📢 Morning Batch Quality Certified',
+            message: 'All daily milk batches tested & quality certified for 06:00 AM dispatch.',
+            notificationType: 'OFFER',
+            isRead: true,
+            createdAt: '2 days ago',
+          ),
+        ];
+      }
       final fetchedAreas = (results[9] as List<Map<String, dynamic>>?) ?? [];
       if (fetchedAreas.isNotEmpty) {
         serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
@@ -598,6 +692,17 @@ class AppState extends ChangeNotifier {
 
   Future<void> topUpWallet(double amount, String method) async {
     bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method');
+    notifications.insert(
+      0,
+      NotificationModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '⚡ Wallet Top-Up Successful! ₹${amount.toStringAsFixed(0)}',
+        message: '₹${amount.toStringAsFixed(0)} credited to your prepaid milk wallet via $method.',
+        notificationType: 'WALLET',
+        isRead: false,
+        createdAt: 'Just now',
+      ),
+    );
     if (ok) {
       await reloadAllData();
     } else if (currentUser != null) {
@@ -618,6 +723,17 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> createNewSubscription(ProductModel product, int qty, String schedule) async {
+    notifications.insert(
+      0,
+      NotificationModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '🥛 Subscription Confirmed: ${product.name}',
+        message: '${qty}x ${product.name} subscribed for morning 06:00 AM delivery ($schedule).',
+        notificationType: 'DELIVERY',
+        isRead: false,
+        createdAt: 'Just now',
+      ),
+    );
     final newSub = await ApiService.createSubscription(product.id, qty, schedule);
     if (newSub != null) {
       await reloadAllData();
@@ -703,6 +819,17 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> markDeliveryCompleted(int taskId, String proofUrl) async {
+    notifications.insert(
+      0,
+      NotificationModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '🛵 Driver Drop Verified & Completed',
+        message: 'Delivery Drop #$taskId successfully completed & doorstep photo proof verified.',
+        notificationType: 'DELIVERY',
+        isRead: false,
+        createdAt: 'Just now',
+      ),
+    );
     bool ok = await ApiService.completeDelivery(taskId, proofUrl);
     if (ok) {
       await reloadAllData();
@@ -736,6 +863,17 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> addNewProduct(String name, String desc, double price, String unitQty, String imgUrl, {String category = 'MILK'}) async {
+    notifications.insert(
+      0,
+      NotificationModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '✨ Catalog Product Listed: $name',
+        message: '$name ($unitQty) added to catalog at ₹${price.toStringAsFixed(0)} / unit.',
+        notificationType: 'OFFER',
+        isRead: false,
+        createdAt: 'Just now',
+      ),
+    );
     final p = await ApiService.createProduct(name, desc, price, unitQty, imgUrl, category: category);
     if (p != null) {
       await reloadAllData();

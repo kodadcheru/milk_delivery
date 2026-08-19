@@ -20,24 +20,24 @@ class AdminProfileTab extends StatelessWidget {
     final adminEmail = adminUser?.email.isNotEmpty == true ? adminUser!.email : 'ops.admin@milkdrop.in';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         children: [
-          // ── Admin Hero Card ──
+          // ── 1. ADMIN HERO CARD ──
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0D7C66)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 15,
+                  color: const Color(0xFF0D7C66).withValues(alpha: 0.25),
+                  blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
               ],
@@ -50,20 +50,21 @@ class AdminProfileTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
+                        gradient: LinearGradient(colors: [Color(0xFF10B981), Color(0xFF38BDF8)]),
                         shape: BoxShape.circle,
                       ),
                       child: const CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Color(0xFF0D7C66),
-                        child: Text('🛡️', style: TextStyle(fontSize: 38)),
+                        radius: 38,
+                        backgroundColor: Color(0xFF0F172A),
+                        child: Text('🛡️', style: TextStyle(fontSize: 36)),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
                         shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFF0F172A), width: 2),
                       ),
                       child: const Icon(Icons.shield_rounded, size: 14, color: Colors.white),
                     ),
@@ -72,38 +73,45 @@ class AdminProfileTab extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   adminName,
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.3),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   adminEmail,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12.5),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF10B981)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
                   ),
                   child: const Text(
-                    '🛡️ Master Administrator • ID #ADM-001',
-                    style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
+                    '🛡️ Master Operations Administrator • ID #ADM-001',
+                    style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w800, fontSize: 11),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-          // ── System Health Status Card ──
+          // ── 2. SYSTEM HEALTH STATUS CARD ──
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,69 +119,79 @@ class AdminProfileTab extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('LIVE BACKEND & SYSTEM HEALTH', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1)),
+                    const Text('LIVE BACKEND & SYSTEM HEALTH', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, letterSpacing: 0.8, color: Color(0xFF0F172A))),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('🟢 ALL SYSTEMS OPERATIONAL', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: const Text('🟢 ALL OPERATIONAL', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _buildSystemStatRow('API Server', 'http://127.0.0.1:8000 (Django 5.x)', '🟢 ONLINE'),
-                const Divider(height: 16),
-                _buildSystemStatRow('Database', 'SQLite3 WAL Mode (196 KB)', '🟢 HEALTHY'),
-                const Divider(height: 16),
-                _buildSystemStatRow('Geocoding Engine', 'OpenStreetMap Nominatim', '🟢 ACTIVE'),
+                const SizedBox(height: 14),
+                _buildSystemStatRow('API Server Engine', 'http://127.0.0.1:8000 (Django 5.x REST Framework)', '🟢 ONLINE'),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                _buildSystemStatRow('SQLite Database', 'SQLite3 WAL Mode • Auto-indexed schema', '🟢 HEALTHY'),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                _buildSystemStatRow('Geocoding Service', 'OpenStreetMap Nominatim Reverse Geocoder', '🟢 ACTIVE'),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // ── Web Console Quick Access ──
-          _buildSectionHeader('Web Console Quick Access'),
-          Card(
-            elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildWebLinkRow(
-                    context,
-                    '🖥️ MilkDrop Operations Console',
-                    'http://127.0.0.1:8000/admin-console/',
-                    'Real-time delivery management, manual wallet credits & push broadcasts',
-                  ),
-                  const Divider(height: 20),
-                  _buildWebLinkRow(
-                    context,
-                    '⚙️ Django Master Admin Panel',
-                    'http://127.0.0.1:8000/admin/',
-                    'Complete database models, permission groups & server logs',
-                  ),
-                ],
-              ),
+          // ── 3. WEB CONSOLE QUICK ACCESS ──
+          _buildSectionHeader('Operations Web Console Shortcuts'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _buildWebLinkRow(
+                  context,
+                  '🖥️ Operations Web Console',
+                  'http://127.0.0.1:8000/admin-console/',
+                  'Real-time delivery management, wallet credits & push broadcasts',
+                ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                _buildWebLinkRow(
+                  context,
+                  '⚙️ Django Master Admin Portal',
+                  'http://127.0.0.1:8000/admin/',
+                  'Database models, user roles, permission groups & server logs',
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // ── Logout Action ──
+          // ── 4. LOG OUT ACTION ──
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 50,
             child: OutlinedButton.icon(
               onPressed: () {
                 state.setRole('CUSTOMER');
                 onLogout();
               },
-              icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
-              label: const Text('Log Out of Admin Account', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+              icon: const Icon(Icons.logout_rounded, color: Color(0xFFE11D48), size: 18),
+              label: const Text('Log Out of Admin Account', style: TextStyle(color: Color(0xFFE11D48), fontWeight: FontWeight.w800, fontSize: 14)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.redAccent),
+                backgroundColor: const Color(0xFFFFF1F2),
+                side: const BorderSide(color: Color(0xFFFECDD3)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
@@ -187,12 +205,9 @@ class AdminProfileTab extends StatelessWidget {
   Widget _buildSectionHeader(String title) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8, left: 4),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-        ),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.2),
       ),
     );
   }
@@ -201,14 +216,24 @@ class AdminProfileTab extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            Text(value, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
+            ],
+          ),
         ),
-        Text(status, style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 11)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(status, style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w900, fontSize: 10.5)),
+        ),
       ],
     );
   }
@@ -220,7 +245,7 @@ class AdminProfileTab extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A))),
             IconButton(
               icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF0D7C66)),
               tooltip: 'Copy URL',
@@ -232,9 +257,9 @@ class AdminProfileTab extends StatelessWidget {
             ),
           ],
         ),
-        Text(url, style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 12, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 2),
-        Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+        Text(url, style: const TextStyle(color: Color(0xFF0284C7), fontSize: 12, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 3),
+        Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 11.5)),
       ],
     );
   }
