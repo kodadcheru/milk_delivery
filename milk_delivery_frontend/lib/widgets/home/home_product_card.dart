@@ -16,7 +16,7 @@ class HomeProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final discountPrice = item.pricePerUnit * 1.12;
-    final inCartQty = state.cartItems[item.id] ?? 0;
+    final inCartQty = state.getCartQty(item.id);
 
     return Container(
       decoration: BoxDecoration(

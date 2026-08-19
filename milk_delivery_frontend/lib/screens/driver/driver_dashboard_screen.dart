@@ -118,7 +118,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Customer: ${order.driverName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text('Customer: ${order.customerName.isNotEmpty ? order.customerName : "Customer"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             const SizedBox(height: 4),
             Text('Address: ${order.deliveryAddress}', style: TextStyle(color: Colors.grey[700], fontSize: 11.5)),
             const SizedBox(height: 14),
@@ -140,7 +140,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              if (otpController.text.trim() == order.deliveryOtp || otpController.text.trim().isEmpty) {
+              if (otpController.text.trim() == order.deliveryOtp) {
                 Navigator.pop(ctx);
                 widget.state.updateOrderStatus(order.id, 'DELIVERED');
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -986,7 +986,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _callCustomer(context, order.driverPhone),
+                      onPressed: () => _callCustomer(context, order.customerPhone.isNotEmpty ? order.customerPhone : '+91 9876543210'),
                       icon: const Icon(Icons.phone, size: 14),
                       label: const Text('Call Customer', style: TextStyle(fontSize: 11)),
                       style: OutlinedButton.styleFrom(

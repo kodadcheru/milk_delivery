@@ -42,6 +42,8 @@ class LiveOrderModel {
   final double deliveryLatitude;
   final double deliveryLongitude;
   final String deliveryOtp;
+  final String customerName;
+  final String customerPhone;
   final String driverName;
   final String driverPhone;
   final String paymentStatus;
@@ -61,6 +63,8 @@ class LiveOrderModel {
     this.deliveryLatitude = 17.4319,
     this.deliveryLongitude = 78.4073,
     this.deliveryOtp = '4892',
+    this.customerName = 'Customer',
+    this.customerPhone = '',
     this.driverName = 'Assigning Delivery Partner...',
     this.driverPhone = '',
     this.paymentStatus = 'PAID (Wallet Auto-Debit)',
@@ -90,6 +94,8 @@ class LiveOrderModel {
       deliveryLatitude: deliveryLatitude,
       deliveryLongitude: deliveryLongitude,
       deliveryOtp: deliveryOtp,
+      customerName: customerName,
+      customerPhone: customerPhone,
       driverName: driverName,
       driverPhone: driverPhone,
       paymentStatus: paymentStatus,
@@ -117,6 +123,8 @@ class LiveOrderModel {
       deliveryLatitude: double.tryParse(json['delivery_latitude']?.toString() ?? '17.4319') ?? 17.4319,
       deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '78.4073') ?? 78.4073,
       deliveryOtp: json['delivery_otp'] ?? '4892',
+      customerName: json['customer_name'] ?? (json['customer_detail'] != null ? '${json['customer_detail']['first_name'] ?? ''} ${json['customer_detail']['last_name'] ?? ''}'.trim() : 'Customer'),
+      customerPhone: json['customer_phone'] ?? (json['customer_detail'] != null ? json['customer_detail']['phone'] ?? '' : ''),
       driverName: json['driver_name'] ?? 'Assigning Partner...',
       driverPhone: json['driver_phone'] ?? '',
       paymentStatus: json['payment_status'] ?? 'PAID (Wallet)',

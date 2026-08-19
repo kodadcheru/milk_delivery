@@ -284,10 +284,12 @@ class FloatingCartBar extends StatelessWidget {
                               ),
                               InkWell(
                                 onTap: () async {
+                                  final tomorrow = DateTime.now().add(const Duration(days: 1));
+                                  final initDate = selectedDate.isBefore(tomorrow) ? tomorrow : selectedDate;
                                   final picked = await showDatePicker(
                                     context: ctx,
-                                    initialDate: selectedDate,
-                                    firstDate: DateTime.now(),
+                                    initialDate: initDate,
+                                    firstDate: tomorrow,
                                     lastDate: DateTime.now().add(const Duration(days: 14)),
                                     builder: (context, child) {
                                       return Theme(

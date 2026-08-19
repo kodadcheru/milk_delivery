@@ -290,7 +290,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                     itemBuilder: (context, index) {
                       final item = categoryProducts[index];
                       final discountPrice = item.pricePerUnit * 1.12;
-                      final inCartQty = widget.state.cartItems[item.id] ?? 0;
+                      final inCartQty = widget.state.getCartQty(item.id);
 
                       return Card(
                         child: InkWell(

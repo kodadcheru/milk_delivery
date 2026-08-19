@@ -248,6 +248,10 @@ class AdminCreditWalletView(APIView):
 
     def post(self, request):
         user_id = request.data.get("user_id")
+        if not user_id:
+            customer = User.objects.filter(role=User.Roles.CUSTOMER).first()
+            user_id = customer.id if customer else None
+
         amount_str = request.data.get("amount", "100.00")
         desc = request.data.get("description", "Admin Manual Wallet Bonus")
 
@@ -1152,7 +1156,10 @@ class AdminHubRebalanceView(APIView):
         if not active_drivers:
             active_drivers = list(User.objects.filter(role=User.Roles.DELIVERY_PARTNER))
 
-        tasks = list(DeliveryTask.objects.filter(status=DeliveryTask.Statuses.PENDING))
+        from datetime import date
+        tasks = list(DeliveryTask.objects.filter(hub=hub, status=DeliveryTask.Statuses.PENDING))
+        if not tasks:
+            tasks = list(DeliveryTask.objects.filter(status=DeliveryTask.Statuses.PENDING))
 
         if active_drivers and tasks:
             for idx, task in enumerate(tasks):

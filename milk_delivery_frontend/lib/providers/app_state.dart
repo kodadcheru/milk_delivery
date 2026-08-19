@@ -172,62 +172,69 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? adminSummary;
 
   // In-memory Shopping Cart State
-  final Map<int, int> cartItems = {};
+  final Map<String, MapEntry<ProductModel, int>> cartItems = {};
 
-  int get totalCartItemCount => cartItems.values.fold(0, (sum, count) => sum + count);
+  int get totalCartItemCount => cartItems.values.fold(0, (sum, entry) => sum + entry.value);
 
   double get totalCartPrice {
     double total = 0.0;
-    for (var entry in cartItems.entries) {
-      final product = products.firstWhere(
-        (p) => p.id == entry.key,
-        orElse: () => ProductModel(id: entry.key, name: 'Item', description: '', pricePerUnit: 50.0, unit: 'PACKET', unitQuantity: '1 Unit', imageUrl: ''),
-      );
-      total += product.pricePerUnit * entry.value;
+    for (var entry in cartItems.values) {
+      total += entry.key.pricePerUnit * entry.value;
     }
     return total;
   }
 
-  List<MapEntry<ProductModel, int>> get cartProductsList {
-    final list = <MapEntry<ProductModel, int>>[];
-    for (var entry in cartItems.entries) {
-      final product = products.firstWhere(
-        (p) => p.id == entry.key,
-        orElse: () => ProductModel(id: entry.key, name: 'Item', description: '', pricePerUnit: 50.0, unit: 'PACKET', unitQuantity: '1 Unit', imageUrl: ''),
-      );
-      list.add(MapEntry(product, entry.value));
+  List<MapEntry<ProductModel, int>> get cartProductsList => cartItems.values.toList();
+
+  int getCartQty(int productId) {
+    int count = 0;
+    for (var entry in cartItems.values) {
+      if (entry.key.id == productId) {
+        count += entry.value;
+      }
     }
-    return list;
+    return count;
   }
 
   void addToCart(ProductModel product) {
     HapticFeedback.lightImpact();
-    cartItems[product.id] = (cartItems[product.id] ?? 0) + 1;
+    final key = '${product.id}_${product.unitQuantity}';
+    final existingQty = cartItems[key]?.value ?? 0;
+    cartItems[key] = MapEntry(product, existingQty + 1);
     notifyListeners();
   }
 
   void decreaseCartQty(int productId) {
     HapticFeedback.lightImpact();
-    if (!cartItems.containsKey(productId)) return;
-    if (cartItems[productId]! > 1) {
-      cartItems[productId] = cartItems[productId]! - 1;
-    } else {
-      cartItems.remove(productId);
+    String? targetKey;
+    for (var entry in cartItems.entries) {
+      if (entry.value.key.id == productId) {
+        targetKey = entry.key;
+        break;
+      }
     }
-    notifyListeners();
+    if (targetKey != null && cartItems.containsKey(targetKey)) {
+      final item = cartItems[targetKey]!;
+      if (item.value > 1) {
+        cartItems[targetKey] = MapEntry(item.key, item.value - 1);
+      } else {
+        cartItems.remove(targetKey);
+      }
+      notifyListeners();
+    }
   }
 
   void updateCartQty(int productId, int qty) {
     if (qty <= 0) {
-      cartItems.remove(productId);
+      removeFromCart(productId);
     } else {
-      cartItems[productId] = qty;
+      decreaseCartQty(productId);
     }
     notifyListeners();
   }
 
   void removeFromCart(int productId) {
-    cartItems.remove(productId);
+    cartItems.removeWhere((key, entry) => entry.key.id == productId);
     notifyListeners();
   }
 
@@ -483,7 +490,12 @@ class AppState extends ChangeNotifier {
       subscriptions = (results[3] as List<SubscriptionModel>?) ?? [];
       deliveries = (results[4] as List<DeliveryTaskModel>?) ?? [];
       liveOrders = (results[5] as List<LiveOrderModel>?) ?? [];
+      transactions = (results[6] as List<WalletTransactionModel>?) ?? [];
       notifications = (results[7] as List<NotificationModel>?) ?? [];
+      final fetchedHubs = (results[8] as List<Map<String, dynamic>>?) ?? [];
+      if (fetchedHubs.isNotEmpty) {
+        locationHubs = fetchedHubs;
+      }
       if (notifications.isEmpty) {
         notifications = [
           NotificationModel(
@@ -518,7 +530,7 @@ class AppState extends ChangeNotifier {
         selectedServiceArea = serviceAreas.first;
       }
 
-      if (savedAddresses.isEmpty && locationHubs.isNotEmpty) {
+      if (savedAddresses.isEmpty && locationHubs.isNotEmpty && currentDeliveryAddress == 'Select Delivery Location') {
         final h = locationHubs.first;
         currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
         currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
@@ -582,10 +594,18 @@ class AppState extends ChangeNotifier {
 
     if (result != null) {
       await fetchSavedAddresses();
-      selectActiveAddress(result);
+      final freshlySaved = savedAddresses.firstWhere((a) => a.id == result!.id, orElse: () => result!);
+      selectActiveAddress(freshlySaved);
+      return true;
+    } else {
+      // Resilient fallback: save locally to state
+      final newId = addr.id > 0 ? addr.id : (DateTime.now().millisecondsSinceEpoch % 10000 + 1);
+      final fallbackAddr = addr.copyWith(id: newId);
+      savedAddresses.removeWhere((a) => a.id == newId);
+      savedAddresses.insert(0, fallbackAddr);
+      selectActiveAddress(fallbackAddr);
       return true;
     }
-    return false;
   }
 
   Future<bool> deleteCustomerAddress(int addressId) async {

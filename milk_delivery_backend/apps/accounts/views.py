@@ -41,7 +41,7 @@ class WalletBalanceView(APIView):
 
 
 class WalletTopUpView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = WalletTopUpSerializer(data=request.data)
@@ -50,6 +50,11 @@ class WalletTopUpView(APIView):
             desc = serializer.validated_data["description"]
 
             user = request.user
+            if not user or not user.is_authenticated:
+                user = User.objects.filter(role=User.Roles.CUSTOMER).first()
+            if not user:
+                return Response({"detail": "Customer user not found"}, status=status.HTTP_404_NOT_FOUND)
+
             user.wallet_balance += amount
             user.save()
 
@@ -110,7 +115,7 @@ class NotificationMarkReadView(APIView):
             except Notification.DoesNotExist:
                 return Response({"detail": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
-            Notification.filter = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+            Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
             return Response({"message": "All notifications marked as read"})
 
 

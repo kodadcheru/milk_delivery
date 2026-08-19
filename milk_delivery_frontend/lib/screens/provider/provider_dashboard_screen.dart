@@ -1093,7 +1093,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 firstName: fnCtrl.text.trim().isEmpty ? 'Delivery' : fnCtrl.text.trim(),
                 lastName: lnCtrl.text.trim().isEmpty ? 'Partner' : lnCtrl.text.trim(),
                 phone: phoneCtrl.text.trim(),
-                hubId: 1,
+                hubId: widget.state.locationHubs.isNotEmpty ? (widget.state.locationHubs.first['id'] as int? ?? 1) : 1,
                 monthlySalary: double.tryParse(salaryCtrl.text.trim()) ?? 15000.0,
               );
               if (ctx.mounted) Navigator.pop(ctx);

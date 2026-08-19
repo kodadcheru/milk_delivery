@@ -80,11 +80,14 @@ class ExpressOrderListCreateView(APIView):
         if not parsed_items:
             return Response({"detail": "Invalid products in order payload."}, status=status.HTTP_400_BAD_REQUEST)
 
-        with transaction.atomic():
-            if user.wallet_balance < total_amount:
-                user.wallet_balance += (total_amount - user.wallet_balance + Decimal("100.00"))
-                user.save()
+        if user.wallet_balance < total_amount:
+            shortfall = total_amount - user.wallet_balance
+            return Response(
+                {"detail": f"Insufficient wallet balance (Current: ₹{user.wallet_balance}). Please top up ₹{shortfall:.2f} to confirm order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
+        with transaction.atomic():
             order = LiveOrder.objects.create(
                 id=order_id,
                 customer=user,
@@ -156,8 +159,18 @@ class ExpressOrderDetailView(APIView):
         new_status = request.data.get("status")
         if new_status and new_status in dict(LiveOrder.Statuses.choices):
             order.status = new_status
+            proof_url = request.data.get("proof_image_url", "")
             if new_status == LiveOrder.Statuses.DELIVERED:
                 order.delivered_at = timezone.now()
-                order.proof_image_url = request.data.get("proof_image_url", "")
+                if proof_url:
+                    order.proof_image_url = proof_url
             order.save()
+
+            # Also update linked DeliveryTask
+            task_status = DeliveryTask.Statuses.DELIVERED if new_status == LiveOrder.Statuses.DELIVERED else DeliveryTask.Statuses.PENDING
+            DeliveryTask.objects.filter(order=order).update(
+                status=task_status,
+                proof_image_url=proof_url if proof_url else "",
+                delivered_at=timezone.now() if new_status == LiveOrder.Statuses.DELIVERED else None,
+            )
         return Response(LiveOrderSerializer(order).data)

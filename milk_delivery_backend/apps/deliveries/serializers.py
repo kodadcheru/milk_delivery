@@ -116,6 +116,8 @@ class LiveOrderItemSerializer(serializers.ModelSerializer):
 class LiveOrderSerializer(serializers.ModelSerializer):
     items = LiveOrderItemSerializer(many=True, read_only=True)
     customer_detail = UserSerializer(source="customer", read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    customer_phone = serializers.SerializerMethodField()
     driver_name = serializers.SerializerMethodField()
     driver_phone = serializers.SerializerMethodField()
 
@@ -126,6 +128,8 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "id",
             "customer",
             "customer_detail",
+            "customer_name",
+            "customer_phone",
             "hub",
             "driver",
             "driver_name",
@@ -147,6 +151,15 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "items",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+    def get_customer_name(self, obj):
+        if obj.customer:
+            name = f"{obj.customer.first_name} {obj.customer.last_name}".strip()
+            return name if name else obj.customer.username
+        return "Customer"
+
+    def get_customer_phone(self, obj):
+        return obj.customer.phone if obj.customer else ""
 
     def get_driver_name(self, obj):
         if obj.driver:

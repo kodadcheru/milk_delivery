@@ -204,7 +204,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       }
                                       Navigator.maybePop(context);
                                       if (isDelivery) {
-                                        widget.state.setTab(1); // Switch to Tracker
+                                        widget.state.setTab(3); // Switch to Tracker / Bookings
                                       } else if (isWallet) {
                                         widget.state.setTab(2); // Switch to Wallet
                                       } else {

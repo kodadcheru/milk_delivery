@@ -205,8 +205,8 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> fetchDrivers({int? hubId}) async {
     try {
       final uri = hubId != null
-          ? Uri.parse('$baseUrl/admin/drivers/?hub_id=$hubId')
-          : Uri.parse('$baseUrl/admin/drivers/');
+          ? Uri.parse('$baseUrl/admin/fleet/?hub_id=$hubId')
+          : Uri.parse('$baseUrl/admin/fleet/');
       final res = await _executeWithRetry(() => _client.get(uri, headers: _headers));
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
@@ -568,6 +568,22 @@ class ApiService {
     return [];
   }
 
+  static Future<bool> adminCreditWallet({int? userId, required double amount, required String description}) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/admin/credit-wallet/'),
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': ?userId,
+              'amount': amount,
+              'description': description,
+            }),
+          ));
+      return res.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
   // ── 11. Salaried Delivery Fleet & Hub Onboarding ──
   static Future<List<Map<String, dynamic>>> fetchFleet({int? hubId}) async {
     try {
@@ -747,17 +763,22 @@ class ApiService {
     int? hubId,
   }) async {
     try {
+      final nameParts = name.trim().split(' ');
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'Partner';
+
       final res = await _executeWithRetry(() => _client.post(
-            Uri.parse('$baseUrl/admin/drivers/'),
+            Uri.parse('$baseUrl/admin/fleet/create-driver/'),
             headers: _headers,
             body: jsonEncode({
-              'name': name,
+              'first_name': firstName,
+              'last_name': lastName,
               'phone': phone,
               'vehicle_number': vehicleNumber,
-              'hub_id': ?hubId,
+              'hub_id': hubId ?? 1,
             }),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body);
       }
     } catch (_) {}
@@ -767,7 +788,7 @@ class ApiService {
   static Future<bool> sendBroadcastAlert(String title, String message, {String targetRole = 'ALL'}) async {
     try {
       final res = await _executeWithRetry(() => _client.post(
-            Uri.parse('$baseUrl/admin/broadcast/'),
+            Uri.parse('$baseUrl/admin/broadcast-notification/'),
             headers: _headers,
             body: jsonEncode({
               'title': title,

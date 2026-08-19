@@ -449,6 +449,7 @@
     .status-paused { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
     .status-pending { background: rgba(2, 132, 199, 0.15); color: #38BDF8; }
     .status-delivered { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+    .status-skipped { background: rgba(239, 68, 68, 0.15); color: #F87171; }
     .status-hub { background: rgba(99, 102, 241, 0.15); color: #A5B4FC; }
 
     /* Modals & Forms */
@@ -2528,7 +2529,8 @@
       try {
         const pRes = await fetch(`${baseUrl}/products/`);
         if (pRes.ok) {
-          const products = await pRes.json();
+          const pData = await pRes.json();
+          const products = Array.isArray(pData) ? pData : (pData.results || []);
           const tbody = document.getElementById('forecast-table-body');
           tbody.innerHTML = '';
           if (products.length === 0) {
@@ -4032,7 +4034,8 @@
       try {
         const res = await fetch(`${baseUrl}/deliveries/`);
         if (res.ok) {
-          rawDeliveries = await res.json();
+          const dData = await res.json();
+          rawDeliveries = Array.isArray(dData) ? dData : (dData.results || []);
           renderDeliveriesTable(rawDeliveries);
         }
       } catch (e) {}
@@ -4467,7 +4470,8 @@
       try {
         const res = await fetch(`${baseUrl}/products/?all=true`);
         if (res.ok) {
-          rawProducts = await res.json();
+          const prData = await res.json();
+          rawProducts = Array.isArray(prData) ? prData : (prData.results || []);
           renderProductsTable(rawProducts);
           renderCategoryFilterPills();
         }
@@ -5139,10 +5143,6 @@
       document.getElementById('creditWalletModal').style.display = 'flex';
     }
 
-    function openAddProductModal() {
-      document.getElementById('addProductModal').style.display = 'flex';
-    }
-
     function openBroadcastModal() {
       document.getElementById('broadcastModal').style.display = 'flex';
     }
@@ -5165,23 +5165,6 @@
       closeModal('creditWalletModal');
       loadCustomers();
       alert('Wallet credited successfully!');
-    }
-
-    async function submitAddProduct() {
-      const name = document.getElementById('prodName').value;
-      const desc = document.getElementById('prodDesc').value;
-      const price = document.getElementById('prodPrice').value;
-      const unitQty = document.getElementById('prodUnitQty').value;
-
-      await fetch(`${baseUrl}/products/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description: desc, price_per_unit: price, unit_quantity: unitQty, is_available: true })
-      });
-
-      closeModal('addProductModal');
-      loadProducts();
-      alert('Product saved to database!');
     }
 
     async function submitBroadcast() {

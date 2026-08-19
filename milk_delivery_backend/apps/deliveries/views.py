@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from apps.core.pagination import LargeResultsSetPagination
 from apps.accounts.models import User, WalletTransaction, Notification
-from apps.deliveries.models import DeliveryTask
+from apps.deliveries.models import DeliveryTask, LiveOrder
 from apps.deliveries.serializers import DeliveryTaskSerializer
 from apps.subscriptions.models import Subscription
 from apps.products.models import Product
@@ -51,41 +51,41 @@ class DeliveryTaskCompleteView(APIView):
         task.delivered_at = timezone.now()
         task.save()
 
-        # Deduct wallet balance for customer
-        sub = task.subscription
-        customer = sub.customer
-        total_cost = sub.product.price_per_unit * sub.quantity
+        # Update linked LiveOrder if express order task
+        if task.order:
+            task.order.status = LiveOrder.Statuses.DELIVERED
+            task.order.delivered_at = timezone.now()
+            if proof_url:
+                task.order.proof_image_url = proof_url
+            task.order.save()
 
-        customer.wallet_balance -= total_cost
-        customer.save()
+        # Deduct wallet balance for subscription deliveries
+        if task.subscription and task.subscription.customer:
+            customer = task.subscription.customer
+            total_cost = task.subscription.product.price_per_unit * task.subscription.quantity
+            customer.wallet_balance -= total_cost
+            if customer.wallet_balance < Decimal("0.00"):
+                customer.wallet_balance = Decimal("0.00")
+            customer.save()
 
-        WalletTransaction.objects.create(
-            user=customer,
-            amount=total_cost,
-            transaction_type=WalletTransaction.Types.DEBIT,
-            description=f"Daily Delivery #{task.id}: {sub.quantity}x {sub.product.name}",
-        )
+            WalletTransaction.objects.create(
+                user=customer,
+                amount=total_cost,
+                transaction_type=WalletTransaction.Types.DEBIT,
+                description=f"Morning Delivery #{task.id} ({task.subscription.product.name})",
+            )
 
-        Notification.objects.create(
-            user=customer,
-            title="🥛 Morning Delivery Complete!",
-            message=f"Your {sub.quantity}x {sub.product.name} was delivered at doorstep. Photo proof attached. ₹{total_cost} debited from wallet.",
-            notification_type=Notification.Types.DELIVERY,
-        )
-
-        if customer.wallet_balance < Decimal("150.00"):
             Notification.objects.create(
                 user=customer,
-                title="⚠️ Low Wallet Balance Warning",
-                message=f"Your wallet balance is ₹{customer.wallet_balance}. Top up now to avoid delivery interruptions tomorrow!",
-                notification_type=Notification.Types.WALLET,
+                title="🥛 Morning Delivery Complete!",
+                message=f"Your delivery #{task.id} ({task.subscription.quantity}x {task.subscription.product.name}) was dropped at doorstep. ₹{total_cost} debited from wallet.",
+                notification_type=Notification.Types.DELIVERY,
             )
 
         return Response(
             {
-                "message": "Delivery completed successfully and customer wallet debited.",
+                "message": "Delivery completed successfully.",
                 "task": DeliveryTaskSerializer(task).data,
-                "remaining_balance": str(customer.wallet_balance),
             },
             status=status.HTTP_200_OK,
         )

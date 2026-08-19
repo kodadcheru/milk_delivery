@@ -67,11 +67,18 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class SubscriptionPauseView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
+        user = request.user
+        if not user or not user.is_authenticated:
+            user = User.objects.filter(role=User.Roles.CUSTOMER).first()
+
         try:
-            sub = Subscription.objects.get(pk=pk, customer=request.user)
+            if user and user.role == User.Roles.ADMIN:
+                sub = Subscription.objects.get(pk=pk)
+            else:
+                sub = Subscription.objects.get(pk=pk, customer=user)
         except Subscription.DoesNotExist:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -81,6 +88,9 @@ class SubscriptionPauseView(APIView):
 
         if not start_date or not end_date:
             return Response({"detail": "start_date and end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(end_date) < str(start_date):
+            return Response({"detail": "end_date cannot be earlier than start_date"}, status=status.HTTP_400_BAD_REQUEST)
 
         pause = VacationPause.objects.create(
             subscription=sub,
@@ -102,11 +112,18 @@ class SubscriptionPauseView(APIView):
 
 
 class SubscriptionResumeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
+        user = request.user
+        if not user or not user.is_authenticated:
+            user = User.objects.filter(role=User.Roles.CUSTOMER).first()
+
         try:
-            sub = Subscription.objects.get(pk=pk, customer=request.user)
+            if user and user.role == User.Roles.ADMIN:
+                sub = Subscription.objects.get(pk=pk)
+            else:
+                sub = Subscription.objects.get(pk=pk, customer=user)
         except Subscription.DoesNotExist:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 

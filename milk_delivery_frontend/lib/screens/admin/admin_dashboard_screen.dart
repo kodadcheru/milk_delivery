@@ -877,10 +877,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
               final amt = double.tryParse(amountCtrl.text) ?? 500.0;
-              await widget.state.topUpWallet(amt, descCtrl.text);
+              final ok = await ApiService.adminCreditWallet(amount: amt, description: descCtrl.text);
+              if (ok) {
+                await widget.state.reloadAllData();
+              }
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⚡ ₹${amt.toStringAsFixed(0)} credited to prepaid wallet!')),
+                  SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⚡ ₹${amt.toStringAsFixed(0)} credited to customer prepaid wallet!')),
                 );
               }
             },
