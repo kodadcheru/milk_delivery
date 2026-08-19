@@ -320,7 +320,14 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('📦 Crate Inventory Pre-Load Checklist:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+              const Expanded(
+                child: Text(
+                  '📦 Crate Pre-Load Checklist:',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                ),
+              ),
+              const SizedBox(width: 8),
               Text('$totalUnits Total Units', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0D7C66))),
             ],
           ),

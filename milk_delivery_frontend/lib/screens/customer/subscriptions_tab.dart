@@ -146,19 +146,32 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.alarm_on_rounded, color: Colors.amber, size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Next Morning Dispatch in: $_countdownStr',
-                              style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
-                            ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.alarm_on_rounded, color: Colors.amber, size: 15),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Next Dispatch: $_countdownStr',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const Text(
-                          '06:00 AM Slot',
-                          style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.bold),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            '06:00 AM Slot',
+                            style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),
