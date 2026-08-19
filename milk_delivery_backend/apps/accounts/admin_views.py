@@ -271,18 +271,34 @@ class AdminHubsView(APIView):
         from apps.deliveries.models import LocationHub
         from apps.subscriptions.models import Subscription
 
-        if not LocationHub.objects.exists():
-            LocationHub.objects.create(
-                hub_code="HUB-KDD-01",
-                name="Kodad Depot",
-                address="Main Road, Kodad, Suryapet, Telangana 508206",
-                manager_name="Operations Manager",
-                manager_phone="+91 8919548905",
-                coverage_radius_km=5.0,
-                latitude=16.9950,
-                longitude=79.9670,
-                fssai_license="13621014000342",
-            )
+        LocationHub.objects.get_or_create(
+            hub_code="HUB-KDD-01",
+            defaults={
+                "name": "Kodad Depot",
+                "address": "Main Road, Kodad, Suryapet, Telangana 508206",
+                "manager_name": "Operations Manager",
+                "manager_phone": "+91 8919548905",
+                "coverage_radius_km": 25.0,
+                "latitude": 16.9950,
+                "longitude": 79.9670,
+                "fssai_license": "13621014000342",
+            },
+        )
+        LocationHub.objects.get_or_create(
+            hub_code="HUB-HYD-01",
+            defaults={
+                "name": "Hyderabad Central Depot",
+                "address": "Road No 36, Jubilee Hills, Hyderabad 500033",
+                "manager_name": "Regional Operations Manager",
+                "manager_phone": "+91 8919548905",
+                "coverage_radius_km": 25.0,
+                "latitude": 17.4319,
+                "longitude": 78.4073,
+                "fssai_license": "13621014000343",
+            },
+        )
+        # Ensure all existing hubs have at least 25km radius
+        LocationHub.objects.filter(coverage_radius_km__lt=25.0).update(coverage_radius_km=25.0)
 
         hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)

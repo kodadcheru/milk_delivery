@@ -36,7 +36,27 @@ class AppState extends ChangeNotifier {
 
   List<ServiceAreaModel> serviceAreas = [];
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
-  List<Map<String, dynamic>> locationHubs = [];
+
+  List<Map<String, dynamic>> locationHubs = [
+    {
+      'id': 'HUB-KDD-01',
+      'hub_code': 'HUB-KDD-01',
+      'name': 'Kodad Depot',
+      'address': 'Main Road, Kodad, Suryapet, Telangana 508206',
+      'latitude': 16.9950,
+      'longitude': 79.9670,
+      'coverage_radius_km': 25.0,
+    },
+    {
+      'id': 'HUB-HYD-01',
+      'hub_code': 'HUB-HYD-01',
+      'name': 'Hyderabad Central Depot',
+      'address': 'Road No 36, Jubilee Hills, Hyderabad 500033',
+      'latitude': 17.4319,
+      'longitude': 78.4073,
+      'coverage_radius_km': 25.0,
+    },
+  ];
 
   // Distance helper in KM using Haversine formula
   double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
