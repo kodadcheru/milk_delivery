@@ -2922,10 +2922,17 @@
 
         if (res.ok) {
           closeModal('editHubModal');
-          await loadHubs();
-          await loadServiceAreas();
-          if (googleMap) refreshMapLayers();
+          try {
+            await loadHubs();
+            await loadServiceAreas();
+            if (window.google && typeof googleMap !== 'undefined' && googleMap && typeof refreshMapLayers === 'function') {
+              refreshMapLayers();
+            }
+          } catch (_) {}
           alert('✅ Hub details updated successfully!');
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.detail || errData.message || 'Could not update hub.');
         }
       } catch (e) {
         alert('Network error while updating hub.');
@@ -3185,13 +3192,20 @@
         });
 
         if (res.ok) {
-          await loadHubs();
-          await loadServiceAreas();
-          if (googleMap) refreshMapLayers();
+          try {
+            await loadHubs();
+            await loadServiceAreas();
+            if (window.google && typeof googleMap !== 'undefined' && googleMap && typeof refreshMapLayers === 'function') {
+              refreshMapLayers();
+            }
+          } catch (_) {}
           alert(`✅ Hub '${name}' (${code}) details & ${radius} km radius saved successfully!`);
-          openHubDetailPage(dbId);
+          try {
+            await openHubDetailPage(dbId);
+          } catch (_) {}
         } else {
-          alert('Could not save hub changes.');
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.detail || errData.message || 'Could not save hub changes.');
         }
       } catch (err) {
         alert('Network error while saving hub changes.');
