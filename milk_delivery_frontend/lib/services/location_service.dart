@@ -6,7 +6,7 @@ class LocationService {
   static String googleMapsApiKey = 'AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg';
 
   // Google Maps Official Raster Tile Template
-  static const String googleMapsTileUrl = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+  static const String googleMapsTileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
   static const List<String> googleMapsSubdomains = ['mt0', 'mt1', 'mt2', 'mt3'];
 
   static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
