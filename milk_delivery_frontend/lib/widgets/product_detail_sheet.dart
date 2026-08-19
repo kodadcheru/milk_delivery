@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
+import 'home/home_location_sheet.dart';
+import '../screens/customer/address_book_screen.dart';
 
 enum SubscriptionPlanType { weekly, monthly }
 
@@ -519,7 +521,95 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    // ── Delivery Location Selection Bar ──
+                    AnimatedBuilder(
+                      animation: widget.state,
+                      builder: (context, _) {
+                        final currentAddr = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
+                        final tag = widget.state.activeAddress?.title.toUpperCase() ?? 'DOORSTEP';
+                        final icon = widget.state.activeAddress?.icon ?? '📍';
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(icon, style: const TextStyle(fontSize: 20)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'Deliver to:',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF047857),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDCFCE7),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            tag,
+                                            style: const TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w800,
+                                              color: Color(0xFF059669),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      currentAddr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  HomeLocationSheet.show(context, widget.state);
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  backgroundColor: const Color(0xFF0D7C66),
+                                  foregroundColor: Colors.white,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
+                                label: const Text(
+                                  'Change',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),

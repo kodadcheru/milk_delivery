@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../providers/app_state.dart';
+import 'home/home_location_sheet.dart';
 
 class FloatingCartBar extends StatelessWidget {
   final AppState state;
@@ -402,37 +403,71 @@ class FloatingCartBar extends StatelessWidget {
                           const SizedBox(height: 14),
 
                           // ── Delivery Location Strip ──
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.location_on_rounded, color: Color(0xFF0D7C66), size: 20),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Deliver to Doorstep', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                      Text(
-                                        state.currentDeliveryAddress,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(color: Colors.grey[700], fontSize: 11),
+                          AnimatedBuilder(
+                            animation: state,
+                            builder: (context, _) {
+                              final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
+                              final tag = state.activeAddress?.title.toUpperCase() ?? 'DOORSTEP';
+                              final icon = state.activeAddress?.icon ?? '📍';
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FDF4),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(icon, style: const TextStyle(fontSize: 20)),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Text('Deliver to:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF047857))),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFDCFCE7),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(tag, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF059669))),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            currentAddr,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF0F172A)),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        HomeLocationSheet.show(context, state);
+                                      },
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        backgroundColor: const Color(0xFF0D7C66),
+                                        foregroundColor: Colors.white,
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
+                                      label: const Text('Change', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
                                 ),
-                                TextButton(
-                                  onPressed: () => state.setTab(4),
-                                  child: const Text('Change', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 11, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 14),
 
