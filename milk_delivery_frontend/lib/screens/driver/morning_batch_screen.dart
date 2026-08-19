@@ -16,7 +16,6 @@ class MorningBatchScreen extends StatefulWidget {
 }
 
 class _MorningBatchScreenState extends State<MorningBatchScreen> {
-  final HubLocationModel _hub = HubLocationModel.defaultHub;
   late RouteOptimizationResult _routeResult;
 
   int _batchStage = 0; // 0: Depot Pre-Load Checklist, 1: Active Sequential Route, 2: Shift Completed / Reconciliation
@@ -25,43 +24,79 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   int _currentStopBottles = 0;
   final Set<String> _verifiedCrates = {};
 
-  final List<CrateItemManifest> _crateManifest = const [
-    CrateItemManifest(
-      productName: 'Fresh A2 Cow Milk',
-      icon: '🥛',
-      totalUnits: 12,
-      unitVolume: '1 Litre Pouch',
-      crateLabel: 'Crate #A1 (Insulated Blue)',
-    ),
-    CrateItemManifest(
-      productName: 'Creamy Buffalo Milk',
-      icon: '🥛',
-      totalUnits: 6,
-      unitVolume: '500 ml Pouch',
-      crateLabel: 'Crate #B2 (Insulated Red)',
-    ),
-    CrateItemManifest(
-      productName: 'Farm Fresh Country Eggs',
-      icon: '🥚',
-      totalUnits: 4,
-      unitVolume: 'Pack of 6',
-      crateLabel: 'Crate #C3 (Padded Box)',
-    ),
-  ];
+  HubLocationModel get _activeHub {
+    if (widget.state.locationHubs.isNotEmpty) {
+      final h = widget.state.locationHubs.first;
+      return HubLocationModel(
+        id: '${h['id'] ?? 'HUB-KDD-01'}',
+        name: h['name'] as String? ?? 'Kodad Depot',
+        address: '${h['name'] ?? 'Kodad Depot'}, Telangana 508206',
+        managerName: h['manager_phone'] != null && (h['manager_phone'] as String).isNotEmpty
+            ? 'Dispatch Lead'
+            : 'Depot Dispatch Operations',
+        managerPhone: h['manager_phone'] as String? ?? '+91 8919548905',
+        latitude: (h['latitude'] as num?)?.toDouble() ?? 16.9947,
+        longitude: (h['longitude'] as num?)?.toDouble() ?? 79.9750,
+      );
+    }
+    return HubLocationModel.defaultHub;
+  }
+
+  List<CrateItemManifest> get _dynamicCrateManifest {
+    final Map<String, int> productCounts = {};
+    final Map<String, String> productIcons = {};
+    final Map<String, String> productUnits = {};
+
+    for (var delivery in widget.state.deliveries) {
+      if (delivery.status != 'SKIPPED') {
+        final pName = delivery.subscriptionDetail?.productDetail?.name ?? 'Fresh A2 Cow Milk';
+        final qty = delivery.subscriptionDetail?.quantity ?? 1;
+        productCounts[pName] = (productCounts[pName] ?? 0) + qty;
+        productIcons[pName] = delivery.subscriptionDetail?.productDetail?.icon ?? '🥛';
+        productUnits[pName] = delivery.subscriptionDetail?.productDetail?.unitQuantity ?? '1 Litre Pouch';
+      }
+    }
+
+    if (productCounts.isEmpty) {
+      return const [
+        CrateItemManifest(
+          productName: 'Fresh A2 Cow Milk',
+          icon: '🥛',
+          totalUnits: 10,
+          unitVolume: '1 Litre Pouch',
+          crateLabel: 'Crate #A1 (Insulated Blue)',
+        ),
+      ];
+    }
+
+    final List<CrateItemManifest> manifest = [];
+    int idx = 1;
+    productCounts.forEach((pName, totalUnits) {
+      manifest.add(CrateItemManifest(
+        productName: pName,
+        icon: productIcons[pName] ?? '🥛',
+        totalUnits: totalUnits,
+        unitVolume: productUnits[pName] ?? '1 Unit',
+        crateLabel: 'Crate #${String.fromCharCode(64 + idx)}1 (Insulated Box)',
+      ));
+      idx++;
+    });
+
+    return manifest;
+  }
 
   @override
   void initState() {
     super.initState();
     _optimizeRoute();
-    // Default all crates checked for quick start
-    for (var c in _crateManifest) {
+    for (var c in _dynamicCrateManifest) {
       _verifiedCrates.add(c.crateLabel);
     }
   }
 
   void _optimizeRoute() {
     final tasks = widget.state.deliveries;
-    _routeResult = RouteOptimizer.optimizeBatchRoute(hub: _hub, tasks: tasks);
+    _routeResult = RouteOptimizer.optimizeBatchRoute(hub: _activeHub, tasks: tasks);
   }
 
   void _callPhone(BuildContext context, String phone) async {
@@ -162,7 +197,8 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   // STAGE 0: DEPOT CRATE PRE-LOAD & FUEL SAVINGS TELEMETRY
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildDepotPreloadStage() {
-    final totalUnits = _crateManifest.fold<int>(0, (sum, c) => sum + c.totalUnits);
+    final crateManifest = _dynamicCrateManifest;
+    final totalUnits = crateManifest.fold<int>(0, (sum, c) => sum + c.totalUnits);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -196,7 +232,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                         children: [
                           Flexible(
                             child: Text(
-                              _hub.name,
+                              _activeHub.name,
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
                             ),
                           ),
@@ -205,10 +241,10 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(_hub.address, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                      Text(_activeHub.address, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
                       const SizedBox(height: 4),
                       Text(
-                        'Dispatch Lead: ${_hub.managerName}',
+                        _activeHub.managerName,
                         style: const TextStyle(fontSize: 10.5, color: Color(0xFF0D7C66), fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -292,10 +328,10 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _crateManifest.length,
+            itemCount: crateManifest.length,
             separatorBuilder: (c, i) => const SizedBox(height: 8),
             itemBuilder: (ctx, idx) {
-              final crate = _crateManifest[idx];
+              final crate = crateManifest[idx];
               final isChecked = _verifiedCrates.contains(crate.crateLabel);
 
               return InkWell(
@@ -765,7 +801,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Return to Depot Hub', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('Return to ${_activeHub.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                       Text('Deposit empty crates & $_totalBottlesCollected collected glass bottles', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                     ],
                   ),
@@ -787,7 +823,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
               children: [
                 _buildReceiptRow('Employment Type', 'Fixed Monthly Salaried Partner'),
                 const Divider(height: 16),
-                _buildReceiptRow('Monthly Salary (Paid by Hub)', '₹15,000 / Month'),
+                _buildReceiptRow('Monthly Salary (Paid by Hub)', '${widget.state.currentUser?.monthlySalary ?? '₹15,000 / Month'}'),
                 const Divider(height: 16),
                 _buildReceiptRow('Morning Shift Doorsteps Completed', '${stops.length} / ${stops.length} Drops (100%)'),
                 const Divider(height: 16),
