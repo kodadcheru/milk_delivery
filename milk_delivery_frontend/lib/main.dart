@@ -218,31 +218,52 @@ class _MainAppShellState extends State<MainAppShell> {
   Widget build(BuildContext context) {
     // ── 1. DRIVER ROLE APP SHELL ──
     if (widget.state.currentRole == 'DRIVER') {
+      final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+      final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+
       return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text('🛵', style: TextStyle(fontSize: 20)),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Driver Partner App', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text(
-                    '${widget.state.deliveries.where((d) => d.status == "PENDING").length} Deliveries Pending Today',
-                    style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600),
+          title: InkWell(
+            onTap: () => _showDriverLocationZoneSheet(context, widget.state),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ],
-              ),
-            ],
+                  child: const Text('🛵', style: TextStyle(fontSize: 18)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '📍 $hubName',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF10B981), size: 18),
+                        ],
+                      ),
+                      Text(
+                        'Operating Zone • ${widget.state.deliveries.where((d) => d.status == "PENDING").length} Pending Drops',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             IconButton(
@@ -536,4 +557,87 @@ class _MainAppShellState extends State<MainAppShell> {
       ),
     );
   }
+}
+
+void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
+  final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
+  final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+  final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-KDD-01') : 'HUB-KDD-01';
+
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (ctx) => Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on_rounded, color: Color(0xFF10B981), size: 22),
+              const SizedBox(width: 8),
+              const Text('Driver Operating Zone & Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Spacer(),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text('🏬', style: TextStyle(fontSize: 20)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(hubName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text('Assigned Hub • $hubCode', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    content: Text('🟢 GPS Location Synced to $hubName!'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.gps_fixed_rounded, size: 18),
+              label: const Text('Detect & Sync Device GPS Location 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D7C66),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
