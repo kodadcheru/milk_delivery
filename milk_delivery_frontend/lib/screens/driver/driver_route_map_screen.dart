@@ -63,6 +63,44 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
     }
   }
 
+  void _launchFullMultiStopGoogleMapsRoute(List<DeliveryTaskModel> tasks) async {
+    if (tasks.isEmpty) return;
+
+    final origin = '${_depotLocation.latitude},${_depotLocation.longitude}';
+    final destination = '${tasks.last.customerLatitude},${tasks.last.customerLongitude}';
+
+    String waypointsParam = '';
+    if (tasks.length > 1) {
+      final intermediate = tasks.sublist(0, tasks.length - 1);
+      waypointsParam = '&waypoints=${intermediate.map((t) => '${t.customerLatitude},${t.customerLongitude}').join('|')}';
+    }
+
+    final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination$waypointsParam&travelmode=driving';
+    final uri = Uri.parse(googleMapsUrl);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0D7C66),
+            content: Text('🗺️ Launching Full Multi-Stop Google Maps Route (${tasks.length} Drops)'),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('📍 Opening Google Maps route...')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasks = widget.tasks;
@@ -101,6 +139,11 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.map_outlined, color: Color(0xFF38BDF8)),
+            tooltip: 'Open Full Multi-Stop Google Maps Route',
+            onPressed: () => _launchFullMultiStopGoogleMapsRoute(tasks),
+          ),
           IconButton(
             icon: const Icon(Icons.my_location, color: Color(0xFF10B981)),
             onPressed: () {
@@ -249,38 +292,52 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             top: 14,
             left: 16,
             right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white12),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 10),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.route, color: Color(0xFF10B981), size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Optimized Polar Route: ${tasks.length} Drops (05:30 AM - 07:00 AM)',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+            child: InkWell(
+              onTap: () => _launchFullMultiStopGoogleMapsRoute(tasks),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.5)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 10),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.map_rounded, color: Color(0xFF38BDF8), size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Google Maps Multi-Stop Route 🗺️',
+                            style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Optimized Polar Sequence (${tasks.length} Drops)',
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${tasks.where((t) => t.isDelivered).length}/${tasks.length} Done',
+                        style: const TextStyle(color: Color(0xFF34D399), fontSize: 11, fontWeight: FontWeight.w800),
+                      ),
                     ),
-                    child: Text(
-                      '${tasks.where((t) => t.isDelivered).length}/${tasks.length} Done',
-                      style: const TextStyle(color: Color(0xFF34D399), fontSize: 11, fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
