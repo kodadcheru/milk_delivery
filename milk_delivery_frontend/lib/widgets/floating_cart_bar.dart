@@ -330,7 +330,7 @@ class FloatingCartBar extends StatelessWidget {
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: 5,
-                              separatorBuilder: (_, __) => const SizedBox(width: 8),
+                              separatorBuilder: (context, index) => const SizedBox(width: 8),
                               itemBuilder: (context, idx) {
                                 final date = DateTime.now().add(Duration(days: idx + 1));
                                 final isSelected = selectedDate.year == date.year && selectedDate.month == date.month && selectedDate.day == date.day;
@@ -505,33 +505,6 @@ class FloatingCartBar extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildScheduleChip(String val, String label, String currentVal, Function(String) onSelect) {
-    final isSelected = currentVal == val;
-    return Expanded(
-      child: InkWell(
-        onTap: () => onSelect(val),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1)),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : const Color(0xFF0F172A),
-              fontSize: 10.5,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
       ),
     );
   }

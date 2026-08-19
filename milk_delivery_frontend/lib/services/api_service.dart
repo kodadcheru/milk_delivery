@@ -675,11 +675,11 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({
               'items': items,
-              if (deliveryDate != null) 'delivery_date': deliveryDate,
-              if (deliverySlot != null) 'delivery_slot': deliverySlot,
-              if (deliveryAddress != null) 'delivery_address': deliveryAddress,
-              if (deliveryLatitude != null) 'delivery_latitude': deliveryLatitude,
-              if (deliveryLongitude != null) 'delivery_longitude': deliveryLongitude,
+              'delivery_date': ?deliveryDate,
+              'delivery_slot': ?deliverySlot,
+              'delivery_address': ?deliveryAddress,
+              'delivery_latitude': ?deliveryLatitude,
+              'delivery_longitude': ?deliveryLongitude,
             }),
           ));
       if (res.statusCode == 201 || res.statusCode == 200) {

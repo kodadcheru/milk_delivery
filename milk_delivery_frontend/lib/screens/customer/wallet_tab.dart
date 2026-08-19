@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import '../../models/wallet_transaction_model.dart';
 import '../../widgets/scratch_card_modal.dart';

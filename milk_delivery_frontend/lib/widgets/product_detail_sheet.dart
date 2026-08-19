@@ -200,7 +200,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                                 height: 110,
                                 width: 140,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Text(item.icon, style: const TextStyle(fontSize: 56)),
+                                errorBuilder: (context, error, stackTrace) => Text(item.icon, style: const TextStyle(fontSize: 56)),
                               ),
                             )
                           else
@@ -448,8 +448,8 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                                 InkWell(
                                   onTap: () => setState(() => _qty++),
                                   borderRadius: BorderRadius.circular(8),
-                                  child: const Padding(
-                                    padding: const EdgeInsets.all(6),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(6),
                                     child: Icon(Icons.add, size: 18, color: Color(0xFF0D7C66)),
                                   ),
                                 ),

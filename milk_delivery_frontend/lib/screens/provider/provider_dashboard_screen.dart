@@ -26,7 +26,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   int _crateStockEggs = 18;
   List<Map<String, dynamic>> _liveFleet = [];
 
-  List<Map<String, dynamic>> _broadcastAlerts = [
+  final List<Map<String, dynamic>> _broadcastAlerts = [
     {
       'title': '🌧️ Weather Update: Morning Dispatch Completed',
       'time': '06:15 AM Today',
@@ -41,7 +41,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     },
   ];
 
-  List<Map<String, dynamic>> _payoutHistory = [
+  final List<Map<String, dynamic>> _payoutHistory = [
     {
       'id': 'PAY-HYD-9021',
       'date': 'Yesterday, 08:30 PM',
