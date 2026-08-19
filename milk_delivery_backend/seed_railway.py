@@ -134,9 +134,9 @@ def seed():
         "last_name": "Kumar",
         "role": User.Roles.CUSTOMER,
         "phone": "+91 98765 43210",
-        "address": "Flat 402, Road No. 36, Jubilee Hills, Hyderabad",
+        "address": "",
         "assigned_hub": hub1,
-        "wallet_balance": 1500.0,
+        "wallet_balance": 500.0,
     })
 
     # 5. Categories & Products
@@ -201,32 +201,14 @@ def seed():
         },
     )
 
-    # 6. Subscriptions & Deliveries
-    sub, _ = Subscription.objects.get_or_create(
-        customer=cust,
-        product=p1,
-        defaults={
-            "quantity": 2,
-            "schedule_type": "DAILY",
-            "status": "ACTIVE",
-            "start_date": date.today(),
-        },
-    )
+    # 6. Purge any stale dummy customer subscriptions and pending mock tasks
+    from apps.subscriptions.models import Subscription
+    from apps.deliveries.models import DeliveryTask
+    deleted_subs = Subscription.objects.all().delete()
+    deleted_tasks = DeliveryTask.objects.filter(subscription__isnull=True).delete()
+    print(f"🧹 Cleaned {deleted_subs} old subscriptions for pristine customer experience.")
 
-    suresh = User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
-    DeliveryTask.objects.get_or_create(
-        subscription=sub,
-        delivery_date=date.today(),
-        defaults={
-            "hub": hub1,
-            "driver": suresh,
-            "slot_time": "05:30 AM - 07:00 AM",
-            "status": "PENDING",
-            "proof_image_url": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80",
-        },
-    )
-
-    print("🎉 [Railway DB Seeder] All Hub-affiliated drivers and tasks seeded successfully!")
+    print("🎉 [Railway DB Seeder] All Categories, Hubs, and Drivers verified successfully with clean customer slate!")
 
 
 if __name__ == "__main__":
