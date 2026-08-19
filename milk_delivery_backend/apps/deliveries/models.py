@@ -12,6 +12,7 @@ class LocationHub(models.Model):
     manager_name = models.CharField(max_length=100)
     manager_phone = models.CharField(max_length=20)
     fssai_license = models.CharField(max_length=50, default="13621014000342")
+    coverage_radius_km = models.FloatField(default=5.0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

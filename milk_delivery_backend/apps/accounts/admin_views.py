@@ -208,6 +208,7 @@ class AdminHubsView(APIView):
                 "salary_per_boy": 15000,
                 "status": "OPERATIONAL",
                 "fssai_license": h.fssai_license,
+                "coverage_radius_km": getattr(h, "coverage_radius_km", 5.0),
                 "service_areas_count": service_areas_count,
                 "latitude": h.latitude,
                 "longitude": h.longitude,
@@ -225,6 +226,7 @@ class AdminHubsView(APIView):
         manager_name = request.data.get("manager_name", "").strip()
         raw_phone = request.data.get("manager_phone", "").strip()
         fssai = request.data.get("fssai_license", "").strip()
+        radius = float(request.data.get("coverage_radius_km", 5.0))
 
         # Strict Mandatory Field Validation (Except FSSAI)
         if not name:
@@ -261,6 +263,7 @@ class AdminHubsView(APIView):
                 "manager_name": manager_name,
                 "manager_phone": clean_phone,
                 "fssai_license": fssai,
+                "coverage_radius_km": radius,
                 "latitude": lat,
                 "longitude": lng,
             }
@@ -271,6 +274,7 @@ class AdminHubsView(APIView):
             hub.manager_name = manager_name
             hub.manager_phone = clean_phone
             hub.fssai_license = fssai
+            hub.coverage_radius_km = radius
             hub.latitude = lat
             hub.longitude = lng
             hub.save()
@@ -281,6 +285,7 @@ class AdminHubsView(APIView):
             "db_id": hub.id,
             "name": hub.name,
             "hub_code": hub.hub_code,
+            "coverage_radius_km": hub.coverage_radius_km,
         }, status=status.HTTP_201_CREATED)
 
 
@@ -341,6 +346,7 @@ class AdminHubDetailView(APIView):
                 "manager_name": hub.manager_name,
                 "manager_phone": hub.manager_phone,
                 "fssai_license": hub.fssai_license,
+                "coverage_radius_km": getattr(hub, "coverage_radius_km", 5.0),
                 "latitude": hub.latitude,
                 "longitude": hub.longitude,
                 "created_at": hub.created_at,
@@ -363,11 +369,12 @@ class AdminHubDetailView(APIView):
         if "manager_name" in request.data: hub.manager_name = request.data["manager_name"]
         if "manager_phone" in request.data: hub.manager_phone = request.data["manager_phone"]
         if "fssai_license" in request.data: hub.fssai_license = request.data["fssai_license"]
+        if "coverage_radius_km" in request.data: hub.coverage_radius_km = float(request.data["coverage_radius_km"])
         if "latitude" in request.data: hub.latitude = float(request.data["latitude"])
         if "longitude" in request.data: hub.longitude = float(request.data["longitude"])
         hub.save()
 
-        return Response({"message": f"Hub '{hub.name}' updated successfully!", "hub_code": hub.hub_code})
+        return Response({"message": f"Hub '{hub.name}' updated successfully!", "hub_code": hub.hub_code, "coverage_radius_km": hub.coverage_radius_km})
 
     def delete(self, request, pk):
         from apps.deliveries.models import LocationHub

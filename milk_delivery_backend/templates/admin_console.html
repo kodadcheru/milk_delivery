@@ -849,15 +849,35 @@
             <input type="text" id="detailHubFssai" class="form-control" placeholder="e.g. 13621014000342">
           </div>
 
-          <!-- Mini Map Picker for Location Pin -->
+          <!-- Editable Coverage Radius Control -->
+          <div class="form-group" style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="font-size: 12px; font-weight: 700; color: #38BDF8; margin: 0;">
+                <i class="fa-solid fa-bullseye"></i> Delivery Geofence Radius (km)
+              </label>
+              <span id="detailRadiusBadge" style="font-size: 11.5px; font-weight: 800; color: #10B981; background: rgba(16,185,129,0.12); padding: 2px 8px; border-radius: 6px;">5.0 km Radial Zone</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4;">
+              Defines the dispatch and morning fulfillment boundary for this depot. Standard town: <strong>5.0 km</strong> | Hyperlocal: <strong>3.0 km</strong> | Mandal corridor: <strong>10.0+ km</strong>.
+            </p>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="range" id="detailHubRadiusSlider" min="1.0" max="25.0" step="0.5" value="5.0" style="flex: 1; accent-color: #10B981; cursor: pointer;" oninput="onDetailRadiusChange(this.value)">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <input type="number" id="detailHubRadius" class="form-control" style="width: 75px; font-weight: bold; text-align: center; color: #38BDF8; font-size: 13px;" value="5.0" step="0.5" min="1.0" max="30.0" oninput="onDetailRadiusChange(this.value)">
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: bold;">km</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini Map Picker for Location Pin & Live Geofence Preview -->
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <label style="font-size: 12px; font-weight: 700; color: #10B981;">
-                <i class="fa-solid fa-location-dot"></i> GPS Depot Pin (Drag to reposition)
+                <i class="fa-solid fa-location-dot"></i> GPS Depot Pin & Real-Time Geofence Preview
               </label>
               <span id="detailPinCoordsBadge" style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 6px;">16.9950, 79.9670</span>
             </div>
-            <div id="detailHubMap" style="height: 180px; width: 100%; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px;"></div>
+            <div id="detailHubMap" style="height: 200px; width: 100%; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px;"></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
               <input type="text" id="detailHubLat" class="form-control" placeholder="Latitude" readonly style="font-size: 11px;">
               <input type="text" id="detailHubLng" class="form-control" placeholder="Longitude" readonly style="font-size: 11px;">
@@ -1380,6 +1400,23 @@
       <div class="form-group">
         <label>FSSAI Food Safety License <span style="color: var(--text-muted); font-size: 11px; font-weight: normal;">(Optional)</span></label>
         <input type="text" id="hubFssai" class="form-control" placeholder="e.g. 13621014000456 (Leave blank if not applicable)">
+      </div>
+
+      <!-- Coverage Radius input with presets -->
+      <div class="form-group" style="background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="font-weight: 700; color: #10B981; margin: 0;"><i class="fa-solid fa-bullseye"></i> Delivery Geofence Radius (km) <span style="color: #EF4444;">*</span></label>
+          <span style="font-size: 11px; color: var(--text-muted);">Standard Town: 5.0 km</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <input type="number" id="hubRadius" class="form-control" value="5.0" step="0.5" min="1.0" max="30.0" style="max-width: 120px; font-weight: bold; color: #38BDF8;">
+          <div style="display: flex; gap: 4px;">
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="document.getElementById('hubRadius').value='3.0'">3 km</button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="document.getElementById('hubRadius').value='5.0'">5 km</button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="document.getElementById('hubRadius').value='8.0'">8 km</button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="document.getElementById('hubRadius').value='12.0'">12 km</button>
+          </div>
+        </div>
       </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('createHubModal')">Cancel</button>
@@ -2278,7 +2315,10 @@
       hubs.forEach(h => {
         tbody.innerHTML += `
           <tr style="cursor: pointer; transition: background 0.15s ease;" onclick="openHubDetailPage(${h.db_id})">
-            <td><span class="status-tag status-hub">${h.id}</span></td>
+            <td>
+              <span class="status-tag status-hub">${h.id}</span><br>
+              <span class="status-tag status-active" style="font-size: 10px; margin-top: 4px; padding: 2px 6px;">🎯 ${parseFloat(h.coverage_radius_km || 5.0).toFixed(1)} km Radius</span>
+            </td>
             <td>
               <strong style="color: #38BDF8; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px;">${h.name}</strong><br>
               <small style="color:var(--text-muted);">${h.address}</small>
@@ -2586,6 +2626,8 @@
         return;
       }
 
+      const radius = document.getElementById('hubRadius') ? document.getElementById('hubRadius').value : '5.0';
+
       try {
         const token = localStorage.getItem('milkdrop_admin_token') || '';
         const res = await fetch(`${baseUrl}/admin/hubs/`, {
@@ -2602,6 +2644,7 @@
             manager_phone: phoneDigits,
             latitude: parseFloat(lat),
             longitude: parseFloat(lng),
+            coverage_radius_km: parseFloat(radius || 5.0),
             fssai_license: fssai
           })
         });
@@ -2720,6 +2763,7 @@
     let currentHubData = null;
     let detailHubMapInstance = null;
     let detailHubMarkerInstance = null;
+    let detailHubCircleInstance = null;
 
     async function openHubDetailPage(hubDbId) {
       try {
@@ -2766,13 +2810,18 @@
       document.getElementById('detailHubManagerPhone').value = phoneDigits;
       document.getElementById('detailHubFssai').value = hub.fssai_license || '';
 
+      const radius = parseFloat(hub.coverage_radius_km || 5.0);
+      document.getElementById('detailHubRadius').value = radius.toFixed(1);
+      document.getElementById('detailHubRadiusSlider').value = radius;
+      document.getElementById('detailRadiusBadge').innerText = `${radius.toFixed(1)} km Radial Zone`;
+
       const lat = parseFloat(hub.latitude || 16.9950);
       const lng = parseFloat(hub.longitude || 79.9670);
       document.getElementById('detailHubLat').value = lat.toFixed(6);
       document.getElementById('detailHubLng').value = lng.toFixed(6);
       document.getElementById('detailPinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
-      setTimeout(() => initDetailHubMap(lat, lng), 300);
+      setTimeout(() => initDetailHubMap(lat, lng, radius), 300);
 
       // Available Drivers Dropdown
       const sel = document.getElementById('detailAvailableDriversSelect');
@@ -2828,16 +2877,28 @@
       }
     }
 
-    function initDetailHubMap(lat, lng) {
+    function onDetailRadiusChange(val) {
+      const r = parseFloat(val) || 5.0;
+      document.getElementById('detailHubRadius').value = r.toFixed(1);
+      document.getElementById('detailHubRadiusSlider').value = r;
+      document.getElementById('detailRadiusBadge').innerText = `${r.toFixed(1)} km Radial Zone`;
+
+      if (detailHubCircleInstance) {
+        detailHubCircleInstance.setRadius(r * 1000);
+      }
+    }
+
+    function initDetailHubMap(lat, lng, radiusKm) {
       const mapEl = document.getElementById('detailHubMap');
       if (!mapEl || typeof google === 'undefined' || !google.maps) return;
 
       const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
+      const radiusMeters = (parseFloat(radiusKm) || 5.0) * 1000;
 
       if (!detailHubMapInstance) {
         detailHubMapInstance = new google.maps.Map(mapEl, {
           center: pos,
-          zoom: 14,
+          zoom: 13,
           mapTypeId: 'roadmap',
           streetViewControl: false,
           mapTypeControl: false,
@@ -2861,16 +2922,32 @@
           animation: google.maps.Animation.DROP,
         });
 
+        detailHubCircleInstance = new google.maps.Circle({
+          strokeColor: '#10B981',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#10B981',
+          fillOpacity: 0.15,
+          map: detailHubMapInstance,
+          center: pos,
+          radius: radiusMeters,
+        });
+
         detailHubMarkerInstance.addListener('dragend', () => {
           const p = detailHubMarkerInstance.getPosition();
           document.getElementById('detailHubLat').value = p.lat().toFixed(6);
           document.getElementById('detailHubLng').value = p.lng().toFixed(6);
           document.getElementById('detailPinCoordsBadge').innerText = `${p.lat().toFixed(4)}, ${p.lng().toFixed(4)}`;
+          detailHubCircleInstance.setCenter(p);
         });
       } else {
         google.maps.event.trigger(detailHubMapInstance, 'resize');
         detailHubMapInstance.setCenter(pos);
         detailHubMarkerInstance.setPosition(pos);
+        if (detailHubCircleInstance) {
+          detailHubCircleInstance.setCenter(pos);
+          detailHubCircleInstance.setRadius(radiusMeters);
+        }
       }
     }
 
@@ -2882,6 +2959,7 @@
       const mgr = document.getElementById('detailHubManagerName').value.trim();
       const phoneDigits = document.getElementById('detailHubManagerPhone').value.replace(/\D/g, '');
       const fssai = document.getElementById('detailHubFssai').value.trim();
+      const radius = document.getElementById('detailHubRadius').value.trim();
       const lat = document.getElementById('detailHubLat').value.trim();
       const lng = document.getElementById('detailHubLng').value.trim();
 
@@ -2905,6 +2983,7 @@
             manager_name: mgr,
             manager_phone: phoneDigits,
             fssai_license: fssai,
+            coverage_radius_km: parseFloat(radius || 5.0),
             latitude: parseFloat(lat),
             longitude: parseFloat(lng)
           })
@@ -2914,7 +2993,7 @@
           await loadHubs();
           await loadServiceAreas();
           if (googleMap) refreshMapLayers();
-          alert(`✅ Hub '${name}' (${code}) details saved successfully!`);
+          alert(`✅ Hub '${name}' (${code}) details & ${radius} km radius saved successfully!`);
           openHubDetailPage(dbId);
         } else {
           alert('Could not save hub changes.');
@@ -3475,7 +3554,8 @@
 
         hubMarkers.push(marker);
 
-        // 4km Radial Geofenced Circle
+        // Radial Geofenced Circle according to hub's configured coverage_radius_km
+        const radiusMeters = (parseFloat(h.coverage_radius_km) || 5.0) * 1000;
         const circle = new google.maps.Circle({
           strokeColor: color,
           strokeOpacity: 0.8,
@@ -3484,7 +3564,7 @@
           fillOpacity: 0.15,
           map: googleMap,
           center: { lat, lng },
-          radius: 4000,
+          radius: radiusMeters,
         });
 
         hubCircles.push(circle);
