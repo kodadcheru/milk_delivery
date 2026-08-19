@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/location_service.dart';
 import 'help_support_screen.dart';
 
 class LiveDriverTrackingScreen extends StatefulWidget {
@@ -181,8 +182,10 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: LocationService.googleMapsTileUrl,
+                subdomains: LocationService.googleMapsSubdomains,
                 userAgentPackageName: 'com.milkdrop.express.app',
+                maxZoom: 20,
               ),
 
               // Polyline Route Path (Glowing Green)

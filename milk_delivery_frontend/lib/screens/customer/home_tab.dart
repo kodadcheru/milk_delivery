@@ -329,73 +329,107 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ],
                   ),
                 ),
-                ElevatedButton.icon(
-                  onPressed: () => _showTopUpDialog(context),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text('Recharge'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF0D7C66),
-                    elevation: 0,
+                InkWell(
+                  onTap: () => _showTopUpDialog(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Vacation Mode Toggle Strip
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  widget.state.isVacationMode ? Icons.beach_access_rounded : Icons.schedule_rounded,
-                  color: widget.state.isVacationMode ? Colors.amber : const Color(0xFF10B981),
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.state.isVacationMode
-                        ? '⏸ Vacation Pause Active (Deliveries on hold)'
-                        : '🟢 Morning Deliveries Active: Tomorrow 06:00 AM',
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    widget.state.toggleVacationMode(!widget.state.isVacationMode);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: !widget.state.isVacationMode ? Colors.amber[900] : const Color(0xFF0D7C66),
-                        content: Text(!widget.state.isVacationMode ? '⏸ Vacation Mode turned ON.' : '▶️ Vacation Mode turned OFF.'),
-                      ),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                  ),
-                  child: Text(
-                    widget.state.isVacationMode ? 'Resume' : 'Pause',
-                    style: TextStyle(
-                      color: widget.state.isVacationMode ? Colors.amber : const Color(0xFF10B981),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_rounded, size: 16, color: Color(0xFF0D7C66)),
+                        SizedBox(width: 4),
+                        Text(
+                          'Recharge',
+                          style: TextStyle(color: Color(0xFF0D7C66), fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
+          // Subscription Status Strip
+          if (widget.state.subscriptions.any((s) => s.status == 'ACTIVE')) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    widget.state.isVacationMode ? Icons.beach_access_rounded : Icons.schedule_rounded,
+                    color: widget.state.isVacationMode ? Colors.amber : const Color(0xFF10B981),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.state.isVacationMode
+                          ? '⏸ Vacation Pause Active (Deliveries on hold)'
+                          : '🟢 Morning Deliveries Active: Tomorrow 06:00 AM',
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      widget.state.toggleVacationMode(!widget.state.isVacationMode);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: !widget.state.isVacationMode ? Colors.amber[900] : const Color(0xFF0D7C66),
+                          content: Text(!widget.state.isVacationMode ? '⏸ Vacation Mode turned ON.' : '▶️ Vacation Mode turned OFF.'),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                    ),
+                    child: Text(
+                      widget.state.isVacationMode ? 'Resume' : 'Pause',
+                      style: TextStyle(
+                        color: widget.state.isVacationMode ? Colors.amber : const Color(0xFF10B981),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.explore_outlined, color: Color(0xFF10B981), size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '🌱 No Active Subscriptions • Subscribe below for 6 AM milk',
+                      style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1402,7 +1436,104 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                 const SizedBox(height: 8),
               ],
 
-              // 1. Current Location Button (Device GPS Auto-Fill)
+              // ── 1. Real-Time Google Maps Search Bar ──
+              TextField(
+                controller: searchCtrl,
+                autofocus: false,
+                decoration: InputDecoration(
+                  hintText: 'Search society, building, or street on Google Maps...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF10B981)),
+                  suffixIcon: isSearching
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981))),
+                        )
+                      : (searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                searchCtrl.clear();
+                                setModalState(() => searchResults = []);
+                              },
+                            )
+                          : null),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                onChanged: (query) async {
+                  if (query.trim().isEmpty) {
+                    setModalState(() {
+                      searchResults = [];
+                      isSearching = false;
+                    });
+                    return;
+                  }
+                  setModalState(() => isSearching = true);
+                  final results = await LocationService.searchPlaces(query);
+                  setModalState(() {
+                    searchResults = results;
+                    isSearching = false;
+                  });
+                },
+                onSubmitted: (query) async {
+                  if (query.trim().isEmpty) return;
+                  setModalState(() => isSearching = true);
+                  final results = await LocationService.searchPlaces(query);
+                  setModalState(() {
+                    searchResults = results;
+                    isSearching = false;
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+
+              // Search Results List Dropdown
+              if (searchResults.isNotEmpty) ...[
+                const Text('Google Maps Results:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                const SizedBox(height: 6),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: searchResults.length,
+                    separatorBuilder: (ctx, sepIdx) => const Divider(height: 1),
+                    itemBuilder: (context, idx) {
+                      final item = searchResults[idx];
+                      return ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Color(0xFFECFDF5), shape: BoxShape.circle),
+                          child: const Icon(Icons.place_rounded, color: Color(0xFF10B981), size: 16),
+                        ),
+                        title: Text(item['short_title'] ?? item['display_name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                        subtitle: Text(item['display_name'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        onTap: () {
+                          final lat = (item['lat'] as num?)?.toDouble() ?? 17.4319;
+                          final lon = (item['lon'] as num?)?.toDouble() ?? 78.4073;
+                          final chosenAddr = item['display_name'] ?? item['short_title'] ?? 'Custom Address';
+                          widget.state.updateDeliveryLocation(chosenAddr, lat, lon);
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFF10B981),
+                              content: Text('📍 Delivery address updated to: $chosenAddr'),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                const Divider(height: 16),
+              ],
+
+              // ── 2. Quick Location Action Tiles ──
+              // Use GPS Location Button
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
@@ -1428,9 +1559,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   }
                 },
               ),
-              const Divider(height: 12),
+              const Divider(height: 10),
 
-              // 2. Pick on Map Button (Zepto/Swiggy Interactive Map)
+              // Pick on Google Map Button
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
@@ -1451,9 +1582,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   );
                 },
               ),
-              const Divider(height: 12),
+              const Divider(height: 10),
 
-              // 3. Geofenced Service Areas Modal Trigger
+              // Geofenced Service Areas Modal Trigger
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
@@ -1469,80 +1600,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   ServiceAreaSheet.show(context, widget.state);
                 },
               ),
-              const Divider(height: 12),
+              const Divider(height: 10),
 
-              // Search Box
-              TextField(
-                controller: searchCtrl,
-                decoration: InputDecoration(
-                  hintText: 'Search new society, street, or landmark...',
-                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF10B981)),
-                  suffixIcon: isSearching
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981))),
-                        )
-                      : (searchCtrl.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 16),
-                              onPressed: () {
-                                searchCtrl.clear();
-                                setModalState(() => searchResults = []);
-                              },
-                            )
-                          : null),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                onSubmitted: (query) async {
-                  if (query.trim().isEmpty) return;
-                  setModalState(() => isSearching = true);
-                  final results = await LocationService.searchPlaces(query);
-                  setModalState(() {
-                    searchResults = results;
-                    isSearching = false;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-
-              // Search Results List
-              if (searchResults.isNotEmpty) ...[
-                const Text('Search Results:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 180,
-                  child: ListView.separated(
-                    itemCount: searchResults.length,
-                    separatorBuilder: (ctx, sepIdx) => const Divider(height: 1),
-                    itemBuilder: (context, idx) {
-                      final item = searchResults[idx];
-                      return ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.place_outlined, color: Color(0xFF10B981), size: 18),
-                        title: Text(item['display_name'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-                        onTap: () {
-                          final lat = double.tryParse(item['lat']?.toString() ?? '17.4319') ?? 17.4319;
-                          final lon = double.tryParse(item['lon']?.toString() ?? '78.4073') ?? 78.4073;
-                          widget.state.updateDeliveryLocation(item['display_name'] ?? 'Custom Address', lat, lon);
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: const Color(0xFF10B981),
-                              content: Text('📍 Delivery address updated to: ${item['display_name']}'),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ] else if (!isSearching) ...[
-                // Saved Sample Addresses
+              // Saved Sample Addresses
+              if (searchResults.isEmpty) ...[
                 const Text('Popular Localities:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                 const SizedBox(height: 6),
                 _buildAddressOption(ctx, 'Jubilee Hills, Road No. 36, Hyderabad', 17.4319, 78.4073),

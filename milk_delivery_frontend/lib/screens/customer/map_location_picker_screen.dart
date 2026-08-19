@@ -199,9 +199,10 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'in.milkdrop.express',
-                maxZoom: 19,
+                urlTemplate: LocationService.googleMapsTileUrl,
+                subdomains: LocationService.googleMapsSubdomains,
+                userAgentPackageName: 'com.milkdrop.express.app',
+                maxZoom: 20,
               ),
             ],
           ),
