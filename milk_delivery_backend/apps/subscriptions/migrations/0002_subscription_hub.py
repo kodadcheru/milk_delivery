@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('deliveries', '0002_locationhub_servicearea'),
+        ('deliveries', '0005_locationhub_coverage_radius_km'),
         ('subscriptions', '0001_initial'),
     ]
 
