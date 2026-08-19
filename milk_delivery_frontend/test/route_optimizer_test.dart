@@ -99,5 +99,37 @@ void main() {
       expect(partitions[0].orderedStops.length + partitions[1].orderedStops.length, equals(3));
       expect((partitions[0].orderedStops.length - partitions[1].orderedStops.length).abs() <= 1, isTrue);
     });
+
+    test('RouteOptimizer handles empty tasks array without throwing exceptions', () {
+      final result = RouteOptimizer.optimizeBatchRoute(
+        hub: hub,
+        tasks: [],
+      );
+
+      expect(result.orderedStops.isEmpty, isTrue);
+      expect(result.totalDistanceKm, equals(0.0));
+      expect(result.distanceSavedKm, equals(0.0));
+    });
+
+    test('RouteOptimizer handles single task route correctly', () {
+      final result = RouteOptimizer.optimizeBatchRoute(
+        hub: hub,
+        tasks: [mockTasks.first],
+      );
+
+      expect(result.orderedStops.length, equals(1));
+      expect(result.orderedStops.first.id, equals(mockTasks.first.id));
+      expect(result.totalDistanceKm > 0, isTrue);
+    });
+
+    test('partitionEquallyForDrivers handles zero drivers gracefully', () {
+      final partitions = RouteOptimizer.partitionEquallyForDrivers(
+        hub: hub,
+        allTasks: mockTasks,
+        numberOfDrivers: 0,
+      );
+
+      expect(partitions.isEmpty, isTrue);
+    });
   });
 }
