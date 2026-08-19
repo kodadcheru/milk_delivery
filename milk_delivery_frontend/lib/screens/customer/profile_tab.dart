@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import 'address_book_screen.dart';
 import 'map_location_picker_screen.dart';
@@ -32,11 +33,15 @@ class ProfileTab extends StatelessWidget {
     final walletBal = user?.walletBalance ?? 0.0;
     final activeSubsCount = state.subscriptions.where((s) => s.status == 'ACTIVE').length;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return RefreshIndicator(
+      color: const Color(0xFF0D7C66),
+      onRefresh: () => state.reloadAllData(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // ── User Profile Header Card ──
           Container(
             padding: const EdgeInsets.all(20),
@@ -322,8 +327,9 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: 24),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSectionTitle(String title) {
     return Text(

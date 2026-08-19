@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import '../../models/wallet_transaction_model.dart';
 import '../../widgets/scratch_card_modal.dart';
@@ -27,11 +28,15 @@ class _WalletTabState extends State<WalletTab> {
       return true;
     }).toList();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return RefreshIndicator(
+      color: const Color(0xFF0D7C66),
+      onRefresh: () => widget.state.reloadAllData(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // ── Virtual Metallic Wallet Card ──
           Container(
             width: double.infinity,
@@ -283,8 +288,9 @@ class _WalletTabState extends State<WalletTab> {
           const SizedBox(height: 24),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFilterChip(String filterKey, String label) {
     final isSelected = _selectedFilter == filterKey;
