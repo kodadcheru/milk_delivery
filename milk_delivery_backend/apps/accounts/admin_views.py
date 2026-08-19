@@ -583,20 +583,35 @@ class HubDriverCreateView(APIView):
         from apps.accounts.models import User
         from apps.deliveries.models import LocationHub
 
-        first_name = request.data.get("first_name", "Delivery")
-        last_name = request.data.get("last_name", "Boy")
-        phone = request.data.get("phone", "").strip()
+        first_name = request.data.get("first_name", "Delivery").strip()
+        last_name = request.data.get("last_name", "Partner").strip()
+        raw_phone = request.data.get("phone", "").strip()
         hub_id = request.data.get("hub_id")
         salary = float(request.data.get("monthly_salary", 15000.0))
+        address = request.data.get("address", "").strip()
+        city = request.data.get("city", "").strip()
 
-        if not phone:
-            return Response({"detail": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
+        phone_digits = "".join(filter(str.isdigit, raw_phone))
+        if len(phone_digits) < 10:
+            return Response({"detail": "Valid 10-digit phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
+        clean_phone = f"+91 {phone_digits[-10:]}"
 
         hub = LocationHub.objects.filter(id=hub_id).first() if hub_id else LocationHub.objects.first()
-        uname = f"driver_{phone.replace(' ', '')[-4:]}"
+
+        raw_lat = request.data.get("latitude")
+        raw_lng = request.data.get("longitude")
+        lat = Decimal(str(raw_lat)) if raw_lat else (hub.latitude if hub else Decimal("16.9950"))
+        lng = Decimal(str(raw_lng)) if raw_lng else (hub.longitude if hub else Decimal("79.9670"))
+
+        if not address and hub:
+            address = hub.address
+        if not city and hub:
+            city = hub.name.split()[0]
+
+        uname = f"driver_{clean_phone.replace(' ', '').replace('+', '')[-6:]}"
 
         driver, created = User.objects.get_or_create(
-            phone=phone,
+            phone=clean_phone,
             defaults={
                 "username": uname,
                 "first_name": first_name,
@@ -604,8 +619,11 @@ class HubDriverCreateView(APIView):
                 "password": make_password("pass123"),
                 "role": User.Roles.DELIVERY_PARTNER,
                 "assigned_hub": hub,
-                "monthly_salary": salary,
-                "address": hub.address if hub else "Depot",
+                "monthly_salary": Decimal(str(salary)),
+                "address": address or "Depot Operations Base",
+                "city": city or "Kodad",
+                "latitude": lat,
+                "longitude": lng,
                 "driver_status": "ACTIVE",
             }
         )
@@ -614,14 +632,20 @@ class HubDriverCreateView(APIView):
             driver.first_name = first_name
             driver.last_name = last_name
             driver.assigned_hub = hub
-            driver.monthly_salary = salary
+            driver.monthly_salary = Decimal(str(salary))
+            if address: driver.address = address
+            if city: driver.city = city
+            driver.latitude = lat
+            driver.longitude = lng
             driver.save()
 
         return Response({
-            "message": f"Delivery partner {first_name} {last_name} successfully affiliated with {hub.name if hub else 'Hub'}.",
+            "message": f"Delivery partner {first_name} {last_name} successfully onboarded and affiliated with {hub.name if hub else 'Depot'}.",
             "driver_id": driver.id,
             "hub_name": hub.name if hub else "Depot",
             "salary": f"₹{int(salary):,} / month",
+            "latitude": float(driver.latitude),
+            "longitude": float(driver.longitude),
         }, status=status.HTTP_201_CREATED)
 
 

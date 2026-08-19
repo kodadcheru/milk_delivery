@@ -1427,33 +1427,68 @@
 
   <!-- ── Modal: Onboard / Add Delivery Partner ── -->
   <div class="modal-overlay" id="addDriverModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 580px;">
       <div class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--primary-accent);"></i> Onboard Salaried Delivery Partner</div>
+      
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
-          <label>First Name</label>
-          <input type="text" id="drvFirstName" class="form-control" placeholder="e.g. Ramesh">
+          <label>First Name <span style="color: #EF4444;">*</span></label>
+          <input type="text" id="drvFirstName" class="form-control" placeholder="e.g. Ramesh" required>
         </div>
         <div class="form-group">
-          <label>Last Name</label>
-          <input type="text" id="drvLastName" class="form-control" placeholder="e.g. Varma">
+          <label>Last Name <span style="color: #EF4444;">*</span></label>
+          <input type="text" id="drvLastName" class="form-control" placeholder="e.g. Varma" required>
         </div>
       </div>
-      <div class="form-group">
-        <label>Phone Number (Unique Login)</label>
-        <input type="text" id="drvPhone" class="form-control" placeholder="+91 98765 00123">
+
+      <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Phone Number (Login Mobile) <span style="color: #EF4444;">*</span></label>
+          <div style="display: flex; gap: 6px;">
+            <span style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-weight: bold; color: #38BDF8; font-size: 12px; display: flex; align-items: center;">+91</span>
+            <input type="text" id="drvPhone" class="form-control" maxlength="10" placeholder="10-digit mobile" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Monthly Salary (₹)</label>
+          <input type="number" id="drvSalary" class="form-control" value="15000">
+        </div>
       </div>
+
       <div class="form-group">
-        <label>Affiliated Location Fulfillment Hub</label>
-        <select id="drvHubId" class="form-control">
+        <label>Affiliated Location Fulfillment Hub <span style="color: #EF4444;">*</span></label>
+        <select id="drvHubId" class="form-control" onchange="onDriverHubSelectChange(this.value)">
           <!-- Dynamically populated from live hubs -->
         </select>
       </div>
+
+      <!-- Google Places City / Town Search Bar -->
       <div class="form-group">
-        <label>Fixed Monthly Salary (₹)</label>
-        <input type="number" id="drvSalary" class="form-control" value="15000">
+        <label style="font-weight: 700; color: #38BDF8;">
+          <i class="fa-solid fa-magnifying-glass-location"></i> Search City / Town / Operating Location
+        </label>
+        <input type="text" id="drvPlacesSearch" class="form-control" placeholder="🔍 Type to search city (e.g. Kodad, Suryapet, Vijayawada, Hyderabad)..." style="background: rgba(56, 189, 248, 0.08); border-color: #38BDF8; font-weight: 500;">
       </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+
+      <!-- Map Pin Picker for Driver Location -->
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="font-size: 12px; font-weight: 700; color: #10B981;">
+            <i class="fa-solid fa-location-dot"></i> Set Operating Base Pin (Drag or click map)
+          </label>
+          <span id="drvPinCoordsBadge" style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 6px;">16.9950, 79.9670</span>
+        </div>
+        <div id="drvPickerMap" style="height: 180px; width: 100%; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 8px;"></div>
+        <input type="hidden" id="drvLat">
+        <input type="hidden" id="drvLng">
+      </div>
+
+      <div class="form-group">
+        <label>Base Address & Locality</label>
+        <input type="text" id="drvAddress" class="form-control" placeholder="Auto-filled from map (e.g. Near Bus Stand, Kodad)">
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
         <button class="btn btn-secondary" onclick="closeModal('addDriverModal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitAddDriver()"><i class="fa-solid fa-check"></i> Onboard & Affiliate with Hub</button>
       </div>
@@ -3029,19 +3064,171 @@
       });
     }
 
+    let drvPickerGoogleMap = null;
+    let drvPickerMarker = null;
+    let drvAutocomplete = null;
+
     function openAddDriverModal() {
       document.getElementById('addDriverModal').style.display = 'flex';
+      document.getElementById('drvFirstName').value = '';
+      document.getElementById('drvLastName').value = '';
+      document.getElementById('drvPhone').value = '';
+      document.getElementById('drvPlacesSearch').value = '';
+      document.getElementById('drvAddress').value = '';
+
+      let defaultLat = 16.9950;
+      let defaultLng = 79.9670;
+
+      if (rawHubs && rawHubs.length > 0) {
+        defaultLat = parseFloat(rawHubs[0].latitude || 16.9950);
+        defaultLng = parseFloat(rawHubs[0].longitude || 79.9670);
+      }
+
+      document.getElementById('drvLat').value = defaultLat.toFixed(6);
+      document.getElementById('drvLng').value = defaultLng.toFixed(6);
+      document.getElementById('drvPinCoordsBadge').innerText = `${defaultLat.toFixed(4)}, ${defaultLng.toFixed(4)}`;
+
+      setTimeout(() => initDriverPickerMap(defaultLat, defaultLng), 300);
+    }
+
+    function initDriverPickerMap(initLat, initLng) {
+      const mapEl = document.getElementById('drvPickerMap');
+      if (!mapEl || typeof google === 'undefined' || !google.maps) return;
+
+      const pos = { lat: parseFloat(initLat || 16.9950), lng: parseFloat(initLng || 79.9670) };
+
+      if (!drvPickerGoogleMap) {
+        drvPickerGoogleMap = new google.maps.Map(mapEl, {
+          center: pos,
+          zoom: 13.5,
+          mapTypeId: 'roadmap',
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#0d7c66" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1120" }] },
+          ]
+        });
+
+        drvPickerMarker = new google.maps.Marker({
+          position: pos,
+          map: drvPickerGoogleMap,
+          draggable: true,
+          title: "Drag to set delivery partner base coordinates",
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: '#10B981',
+            fillOpacity: 1.0,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+          }
+        });
+
+        // Listen for marker drag
+        drvPickerMarker.addListener('dragend', () => {
+          const p = drvPickerMarker.getPosition();
+          updateDriverCoordinates(p.lat(), p.lng(), true);
+        });
+
+        // Listen for map click
+        drvPickerGoogleMap.addListener('click', (e) => {
+          const lat = e.latLng.lat();
+          const lng = e.latLng.lng();
+          drvPickerMarker.setPosition({ lat, lng });
+          updateDriverCoordinates(lat, lng, true);
+        });
+
+        // Initialize Google Places Autocomplete for City / Location Search
+        const searchInput = document.getElementById('drvPlacesSearch');
+        if (searchInput && google.maps.places) {
+          drvAutocomplete = new google.maps.places.Autocomplete(searchInput, {
+            componentRestrictions: { country: 'in' },
+            fields: ['geometry', 'name', 'formatted_address'],
+          });
+
+          drvAutocomplete.addListener('place_changed', () => {
+            const place = drvAutocomplete.getPlace();
+            if (!place.geometry || !place.geometry.location) {
+              alert("No location details available for this search.");
+              return;
+            }
+
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+
+            drvPickerGoogleMap.setCenter({ lat, lng });
+            drvPickerGoogleMap.setZoom(15);
+            drvPickerMarker.setPosition({ lat, lng });
+
+            document.getElementById('drvLat').value = lat.toFixed(6);
+            document.getElementById('drvLng').value = lng.toFixed(6);
+            document.getElementById('drvPinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+            if (place.formatted_address) {
+              document.getElementById('drvAddress').value = place.formatted_address;
+            }
+          });
+        }
+      } else {
+        google.maps.event.trigger(drvPickerGoogleMap, 'resize');
+        drvPickerGoogleMap.setCenter(pos);
+        drvPickerMarker.setPosition(pos);
+      }
+    }
+
+    function updateDriverCoordinates(lat, lng, shouldReverseGeocode = false) {
+      document.getElementById('drvLat').value = lat.toFixed(6);
+      document.getElementById('drvLng').value = lng.toFixed(6);
+      document.getElementById('drvPinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+      if (shouldReverseGeocode && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === 'OK' && results[0]) {
+            document.getElementById('drvAddress').value = results[0].formatted_address;
+          }
+        });
+      }
+    }
+
+    function onDriverHubSelectChange(hubDbId) {
+      const selectedHub = (rawHubs || []).find(h => h.db_id == hubDbId);
+      if (selectedHub && drvPickerGoogleMap && drvPickerMarker) {
+        const lat = parseFloat(selectedHub.latitude || 16.9950);
+        const lng = parseFloat(selectedHub.longitude || 79.9670);
+        drvPickerGoogleMap.setCenter({ lat, lng });
+        drvPickerGoogleMap.setZoom(14);
+        drvPickerMarker.setPosition({ lat, lng });
+        updateDriverCoordinates(lat, lng, false);
+        if (!document.getElementById('drvAddress').value) {
+          document.getElementById('drvAddress').value = selectedHub.address;
+        }
+      }
     }
 
     async function submitAddDriver() {
       const fn = document.getElementById('drvFirstName').value.trim();
       const ln = document.getElementById('drvLastName').value.trim();
-      const ph = document.getElementById('drvPhone').value.trim();
+      const phoneDigits = document.getElementById('drvPhone').value.replace(/\D/g, '');
       const hubId = document.getElementById('drvHubId').value;
       const sal = document.getElementById('drvSalary').value;
+      const lat = document.getElementById('drvLat').value;
+      const lng = document.getElementById('drvLng').value;
+      const addr = document.getElementById('drvAddress').value.trim();
 
-      if (!ph) {
-        alert('Please enter a valid phone number for the delivery partner');
+      if (!fn || !ln) {
+        alert('⚠️ Please enter First Name and Last Name.');
+        return;
+      }
+      if (!phoneDigits || phoneDigits.length < 10) {
+        alert('⚠️ Please enter a valid 10-digit mobile number for the delivery partner.');
         return;
       }
 
@@ -3054,11 +3241,14 @@
             'Authorization': token ? `Bearer ${token}` : ''
           },
           body: JSON.stringify({
-            first_name: fn || 'Delivery',
-            last_name: ln || 'Partner',
-            phone: ph,
-            hub_id: hubId,
-            monthly_salary: sal
+            first_name: fn,
+            last_name: ln,
+            phone: phoneDigits,
+            hub_id: hubId || null,
+            monthly_salary: sal,
+            latitude: parseFloat(lat || 16.9950),
+            longitude: parseFloat(lng || 79.9670),
+            address: addr
           })
         });
 
@@ -3068,12 +3258,17 @@
           document.getElementById('drvFirstName').value = '';
           document.getElementById('drvLastName').value = '';
           document.getElementById('drvPhone').value = '';
+          document.getElementById('drvPlacesSearch').value = '';
+          document.getElementById('drvAddress').value = '';
+          
           await loadFleet();
           await loadHubs();
           if (googleMap) refreshMapLayers();
+
           alert(`✅ Delivery Partner ${fn} ${ln} successfully onboarded and affiliated with ${data.hub_name}!`);
         } else {
-          alert('Could not onboard driver. Please check the details.');
+          const errData = await res.json();
+          alert(errData.detail || 'Could not onboard driver. Please check the details.');
         }
       } catch (err) {
         alert('Network error while onboarding driver.');
