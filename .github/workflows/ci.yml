@@ -1,0 +1,74 @@
+name: MilkDrop Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── 1. Backend Automated Testing & Linting ──
+  backend-test:
+    name: 🐍 Django Backend Tests & Migrations Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python Dependencies
+        working-directory: ./milk_delivery_backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check Database Migrations & Static Files
+        working-directory: ./milk_delivery_backend
+        env:
+          SECRET_KEY: "ci-secret-key-for-automated-tests"
+          DEBUG: "True"
+        run: |
+          python manage.py makemigrations --check --dry-run
+          python manage.py migrate --noinput
+          python manage.py collectstatic --noinput
+
+      - name: Run Django Tests
+        working-directory: ./milk_delivery_backend
+        env:
+          SECRET_KEY: "ci-secret-key-for-automated-tests"
+          DEBUG: "True"
+        run: |
+          python manage.py test --verbosity=2
+
+  # ── 2. Flutter Automated Unit & Widget Testing ──
+  frontend-test:
+    name: 💙 Flutter Tests & Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Install Flutter Dependencies
+        working-directory: ./milk_delivery_frontend
+        run: flutter pub get
+
+      - name: Run Static Code Analysis
+        working-directory: ./milk_delivery_frontend
+        run: flutter analyze
+
+      - name: Run Flutter Test Suite
+        working-directory: ./milk_delivery_frontend
+        run: flutter test --coverage

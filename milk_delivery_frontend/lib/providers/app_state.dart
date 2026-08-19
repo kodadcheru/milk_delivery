@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 import '../models/customer_address_model.dart';
 import '../models/product_model.dart';
@@ -114,11 +115,13 @@ class AppState extends ChangeNotifier {
   }
 
   void addToCart(ProductModel product) {
+    HapticFeedback.lightImpact();
     cartItems[product.id] = (cartItems[product.id] ?? 0) + 1;
     notifyListeners();
   }
 
   void decreaseCartQty(int productId) {
+    HapticFeedback.lightImpact();
     if (!cartItems.containsKey(productId)) return;
     if (cartItems[productId]! > 1) {
       cartItems[productId] = cartItems[productId]! - 1;
@@ -152,6 +155,7 @@ class AppState extends ChangeNotifier {
     String? deliverySlot,
     String? deliveryAddress,
   }) async {
+    HapticFeedback.mediumImpact();
     final orderItems = cartProductsList.map((entry) {
       return OrderItemModel(
         product: entry.key,
@@ -415,6 +419,7 @@ class AppState extends ChangeNotifier {
   }
 
   void selectActiveAddress(CustomerAddressModel addr) {
+    HapticFeedback.lightImpact();
     activeAddress = addr;
     currentDeliveryAddress = addr.summaryAddress;
     currentLat = addr.latitude;

@@ -59,6 +59,10 @@ class DeliveryTask(models.Model):
 
     class Meta:
         ordering = ["delivery_date", "id"]
+        indexes = [
+            models.Index(fields=["delivery_date", "status"], name="deliv_date_status_idx"),
+            models.Index(fields=["driver", "delivery_date"], name="deliv_driver_date_idx"),
+        ]
 
     def __str__(self):
         cust_name = self.subscription.customer.username if self.subscription else (self.order.customer.username if self.order else "Unknown")
@@ -99,6 +103,10 @@ class LiveOrder(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["customer", "-created_at"], name="order_cust_created_idx"),
+            models.Index(fields=["status", "-created_at"], name="order_status_created_idx"),
+        ]
 
     def __str__(self):
         return f"{self.id} - {self.customer.username} ({self.status}) - ₹{self.total_amount}"

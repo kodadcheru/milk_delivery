@@ -47,6 +47,10 @@ class WalletTransaction(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="wallet_user_created_idx"),
+            models.Index(fields=["user", "transaction_type"], name="wallet_user_type_idx"),
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.transaction_type} ₹{self.amount} ({self.description})"
@@ -68,6 +72,9 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_read", "-created_at"], name="notif_user_read_idx"),
+        ]
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"

@@ -40,6 +40,10 @@ class UserModel {
 
   String get fullName => '$firstName $lastName'.trim().isEmpty ? (username.isNotEmpty ? username : 'Customer') : '$firstName $lastName'.trim();
 
+  bool get isCustomer => role.toUpperCase() == 'CUSTOMER';
+  bool get isDriver => role.toUpperCase() == 'DRIVER';
+  bool get isAdmin => role.toUpperCase() == 'ADMIN' || role.toUpperCase() == 'PROVIDER';
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] ?? 0,
