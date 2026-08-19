@@ -1188,17 +1188,17 @@
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
-          <label>Hub Code <span style="color: #38BDF8; font-size: 11px; font-weight: normal;">(Auto-generated e.g. HUB-KDD-01)</span></label>
-          <input type="text" id="hubCode" class="form-control" placeholder="Leave blank for Auto-ID">
+          <label>Hub Code <span style="color: #38BDF8; font-size: 11px; font-weight: normal;">(Auto-filled from location e.g. HUB-KDD-01)</span></label>
+          <input type="text" id="hubCode" class="form-control" placeholder="Auto-generated (e.g. HUB-KDD-01)" style="font-weight: bold; color: #34D399; letter-spacing: 0.5px;">
         </div>
         <div class="form-group">
           <label>Depot Name <span style="color: #EF4444;">*</span></label>
-          <input type="text" id="hubName" class="form-control" placeholder="e.g. Kodad Main Depot" required>
+          <input type="text" id="hubName" class="form-control" placeholder="e.g. Kodad Main Depot" oninput="autoUpdateHubCode(this.value)" required>
         </div>
       </div>
       <div class="form-group">
         <label>Depot Physical Address <span style="color: #EF4444;">*</span></label>
-        <input type="text" id="hubAddress" class="form-control" placeholder="e.g. Near Bus Stand, Main Road, Kodad" required>
+        <input type="text" id="hubAddress" class="form-control" placeholder="e.g. Near Bus Stand, Main Road, Kodad" oninput="autoUpdateHubCode(this.value)" required>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
@@ -2214,12 +2214,18 @@
             document.getElementById('hubLng').value = lng.toFixed(6);
             document.getElementById('pinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
-            if (place.formatted_address) {
-              document.getElementById('hubAddress').value = place.formatted_address;
+            const formattedAddr = place.formatted_address || '';
+            const placeName = place.name || '';
+
+            if (formattedAddr) {
+              document.getElementById('hubAddress').value = formattedAddr;
             }
-            if (place.name && !document.getElementById('hubName').value) {
-              document.getElementById('hubName').value = `${place.name} Hub`;
+            if (placeName) {
+              document.getElementById('hubName').value = `${placeName} Depot`;
             }
+
+            // Real-time Hub Code auto-fill (e.g. HUB-KDD-01 or HUB-KDD-02)
+            autoUpdateHubCode(`${placeName} ${formattedAddr}`);
           });
         }
       } else {
@@ -2238,10 +2244,102 @@
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng } }, (results, status) => {
           if (status === 'OK' && results[0]) {
-            document.getElementById('hubAddress').value = results[0].formatted_address;
+            const formattedAddr = results[0].formatted_address;
+            document.getElementById('hubAddress').value = formattedAddr;
+            autoUpdateHubCode(formattedAddr);
           }
         });
       }
+    }
+
+    // ── Instant Hub Code Generator Helper ──
+    function computeNextHubCode(addressOrName) {
+      const rtcMap = {
+        "kodad": "KDD",
+        "suryapet": "SYP",
+        "huzurnagar": "HZNR",
+        "munagala": "MNGL",
+        "miryalaguda": "MRGA",
+        "jaggaiahpeta": "JPT",
+        "nandigama": "NDGM",
+        "khammam": "KMM",
+        "nalgonda": "NLG",
+        "vijayawada": "BZA",
+        "guntur": "GNT",
+        "warangal": "WGL",
+        "karimnagar": "KRMR",
+        "mahbubnagar": "MBNR",
+        "nizamabad": "NZB",
+        "jubilee": "JBL",
+        "banjara": "BNJ",
+        "madhapur": "MDP",
+        "gachibowli": "GCB",
+        "kukatpally": "KPB",
+        "kondapur": "KND",
+        "miyapur": "MYP",
+        "uppal": "UPL",
+        "dilsukhnagar": "DSNR",
+        "begumpet": "BMT",
+        "somajiguda": "SMG",
+        "ameerpet": "AMP",
+        "punjagutta": "PJG",
+        "manikonda": "MNK",
+        "chanda nagar": "CNG",
+        "secunderabad": "SC",
+        "hyderabad": "HYD"
+      };
+
+      const text = (addressOrName || '').toLowerCase();
+      let matchedCode = null;
+
+      for (const [loc, code] of Object.entries(rtcMap)) {
+        if (text.includes(loc)) {
+          matchedCode = code;
+          break;
+        }
+      }
+
+      if (!matchedCode) {
+        const cleanWords = (addressOrName || '').replace(/[^a-zA-Z]/g, ' ').trim().split(/\s+/).filter(w => w.length > 0);
+        const firstWord = (cleanWords[0] || 'DEPOT').toUpperCase();
+        if (firstWord.length >= 3) {
+          const consonants = firstWord.replace(/[AEIOU]/g, '');
+          matchedCode = (consonants.length >= 3 ? consonants.slice(0, 3) : firstWord.slice(0, 3)).toUpperCase();
+        } else {
+          matchedCode = firstWord;
+        }
+      }
+
+      const prefix = `HUB-${matchedCode}-`;
+      let maxNum = 0;
+      (rawHubs || []).forEach(h => {
+        const code = (h.hub_code || h.id || '').toUpperCase();
+        if (code.startsWith(prefix)) {
+          const parts = code.split('-');
+          const num = parseInt(parts[parts.length - 1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      });
+
+      const nextNum = maxNum + 1;
+      return `HUB-${matchedCode}-${String(nextNum).padStart(2, '0')}`;
+    }
+
+    function autoUpdateHubCode(addressOrName) {
+      if (!addressOrName || !addressOrName.trim()) return;
+      const codeInput = document.getElementById('hubCode');
+      if (!codeInput) return;
+      
+      const newCode = computeNextHubCode(addressOrName);
+      codeInput.value = newCode;
+      codeInput.style.borderColor = '#10B981';
+      codeInput.style.background = 'rgba(16, 185, 129, 0.12)';
+      setTimeout(() => {
+        codeInput.style.borderColor = 'var(--border-color)';
+        codeInput.style.background = 'var(--bg-dark)';
+      }, 1000);
     }
 
     async function cleanupDuplicateHubs() {
