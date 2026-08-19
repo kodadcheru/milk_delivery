@@ -620,7 +620,7 @@
     <div class="nav-actions">
       <div class="badge-status">
         <div class="pulse-dot"></div>
-        Live PostgreSQL/SQLite DB Connected
+        Live PostgreSQL Database Connected
       </div>
       <button class="btn btn-secondary" onclick="loadAllData()">
         <i class="fa-solid fa-rotate-right"></i> Refresh Data
@@ -710,12 +710,15 @@
     <!-- ── Tab 2: Location Hubs & Equal Load Balancer ── -->
     <div id="tab-hubs" style="display: none;">
       <div class="section-card">
-        <div class="section-header">
+        <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
           <div>
             <div class="section-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Location Hubs & Micro-Fulfillment Depots</div>
-            <span style="font-size: 12px; color: var(--text-muted);">Depots receive 02:00 AM farm tankers and dispatch morning delivery boy routes</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Create and manage depots that receive farm tankers and dispatch morning delivery routes</span>
           </div>
-          <button class="btn btn-secondary" onclick="loadHubs()"><i class="fa-solid fa-sync"></i> Refresh Hubs</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="openCreateHubModal()"><i class="fa-solid fa-plus"></i> Create New Location Hub</button>
+            <button class="btn btn-secondary" onclick="loadHubs()"><i class="fa-solid fa-sync"></i> Refresh Hubs</button>
+          </div>
         </div>
         <div class="data-table-wrapper">
           <table>
@@ -726,9 +729,10 @@
                 <th>Hub Manager</th>
                 <th>Subscribers</th>
                 <th>Daily Volume</th>
-                <th>Salaried Delivery Boys</th>
-                <th>Load Balancing Action</th>
+                <th>Salaried Boys</th>
+                <th>Load Balancing</th>
                 <th>FSSAI License</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="hubs-table-body">
@@ -745,7 +749,7 @@
         <div class="section-header">
           <div>
             <div class="section-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Interactive Hyderabad Geofenced Coverage Map</div>
-            <span style="font-size: 12px; color: var(--text-muted);">Live 5km radial fulfillment coverage across Jubilee Hills, Banjara Hills, and Madhapur clusters</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Live 5km radial fulfillment coverage across all registered Location Hub depots</span>
           </div>
           <button class="btn btn-primary" onclick="openAddServiceAreaModal()"><i class="fa-solid fa-plus"></i> Add Service Area</button>
         </div>
@@ -887,16 +891,13 @@
         <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
           <div>
             <div class="section-title"><i class="fa-solid fa-motorcycle" style="color: var(--primary-accent);"></i> Hub-Centric Salaried Delivery Partners (₹15,000 / mo)</div>
-            <span style="font-size: 12px; color: var(--text-muted);">Delivery boys are affiliated strictly with Location Hubs and paid fixed monthly salaries</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Manage drivers, reassign between Location Hubs, adjust monthly salaries, and monitor shifts</span>
           </div>
           <div style="display: flex; gap: 10px; align-items: center;">
             <select id="fleetHubFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="loadFleet(this.value)">
               <option value="">🏢 All Location Hubs</option>
-              <option value="1">HUB-HYD-01: Jubilee Hills Depot #1</option>
-              <option value="2">HUB-HYD-02: Banjara Hills Depot #2</option>
-              <option value="3">HUB-HYD-03: Madhapur Tech Depot #3</option>
             </select>
-            <button class="btn btn-primary" onclick="openAddDriverModal()"><i class="fa-solid fa-user-plus"></i> Onboard Delivery Boy</button>
+            <button class="btn btn-primary" onclick="openAddDriverModal()"><i class="fa-solid fa-user-plus"></i> Onboard Delivery Partner</button>
           </div>
         </div>
         <div class="data-table-wrapper">
@@ -907,11 +908,11 @@
                 <th>Partner Name</th>
                 <th>Contact</th>
                 <th>Affiliated Depot Hub</th>
-                <th>Sector Route</th>
                 <th>Shift Progress</th>
-                <th>On-Time Rate</th>
+                <th>Status</th>
                 <th>Fixed Monthly Salary</th>
                 <th>Bottles Returned</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="fleet-table-body">
@@ -1072,6 +1073,170 @@
   <!-- ── MODALS ── -->
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
 
+  <!-- ── Modal: Create / Add Location Hub ── -->
+  <div class="modal-overlay" id="createHubModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Create New Location Fulfillment Hub</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Hub Code (Unique ID)</label>
+          <input type="text" id="hubCode" class="form-control" placeholder="e.g. HUB-HYD-04">
+        </div>
+        <div class="form-group">
+          <label>Depot Name</label>
+          <input type="text" id="hubName" class="form-control" placeholder="e.g. Kukatpally Main Depot #4">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Depot Physical Address</label>
+        <input type="text" id="hubAddress" class="form-control" placeholder="e.g. Near KPHB Metro Station, Phase 1, Hyderabad">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Hub Manager Full Name</label>
+          <input type="text" id="hubManagerName" class="form-control" placeholder="e.g. Venkat Reddy">
+        </div>
+        <div class="form-group">
+          <label>Manager Contact Phone</label>
+          <input type="text" id="hubManagerPhone" class="form-control" placeholder="+91 98888 12345">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Latitude (GPS)</label>
+          <input type="text" id="hubLat" class="form-control" value="17.4849">
+        </div>
+        <div class="form-group">
+          <label>Longitude (GPS)</label>
+          <input type="text" id="hubLng" class="form-control" value="78.3883">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>FSSAI Food Safety License Number</label>
+        <input type="text" id="hubFssai" class="form-control" value="13621014000456">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('createHubModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreateHub()"><i class="fa-solid fa-check"></i> Register Location Hub</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Edit Location Hub ── -->
+  <div class="modal-overlay" id="editHubModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-accent);"></i> Edit Location Hub Details</div>
+      <input type="hidden" id="editHubDbId">
+      <div class="form-group">
+        <label>Depot Name</label>
+        <input type="text" id="editHubName" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Depot Physical Address</label>
+        <input type="text" id="editHubAddress" class="form-control">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Manager Name</label>
+          <input type="text" id="editHubManagerName" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Manager Phone</label>
+          <input type="text" id="editHubManagerPhone" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>FSSAI License</label>
+        <input type="text" id="editHubFssai" class="form-control">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('editHubModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitUpdateHub()"><i class="fa-solid fa-check"></i> Save Hub Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Onboard / Add Delivery Partner ── -->
+  <div class="modal-overlay" id="addDriverModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--primary-accent);"></i> Onboard Salaried Delivery Partner</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="drvFirstName" class="form-control" placeholder="e.g. Ramesh">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="drvLastName" class="form-control" placeholder="e.g. Varma">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number (Unique Login)</label>
+        <input type="text" id="drvPhone" class="form-control" placeholder="+91 98765 00123">
+      </div>
+      <div class="form-group">
+        <label>Affiliated Location Fulfillment Hub</label>
+        <select id="drvHubId" class="form-control">
+          <!-- Dynamically populated from live hubs -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fixed Monthly Salary (₹)</label>
+        <input type="number" id="drvSalary" class="form-control" value="15000">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addDriverModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddDriver()"><i class="fa-solid fa-check"></i> Onboard & Affiliate with Hub</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Edit Delivery Partner ── -->
+  <div class="modal-overlay" id="editDriverModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-user-pen" style="color: var(--primary-accent);"></i> Manage Delivery Partner</div>
+      <input type="hidden" id="editDrvId">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="editDrvFirstName" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="editDrvLastName" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="text" id="editDrvPhone" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Reassign Location Hub</label>
+        <select id="editDrvHubId" class="form-control">
+          <!-- Dynamically populated from live hubs -->
+        </select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Fixed Monthly Salary (₹)</label>
+          <input type="number" id="editDrvSalary" class="form-control" value="15000">
+        </div>
+        <div class="form-group">
+          <label>Duty Status</label>
+          <select id="editDrvStatus" class="form-control">
+            <option value="ACTIVE">ACTIVE (On Duty)</option>
+            <option value="ON_LEAVE">ON_LEAVE</option>
+            <option value="OFF_DUTY">OFF_DUTY</option>
+          </select>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('editDriverModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitUpdateDriver()"><i class="fa-solid fa-check"></i> Save Partner Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Create New Subscription ── -->
   <div class="modal-overlay" id="createSubModal">
     <div class="modal-card">
@@ -1141,43 +1306,6 @@
     </div>
   </div>
 
-  <!-- ── Modal: Onboard Delivery Partner ── -->
-  <div class="modal-overlay" id="addDriverModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--primary-accent);"></i> Onboard Salaried Delivery Partner</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label>First Name</label>
-          <input type="text" id="drvFirstName" class="form-control" placeholder="e.g. Ramesh">
-        </div>
-        <div class="form-group">
-          <label>Last Name</label>
-          <input type="text" id="drvLastName" class="form-control" placeholder="e.g. Varma">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Phone Number (Unique Login)</label>
-        <input type="text" id="drvPhone" class="form-control" placeholder="+91 98765 00123">
-      </div>
-      <div class="form-group">
-        <label>Affiliated Location Fulfillment Hub</label>
-        <select id="drvHubId" class="form-control">
-          <option value="1">HUB-HYD-01: Jubilee Hills Central Depot #1</option>
-          <option value="2">HUB-HYD-02: Banjara Hills Micro-Depot #2</option>
-          <option value="3">HUB-HYD-03: Madhapur Tech Enclave Depot #3</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Fixed Monthly Salary (₹)</label>
-        <input type="number" id="drvSalary" class="form-control" value="15000">
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('addDriverModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitAddDriver()"><i class="fa-solid fa-check"></i> Onboard & Affiliate with Hub</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ── Modal: Add Service Area ── -->
   <div class="modal-overlay" id="addServiceAreaModal">
     <div class="modal-card">
@@ -1193,9 +1321,7 @@
       <div class="form-group">
         <label>Assigned Fulfillment Depot Hub</label>
         <select id="saHubId" class="form-control">
-          <option value="1">Jubilee Hills Central Depot #1</option>
-          <option value="2">Banjara Hills Micro-Depot #2</option>
-          <option value="3" selected>Madhapur Tech Enclave Depot #3</option>
+          <!-- Dynamically populated from live hubs -->
         </select>
       </div>
       <div class="form-group">
@@ -1315,6 +1441,8 @@
   <script>
     const baseUrl = '/api';
     let currentUser = null;
+    let rawHubs = [];
+    let rawFleet = [];
     let rawDeliveries = [];
     let rawSubscriptions = [];
     let rawCustomers = [];
@@ -1323,7 +1451,6 @@
 
     // ── Auth Check on Load ──
     async function checkAuth() {
-      // Set today's date for subscription modal
       const today = new Date().toISOString().split('T')[0];
       const dateEl = document.getElementById('newSubStartDate');
       if (dateEl) dateEl.value = today;
@@ -1386,7 +1513,6 @@
           localStorage.setItem('milkdrop_admin_token', data.access);
           document.getElementById('loginScreen').style.display = 'none';
           
-          // Fetch Profile
           const profRes = await fetch(`${baseUrl}/auth/me/`, {
             headers: { 'Authorization': `Bearer ${data.access}` }
           });
@@ -1396,7 +1522,8 @@
           }
           loadAllData();
         } else {
-          alertEl.innerText = 'Invalid username or password. Please try again.';
+          const errData = await res.json().catch(() => ({}));
+          alertEl.innerText = errData.detail || 'Invalid username or password. Please try again.';
           alertEl.style.display = 'block';
         }
       } catch (err) {
@@ -1468,7 +1595,7 @@
           updateProfileUI(currentUser);
           alert('Administrator profile updated successfully in the database!');
         } else {
-          alert('Profile update saved locally.');
+          alert('Profile update saved.');
         }
       } catch (err) {
         alert('Profile saved!');
@@ -1518,7 +1645,6 @@
         }
       } catch (e) {}
 
-      // Live Forecast Table
       try {
         const pRes = await fetch(`${baseUrl}/products/`);
         if (pRes.ok) {
@@ -1542,33 +1668,182 @@
       } catch (e) {}
     }
 
+    // ── Location Hubs Operations ──
     async function loadHubs() {
       try {
         const res = await fetch(`${baseUrl}/admin/hubs/`);
         if (res.ok) {
-          const hubs = await res.json();
-          const tbody = document.getElementById('hubs-table-body');
-          tbody.innerHTML = '';
-          hubs.forEach(h => {
-            tbody.innerHTML += `
-              <tr>
-                <td><span class="status-tag status-hub">${h.id}</span></td>
-                <td><strong>${h.name}</strong><br><small style="color:var(--text-muted);">${h.address}</small></td>
-                <td>${h.manager}</td>
-                <td><strong>${h.subscribers_count} Families</strong></td>
-                <td><strong style="color:var(--primary-accent);">${h.daily_volume_liters} L</strong></td>
-                <td><strong>${h.active_delivery_boys} Salaried Boys</strong> (₹15k/mo)</td>
-                <td>
-                  <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="rebalanceHub('${h.id}')">
-                    <i class="fa-solid fa-scale-balanced"></i> Re-Balance Tasks
-                  </button>
-                </td>
-                <td><small style="color:var(--text-muted);">${h.fssai_license}</small></td>
-              </tr>
-            `;
-          });
+          rawHubs = await res.json();
+          renderHubsTable(rawHubs);
+          populateHubDropdowns(rawHubs);
         }
       } catch (e) {}
+    }
+
+    function renderHubsTable(hubs) {
+      const tbody = document.getElementById('hubs-table-body');
+      tbody.innerHTML = '';
+      hubs.forEach(h => {
+        tbody.innerHTML += `
+          <tr>
+            <td><span class="status-tag status-hub">${h.id}</span></td>
+            <td><strong>${h.name}</strong><br><small style="color:var(--text-muted);">${h.address}</small></td>
+            <td>${h.manager}</td>
+            <td><strong>${h.subscribers_count} Families</strong></td>
+            <td><strong style="color:var(--primary-accent);">${h.daily_volume_liters} L</strong></td>
+            <td><strong>${h.active_delivery_boys} Salaried Boys</strong> (₹15k/mo)</td>
+            <td>
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="rebalanceHub('${h.id}')">
+                <i class="fa-solid fa-scale-balanced"></i> Re-Balance
+              </button>
+            </td>
+            <td><small style="color:var(--text-muted);">${h.fssai_license}</small></td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditHubModal(${h.db_id})">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteHub(${h.db_id}, '${h.name}')">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function populateHubDropdowns(hubs) {
+      const filterSelect = document.getElementById('fleetHubFilter');
+      const addDrvSelect = document.getElementById('drvHubId');
+      const editDrvSelect = document.getElementById('editDrvHubId');
+      const saHubSelect = document.getElementById('saHubId');
+
+      if (filterSelect) {
+        const curVal = filterSelect.value;
+        filterSelect.innerHTML = '<option value="">🏢 All Location Hubs</option>';
+        hubs.forEach(h => {
+          filterSelect.innerHTML += `<option value="${h.db_id}">${h.id}: ${h.name}</option>`;
+        });
+        filterSelect.value = curVal;
+      }
+
+      [addDrvSelect, editDrvSelect, saHubSelect].forEach(sel => {
+        if (sel) {
+          sel.innerHTML = '';
+          hubs.forEach(h => {
+            sel.innerHTML += `<option value="${h.db_id}">${h.id}: ${h.name}</option>`;
+          });
+        }
+      });
+    }
+
+    function openCreateHubModal() {
+      document.getElementById('createHubModal').style.display = 'flex';
+    }
+
+    async function submitCreateHub() {
+      const code = document.getElementById('hubCode').value.trim();
+      const name = document.getElementById('hubName').value.trim();
+      const addr = document.getElementById('hubAddress').value.trim();
+      const mgr = document.getElementById('hubManagerName').value.trim();
+      const phone = document.getElementById('hubManagerPhone').value.trim();
+      const lat = document.getElementById('hubLat').value.trim();
+      const lng = document.getElementById('hubLng').value.trim();
+      const fssai = document.getElementById('hubFssai').value.trim();
+
+      if (!code || !name) {
+        alert('Please provide Hub Code and Depot Name.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/hubs/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hub_code: code,
+            name: name,
+            address: addr,
+            manager_name: mgr,
+            manager_phone: phone,
+            latitude: lat,
+            longitude: lng,
+            fssai_license: fssai
+          })
+        });
+
+        if (res.ok) {
+          closeModal('createHubModal');
+          loadHubs();
+          alert(`✅ Location Hub '${name}' created successfully!`);
+        } else {
+          alert('Could not save Location Hub.');
+        }
+      } catch (e) {
+        alert('Network error while saving hub.');
+      }
+    }
+
+    function openEditHubModal(dbId) {
+      const hub = rawHubs.find(h => h.db_id === dbId);
+      if (!hub) return;
+
+      document.getElementById('editHubDbId').value = hub.db_id;
+      document.getElementById('editHubName').value = hub.name;
+      document.getElementById('editHubAddress').value = hub.address;
+      
+      const mgrParts = hub.manager ? hub.manager.split('(') : ['', ''];
+      document.getElementById('editHubManagerName').value = mgrParts[0].trim();
+      document.getElementById('editHubManagerPhone').value = (mgrParts[1] || '').replace(')', '').trim();
+      document.getElementById('editHubFssai').value = hub.fssai_license || '';
+
+      document.getElementById('editHubModal').style.display = 'flex';
+    }
+
+    async function submitUpdateHub() {
+      const dbId = document.getElementById('editHubDbId').value;
+      const name = document.getElementById('editHubName').value.trim();
+      const addr = document.getElementById('editHubAddress').value.trim();
+      const mgr = document.getElementById('editHubManagerName').value.trim();
+      const phone = document.getElementById('editHubManagerPhone').value.trim();
+      const fssai = document.getElementById('editHubFssai').value.trim();
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            address: addr,
+            manager_name: mgr,
+            manager_phone: phone,
+            fssai_license: fssai
+          })
+        });
+
+        if (res.ok) {
+          closeModal('editHubModal');
+          loadHubs();
+          alert('✅ Hub details updated successfully!');
+        }
+      } catch (e) {
+        alert('Network error while updating hub.');
+      }
+    }
+
+    async function deleteHub(dbId, name) {
+      if (!confirm(`Are you sure you want to delete Location Hub '${name}'?`)) return;
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, { method: 'DELETE' });
+        if (res.ok) {
+          loadHubs();
+          alert(`Hub '${name}' deleted successfully.`);
+        }
+      } catch (e) {
+        alert('Could not delete hub.');
+      }
     }
 
     async function rebalanceHub(hubCode) {
@@ -1585,19 +1860,169 @@
       }
     }
 
+    // ── Delivery Partner Fleet Operations ──
+    async function loadFleet(hubId = '') {
+      try {
+        const url = hubId ? `${baseUrl}/admin/fleet/?hub_id=${hubId}` : `${baseUrl}/admin/fleet/`;
+        const res = await fetch(url);
+        if (res.ok) {
+          rawFleet = await res.json();
+          renderFleetTable(rawFleet);
+        }
+      } catch (e) {}
+    }
+
+    function renderFleetTable(fleet) {
+      const tbody = document.getElementById('fleet-table-body');
+      tbody.innerHTML = '';
+      if (fleet.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No delivery partners found.</td></tr>';
+        return;
+      }
+      fleet.forEach(f => {
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>DRV-${f.id}</strong></td>
+            <td><strong>${f.name}</strong></td>
+            <td>${f.phone}</td>
+            <td><span class="status-tag status-hub">🏢 ${f.hub}</span></td>
+            <td><strong>${f.completed_stops}/${f.assigned_stops} Stops</strong></td>
+            <td><span class="status-tag status-active">${f.driver_status || 'ACTIVE'}</span></td>
+            <td><strong style="color:var(--primary-accent);">${f.salary}</strong></td>
+            <td><strong>🍾 ${f.bottles_collected} Bottles</strong></td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditDriverModal(${f.id})">
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteDriver(${f.id}, '${f.name}')">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function openAddDriverModal() {
+      document.getElementById('addDriverModal').style.display = 'flex';
+    }
+
+    async function submitAddDriver() {
+      const fn = document.getElementById('drvFirstName').value.trim();
+      const ln = document.getElementById('drvLastName').value.trim();
+      const ph = document.getElementById('drvPhone').value.trim();
+      const hubId = document.getElementById('drvHubId').value;
+      const sal = document.getElementById('drvSalary').value;
+
+      if (!ph) {
+        alert('Please enter a valid phone number for the delivery partner');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/fleet/create-driver/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: fn || 'Delivery',
+            last_name: ln || 'Partner',
+            phone: ph,
+            hub_id: hubId,
+            monthly_salary: sal
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          closeModal('addDriverModal');
+          loadFleet();
+          loadHubs();
+          alert(`✅ Delivery Partner ${fn} ${ln} successfully onboarded and affiliated with ${data.hub_name}!`);
+        } else {
+          alert('Could not onboard driver. Please check the details.');
+        }
+      } catch (err) {
+        alert('Network error while onboarding driver.');
+      }
+    }
+
+    function openEditDriverModal(driverId) {
+      const driver = rawFleet.find(d => d.id === driverId);
+      if (!driver) return;
+
+      document.getElementById('editDrvId').value = driver.id;
+      document.getElementById('editDrvFirstName').value = driver.first_name || '';
+      document.getElementById('editDrvLastName').value = driver.last_name || '';
+      document.getElementById('editDrvPhone').value = driver.phone || '';
+      document.getElementById('editDrvHubId').value = driver.hub_id || '';
+      document.getElementById('editDrvSalary').value = driver.raw_salary || 15000;
+      document.getElementById('editDrvStatus').value = driver.driver_status || 'ACTIVE';
+
+      document.getElementById('editDriverModal').style.display = 'flex';
+    }
+
+    async function submitUpdateDriver() {
+      const drvId = document.getElementById('editDrvId').value;
+      const fn = document.getElementById('editDrvFirstName').value.trim();
+      const ln = document.getElementById('editDrvLastName').value.trim();
+      const ph = document.getElementById('editDrvPhone').value.trim();
+      const hubId = document.getElementById('editDrvHubId').value;
+      const sal = document.getElementById('editDrvSalary').value;
+      const stat = document.getElementById('editDrvStatus').value;
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/fleet/${drvId}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: fn,
+            last_name: ln,
+            phone: ph,
+            hub_id: hubId,
+            monthly_salary: sal,
+            driver_status: stat
+          })
+        });
+
+        if (res.ok) {
+          closeModal('editDriverModal');
+          loadFleet();
+          loadHubs();
+          alert(`✅ Delivery partner ${fn} ${ln} updated successfully!`);
+        }
+      } catch (e) {
+        alert('Network error while updating partner.');
+      }
+    }
+
+    async function deleteDriver(drvId, name) {
+      if (!confirm(`Are you sure you want to remove delivery partner '${name}'?`)) return;
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/fleet/${drvId}/`, { method: 'DELETE' });
+        if (res.ok) {
+          loadFleet();
+          loadHubs();
+          alert(`Delivery partner '${name}' removed from fleet.`);
+        }
+      } catch (e) {
+        alert('Could not remove driver.');
+      }
+    }
+
     function initMap() {
       if (mapInstance) {
         mapInstance.invalidateSize();
         return;
       }
 
-      // Hyderabad Coordinates
       mapInstance = L.map('mapContainer').setView([17.4320, 78.4070], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(mapInstance);
 
-      // Hub Depots
       const hubs = [
         { name: 'Jubilee Hills Central Depot #1', lat: 17.4320, lng: 78.4070, color: '#10B981', code: 'HUB-HYD-01' },
         { name: 'Banjara Hills Micro-Depot #2', lat: 17.4156, lng: 78.4350, color: '#6366F1', code: 'HUB-HYD-02' },
@@ -1605,12 +2030,10 @@
       ];
 
       hubs.forEach(h => {
-        // Marker
         L.marker([h.lat, h.lng])
           .addTo(mapInstance)
           .bindPopup(`<strong>🏬 ${h.name}</strong><br>Code: ${h.code}<br>Fulfillment Hub Depot`);
 
-        // Geofence Circle (5km radius)
         L.circle([h.lat, h.lng], {
           color: h.color,
           fillColor: h.color,
@@ -1711,15 +2134,15 @@
             <td><span class="status-tag ${statusClass}">${t.status}</span></td>
             <td>
               <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
-                <i class="fa-solid fa-camera"></i> View Proof
+                <i class="fa-solid fa-camera"></i> Proof
               </button>
             </td>
             <td>
               ${t.status === 'PENDING' ? `
                 <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">
-                  <i class="fa-solid fa-check"></i> Mark Delivered
+                  <i class="fa-solid fa-check"></i> Deliver
                 </button>
-              ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Reconciled</span>`}
+              ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Done</span>`}
             </td>
           </tr>
         `;
@@ -1873,14 +2296,12 @@
     }
 
     function openCreateSubModal() {
-      // Populate Customers dropdown
       const custSelect = document.getElementById('newSubCustomer');
       custSelect.innerHTML = '';
       rawCustomers.forEach(c => {
         custSelect.innerHTML += `<option value="${c.id}">${c.first_name || c.username} (${c.phone || c.email})</option>`;
       });
 
-      // Populate Products dropdown
       const prodSelect = document.getElementById('newSubProduct');
       prodSelect.innerHTML = '';
       rawProducts.forEach(p => {
@@ -1915,83 +2336,13 @@
           loadSubscriptions();
           loadDeliveries();
           loadDashboard();
-          alert('🎉 Subscription created successfully and scheduled for tomorrow morning delivery!');
+          alert('🎉 Subscription created successfully!');
         } else {
-          alert('Could not create subscription. Please verify customer balance.');
+          alert('Could not create subscription.');
         }
       } catch (e) {
         alert('Network error while booking subscription.');
       }
-    }
-
-    function openAddDriverModal() {
-      document.getElementById('addDriverModal').style.display = 'flex';
-    }
-
-    async function submitAddDriver() {
-      const fn = document.getElementById('drvFirstName').value.trim();
-      const ln = document.getElementById('drvLastName').value.trim();
-      const ph = document.getElementById('drvPhone').value.trim();
-      const hubId = document.getElementById('drvHubId').value;
-      const sal = document.getElementById('drvSalary').value;
-
-      if (!ph) {
-        alert('Please enter a valid phone number for the delivery partner');
-        return;
-      }
-
-      try {
-        const res = await fetch(`${baseUrl}/admin/fleet/create-driver/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            first_name: fn || 'Delivery',
-            last_name: ln || 'Partner',
-            phone: ph,
-            hub_id: hubId,
-            monthly_salary: sal
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          closeModal('addDriverModal');
-          loadFleet();
-          loadHubs();
-          alert(`✅ Delivery Partner ${fn} ${ln} successfully onboarded and affiliated with ${data.hub_name}!`);
-        } else {
-          alert('Could not onboard driver. Please check the details.');
-        }
-      } catch (err) {
-        alert('Network error while onboarding driver.');
-      }
-    }
-
-    async function loadFleet(hubId = '') {
-      try {
-        const url = hubId ? `${baseUrl}/admin/fleet/?hub_id=${hubId}` : `${baseUrl}/admin/fleet/`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const fleet = await res.json();
-          const tbody = document.getElementById('fleet-table-body');
-          tbody.innerHTML = '';
-          fleet.forEach(f => {
-            tbody.innerHTML += `
-              <tr>
-                <td><strong>DRV-${f.id}</strong></td>
-                <td><strong>${f.name}</strong></td>
-                <td>${f.phone}</td>
-                <td><span class="status-tag status-hub">🏢 ${f.hub}</span></td>
-                <td>${f.route}</td>
-                <td><strong>${f.completed_stops}/${f.assigned_stops} Stops</strong></td>
-                <td><strong style="color:var(--primary-accent);">${f.on_time_rate}</strong></td>
-                <td><strong style="color:var(--primary-accent);">${f.salary}</strong></td>
-                <td><strong>🍾 ${f.bottles_collected} Bottles</strong></td>
-              </tr>
-            `;
-          });
-        }
-      } catch (e) {}
     }
 
     async function loadProducts() {

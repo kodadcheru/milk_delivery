@@ -142,6 +142,79 @@ class AdminHubsView(APIView):
 
         return Response(hubs_data)
 
+    def post(self, request):
+        from apps.deliveries.models import LocationHub
+
+        hub_code = request.data.get("hub_code", "").strip().upper()
+        name = request.data.get("name", "").strip()
+        address = request.data.get("address", "").strip()
+        manager_name = request.data.get("manager_name", "Hub Lead").strip()
+        manager_phone = request.data.get("manager_phone", "+91 98888 00000").strip()
+        fssai = request.data.get("fssai_license", "13621014000999").strip()
+        lat = float(request.data.get("latitude", 17.4320))
+        lng = float(request.data.get("longitude", 78.4070))
+
+        if not hub_code or not name:
+            return Response({"detail": "Hub Code and Name are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        hub, created = LocationHub.objects.get_or_create(
+            hub_code=hub_code,
+            defaults={
+                "name": name,
+                "address": address,
+                "manager_name": manager_name,
+                "manager_phone": manager_phone,
+                "fssai_license": fssai,
+                "latitude": lat,
+                "longitude": lng,
+            }
+        )
+        if not created:
+            hub.name = name
+            hub.address = address
+            hub.manager_name = manager_name
+            hub.manager_phone = manager_phone
+            hub.fssai_license = fssai
+            hub.latitude = lat
+            hub.longitude = lng
+            hub.save()
+
+        return Response({
+            "message": f"Location Hub '{name}' ({hub_code}) saved successfully!",
+            "id": hub.hub_code,
+            "db_id": hub.id,
+            "name": hub.name,
+        }, status=status.HTTP_201_CREATED)
+
+
+class AdminHubDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def patch(self, request, pk):
+        from apps.deliveries.models import LocationHub
+        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        if not hub:
+            return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if "name" in request.data: hub.name = request.data["name"]
+        if "address" in request.data: hub.address = request.data["address"]
+        if "manager_name" in request.data: hub.manager_name = request.data["manager_name"]
+        if "manager_phone" in request.data: hub.manager_phone = request.data["manager_phone"]
+        if "fssai_license" in request.data: hub.fssai_license = request.data["fssai_license"]
+        hub.save()
+
+        return Response({"message": f"Hub '{hub.name}' updated successfully!"})
+
+    def delete(self, request, pk):
+        from apps.deliveries.models import LocationHub
+        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        if not hub:
+            return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        name = hub.name
+        hub.delete()
+        return Response({"message": f"Hub '{name}' removed from operations."})
+
 
 class AdminSubscriptionsListView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -218,11 +291,15 @@ class AdminFleetListView(APIView):
 
             fleet_data.append({
                 "id": d.id,
+                "first_name": d.first_name,
+                "last_name": d.last_name,
                 "name": f"{d.first_name} {d.last_name}".strip() or d.username,
                 "phone": d.phone or "+91 9123456789",
                 "hub": hub_name,
                 "hub_id": d.assigned_hub_id or 1,
                 "hub_code": hub_code,
+                "raw_salary": float(d.monthly_salary),
+                "driver_status": d.driver_status,
                 "route": f"Sector Route #{d.id} • Dynamic Polar Cluster",
                 "assigned_stops": total_stops,
                 "completed_stops": completed_stops,
@@ -234,6 +311,43 @@ class AdminFleetListView(APIView):
             })
 
         return Response(fleet_data)
+
+
+class AdminFleetDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def patch(self, request, pk):
+        from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub
+
+        driver = User.objects.filter(pk=pk, role=User.Roles.DRIVER).first()
+        if not driver:
+            return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if "first_name" in request.data: driver.first_name = request.data["first_name"]
+        if "last_name" in request.data: driver.last_name = request.data["last_name"]
+        if "phone" in request.data: driver.phone = request.data["phone"]
+        if "driver_status" in request.data: driver.driver_status = request.data["driver_status"]
+        if "monthly_salary" in request.data: driver.monthly_salary = Decimal(str(request.data["monthly_salary"]))
+        
+        if "hub_id" in request.data:
+            hub = LocationHub.objects.filter(id=request.data["hub_id"]).first()
+            if hub:
+                driver.assigned_hub = hub
+                driver.address = hub.address
+
+        driver.save()
+        return Response({"message": f"Delivery partner '{driver.first_name} {driver.last_name}' updated successfully!"})
+
+    def delete(self, request, pk):
+        from apps.accounts.models import User
+        driver = User.objects.filter(pk=pk, role=User.Roles.DRIVER).first()
+        if not driver:
+            return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        name = f"{driver.first_name} {driver.last_name}".strip() or driver.username
+        driver.delete()
+        return Response({"message": f"Delivery partner '{name}' removed from fleet."})
 
 
 class HubDriverCreateView(APIView):
@@ -272,6 +386,8 @@ class HubDriverCreateView(APIView):
         )
 
         if not created:
+            driver.first_name = first_name
+            driver.last_name = last_name
             driver.assigned_hub = hub
             driver.monthly_salary = salary
             driver.save()
