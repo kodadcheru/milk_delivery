@@ -103,41 +103,115 @@ class AdminBroadcastNotificationView(APIView):
         )
 
 
+def generate_hub_code(name, address):
+    from apps.deliveries.models import LocationHub
+    import re
+
+    RTC_LOCATION_CODES = {
+        "kodad": "KDD",
+        "suryapet": "SYP",
+        "huzurnagar": "HZNR",
+        "munagala": "MNGL",
+        "miryalaguda": "MRGA",
+        "jaggaiahpeta": "JPT",
+        "nandigama": "NDGM",
+        "khammam": "KMM",
+        "nalgonda": "NLG",
+        "vijayawada": "BZA",
+        "guntur": "GNT",
+        "warangal": "WGL",
+        "karimnagar": "KRMR",
+        "mahbubnagar": "MBNR",
+        "nizamabad": "NZB",
+        "jubilee": "JBL",
+        "banjara": "BNJ",
+        "madhapur": "MDP",
+        "gachibowli": "GCB",
+        "kukatpally": "KPB",
+        "kondapur": "KND",
+        "miyapur": "MYP",
+        "uppal": "UPL",
+        "dilsukhnagar": "DSNR",
+        "begumpet": "BMT",
+        "somajiguda": "SMG",
+        "ameerpet": "AMP",
+        "punjagutta": "PJG",
+        "manikonda": "MNK",
+        "chanda nagar": "CNG",
+        "secunderabad": "SC",
+        "hyderabad": "HYD",
+    }
+
+    full_text = f"{name} {address}".lower()
+    matched_code = None
+
+    for loc, code in RTC_LOCATION_CODES.items():
+        if loc in full_text:
+            matched_code = code
+            break
+
+    if not matched_code:
+        words = re.findall(r'[a-zA-Z]+', name)
+        first_word = words[0].upper() if words else "DEPOT"
+        if len(first_word) >= 3:
+            consonants = "".join([c for c in first_word if c not in "AEIOU"])
+            matched_code = (consonants[:3] if len(consonants) >= 3 else first_word[:3]).upper()
+        else:
+            matched_code = first_word.upper()
+
+    prefix = f"HUB-{matched_code}-"
+    existing = LocationHub.objects.filter(hub_code__startswith=prefix).values_list("hub_code", flat=True)
+    max_num = 0
+    for c in existing:
+        try:
+            num = int(c.split("-")[-1])
+            if num > max_num:
+                max_num = num
+        except (ValueError, IndexError):
+            pass
+
+    next_num = max_num + 1
+    return f"HUB-{matched_code}-{next_num:02d}"
+
+
 class AdminHubsView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        from apps.deliveries.models import LocationHub, DeliveryTask
+        from apps.deliveries.models import LocationHub
         from apps.subscriptions.models import Subscription
 
-        hubs_qs = LocationHub.objects.all().prefetch_related("service_areas")
+        hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)
 
-        total_sub_count = active_subs.count() or 128
-        total_vol = sum(s.quantity for s in active_subs) or 310
+        total_sub_count = active_subs.count() or 0
+        total_vol = sum(s.quantity for s in active_subs) or 0
 
         hubs_data = []
         for idx, h in enumerate(hubs_qs, 1):
             service_areas_count = h.service_areas.count()
-            # Distribute realistic load across hubs based on service areas
-            assigned_subs = int(total_sub_count * (0.4 if idx == 1 else (0.35 if idx == 2 else 0.25)))
-            assigned_vol = round(total_vol * (0.4 if idx == 1 else (0.35 if idx == 2 else 0.25)), 1)
             real_boys = h.delivery_partners.filter(role=User.Roles.DRIVER).count()
-            active_boys = real_boys if real_boys > 0 else max(2, int(assigned_vol / 60))
 
             hubs_data.append({
                 "id": h.hub_code,
+                "hub_code": h.hub_code,
                 "db_id": h.id,
                 "name": h.name,
                 "address": h.address,
+                "manager_name": h.manager_name,
+                "manager_phone": h.manager_phone,
                 "manager": f"{h.manager_name} ({h.manager_phone})",
-                "subscribers_count": assigned_subs,
-                "daily_volume_liters": assigned_vol,
-                "active_delivery_boys": active_boys,
+                "subscribers_count": total_sub_count,
+                "daily_volume_liters": total_vol,
+                "active_delivery_boys": real_boys,
                 "salary_per_boy": 15000,
                 "status": "OPERATIONAL",
                 "fssai_license": h.fssai_license,
                 "service_areas_count": service_areas_count,
+                "latitude": h.latitude,
+                "longitude": h.longitude,
+                "lat": h.latitude,
+                "lng": h.longitude,
             })
 
         return Response(hubs_data)
@@ -145,17 +219,38 @@ class AdminHubsView(APIView):
     def post(self, request):
         from apps.deliveries.models import LocationHub
 
-        hub_code = request.data.get("hub_code", "").strip().upper()
         name = request.data.get("name", "").strip()
         address = request.data.get("address", "").strip()
-        manager_name = request.data.get("manager_name", "Hub Lead").strip()
-        manager_phone = request.data.get("manager_phone", "+91 98888 00000").strip()
-        fssai = request.data.get("fssai_license", "13621014000999").strip()
-        lat = float(request.data.get("latitude", 17.4320))
-        lng = float(request.data.get("longitude", 78.4070))
+        manager_name = request.data.get("manager_name", "").strip()
+        raw_phone = request.data.get("manager_phone", "").strip()
+        fssai = request.data.get("fssai_license", "").strip()
 
-        if not hub_code or not name:
-            return Response({"detail": "Hub Code and Name are required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Strict Mandatory Field Validation (Except FSSAI)
+        if not name:
+            return Response({"detail": "Depot Name is mandatory."}, status=status.HTTP_400_BAD_REQUEST)
+        if not address:
+            return Response({"detail": "Depot Physical Address is mandatory."}, status=status.HTTP_400_BAD_REQUEST)
+        if not manager_name:
+            return Response({"detail": "Hub Manager Full Name is mandatory."}, status=status.HTTP_400_BAD_REQUEST)
+        if not raw_phone:
+            return Response({"detail": "Hub Mobile Number is mandatory."}, status=status.HTTP_400_BAD_REQUEST)
+
+        phone_digits = "".join(filter(str.isdigit, raw_phone))
+        if len(phone_digits) < 10:
+            return Response({"detail": "Please enter a valid 10-digit mobile number for the Hub Manager."}, status=status.HTTP_400_BAD_REQUEST)
+        clean_phone = f"+91 {phone_digits[-10:]}"
+
+        try:
+            lat = float(request.data.get("latitude", 0))
+            lng = float(request.data.get("longitude", 0))
+            if lat == 0 and lng == 0:
+                raise ValueError("Invalid GPS coordinates")
+        except (ValueError, TypeError):
+            return Response({"detail": "Valid GPS Latitude and Longitude are mandatory (pick location on Google Map)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        hub_code = request.data.get("hub_code", "").strip().upper()
+        if not hub_code or hub_code == "AUTO":
+            hub_code = generate_hub_code(name, address)
 
         hub, created = LocationHub.objects.get_or_create(
             hub_code=hub_code,
@@ -163,7 +258,7 @@ class AdminHubsView(APIView):
                 "name": name,
                 "address": address,
                 "manager_name": manager_name,
-                "manager_phone": manager_phone,
+                "manager_phone": clean_phone,
                 "fssai_license": fssai,
                 "latitude": lat,
                 "longitude": lng,
@@ -173,17 +268,18 @@ class AdminHubsView(APIView):
             hub.name = name
             hub.address = address
             hub.manager_name = manager_name
-            hub.manager_phone = manager_phone
+            hub.manager_phone = clean_phone
             hub.fssai_license = fssai
             hub.latitude = lat
             hub.longitude = lng
             hub.save()
 
         return Response({
-            "message": f"Location Hub '{name}' ({hub_code}) saved successfully!",
+            "message": f"Location Hub '{name}' ({hub_code}) registered successfully!",
             "id": hub.hub_code,
             "db_id": hub.id,
             "name": hub.name,
+            "hub_code": hub.hub_code,
         }, status=status.HTTP_201_CREATED)
 
 
