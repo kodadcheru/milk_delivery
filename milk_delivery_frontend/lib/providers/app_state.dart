@@ -161,15 +161,38 @@ class AppState extends ChangeNotifier {
     }).toList();
 
     final total = totalCartPrice;
-    final orderId = 'MD-${8000 + liveOrders.length + 1}';
     final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
     final dateStr = deliveryDate ?? 'Tomorrow';
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
 
+    // 1. Send to Backend API
+    final itemsPayload = cartProductsList.map((e) => {
+      'product_id': e.key.id,
+      'quantity': e.value,
+    }).toList();
+
+    LiveOrderModel? serverOrder = await ApiService.createExpressOrder(
+      items: itemsPayload,
+      deliveryDate: dateStr,
+      deliverySlot: slotStr,
+      deliveryAddress: addr,
+      deliveryLatitude: currentLat,
+      deliveryLongitude: currentLon,
+    );
+
+    if (serverOrder != null) {
+      liveOrders.insert(0, serverOrder);
+      cartItems.clear();
+      await reloadAllData();
+      return serverOrder;
+    }
+
+    // 2. Resilient In-Memory Fallback if backend is unreachable
+    final orderId = 'MD-${8000 + liveOrders.length + 1}';
     final hub = nearestCoveringHub;
     final driverPlaceholder = hub != null ? 'Assigning Partner (${hub['name']})...' : 'Assigning Delivery Partner...';
 
-    final newOrder = LiveOrderModel(
+    final fallbackOrder = LiveOrderModel(
       id: orderId,
       orderType: 'ONE_TIME',
       items: orderItems,
@@ -187,7 +210,7 @@ class AppState extends ChangeNotifier {
       createdAt: 'Just now',
     );
 
-    liveOrders.insert(0, newOrder);
+    liveOrders.insert(0, fallbackOrder);
 
     // Deduct from wallet & record transaction
     if (currentUser != null) {
@@ -218,58 +241,21 @@ class AppState extends ChangeNotifier {
       ),
     );
 
-    if (currentUser != null && currentUser!.walletBalance < 150.0) {
-      notifications.insert(
-        0,
-        NotificationModel(
-          id: notifications.length + 2,
-          title: '⚠️ Wallet Balance Low (₹${currentUser!.walletBalance.toStringAsFixed(0)})',
-          message: 'Your balance is below ₹150. Re-charge now for smooth morning milk drops!',
-          notificationType: 'WALLET',
-          isRead: false,
-          createdAt: 'Just now',
-        ),
-      );
-    }
-
     cartItems.clear();
     notifyListeners();
-    return newOrder;
+    return fallbackOrder;
   }
 
-  void updateOrderStatus(String orderId, String newStatus) {
+  void updateOrderStatus(String orderId, String newStatus) async {
     final idx = liveOrders.indexWhere((o) => o.id == orderId);
     if (idx != -1) {
       final old = liveOrders[idx];
-      liveOrders[idx] = LiveOrderModel(
-        id: old.id,
-        orderType: old.orderType,
-        items: old.items,
-        totalAmount: old.totalAmount,
-        status: newStatus,
-        deliverySlot: old.deliverySlot,
-        deliveryAddress: old.deliveryAddress,
-        deliveryLatitude: old.deliveryLatitude,
-        deliveryLongitude: old.deliveryLongitude,
-        deliveryOtp: old.deliveryOtp,
-        driverName: old.driverName,
-        driverPhone: old.driverPhone,
-        paymentStatus: old.paymentStatus,
-        createdAt: old.createdAt,
-      );
-      notifications.insert(
-        0,
-        NotificationModel(
-          id: notifications.length + 1,
-          title: '🎉 Express Order $orderId Delivered!',
-          message: 'Your express delivery was completed successfully by driver.',
-          notificationType: 'DELIVERY',
-          isRead: false,
-          createdAt: 'Just now',
-        ),
-      );
+      liveOrders[idx] = old.copyWith(status: newStatus);
       notifyListeners();
     }
+
+    await ApiService.updateLiveOrderStatus(orderId, newStatus);
+    await reloadAllData();
   }
 
   Future<void> checkoutCart({
@@ -379,6 +365,7 @@ class AppState extends ChangeNotifier {
     products = await ApiService.fetchProducts();
     subscriptions = await ApiService.fetchSubscriptions();
     deliveries = await ApiService.fetchDeliveries();
+    liveOrders = await ApiService.fetchLiveOrders();
     transactions = await ApiService.fetchWalletTransactions();
     notifications = await ApiService.fetchNotifications();
 

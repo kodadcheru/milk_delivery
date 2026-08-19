@@ -1,8 +1,11 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.core.views import HealthCheckView
+from apps.core.upload_views import FileUploadView
 from apps.accounts.admin_views import (
     AdminBroadcastNotificationView,
     AdminConsoleHTMLView,
@@ -51,6 +54,10 @@ from apps.deliveries.views import (
     DeliveryTaskCompleteView,
     DeliveryTaskListView,
     DeliveryTaskSkipView,
+)
+from apps.deliveries.order_views import (
+    ExpressOrderListCreateView,
+    ExpressOrderDetailView,
 )
 from apps.products.views import (
     CategoryDetailView,
@@ -128,4 +135,12 @@ urlpatterns = [
     path("api/deliveries/<int:pk>/complete/", DeliveryTaskCompleteView.as_view(), name="delivery_complete"),
     path("api/deliveries/<int:pk>/skip/", DeliveryTaskSkipView.as_view(), name="delivery_skip"),
     path("api/deliveries/summary/", DeliverySummaryView.as_view(), name="delivery_summary"),
+    # Express / Live Orders endpoints
+    path("api/orders/express/", ExpressOrderListCreateView.as_view(), name="express_order_list_create"),
+    path("api/orders/express/<str:order_id>/", ExpressOrderDetailView.as_view(), name="express_order_detail"),
+    # Image & Media Upload Service endpoint
+    path("api/upload/image/", FileUploadView.as_view(), name="image_upload"),
 ]
+
+# Serve media files directly in development and production
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

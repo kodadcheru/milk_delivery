@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:milk_delivery_frontend/models/product_model.dart';
 import 'package:milk_delivery_frontend/models/user_model.dart';
 import 'package:milk_delivery_frontend/models/delivery_task_model.dart';
+import 'package:milk_delivery_frontend/models/live_order_model.dart';
 import 'package:milk_delivery_frontend/providers/app_state.dart';
 
 void main() {
@@ -165,6 +166,57 @@ void main() {
       expect(order.items.length, 1);
       expect(state.liveOrders.first.id, order.id);
       expect(state.totalCartItemCount, 0);
+    });
+
+    test('LiveOrderModel serializes and deserializes JSON correctly', () {
+      final json = {
+        'id': 'MD-9999',
+        'order_type': 'ONE_TIME',
+        'items': [
+          {
+            'product': {
+              'id': 5,
+              'name': 'Desi Ghee 500ml',
+              'description': 'Pure Cow Ghee',
+              'price_per_unit': '450.00',
+              'unit': 'ML',
+              'unit_quantity': '500 ml',
+              'category': 'MILK',
+            },
+            'quantity': 2,
+            'unit_price': '450.00',
+          }
+        ],
+        'total_amount': '900.00',
+        'status': 'PREPARING',
+        'delivery_date': 'Tomorrow',
+        'delivery_slot': '05:30 AM - 07:00 AM',
+        'delivery_address': 'Flat 402, Royal Palms',
+        'delivery_latitude': '17.4320',
+        'delivery_longitude': '78.4070',
+        'delivery_otp': '7890',
+        'payment_status': 'PAID (Prepaid Wallet)',
+      };
+
+      final order = LiveOrderModel.fromJson(json);
+      expect(order.id, 'MD-9999');
+      expect(order.totalAmount, 900.0);
+      expect(order.items.length, 1);
+      expect(order.items.first.quantity, 2);
+      expect(order.items.first.totalPrice, 900.0);
+      expect(order.deliveryOtp, '7890');
+      expect(order.status, 'PREPARING');
+    });
+
+    test('DoorstepProofPreset and proof photo parsing test', () {
+      final presets = [
+        {'id': 'bag_doorstep', 'title': 'Doorstep Insulated Bag', 'icon': '🥛'},
+        {'id': 'cooler_box', 'title': 'Inside Cooler Box', 'icon': '📦'},
+      ];
+
+      expect(presets.length, 2);
+      expect(presets[0]['id'], 'bag_doorstep');
+      expect(presets[1]['icon'], '📦');
     });
   });
 }

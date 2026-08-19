@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
@@ -9,12 +10,16 @@ import '../models/subscription_model.dart';
 import '../models/delivery_task_model.dart';
 import '../models/wallet_transaction_model.dart';
 import '../models/notification_model.dart';
+import '../models/live_order_model.dart';
+import 'image_upload_service.dart';
 
 class ApiService {
   static String get baseUrl => AppConfig.apiBaseUrl;
   static String? authToken;
+  static String? refreshToken;
 
   static const String _prefTokenKey = 'milkdrop_auth_token';
+  static const String _prefRefreshTokenKey = 'milkdrop_refresh_token';
   static const String _prefUserKey = 'milkdrop_user_data';
 
   static Map<String, String> get _headers => {
@@ -22,43 +27,91 @@ class ApiService {
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
 
-  /// Initialize and restore stored token from SharedPreferences
+  /// Initialize and restore stored tokens from SharedPreferences
   static Future<String?> initAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       authToken = prefs.getString(_prefTokenKey);
+      refreshToken = prefs.getString(_prefRefreshTokenKey);
       return authToken;
     } catch (_) {
       return null;
     }
   }
 
-  /// Save token to persistent storage
-  static Future<void> saveAuthToken(String token) async {
+  /// Save tokens to persistent storage
+  static Future<void> saveAuthToken(String token, {String? refresh}) async {
     authToken = token;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefTokenKey, token);
+      if (refresh != null) {
+        refreshToken = refresh;
+        await prefs.setString(_prefRefreshTokenKey, refresh);
+      }
     } catch (_) {}
+  }
+
+  /// Refresh JWT Access Token using Refresh Token
+  static Future<bool> refreshAuthToken() async {
+    if (refreshToken == null || refreshToken!.isEmpty) return false;
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/token/refresh/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh': refreshToken}),
+      ).timeout(AppConfig.requestTimeout);
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['access'] != null) {
+          authToken = data['access'];
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_prefTokenKey, authToken!);
+          if (data['refresh'] != null) {
+            refreshToken = data['refresh'];
+            await prefs.setString(_prefRefreshTokenKey, refreshToken!);
+          }
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
   }
 
   /// Clear persistent token and user on logout
   static Future<void> clearAuthToken() async {
     authToken = null;
+    refreshToken = null;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prefTokenKey);
+      await prefs.remove(_prefRefreshTokenKey);
       await prefs.remove(_prefUserKey);
     } catch (_) {}
   }
 
-  /// Helper with retry and exponential backoff
+  /// Helper with retry, exponential backoff, and transparent JWT refresh on 401
   static Future<http.Response> _executeWithRetry(Future<http.Response> Function() action) async {
     int attempts = 0;
+    bool hasRefreshed = false;
+
     while (true) {
       try {
         attempts++;
-        return await action().timeout(AppConfig.requestTimeout);
+        final response = await action().timeout(AppConfig.requestTimeout);
+
+        // Auto-refresh token if 401 Unauthorized encountered
+        if (response.statusCode == 401 && !hasRefreshed && refreshToken != null) {
+          hasRefreshed = true;
+          final refreshed = await refreshAuthToken();
+          if (refreshed) {
+            // Re-run action with updated Authorization header
+            return await action().timeout(AppConfig.requestTimeout);
+          }
+        }
+
+        return response;
       } catch (e) {
         if (attempts >= AppConfig.maxRetryAttempts) {
           rethrow;
@@ -99,7 +152,7 @@ class ApiService {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['access'] != null) {
-          await saveAuthToken(data['access']);
+          await saveAuthToken(data['access'], refresh: data['refresh']);
         }
         return data;
       } else {
@@ -136,7 +189,7 @@ class ApiService {
       if (res.statusCode == 201 || res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['access'] != null) {
-          await saveAuthToken(data['access']);
+          await saveAuthToken(data['access'], refresh: data['refresh']);
         }
         return data;
       } else {
@@ -173,7 +226,7 @@ class ApiService {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        await saveAuthToken(data['access']);
+        await saveAuthToken(data['access'], refresh: data['refresh']);
         return {'success': true, 'token': data['access']};
       }
     } catch (_) {}
@@ -534,5 +587,74 @@ class ApiService {
       return res.statusCode == 200;
     } catch (_) {}
     return false;
+  }
+
+  // ── 13. Express / Live Orders APIs ──
+  static Future<List<LiveOrderModel>> fetchLiveOrders() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/orders/express/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((item) => LiveOrderModel.fromJson(item)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<LiveOrderModel?> createExpressOrder({
+    required List<Map<String, dynamic>> items,
+    String? deliveryDate,
+    String? deliverySlot,
+    String? deliveryAddress,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/orders/express/'),
+            headers: _headers,
+            body: jsonEncode({
+              'items': items,
+              if (deliveryDate != null) 'delivery_date': deliveryDate,
+              if (deliverySlot != null) 'delivery_slot': deliverySlot,
+              if (deliveryAddress != null) 'delivery_address': deliveryAddress,
+              if (deliveryLatitude != null) 'delivery_latitude': deliveryLatitude,
+              if (deliveryLongitude != null) 'delivery_longitude': deliveryLongitude,
+            }),
+          ));
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        return LiveOrderModel.fromJson(jsonDecode(res.body));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<LiveOrderModel?> updateLiveOrderStatus(String orderId, String newStatus, {String? proofImageUrl}) async {
+    try {
+      final body = <String, dynamic>{'status': newStatus};
+      if (proofImageUrl != null) body['proof_image_url'] = proofImageUrl;
+
+      final res = await _executeWithRetry(() => http.patch(
+            Uri.parse('$baseUrl/orders/express/$orderId/'),
+            headers: _headers,
+            body: jsonEncode(body),
+          ));
+      if (res.statusCode == 200) {
+        return LiveOrderModel.fromJson(jsonDecode(res.body));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ── 14. Media & Image Upload Service ──
+  static Future<String?> uploadImage(Uint8List bytes, String filename, {String folder = 'proofs'}) async {
+    return ImageUploadService.uploadImageBytes(
+      bytes: bytes,
+      filename: filename,
+      folder: folder,
+    );
   }
 }

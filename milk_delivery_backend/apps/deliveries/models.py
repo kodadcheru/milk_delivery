@@ -47,7 +47,8 @@ class DeliveryTask(models.Model):
         DELIVERED = "DELIVERED", "Delivered at Doorstep"
         SKIPPED = "SKIPPED", "Skipped / Paused"
 
-    subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.CASCADE, related_name="deliveries")
+    subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.CASCADE, related_name="deliveries", null=True, blank=True)
+    order = models.ForeignKey("LiveOrder", on_delete=models.CASCADE, related_name="deliveries", null=True, blank=True)
     hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_deliveries")
     delivery_date = models.DateField()
@@ -60,4 +61,54 @@ class DeliveryTask(models.Model):
         ordering = ["delivery_date", "id"]
 
     def __str__(self):
-        return f"Delivery #{self.id} on {self.delivery_date} - {self.subscription.customer.username} ({self.status})"
+        cust_name = self.subscription.customer.username if self.subscription else (self.order.customer.username if self.order else "Unknown")
+        return f"Delivery #{self.id} on {self.delivery_date} - {cust_name} ({self.status})"
+
+
+class LiveOrder(models.Model):
+    class OrderTypes(models.TextChoices):
+        ONE_TIME = "ONE_TIME", "One-Time Order"
+        EXPRESS = "EXPRESS", "Express Delivery"
+        SUBSCRIPTION_ORDER = "SUBSCRIPTION_ORDER", "Subscription Batch Order"
+
+    class Statuses(models.TextChoices):
+        PLACED = "PLACED", "Order Placed"
+        PREPARING = "PREPARING", "Preparing / Packing"
+        OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY", "Out for Delivery"
+        DELIVERED = "DELIVERED", "Delivered"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    id = models.CharField(max_length=50, primary_key=True)  # e.g., MD-8042
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="live_orders")
+    hub = models.ForeignKey(LocationHub, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_orders")
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_orders")
+    order_type = models.CharField(max_length=30, choices=OrderTypes.choices, default=OrderTypes.ONE_TIME)
+    status = models.CharField(max_length=30, choices=Statuses.choices, default=Statuses.PREPARING)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    delivery_date = models.CharField(max_length=50, default="Tomorrow")
+    delivery_slot = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
+    delivery_address = models.TextField(default="Doorstep Delivery Location")
+    delivery_latitude = models.DecimalField(max_digits=11, decimal_places=8, default=17.4319)
+    delivery_longitude = models.DecimalField(max_digits=11, decimal_places=8, default=78.4073)
+    delivery_otp = models.CharField(max_length=10, default="4892")
+    payment_status = models.CharField(max_length=50, default="PAID (Prepaid Wallet)")
+    proof_image_url = models.URLField(blank=True, default="")
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.id} - {self.customer.username} ({self.status}) - ₹{self.total_amount}"
+
+
+class LiveOrderItem(models.Model):
+    order = models.ForeignKey(LiveOrder, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey("products.Product", on_delete=models.CASCADE, related_name="order_items")
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=8, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.order.id}: {self.quantity}x {self.product.name} @ ₹{self.unit_price}"

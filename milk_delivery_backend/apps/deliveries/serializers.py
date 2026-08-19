@@ -18,6 +18,9 @@ class ServiceAreaSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+from apps.products.serializers import ProductSerializer
+
+
 class DeliveryTaskSerializer(serializers.ModelSerializer):
     subscription_detail = SubscriptionSerializer(source="subscription", read_only=True)
     driver_detail = UserSerializer(source="driver", read_only=True)
@@ -34,6 +37,7 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "id",
             "subscription",
             "subscription_detail",
+            "order",
             "driver",
             "driver_detail",
             "customer_name",
@@ -50,22 +54,99 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "delivered_at"]
 
+    def _get_cust(self, obj):
+        if obj.subscription and obj.subscription.customer:
+            return obj.subscription.customer
+        if obj.order and obj.order.customer:
+            return obj.order.customer
+        return None
+
     def get_customer_name(self, obj):
-        cust = obj.subscription.customer
+        cust = self._get_cust(obj)
+        if not cust:
+            return "Customer"
         name = f"{cust.first_name} {cust.last_name}".strip()
         return name if name else cust.username
 
     def get_customer_phone(self, obj):
-        return obj.subscription.customer.phone
+        cust = self._get_cust(obj)
+        return cust.phone if cust else ""
 
     def get_delivery_address(self, obj):
-        return obj.subscription.customer.address
+        if obj.order and obj.order.delivery_address:
+            return obj.order.delivery_address
+        cust = self._get_cust(obj)
+        return cust.address if cust else ""
 
     def get_delivery_instructions(self, obj):
-        return obj.subscription.customer.delivery_instructions
+        cust = self._get_cust(obj)
+        return cust.delivery_instructions if cust else ""
 
     def get_customer_latitude(self, obj):
-        return float(obj.subscription.customer.latitude) if obj.subscription.customer.latitude else 17.4319
+        if obj.order and obj.order.delivery_latitude:
+            return float(obj.order.delivery_latitude)
+        cust = self._get_cust(obj)
+        return float(cust.latitude) if (cust and cust.latitude) else 17.4319
 
     def get_customer_longitude(self, obj):
-        return float(obj.subscription.customer.longitude) if obj.subscription.customer.longitude else 78.4073
+        if obj.order and obj.order.delivery_longitude:
+            return float(obj.order.delivery_longitude)
+        cust = self._get_cust(obj)
+        return float(cust.longitude) if (cust and cust.longitude) else 78.4073
+
+
+class LiveOrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        from apps.deliveries.models import LiveOrderItem
+        model = LiveOrderItem
+        fields = ["id", "product", "product_id", "quantity", "unit_price"]
+
+
+class LiveOrderSerializer(serializers.ModelSerializer):
+    items = LiveOrderItemSerializer(many=True, read_only=True)
+    customer_detail = UserSerializer(source="customer", read_only=True)
+    driver_name = serializers.SerializerMethodField()
+    driver_phone = serializers.SerializerMethodField()
+
+    class Meta:
+        from apps.deliveries.models import LiveOrder
+        model = LiveOrder
+        fields = [
+            "id",
+            "customer",
+            "customer_detail",
+            "hub",
+            "driver",
+            "driver_name",
+            "driver_phone",
+            "order_type",
+            "status",
+            "total_amount",
+            "delivery_date",
+            "delivery_slot",
+            "delivery_address",
+            "delivery_latitude",
+            "delivery_longitude",
+            "delivery_otp",
+            "payment_status",
+            "proof_image_url",
+            "delivered_at",
+            "created_at",
+            "updated_at",
+            "items",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def get_driver_name(self, obj):
+        if obj.driver:
+            name = f"{obj.driver.first_name} {obj.driver.last_name}".strip()
+            return name if name else obj.driver.username
+        if obj.hub:
+            return f"Assigned to {obj.hub.name} Fleet"
+        return "Assigning Delivery Partner..."
+
+    def get_driver_phone(self, obj):
+        return obj.driver.phone if obj.driver else ""

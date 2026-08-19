@@ -10,6 +10,9 @@ python seed_railway.py || true
 echo "📦 [3/4] Collecting static assets..."
 python manage.py collectstatic --noinput --clear || true
 
+# Ensure persistent media directories exist
+mkdir -p "${MEDIA_ROOT:-/app/media}/proofs" || true
+
 APP_PORT="${PORT:-8000}"
 echo "🌟 [4/4] Starting Gunicorn production server on port $APP_PORT..."
 exec gunicorn milk_backend.wsgi:application \

@@ -3,13 +3,22 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
+from django.core.management.utils import get_random_secret_key
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env if present
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "milk-delivery-secret-key-prod-2026-secure")
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "t")
+
+# Load SECRET_KEY securely from environment or generate random key in DEBUG
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "milk-delivery-dev-insecure-key-replace-in-production"
+    else:
+        SECRET_KEY = get_random_secret_key()
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
@@ -103,12 +112,28 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+media_root_env = os.environ.get("MEDIA_ROOT")
+MEDIA_ROOT = Path(media_root_env) if media_root_env else (BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS & CSRF Settings
-CORS_ALLOW_ALL_ORIGINS = True
+cors_origins_env = os.environ.get("CORS_ALLOWED_ORIGINS")
+if cors_origins_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+    CORS_ALLOW_ALL_ORIGINS = False
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8080",
+    ]
+    # Allow all in DEBUG if not explicitly specified, but allow easy restriction
+    CORS_ALLOW_ALL_ORIGINS = DEBUG
+
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
