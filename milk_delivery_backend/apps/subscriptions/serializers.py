@@ -1,7 +1,13 @@
 from rest_framework import serializers
 from apps.products.serializers import ProductSerializer
-from apps.deliveries.serializers import LocationHubSerializer
 from apps.subscriptions.models import Subscription, VacationPause
+from apps.deliveries.models import LocationHub
+
+
+class HubSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationHub
+        fields = ["id", "hub_code", "name", "address", "latitude", "longitude", "manager_name", "manager_phone", "coverage_radius_km"]
 
 
 class VacationPauseSerializer(serializers.ModelSerializer):
@@ -13,7 +19,7 @@ class VacationPauseSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     product_detail = ProductSerializer(source="product", read_only=True)
-    hub_detail = LocationHubSerializer(source="hub", read_only=True)
+    hub_detail = HubSimpleSerializer(source="hub", read_only=True)
     vacation_pauses = VacationPauseSerializer(many=True, read_only=True)
 
     class Meta:
