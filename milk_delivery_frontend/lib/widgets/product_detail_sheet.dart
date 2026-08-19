@@ -274,26 +274,73 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     const SizedBox(height: 16),
 
                     // ── 3. Quantity per Morning ──
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('3. Quantity per Delivery:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
-                              icon: const Icon(Icons.remove_circle_outline, color: Color(0xFF0D7C66)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '3. Quantity per Delivery:',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$_qty × ${item.unitQuantity} (₹${singleDeliveryCost.toStringAsFixed(0)} / day)',
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF0D7C66), fontWeight: FontWeight.w700),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            Text('$_qty × ${item.unitQuantity}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF0D7C66))),
-                            IconButton(
-                              onPressed: () => setState(() => _qty++),
-                              icon: const Icon(Icons.add_circle_outline, color: Color(0xFF0D7C66)),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
                             ),
-                          ],
-                        ),
-                      ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: _qty > 1 ? () => setState(() => _qty--) : null,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: Icon(Icons.remove, size: 18, color: _qty > 1 ? const Color(0xFF0D7C66) : Colors.grey[400]),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  child: Text(
+                                    '$_qty',
+                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () => setState(() => _qty++),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: const Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: Icon(Icons.add, size: 18, color: Color(0xFF0D7C66)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 14),
 
                     // ── 4. Delivery Schedule ──
                     const Text('4. Delivery Frequency:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -353,70 +400,76 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
 
             // Bottom Dual CTA Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        widget.state.addToCart(item);
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            duration: const Duration(seconds: 1),
-                            backgroundColor: const Color(0xFF0F172A),
-                            content: Text('🛒 Added 1x ${item.name} to Cart!'),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            widget.state.addToCart(item);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                duration: const Duration(seconds: 1),
+                                backgroundColor: const Color(0xFF0F172A),
+                                content: Text('🛒 Added 1x ${item.name} to Cart!'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF0D7C66), size: 16),
+                          label: const Text('Add 1x Cart', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF0D7C66), size: 16),
-                      label: const Text('Add 1x Cart', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 12)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        widget.state.createNewSubscription(item, _qty, _schedule);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            widget.state.createNewSubscription(item, _qty, _schedule);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: const Color(0xFF0D7C66),
+                                content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries)! First delivery tomorrow 06:00 AM.'),
+                              ),
+                            );
+                            widget.state.setTab(1);
+                          },
+                          style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0D7C66),
-                            content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries)! First delivery tomorrow 06:00 AM.'),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
                           ),
-                        );
-                        widget.state.setTab(1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D7C66),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Subscribe ($_durationLabel) • ₹${_totalSubscriptionCost.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900),
+                          child: Text(
+                            'Subscribe ($_durationLabel) • ₹${_totalSubscriptionCost.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
