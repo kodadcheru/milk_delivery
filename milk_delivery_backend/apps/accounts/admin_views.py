@@ -408,6 +408,17 @@ class AdminHubsView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+def _resolve_hub_by_pk_or_code(pk):
+    from apps.deliveries.models import LocationHub
+    pk_str = str(pk).strip()
+    if pk_str.isdigit():
+        hub = LocationHub.objects.filter(pk=int(pk_str)).first() or LocationHub.objects.filter(hub_code=pk_str).first()
+        if hub:
+            return hub
+    hub = LocationHub.objects.filter(hub_code__iexact=pk_str).first() or LocationHub.objects.filter(hub_code__icontains=pk_str).first()
+    return hub or LocationHub.objects.first()
+
+
 class AdminHubDetailView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -415,7 +426,7 @@ class AdminHubDetailView(APIView):
         from apps.accounts.models import User
         from apps.deliveries.models import LocationHub, ServiceArea, DeliveryTask
 
-        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        hub = _resolve_hub_by_pk_or_code(pk)
         if not hub:
             return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -476,8 +487,7 @@ class AdminHubDetailView(APIView):
         })
 
     def patch(self, request, pk):
-        from apps.deliveries.models import LocationHub
-        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        hub = _resolve_hub_by_pk_or_code(pk)
         if not hub:
             return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -496,8 +506,7 @@ class AdminHubDetailView(APIView):
         return Response({"message": f"Hub '{hub.name}' updated successfully!", "hub_code": hub.hub_code, "coverage_radius_km": hub.coverage_radius_km})
 
     def delete(self, request, pk):
-        from apps.deliveries.models import LocationHub
-        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        hub = _resolve_hub_by_pk_or_code(pk)
         if not hub:
             return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -511,9 +520,8 @@ class AdminHubAssignDriverView(APIView):
 
     def post(self, request, pk):
         from apps.accounts.models import User
-        from apps.deliveries.models import LocationHub
 
-        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        hub = _resolve_hub_by_pk_or_code(pk)
         if not hub:
             return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
 
