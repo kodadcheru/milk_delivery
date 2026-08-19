@@ -10,9 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Leaflet Map CSS & JS for Live Geofencing Visualizer -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Google Maps JavaScript API with Places & Geometry libraries -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg&libraries=places,geometry"></script>
 
   <style>
     :root {
@@ -757,7 +756,7 @@
         <!-- Google Maps Operations Layer Filter Bar -->
         <div class="table-toolbar" style="margin-bottom: 12px;">
           <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
-            <span style="font-size: 12px; font-weight: 700; color: var(--text-muted);"><i class="fa-solid fa-layer-group"></i> Map Overlays:</span>
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-muted);"><i class="fa-solid fa-layer-group"></i> Google Maps Overlays:</span>
             <label style="font-size: 12px; color: #34D399; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
               <input type="checkbox" checked onchange="toggleMapLayer('hubs', this)"> 🏬 Location Depots (5km Radius)
             </label>
@@ -768,14 +767,12 @@
               <input type="checkbox" checked onchange="toggleMapLayer('drops', this)"> 📍 Customer Doorstep Drops
             </label>
           </div>
-          <div>
-            <a href="https://www.google.com/maps/search/?api=1&query=17.4320,78.4070" target="_blank" class="btn btn-secondary" style="font-size: 11.5px; padding: 6px 12px;">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in Google Maps
-            </a>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #38BDF8; font-weight: 700;">
+            <i class="fa-solid fa-satellite-dish"></i> Live Google Maps Engine Active
           </div>
         </div>
 
-        <!-- Leaflet Map Container -->
+        <!-- Google Maps JS API Container -->
         <div id="mapContainer"></div>
 
         <div class="data-table-wrapper">
@@ -2033,45 +2030,75 @@
       }
     }
 
-    let hubLayerGroup = L.layerGroup();
-    let fleetLayerGroup = L.layerGroup();
-    let dropsLayerGroup = L.layerGroup();
+    let googleMap = null;
+    let hubMarkers = [];
+    let hubCircles = [];
+    let driverMarkers = [];
+    let dropMarkers = [];
+    let activeInfoWindow = null;
 
     function initMap() {
-      if (mapInstance) {
-        mapInstance.invalidateSize();
-        refreshMapLayers();
-        return;
+      const mapEl = document.getElementById('mapContainer');
+      if (!mapEl) return;
+
+      if (!googleMap) {
+        if (typeof google === 'undefined' || !google.maps) {
+          console.log('Waiting for Google Maps API to load...');
+          setTimeout(initMap, 300);
+          return;
+        }
+
+        // Initialize Google Map centered in Hyderabad (Jubilee Hills)
+        googleMap = new google.maps.Map(mapEl, {
+          center: { lat: 17.4320, lng: 78.4070 },
+          zoom: 12.8,
+          mapTypeId: 'roadmap',
+          zoomControl: true,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: true,
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+            { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
+            { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+            { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#064e3b" }] },
+            { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#34d399" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+            { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+            { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#0d7c66" }] },
+            { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#042f2e" }] },
+            { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f8fafc" }] },
+            { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1e1b4b" }] },
+            { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#a5b4fc" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1120" }] },
+            { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
+            { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#0b1120" }] },
+          ],
+        });
+
+        activeInfoWindow = new google.maps.InfoWindow();
       }
-
-      // Initialize map centered at Hyderabad
-      mapInstance = L.map('mapContainer', {
-        center: [17.4320, 78.4070],
-        zoom: 12.5,
-        zoomControl: true,
-      });
-
-      // Google Maps Styled / CartoDB Voyager Retina Tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png', {
-        attribution: '© Google Maps / OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(mapInstance);
-
-      hubLayerGroup.addTo(mapInstance);
-      fleetLayerGroup.addTo(mapInstance);
-      dropsLayerGroup.addTo(mapInstance);
 
       refreshMapLayers();
     }
 
     function refreshMapLayers() {
-      if (!mapInstance) return;
+      if (!googleMap) return;
 
-      hubLayerGroup.clearLayers();
-      fleetLayerGroup.clearLayers();
-      dropsLayerGroup.clearLayers();
+      // Clear existing markers & circles
+      hubMarkers.forEach(m => m.setMap(null));
+      hubCircles.forEach(c => c.setMap(null));
+      driverMarkers.forEach(m => m.setMap(null));
+      dropMarkers.forEach(m => m.setMap(null));
+      hubMarkers = [];
+      hubCircles = [];
+      driverMarkers = [];
+      dropMarkers = [];
 
-      // 1. Plot All Location Hubs & 5km Radius Geofences
+      // 1. Plot All Location Hubs & 5km Radius Geofence Circles
       const defaultHubColors = ['#10B981', '#6366F1', '#0284C7', '#F59E0B', '#EC4899'];
       const hubsToPlot = rawHubs.length > 0 ? rawHubs : [
         { id: 'HUB-HYD-01', name: 'Jubilee Hills Central Depot #1', address: 'Plot 42, Road #36, Jubilee Hills', manager: 'Rajesh Varma', lat: 17.4320, lng: 78.4070 },
@@ -2084,38 +2111,57 @@
         const lng = parseFloat(h.lng || (idx === 0 ? 78.4070 : (idx === 1 ? 78.4350 : 78.3915)));
         const color = defaultHubColors[idx % defaultHubColors.length];
 
-        const hubIcon = L.divIcon({
-          className: 'custom-hub-icon',
-          html: `<div style="background:#1E1B4B; border:2.5px solid ${color}; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 0 12px ${color};">🏬</div>`,
-          iconSize: [38, 38],
-          iconAnchor: [19, 19],
+        // Google Maps Hub Marker
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: googleMap,
+          title: h.name,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 14,
+            fillColor: color,
+            fillOpacity: 1.0,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 3,
+          },
+          label: {
+            text: '🏬',
+            fontSize: '14px',
+          },
         });
 
-        const hubMarker = L.marker([lat, lng], { icon: hubIcon });
-        hubMarker.bindPopup(`
-          <div style="font-family:sans-serif; min-width:200px; padding:4px;">
-            <strong style="color:#10B981; font-size:14px;">🏬 ${h.name}</strong><br>
-            <span style="font-size:11.5px; color:#475569;"><strong>Code:</strong> ${h.id}</span><br>
-            <span style="font-size:11.5px; color:#475569;"><strong>Manager:</strong> ${h.manager}</span><br>
-            <span style="font-size:11px; color:#64748B;">${h.address}</span>
-            <div style="margin-top:8px;">
-              <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" style="display:inline-block; padding:4px 8px; background:#0284C7; color:white; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">
-                🗺️ Open in Google Maps
-              </a>
+        const content = `
+          <div style="font-family:'Inter',sans-serif; min-width:220px; padding:8px; color:#0F172A;">
+            <div style="font-size:14px; font-weight:800; color:#0D7C66; margin-bottom:4px;">🏬 ${h.name}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Hub Code:</strong> ${h.id}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Manager:</strong> ${h.manager}</div>
+            <div style="font-size:11px; color:#64748B; margin-bottom:8px;">${h.address}</div>
+            <div style="font-size:11px; background:#ECFDF5; color:#047857; padding:4px 8px; border-radius:6px; font-weight:bold; display:inline-block;">
+              ✓ 5.0 km Radial Geofenced Coverage Zone
             </div>
           </div>
-        `);
-        hubLayerGroup.addLayer(hubMarker);
+        `;
+
+        marker.addListener('click', () => {
+          activeInfoWindow.setContent(content);
+          activeInfoWindow.open(googleMap, marker);
+        });
+
+        hubMarkers.push(marker);
 
         // 4km Radial Geofenced Circle
-        const geofenceCircle = L.circle([lat, lng], {
-          color: color,
+        const circle = new google.maps.Circle({
+          strokeColor: color,
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
           fillColor: color,
-          fillOpacity: 0.12,
-          weight: 2,
-          radius: 4000
+          fillOpacity: 0.15,
+          map: googleMap,
+          center: { lat, lng },
+          radius: 4000,
         });
-        hubLayerGroup.addLayer(geofenceCircle);
+
+        hubCircles.push(circle);
       });
 
       // 2. Plot Salaried Delivery Boys Moving Live
@@ -2127,38 +2173,52 @@
       ];
 
       const driverOffsets = [
-        [17.4360, 78.4110],
-        [17.4280, 78.4020],
-        [17.4190, 78.4380],
-        [17.4520, 78.3880],
-        [17.4410, 78.3970],
+        { lat: 17.4360, lng: 78.4110 },
+        { lat: 17.4280, lng: 78.4020 },
+        { lat: 17.4190, lng: 78.4380 },
+        { lat: 17.4520, lng: 78.3880 },
+        { lat: 17.4410, lng: 78.3970 },
       ];
 
       driversToPlot.forEach((d, idx) => {
         const coord = driverOffsets[idx % driverOffsets.length];
-        const driverIcon = L.divIcon({
-          className: 'custom-driver-icon',
-          html: `<div style="background:#0D7C66; border:2px solid white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(16,185,129,0.8);"><i class="fa-solid fa-motorcycle" style="color:white; font-size:16px;"></i></div>`,
-          iconSize: [34, 34],
-          iconAnchor: [17, 17],
+
+        const marker = new google.maps.Marker({
+          position: coord,
+          map: googleMap,
+          title: d.name,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 12,
+            fillColor: '#10B981',
+            fillOpacity: 1.0,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2.5,
+          },
+          label: {
+            text: '🛵',
+            fontSize: '12px',
+          },
         });
 
-        const driverMarker = L.marker(coord, { icon: driverIcon });
-        driverMarker.bindPopup(`
-          <div style="font-family:sans-serif; min-width:200px; padding:4px;">
-            <strong style="color:#0D7C66; font-size:13.5px;">🛵 ${d.name}</strong><br>
-            <span style="font-size:11.5px; color:#475569;"><strong>Phone:</strong> ${d.phone}</span><br>
-            <span style="font-size:11.5px; color:#475569;"><strong>Hub:</strong> ${d.hub}</span><br>
-            <span style="font-size:11.5px; color:#475569;"><strong>Progress:</strong> ${d.completed_stops || 10}/${d.assigned_stops || 12} Stops Completed</span><br>
-            <span style="font-size:11.5px; color:#0D7C66; font-weight:bold;">Fixed Salary: ${d.salary || '₹15,000 / mo'}</span>
-            <div style="margin-top:8px;">
-              <a href="https://www.google.com/maps/search/?api=1&query=${coord[0]},${coord[1]}" target="_blank" style="display:inline-block; padding:4px 8px; background:#0284C7; color:white; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">
-                🗺️ Navigate in Google Maps
-              </a>
+        const content = `
+          <div style="font-family:'Inter',sans-serif; min-width:220px; padding:8px; color:#0F172A;">
+            <div style="font-size:14px; font-weight:800; color:#0D7C66; margin-bottom:4px;">🛵 ${d.name}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Phone:</strong> ${d.phone}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Assigned Hub:</strong> ${d.hub}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Shift Progress:</strong> ${d.completed_stops || 10}/${d.assigned_stops || 12} Drops</div>
+            <div style="font-size:11px; background:#F0FDF4; color:#166534; padding:4px 8px; border-radius:6px; font-weight:bold; margin-top:4px;">
+              Fixed Monthly Salary: ${d.salary || '₹15,000 / mo'}
             </div>
           </div>
-        `);
-        fleetLayerGroup.addLayer(driverMarker);
+        `;
+
+        marker.addListener('click', () => {
+          activeInfoWindow.setContent(content);
+          activeInfoWindow.open(googleMap, marker);
+        });
+
+        driverMarkers.push(marker);
       });
 
       // 3. Plot Scheduled Customer Doorstep Deliveries
@@ -2169,36 +2229,50 @@
         const lat = 17.4320 + (idx * 0.003 * (idx % 2 === 0 ? 1 : -1));
         const lng = 78.4070 + (idx * 0.004 * (idx % 3 === 0 ? 1 : -1));
 
-        const dropIcon = L.divIcon({
-          className: 'custom-drop-icon',
-          html: `<div style="background:${isDelivered ? '#10B981' : '#0284C7'}; border:1.5px solid white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; color:white; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.3);">${idx + 1}</div>`,
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: googleMap,
+          title: `Drop #${t.id}: ${t.customer_name || 'Customer'}`,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: isDelivered ? '#10B981' : '#0284C7',
+            fillOpacity: 1.0,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+          },
         });
 
-        const dropMarker = L.marker([lat, lng], { icon: dropIcon });
-        dropMarker.bindPopup(`
-          <div style="font-family:sans-serif; min-width:180px; padding:4px;">
-            <strong style="font-size:13px;">Drop #${t.id}: ${t.customer_name || cust.username || 'Customer'}</strong><br>
-            <span style="font-size:11px; color:#64748B;">${t.delivery_address || 'Jubilee Hills'}</span><br>
-            <span style="font-size:11px; font-weight:bold; color:${isDelivered ? '#10B981' : '#0284C7'};">Status: ${t.status}</span>
+        const content = `
+          <div style="font-family:'Inter',sans-serif; min-width:190px; padding:6px; color:#0F172A;">
+            <div style="font-size:13px; font-weight:800; color:#1E293B; margin-bottom:4px;">Drop #${t.id}: ${t.customer_name || cust.username || 'Customer'}</div>
+            <div style="font-size:11px; color:#64748B; margin-bottom:4px;">${t.delivery_address || 'Jubilee Hills, Hyderabad'}</div>
+            <div style="font-size:11px; font-weight:bold; color:${isDelivered ? '#10B981' : '#0284C7'};">
+              Status: ${isDelivered ? '✓ Delivered at Doorstep' : '⏳ Scheduled for Delivery'}
+            </div>
           </div>
-        `);
-        dropsLayerGroup.addLayer(dropMarker);
+        `;
+
+        marker.addListener('click', () => {
+          activeInfoWindow.setContent(content);
+          activeInfoWindow.open(googleMap, marker);
+        });
+
+        dropMarkers.push(marker);
       });
     }
 
     function toggleMapLayer(layerName, checkbox) {
-      if (!mapInstance) return;
+      if (!googleMap) return;
+      const isVisible = checkbox.checked;
+
       if (layerName === 'hubs') {
-        if (checkbox.checked) mapInstance.addLayer(hubLayerGroup);
-        else mapInstance.removeLayer(hubLayerGroup);
+        hubMarkers.forEach(m => m.setVisible(isVisible));
+        hubCircles.forEach(c => c.setVisible(isVisible));
       } else if (layerName === 'fleet') {
-        if (checkbox.checked) mapInstance.addLayer(fleetLayerGroup);
-        else mapInstance.removeLayer(fleetLayerGroup);
+        driverMarkers.forEach(m => m.setVisible(isVisible));
       } else if (layerName === 'drops') {
-        if (checkbox.checked) mapInstance.addLayer(dropsLayerGroup);
-        else mapInstance.removeLayer(dropsLayerGroup);
+        dropMarkers.forEach(m => m.setVisible(isVisible));
       }
     }
 
