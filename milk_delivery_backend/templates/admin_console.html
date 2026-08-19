@@ -714,8 +714,9 @@
             <div class="section-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Location Hubs & Micro-Fulfillment Depots</div>
             <span style="font-size: 12px; color: var(--text-muted);">Create and manage depots that receive farm tankers and dispatch morning delivery routes</span>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="openCreateHubModal()"><i class="fa-solid fa-plus"></i> Create New Location Hub</button>
+            <button class="btn btn-secondary" onclick="cleanupDuplicateHubs()"><i class="fa-solid fa-broom"></i> Clean Duplicate Hubs</button>
             <button class="btn btn-secondary" onclick="loadHubs()"><i class="fa-solid fa-sync"></i> Refresh Hubs</button>
           </div>
         </div>
@@ -1091,10 +1092,33 @@
   <!-- ── MODALS ── -->
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
 
-  <!-- ── Modal: Create / Add Location Hub ── -->
+  <!-- ── Modal: Create / Add Location Hub with Google Maps Places & Pin-Drop ── -->
   <div class="modal-overlay" id="createHubModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Create New Location Fulfillment Hub</div>
+      
+      <!-- 🔍 Google Places Search Input -->
+      <div class="form-group" style="background: rgba(56, 189, 248, 0.08); padding: 12px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.3);">
+        <label style="color: #38BDF8; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-brands fa-google"></i> Search & Select Location via Google Maps:
+        </label>
+        <input type="text" id="hubPlacesSearch" class="form-control" placeholder="Search society, landmark, area on Google Maps (e.g. Kondapur, Gachibowli, Jubilee Hills)..." style="border-color: #38BDF8; margin-top: 4px;">
+        <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+          Select a suggestion from the dropdown to automatically center the pin and populate address details.
+        </small>
+      </div>
+
+      <!-- 📍 Mini Google Map with Draggable Pin -->
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="font-size: 12px; font-weight: 700; color: #10B981;">
+            <i class="fa-solid fa-map-pin"></i> Pinpoint Depot on Map (Drag pin or click map)
+          </label>
+          <span id="pinCoordsBadge" style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 6px;">17.4320, 78.4070</span>
+        </div>
+        <div id="hubPickerMap" style="height: 190px; width: 100%; border-radius: 12px; border: 1px solid var(--border-color);"></div>
+      </div>
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
           <label>Hub Code (Unique ID)</label>
@@ -1115,18 +1139,18 @@
           <input type="text" id="hubManagerName" class="form-control" placeholder="e.g. Venkat Reddy">
         </div>
         <div class="form-group">
-          <label>Manager Contact Phone</label>
+          <label>Hub Mobile / Contact Phone 📱</label>
           <input type="text" id="hubManagerPhone" class="form-control" placeholder="+91 98888 12345">
         </div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
           <label>Latitude (GPS)</label>
-          <input type="text" id="hubLat" class="form-control" value="17.4849">
+          <input type="text" id="hubLat" class="form-control" value="17.4320">
         </div>
         <div class="form-group">
           <label>Longitude (GPS)</label>
-          <input type="text" id="hubLng" class="form-control" value="78.3883">
+          <input type="text" id="hubLng" class="form-control" value="78.4070">
         </div>
       </div>
       <div class="form-group">
@@ -1756,8 +1780,140 @@
       });
     }
 
+    let hubPickerGoogleMap = null;
+    let hubPickerMarker = null;
+    let hubAutocomplete = null;
+
     function openCreateHubModal() {
       document.getElementById('createHubModal').style.display = 'flex';
+
+      // Auto generate next hub code
+      const nextNum = (rawHubs.length + 1).toString().padStart(2, '0');
+      document.getElementById('hubCode').value = `HUB-HYD-${nextNum}`;
+      document.getElementById('hubPlacesSearch').value = '';
+
+      setTimeout(initHubPickerMap, 300);
+    }
+
+    function initHubPickerMap() {
+      const mapEl = document.getElementById('hubPickerMap');
+      if (!mapEl || typeof google === 'undefined' || !google.maps) return;
+
+      const defaultPos = { lat: 17.4320, lng: 78.4070 };
+
+      if (!hubPickerGoogleMap) {
+        hubPickerGoogleMap = new google.maps.Map(mapEl, {
+          center: defaultPos,
+          zoom: 13.5,
+          mapTypeId: 'roadmap',
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#0d7c66" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1120" }] },
+          ]
+        });
+
+        hubPickerMarker = new google.maps.Marker({
+          position: defaultPos,
+          map: hubPickerGoogleMap,
+          draggable: true,
+          title: "Drag pin to exact hub location",
+          animation: google.maps.Animation.DROP,
+        });
+
+        // Listen for marker drag end
+        hubPickerMarker.addListener('dragend', () => {
+          const pos = hubPickerMarker.getPosition();
+          updateHubCoordinates(pos.lat(), pos.lng(), true);
+        });
+
+        // Listen for map click to reposition pin
+        hubPickerGoogleMap.addListener('click', (e) => {
+          const lat = e.latLng.lat();
+          const lng = e.latLng.lng();
+          hubPickerMarker.setPosition({ lat, lng });
+          updateHubCoordinates(lat, lng, true);
+        });
+
+        // Initialize Google Places Autocomplete
+        const searchInput = document.getElementById('hubPlacesSearch');
+        if (searchInput && google.maps.places) {
+          hubAutocomplete = new google.maps.places.Autocomplete(searchInput, {
+            componentRestrictions: { country: 'in' },
+            fields: ['geometry', 'name', 'formatted_address'],
+          });
+
+          hubAutocomplete.addListener('place_changed', () => {
+            const place = hubAutocomplete.getPlace();
+            if (!place.geometry || !place.geometry.location) {
+              alert("No details available for selected place.");
+              return;
+            }
+
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+
+            hubPickerGoogleMap.setCenter({ lat, lng });
+            hubPickerGoogleMap.setZoom(16);
+            hubPickerMarker.setPosition({ lat, lng });
+
+            document.getElementById('hubLat').value = lat.toFixed(6);
+            document.getElementById('hubLng').value = lng.toFixed(6);
+            document.getElementById('pinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+            if (place.formatted_address) {
+              document.getElementById('hubAddress').value = place.formatted_address;
+            }
+            if (place.name && !document.getElementById('hubName').value) {
+              document.getElementById('hubName').value = `${place.name} Hub`;
+            }
+          });
+        }
+      } else {
+        google.maps.event.trigger(hubPickerGoogleMap, 'resize');
+        hubPickerGoogleMap.setCenter(defaultPos);
+        hubPickerMarker.setPosition(defaultPos);
+      }
+    }
+
+    function updateHubCoordinates(lat, lng, shouldReverseGeocode = false) {
+      document.getElementById('hubLat').value = lat.toFixed(6);
+      document.getElementById('hubLng').value = lng.toFixed(6);
+      document.getElementById('pinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+      if (shouldReverseGeocode && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === 'OK' && results[0]) {
+            document.getElementById('hubAddress').value = results[0].formatted_address;
+          }
+        });
+      }
+    }
+
+    async function cleanupDuplicateHubs() {
+      if (!confirm("Are you sure you want to scan and remove any duplicate hubs from the database?")) return;
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/hubs/cleanup/`, { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          alert(`✅ ${data.message}`);
+          loadHubs();
+          if (googleMap) refreshMapLayers();
+        } else {
+          alert("Could not deduplicate hubs.");
+        }
+      } catch (e) {
+        alert("Network error during hub deduplication.");
+      }
     }
 
     async function submitCreateHub() {
@@ -1794,6 +1950,7 @@
         if (res.ok) {
           closeModal('createHubModal');
           loadHubs();
+          if (googleMap) refreshMapLayers();
           alert(`✅ Location Hub '${name}' created successfully!`);
         } else {
           alert('Could not save Location Hub.');
@@ -1843,6 +2000,7 @@
         if (res.ok) {
           closeModal('editHubModal');
           loadHubs();
+          if (googleMap) refreshMapLayers();
           alert('✅ Hub details updated successfully!');
         }
       } catch (e) {
@@ -1857,6 +2015,7 @@
         const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, { method: 'DELETE' });
         if (res.ok) {
           loadHubs();
+          if (googleMap) refreshMapLayers();
           alert(`Hub '${name}' deleted successfully.`);
         }
       } catch (e) {

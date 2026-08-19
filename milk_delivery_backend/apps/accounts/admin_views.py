@@ -201,6 +201,8 @@ class AdminHubDetailView(APIView):
         if "manager_name" in request.data: hub.manager_name = request.data["manager_name"]
         if "manager_phone" in request.data: hub.manager_phone = request.data["manager_phone"]
         if "fssai_license" in request.data: hub.fssai_license = request.data["fssai_license"]
+        if "latitude" in request.data: hub.latitude = float(request.data["latitude"])
+        if "longitude" in request.data: hub.longitude = float(request.data["longitude"])
         hub.save()
 
         return Response({"message": f"Hub '{hub.name}' updated successfully!"})
@@ -214,6 +216,36 @@ class AdminHubDetailView(APIView):
         name = hub.name
         hub.delete()
         return Response({"message": f"Hub '{name}' removed from operations."})
+
+
+class AdminHubCleanupView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from apps.deliveries.models import LocationHub
+        from collections import defaultdict
+
+        # Find and remove duplicate hubs by name or hub_code
+        seen_codes = set()
+        seen_names = set()
+        deleted_count = 0
+
+        for hub in LocationHub.objects.all().order_by("id"):
+            clean_name = hub.name.strip().lower()
+            clean_code = hub.hub_code.strip().upper()
+            if clean_code in seen_codes or clean_name in seen_names:
+                hub.delete()
+                deleted_count += 1
+            else:
+                seen_codes.add(clean_code)
+                seen_names.add(clean_name)
+
+        remaining_count = LocationHub.objects.count()
+        return Response({
+            "message": f"Deduplication complete. Removed {deleted_count} duplicate hub(s). {remaining_count} unique hub(s) remaining.",
+            "deleted_count": deleted_count,
+            "remaining_count": remaining_count,
+        })
 
 
 class AdminSubscriptionsListView(APIView):
