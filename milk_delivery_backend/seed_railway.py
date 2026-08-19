@@ -28,12 +28,13 @@ def seed():
     ]).delete()
     LocationHub.objects.filter(hub_code__in=["HUB-HYD-01", "HUB-HYD-02", "HUB-HYD-03"]).delete()
 
-    # 2. Cleanup legacy mock duplicate users before configuring Super Admin
+    # 2. Cleanup legacy mock users (Ramesh Kumar, Suresh Rao, etc.) before configuring Super Admin
     User.objects.filter(username__in=[
-        "customer", "driver", "hub_manager", "suresh_driver", "vikram_driver", 
-        "raju_driver", "anil_driver", "cust_9876543210", "cust_8099118003", 
-        "cust_9888877777", "cust_7794893990"
+        "customer", "driver", "hub_manager", "customer_ramesh", "driver_suresh", 
+        "admin_owner", "suresh_driver", "vikram_driver", "raju_driver", "anil_driver", 
+        "cust_9876543210", "cust_8099118003", "cust_9888877777", "cust_7794893990"
     ]).delete()
+    User.objects.filter(phone__in=["+91 9876543210", "+91 9123456789", "+91 98765 43210", "+91 91234 56789"]).delete()
 
     # If both admin and admin_8919548905 exist, remove the duplicate
     User.objects.filter(username="admin_8919548905").delete()

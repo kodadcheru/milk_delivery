@@ -3675,7 +3675,7 @@
       tasks.forEach(t => {
         const sub = t.subscription_detail || {};
         const prod = sub.product_detail || {};
-        const cust = sub.customer_detail || { username: 'Ramesh Kumar', phone: '+91 9876543210', address: 'Flat 402, Green Acres' };
+        const cust = sub.customer_detail || { username: t.customer_name || 'Customer', phone: t.customer_phone || '', address: t.delivery_address || '' };
         const statusClass = t.status === 'DELIVERED' ? 'status-delivered' : (t.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
         const proofImg = t.proof_image_url || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80';
 
@@ -3683,10 +3683,10 @@
           <tr>
             <td>#${t.id}</td>
             <td><strong>${t.customer_name || cust.username || 'Customer'}</strong></td>
-            <td>${t.delivery_address || cust.address || 'Jubilee Hills'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
-            <td>${sub.quantity || 1}x ${prod.name || 'A2 Cow Milk 1L'}</td>
+            <td>${t.delivery_address || cust.address || 'Address'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
+            <td>${sub.quantity || 1}x ${prod.name || 'Product'}</td>
             <td>${t.slot_time || '05:30 AM - 07:00 AM'}</td>
-            <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : 'Suresh Rao (Partner #4)'}</td>
+            <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : (t.driver_name || 'Unassigned')}</td>
             <td><span class="status-tag ${statusClass}">${t.status}</span></td>
             <td>
               <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">

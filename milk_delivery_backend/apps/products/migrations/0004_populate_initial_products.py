@@ -1,50 +1,10 @@
 from django.db import migrations
-from django.contrib.auth.hashers import make_password
+
 
 def create_initial_data(apps, schema_editor):
     Product = apps.get_model('products', 'Product')
-    User = apps.get_model('accounts', 'User')
 
-    # 1. Create Default Users if not exists
-    if not User.objects.filter(phone='+91 8919548905').exists():
-        User.objects.create(
-            username='admin_owner',
-            phone='+91 8919548905',
-            password=make_password('admin123'),
-            role='ADMIN',
-            first_name='Admin',
-            last_name='Manager',
-            is_staff=True,
-            is_superuser=True,
-        )
-
-    if not User.objects.filter(phone='+91 9123456789').exists():
-        User.objects.create(
-            username='driver_suresh',
-            phone='+91 9123456789',
-            password=make_password('pass123'),
-            role='DRIVER',
-            first_name='Suresh',
-            last_name='Rao',
-        )
-
-    if not User.objects.filter(phone='+91 9876543210').exists():
-        User.objects.create(
-            username='customer_ramesh',
-            phone='+91 9876543210',
-            password=make_password('pass123'),
-            role='CUSTOMER',
-            first_name='Ramesh',
-            last_name='Kumar',
-            address='Flat 402, Green Acres, Road No. 36, Jubilee Hills',
-            city='Hyderabad',
-            wallet_balance=650.00,
-            latitude=17.4319,
-            longitude=78.4073,
-            delivery_instructions='Ring bell twice and leave near doorstep box',
-        )
-
-    # 2. Create Initial Product Catalog across 4 Core Categories
+    # Initial Product Catalog across 4 Core Categories
     initial_products = [
         {
             'name': 'Farm Fresh A2 Desi Cow Milk',
