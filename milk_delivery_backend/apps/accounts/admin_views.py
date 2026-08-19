@@ -51,7 +51,8 @@ class AdminCustomerListView(APIView):
         return Response(data)
 
     def post(self, request):
-        from apps.deliveries.models import LocationHub, CustomerAddress
+        from apps.accounts.models import CustomerAddress
+        from apps.deliveries.models import LocationHub
         first_name = request.data.get("first_name", "").strip()
         last_name = request.data.get("last_name", "").strip()
         raw_phone = request.data.get("phone", "").strip()
