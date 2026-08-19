@@ -58,6 +58,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     },
   ];
 
+  String get _activeHubName {
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+    return activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -938,7 +943,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       context,
                       task.customerName,
                       custPhone,
-                      'Hello ${task.customerName}! Your daily morning subscription (${product?.name}) from Jubilee Hills Central Depot has been dispatched.',
+                      'Hello ${task.customerName}! Your daily morning subscription (${product?.name}) from $_activeHubName has been dispatched.',
                     ),
                     icon: const Icon(Icons.chat_rounded, size: 13),
                     label: const Text('WhatsApp Ping', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -1164,7 +1169,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             separatorBuilder: (c, i) => const SizedBox(height: 10),
           itemBuilder: (ctx, idx) {
             final drv = drivers[idx];
-            final hubName = drv['hub'] ?? 'Jubilee Hills Central Depot #1';
+            final hubNameText = drv['hub'] ?? _activeHubName;
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1185,7 +1190,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(drv['name'] ?? 'Driver', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('📍 $hubName', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
+                        Text('📍 $hubNameText', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
                         Text(drv['route'] ?? 'Sector Route', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                         const SizedBox(height: 2),
                         Text(drv['status'] ?? '🟢 Active', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF0D7C66))),

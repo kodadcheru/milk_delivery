@@ -75,6 +75,9 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
         ? tasks[_selectedTaskIndex]
         : null;
 
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+    final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+
     return Scaffold(
       backgroundColor: const Color(0xFF0B1120),
       appBar: AppBar(
@@ -92,7 +95,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             Text(
-              '${tasks.length} Drops • Jubilee Hills Depot #1 Sector',
+              '${tasks.length} Drops • $hubName Sector',
               style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
             ),
           ],

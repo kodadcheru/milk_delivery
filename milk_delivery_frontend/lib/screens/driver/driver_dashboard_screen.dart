@@ -192,6 +192,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       return true;
     }).toList();
 
+    final driverUser = widget.state.currentUser;
+    final salaryMetricText = (driverUser != null && driverUser.monthlySalary > 0)
+        ? '₹${driverUser.monthlySalary.toStringAsFixed(0)}'
+        : '₹15,000';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -466,7 +471,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Container(width: 1, height: 28, color: Colors.white30),
                     _buildMetric('Delivered', '$completedCount'),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    _buildMetric('Monthly Salary', '₹15,000'),
+                    _buildMetric('Monthly Salary', salaryMetricText),
                   ],
                 ),
                 const SizedBox(height: 10),
