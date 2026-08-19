@@ -389,6 +389,13 @@ class AppState extends ChangeNotifier {
       selectedServiceArea = serviceAreas.first;
     }
 
+    if (savedAddresses.isEmpty && locationHubs.isNotEmpty) {
+      final h = locationHubs.first;
+      currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
+      currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
+      currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
+    }
+
     if (currentRole == 'ADMIN' || currentRole == 'PROVIDER') {
       adminSummary = await ApiService.fetchDeliverySummary();
     }
@@ -409,6 +416,12 @@ class AppState extends ChangeNotifier {
         currentLon = defaultAddr.longitude;
       } else {
         activeAddress = null;
+        if (locationHubs.isNotEmpty) {
+          final h = locationHubs.first;
+          currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
+          currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
+          currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
+        }
       }
     } catch (_) {}
     notifyListeners();
