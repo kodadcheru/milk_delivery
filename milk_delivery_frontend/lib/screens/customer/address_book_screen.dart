@@ -868,6 +868,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
   }
 
   Future<void> _submitSave() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
@@ -894,7 +895,9 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("✅ Saved '${newAddr.title}' to Address Book"),

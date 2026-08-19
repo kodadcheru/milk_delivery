@@ -354,41 +354,67 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> reloadAllData() async {
-    final user = await ApiService.fetchUserProfile();
-    if (user != null) {
-      currentUser = user;
-      currentRole = user.role;
-      if (user.address.isNotEmpty) {
-        currentDeliveryAddress = user.address;
+    try {
+      final results = await Future.wait([
+        ApiService.fetchUserProfile(),
+        ApiService.fetchCustomerAddresses(),
+        ApiService.fetchProducts(),
+        ApiService.fetchSubscriptions(),
+        ApiService.fetchDeliveries(),
+        ApiService.fetchLiveOrders(),
+        ApiService.fetchWalletTransactions(),
+        ApiService.fetchNotifications(),
+        ApiService.fetchHubs(),
+        ApiService.fetchServiceAreas(),
+      ]);
+
+      final user = results[0] as UserModel?;
+      if (user != null) {
+        currentUser = user;
+        currentRole = user.role;
+        if (user.address.isNotEmpty) {
+          currentDeliveryAddress = user.address;
+        }
+        currentLat = user.latitude;
+        currentLon = user.longitude;
       }
-      currentLat = user.latitude;
-      currentLon = user.longitude;
-    }
 
-    await fetchSavedAddresses();
-    products = await ApiService.fetchProducts();
-    subscriptions = await ApiService.fetchSubscriptions();
-    deliveries = await ApiService.fetchDeliveries();
-    liveOrders = await ApiService.fetchLiveOrders();
-    transactions = await ApiService.fetchWalletTransactions();
-    notifications = await ApiService.fetchNotifications();
+      final addrs = results[1] as List<CustomerAddressModel>? ?? [];
+      savedAddresses = addrs;
+      if (addrs.isNotEmpty) {
+        final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
+        activeAddress = defaultAddr;
+        currentDeliveryAddress = defaultAddr.summaryAddress;
+        currentLat = defaultAddr.latitude;
+        currentLon = defaultAddr.longitude;
+      }
 
-    locationHubs = await ApiService.fetchHubs();
-    final fetchedAreas = await ApiService.fetchServiceAreas();
-    if (fetchedAreas.isNotEmpty) {
-      serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
-      selectedServiceArea = serviceAreas.first;
-    }
+      products = (results[2] as List<ProductModel>?) ?? [];
+      subscriptions = (results[3] as List<SubscriptionModel>?) ?? [];
+      deliveries = (results[4] as List<DeliveryTaskModel>?) ?? [];
+      liveOrders = (results[5] as List<LiveOrderModel>?) ?? [];
+      transactions = (results[6] as List<WalletTransactionModel>?) ?? [];
+      notifications = (results[7] as List<NotificationModel>?) ?? [];
 
-    if (savedAddresses.isEmpty && locationHubs.isNotEmpty) {
-      final h = locationHubs.first;
-      currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
-      currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
-      currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
-    }
+      locationHubs = (results[8] as List<Map<String, dynamic>>?) ?? [];
+      final fetchedAreas = (results[9] as List<Map<String, dynamic>>?) ?? [];
+      if (fetchedAreas.isNotEmpty) {
+        serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
+        selectedServiceArea = serviceAreas.first;
+      }
 
-    if (currentRole == 'ADMIN' || currentRole == 'PROVIDER') {
-      adminSummary = await ApiService.fetchDeliverySummary();
+      if (savedAddresses.isEmpty && locationHubs.isNotEmpty) {
+        final h = locationHubs.first;
+        currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
+        currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
+        currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
+      }
+
+      if (currentRole == 'ADMIN' || currentRole == 'PROVIDER') {
+        adminSummary = await ApiService.fetchDeliverySummary();
+      }
+    } catch (e) {
+      debugPrint('🚨 [MilkDrop Concurrent Reload Error]: $e');
     }
 
     notifyListeners();

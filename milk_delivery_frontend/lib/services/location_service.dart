@@ -15,8 +15,17 @@ class LocationService {
     'Accept': 'application/json',
   };
 
+  // In-Memory Fast Response Caches
+  static final Map<String, Map<String, dynamic>> _reverseCache = {};
+  static final Map<String, List<Map<String, dynamic>>> _searchCache = {};
+
   // Reverse Geocoding: Convert coordinates to real street address
   static Future<Map<String, dynamic>?> reverseGeocode(double lat, double lon) async {
+    final cacheKey = '${lat.toStringAsFixed(4)},${lon.toStringAsFixed(4)}';
+    if (_reverseCache.containsKey(cacheKey)) {
+      return _reverseCache[cacheKey];
+    }
+
     // 1. Google Maps Geocoding API
     if (googleMapsApiKey.isNotEmpty) {
       try {
@@ -53,7 +62,7 @@ class LocationService {
                 ? '$suburb, $city'
                 : (road.isNotEmpty ? '$road, $city' : fullAddr.split(',').take(2).join(','));
 
-            return {
+            final result = {
               'short_address': shortAddr,
               'full_address': fullAddr,
               'road': road.isNotEmpty ? road : 'Main Road',
@@ -63,6 +72,8 @@ class LocationService {
               'lat': lat,
               'lon': lon,
             };
+            _reverseCache[cacheKey] = result;
+            return result;
           }
         }
       } catch (_) {}
@@ -86,7 +97,7 @@ class LocationService {
         final shortAddress = '$road, $suburb, $city';
         final fullAddress = '$road, $suburb, $city, $state - $postcode';
 
-        return {
+        final result = {
           'short_address': shortAddress,
           'full_address': fullAddress,
           'road': road,
@@ -96,11 +107,13 @@ class LocationService {
           'lat': lat,
           'lon': lon,
         };
+        _reverseCache[cacheKey] = result;
+        return result;
       }
     } catch (_) {}
 
     // Fallback default coordinates
-    return {
+    final fallback = {
       'short_address': 'Live GPS Location',
       'full_address': 'Doorstep Delivery Location',
       'road': 'Main Street',
@@ -110,11 +123,18 @@ class LocationService {
       'lat': lat,
       'lon': lon,
     };
+    _reverseCache[cacheKey] = fallback;
+    return fallback;
   }
 
   // Geocoding Search: High-precision search across Google Maps Geocoding & Places APIs
   static Future<List<Map<String, dynamic>>> searchPlaces(String query) async {
-    if (query.trim().isEmpty) return [];
+    final normQuery = query.trim().toLowerCase();
+    if (normQuery.isEmpty) return [];
+
+    if (_searchCache.containsKey(normQuery)) {
+      return _searchCache[normQuery]!;
+    }
 
     // 1. Google Maps Geocoding API for exact coordinates
     if (googleMapsApiKey.isNotEmpty) {
@@ -128,7 +148,7 @@ class LocationService {
           final data = jsonDecode(res.body);
           if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
             final List results = data['results'];
-            return results.map((item) {
+            final list = results.map((item) {
               final geom = item['geometry']?['location'] ?? {};
               final lat = (geom['lat'] as num?)?.toDouble() ?? 17.4319;
               final lon = (geom['lng'] as num?)?.toDouble() ?? 78.4073;
@@ -145,6 +165,9 @@ class LocationService {
                 'lon': lon,
               };
             }).toList();
+
+            _searchCache[normQuery] = list;
+            return list;
           }
         }
       } catch (_) {}
@@ -170,18 +193,19 @@ class LocationService {
               // Fetch exact lat/lon for first 3 predictions
               double lat = 17.4319;
               double lon = 78.4073;
+
               if (placeId != null && output.length < 3) {
                 try {
-                  final placeUrl = Uri.parse(
-                    'https://maps.googleapis.com/maps/api/geocode/json?place_id=$placeId&key=$googleMapsApiKey',
+                  final detailUrl = Uri.parse(
+                    'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&fields=geometry&key=$googleMapsApiKey',
                   );
-                  final placeRes = await http.get(placeUrl).timeout(const Duration(seconds: 2));
-                  if (placeRes.statusCode == 200) {
-                    final placeData = jsonDecode(placeRes.body);
-                    if (placeData['status'] == 'OK' && (placeData['results'] as List).isNotEmpty) {
-                      final geom = placeData['results'][0]['geometry']?['location'] ?? {};
-                      lat = (geom['lat'] as num?)?.toDouble() ?? lat;
-                      lon = (geom['lng'] as num?)?.toDouble() ?? lon;
+                  final dRes = await http.get(detailUrl).timeout(const Duration(seconds: 2));
+                  if (dRes.statusCode == 200) {
+                    final dData = jsonDecode(dRes.body);
+                    final loc = dData['result']?['geometry']?['location'];
+                    if (loc != null) {
+                      lat = (loc['lat'] as num).toDouble();
+                      lon = (loc['lng'] as num).toDouble();
                     }
                   }
                 } catch (_) {}
@@ -196,46 +220,44 @@ class LocationService {
               });
             }
 
-            if (output.isNotEmpty) return output;
+            if (output.isNotEmpty) {
+              _searchCache[normQuery] = output;
+              return output;
+            }
           }
         }
       } catch (_) {}
     }
 
-    // 2. OpenStreetMap Search Fallback
+    // 2. OpenStreetMap Nominatim Search Fallback
     try {
-      final encoded = Uri.encodeComponent('$query, India');
-      final url = Uri.parse('$_nominatimBaseUrl/search?q=$encoded&format=json&addressdetails=1&limit=5');
+      final url = Uri.parse('$_nominatimBaseUrl/search?format=json&q=${Uri.encodeComponent(query)}&limit=5&countrycodes=in');
       final res = await http.get(url, headers: _headers).timeout(const Duration(seconds: 4));
 
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
-        return list.map((item) {
-          final addr = item['address'] ?? {};
-          final name = item['display_name'] ?? query;
+        final List data = jsonDecode(res.body);
+        final list = data.map((item) {
           final lat = double.tryParse(item['lat']?.toString() ?? '17.4319') ?? 17.4319;
           final lon = double.tryParse(item['lon']?.toString() ?? '78.4073') ?? 78.4073;
+          final displayName = item['display_name'] ?? query;
 
-          final road = addr['road'] ?? addr['suburb'] ?? addr['neighbourhood'] ?? query;
-          final city = addr['city'] ?? addr['town'] ?? addr['state'] ?? 'Hyderabad';
+          final parts = displayName.split(',');
+          final shortTitle = parts.isNotEmpty ? parts.take(2).join(',').trim() : query;
 
           return {
-            'display_name': name,
-            'short_title': '$road, $city',
+            'display_name': displayName,
+            'short_title': shortTitle,
+            'place_id': item['place_id']?.toString() ?? '',
             'lat': lat,
             'lon': lon,
           };
         }).toList();
+
+        _searchCache[normQuery] = list;
+        return list;
       }
     } catch (_) {}
 
-    return [
-      {
-        'display_name': '$query, Jubilee Hills, Hyderabad, Telangana, India',
-        'short_title': '$query, Hyderabad',
-        'lat': 17.4319,
-        'lon': 78.4073,
-      },
-    ];
+    return [];
   }
 }

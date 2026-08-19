@@ -42,6 +42,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
 
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
+  bool _isSavingLocation = false;
 
   @override
   void initState() {
@@ -152,6 +153,9 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
   }
 
   void _confirmAndSaveLocation() async {
+    if (_isSavingLocation) return;
+    setState(() => _isSavingLocation = true);
+
     final house = _houseNoController.text.trim();
     final landmark = _landmarkController.text.trim();
 
@@ -163,14 +167,19 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
       formatted = '$formatted (Near $landmark)';
     }
 
-    await widget.state.updateDeliveryLocation(
-      formatted,
-      _currentCenter.latitude,
-      _currentCenter.longitude,
-    );
+    try {
+      await widget.state.updateDeliveryLocation(
+        formatted,
+        _currentCenter.latitude,
+        _currentCenter.longitude,
+      );
+    } catch (_) {}
 
     if (mounted) {
-      Navigator.pop(context, true);
+      setState(() => _isSavingLocation = false);
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context, true);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFF0D7C66),
@@ -523,11 +532,13 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                     width: double.infinity,
                     height: 46,
                     child: ElevatedButton.icon(
-                      onPressed: _confirmAndSaveLocation,
-                      icon: const Icon(Icons.check_circle_rounded, size: 18),
-                      label: const Text(
-                        'Confirm Location & Pin Doorstep 📍',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      onPressed: _isSavingLocation ? null : _confirmAndSaveLocation,
+                      icon: _isSavingLocation
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check_circle_rounded, size: 18),
+                      label: Text(
+                        _isSavingLocation ? 'Saving Doorstep Pin...' : 'Confirm Location & Pin Doorstep 📍',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0D7C66),
