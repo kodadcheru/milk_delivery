@@ -16,6 +16,18 @@ from decimal import Decimal
 def seed():
     print("🌱 [Railway DB Seeder] Initializing database & permanent Super Admin...")
 
+    # 1. Cleanup all legacy mock service areas and demo hubs
+    ServiceArea.objects.filter(name__in=[
+        "Jubilee Hills (Sector A, B & C)",
+        "Film Nagar & Prashasan Nagar",
+        "Banjara Hills (Road 1 to 14)",
+        "Madhapur & Hitec City Core",
+        "Gachibowli Financial District",
+        "Kondapur & Botanical Garden",
+        "Kukatpally Housing Board (KPHB)",
+    ]).delete()
+    LocationHub.objects.filter(hub_code__in=["HUB-HYD-01", "HUB-HYD-02", "HUB-HYD-03"]).delete()
+
     # 2. Cleanup legacy mock duplicate users before configuring Super Admin
     User.objects.filter(username__in=[
         "customer", "driver", "hub_manager", "suresh_driver", "vikram_driver", 

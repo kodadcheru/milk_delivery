@@ -2067,6 +2067,10 @@
     function renderHubsTable(hubs) {
       const tbody = document.getElementById('hubs-table-body');
       tbody.innerHTML = '';
+      if (hubs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:32px; color:var(--text-muted); font-size:13px;"><i class="fa-solid fa-store" style="font-size:24px; display:block; margin-bottom:8px; color:var(--primary-accent);"></i>No location hubs created yet.<br><small style="color:var(--text-dim);">Click <strong>+ Create New Location Hub</strong> above to add your fulfillment depot with Google Maps search & pin-drop.</small></td></tr>';
+        return;
+      }
       hubs.forEach(h => {
         tbody.innerHTML += `
           <tr>
@@ -2625,6 +2629,14 @@
       driverMarkers = [];
       dropMarkers = [];
 
+      // Auto-center map on first hub if available
+      if (rawHubs.length > 0 && googleMap) {
+        const firstHub = rawHubs[0];
+        const centerLat = parseFloat(firstHub.latitude || firstHub.lat || 17.4320);
+        const centerLng = parseFloat(firstHub.longitude || firstHub.lng || 78.4070);
+        googleMap.panTo({ lat: centerLat, lng: centerLng });
+      }
+
       // 1. Plot Real Location Hubs & 5km Radius Geofence Circles
       const defaultHubColors = ['#10B981', '#6366F1', '#0284C7', '#F59E0B', '#EC4899'];
       rawHubs.forEach((h, idx) => {
@@ -2790,6 +2802,10 @@
           const areas = await res.json();
           const tbody = document.getElementById('service-areas-table-body');
           tbody.innerHTML = '';
+          if (areas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted); font-size:13px;"><i class="fa-solid fa-map-location-dot" style="font-size:24px; display:block; margin-bottom:8px; color:var(--primary-accent);"></i>No geofenced service areas configured yet.<br><small style="color:var(--text-dim);">Click <strong>+ Add Service Area</strong> above to define your first doorstep delivery zone.</small></td></tr>';
+            return;
+          }
           areas.forEach(a => {
             const hub = a.hub_detail || { name: 'Central Distribution Hub', hub_code: 'HUB-HYD-01' };
             const statusClass = a.status === 'ACTIVE' ? 'status-active' : (a.status === 'EXPANDING' ? 'status-pending' : 'status-paused');
