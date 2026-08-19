@@ -32,12 +32,12 @@ class AppState extends ChangeNotifier {
   List<CustomerAddressModel> savedAddresses = [];
   CustomerAddressModel? activeAddress;
 
-  List<ServiceAreaModel> serviceAreas = ServiceAreaModel.defaultAreas;
-  ServiceAreaModel selectedServiceArea = ServiceAreaModel.defaultAreas.first;
+  List<ServiceAreaModel> serviceAreas = [];
+  ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
 
   void selectServiceArea(ServiceAreaModel area) {
     selectedServiceArea = area;
-    currentDeliveryAddress = '${area.popularSocieties.split(",").first.trim()}, ${area.name}, ${area.city} - ${area.pincodes.split(",").first.trim()}';
+    currentDeliveryAddress = '${area.name}, ${area.city}';
     currentLat = area.latitude;
     currentLon = area.longitude;
     notifyListeners();

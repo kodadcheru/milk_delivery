@@ -3,12 +3,10 @@ import 'package:milk_delivery_frontend/models/service_area_model.dart';
 
 void main() {
   group('ServiceAreaModel Tests', () {
-    test('Default areas are populated with valid data', () {
-      final areas = ServiceAreaModel.defaultAreas;
-      expect(areas.isNotEmpty, isTrue);
-      expect(areas.any((a) => a.name.contains('Jubilee Hills')), isTrue);
-      expect(areas.any((a) => a.status == 'ACTIVE'), isTrue);
-      expect(areas.any((a) => a.status == 'WAITLIST'), isTrue);
+    test('Fallback area has valid default data', () {
+      final area = ServiceAreaModel.fallbackArea;
+      expect(area.name.isNotEmpty, isTrue);
+      expect(area.status, 'ACTIVE');
     });
 
     test('ServiceAreaModel parses JSON correctly', () {

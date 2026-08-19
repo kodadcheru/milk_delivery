@@ -2593,17 +2593,11 @@
       driverMarkers = [];
       dropMarkers = [];
 
-      // 1. Plot All Location Hubs & 5km Radius Geofence Circles
+      // 1. Plot Real Location Hubs & 5km Radius Geofence Circles
       const defaultHubColors = ['#10B981', '#6366F1', '#0284C7', '#F59E0B', '#EC4899'];
-      const hubsToPlot = rawHubs.length > 0 ? rawHubs : [
-        { id: 'HUB-HYD-01', name: 'Jubilee Hills Central Depot #1', address: 'Plot 42, Road #36, Jubilee Hills', manager: 'Operations Admin', lat: 17.4320, lng: 78.4070 },
-        { id: 'HUB-HYD-02', name: 'Banjara Hills Micro-Depot #2', address: 'Road #12, Banjara Hills', manager: 'Kavitha Reddy', lat: 17.4156, lng: 78.4350 },
-        { id: 'HUB-HYD-03', name: 'Madhapur Tech Enclave Depot #3', address: 'Hitec City Main Road, Madhapur', manager: 'Sanjay Rao', lat: 17.4483, lng: 78.3915 },
-      ];
-
-      hubsToPlot.forEach((h, idx) => {
-        const lat = parseFloat(h.lat || (idx === 0 ? 17.4320 : (idx === 1 ? 17.4156 : 17.4483)));
-        const lng = parseFloat(h.lng || (idx === 0 ? 78.4070 : (idx === 1 ? 78.4350 : 78.3915)));
+      rawHubs.forEach((h, idx) => {
+        const lat = parseFloat(h.latitude || h.lat || 17.4320);
+        const lng = parseFloat(h.longitude || h.lng || 78.4070);
         const color = defaultHubColors[idx % defaultHubColors.length];
 
         // Google Maps Hub Marker
@@ -2628,8 +2622,8 @@
         const content = `
           <div style="font-family:'Inter',sans-serif; min-width:220px; padding:8px; color:#0F172A;">
             <div style="font-size:14px; font-weight:800; color:#0D7C66; margin-bottom:4px;">🏬 ${h.name}</div>
-            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Hub Code:</strong> ${h.id}</div>
-            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Manager:</strong> ${h.manager}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Hub Code:</strong> ${h.hub_code || h.id}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Manager:</strong> ${h.manager_name || h.manager || 'Operations'} (${h.manager_phone || '+91 8919548905'})</div>
             <div style="font-size:11px; color:#64748B; margin-bottom:8px;">${h.address}</div>
             <div style="font-size:11px; background:#ECFDF5; color:#047857; padding:4px 8px; border-radius:6px; font-weight:bold; display:inline-block;">
               ✓ 5.0 km Radial Geofenced Coverage Zone
@@ -2659,27 +2653,13 @@
         hubCircles.push(circle);
       });
 
-      // 2. Plot Salaried Delivery Boys Moving Live
-      const driversToPlot = rawFleet.length > 0 ? rawFleet : [
-        { id: 1, name: 'Suresh Rao', phone: '+91 9123456789', hub: 'Jubilee Hills #1', completed_stops: 12, assigned_stops: 14, salary: '₹15,000 / mo' },
-        { id: 2, name: 'Vikram Sharma', phone: '+91 9876501234', hub: 'Jubilee Hills #1', completed_stops: 10, assigned_stops: 12, salary: '₹15,000 / mo' },
-        { id: 3, name: 'Raju Patel', phone: '+91 9654321098', hub: 'Banjara Hills #2', completed_stops: 9, assigned_stops: 11, salary: '₹15,000 / mo' },
-        { id: 4, name: 'Anil Kumar', phone: '+91 9765432109', hub: 'Madhapur #3', completed_stops: 14, assigned_stops: 15, salary: '₹15,000 / mo' },
-      ];
-
-      const driverOffsets = [
-        { lat: 17.4360, lng: 78.4110 },
-        { lat: 17.4280, lng: 78.4020 },
-        { lat: 17.4190, lng: 78.4380 },
-        { lat: 17.4520, lng: 78.3880 },
-        { lat: 17.4410, lng: 78.3970 },
-      ];
-
-      driversToPlot.forEach((d, idx) => {
-        const coord = driverOffsets[idx % driverOffsets.length];
+      // 2. Plot Salaried Delivery Boys on Duty (Real Fleet from DB)
+      rawFleet.forEach((d, idx) => {
+        const lat = parseFloat(d.latitude || (17.4320 + (idx * 0.005)));
+        const lng = parseFloat(d.longitude || (78.4070 + (idx * 0.005)));
 
         const marker = new google.maps.Marker({
-          position: coord,
+          position: { lat, lng },
           map: googleMap,
           title: d.name,
           icon: {

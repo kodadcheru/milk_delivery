@@ -16,20 +16,6 @@ from decimal import Decimal
 def seed():
     print("🌱 [Railway DB Seeder] Initializing database & permanent Super Admin...")
 
-    # 1. Ensure Default Hubs exist
-    hub1, _ = LocationHub.objects.get_or_create(
-        hub_code="HUB-HYD-01",
-        defaults={
-            "name": "Jubilee Hills Central Depot #1",
-            "address": "Plot 42, Road #36, Jubilee Hills, Hyderabad",
-            "latitude": 17.4320,
-            "longitude": 78.4070,
-            "manager_name": "Operations Admin",
-            "manager_phone": "+91 8919548905",
-            "fssai_license": "13621014000342",
-        }
-    )
-
     # 2. Cleanup legacy mock duplicate users before configuring Super Admin
     User.objects.filter(username__in=[
         "customer", "driver", "hub_manager", "suresh_driver", "vikram_driver", 
@@ -55,7 +41,6 @@ def seed():
             role=User.Roles.ADMIN,
             is_staff=True,
             is_superuser=True,
-            assigned_hub=hub1,
             wallet_balance=Decimal("10000.00"),
         )
     else:
@@ -67,7 +52,6 @@ def seed():
         admin.role = User.Roles.ADMIN
         admin.is_staff = True
         admin.is_superuser = True
-        admin.assigned_hub = hub1
         admin.wallet_balance = Decimal("10000.00")
         
     admin.set_password("admin123")

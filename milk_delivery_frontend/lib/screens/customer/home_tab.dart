@@ -1600,37 +1600,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   ServiceAreaSheet.show(context, widget.state);
                 },
               ),
-              const Divider(height: 10),
-
-              // Saved Sample Addresses
-              if (searchResults.isEmpty) ...[
-                const Text('Popular Localities:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                const SizedBox(height: 6),
-                _buildAddressOption(ctx, 'Jubilee Hills, Road No. 36, Hyderabad', 17.4319, 78.4073),
-                _buildAddressOption(ctx, 'Banjara Hills, Road No. 12, Hyderabad', 17.4156, 78.4350),
-                _buildAddressOption(ctx, 'Hitec City, Madhapur, Hyderabad', 17.4435, 78.3772),
-                _buildAddressOption(ctx, 'Gachibowli, Financial District, Hyderabad', 17.4401, 78.3489),
-              ],
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAddressOption(BuildContext ctx, String addr, double lat, double lon) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.location_city_rounded, color: Color(0xFF0D7C66), size: 18),
-      title: Text(addr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-      onTap: () {
-        widget.state.updateDeliveryLocation(addr, lat, lon);
-        Navigator.pop(ctx);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('📍 Delivery address set to: $addr')),
-        );
-      },
     );
   }
 
