@@ -100,50 +100,54 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
 
               const SizedBox(height: 16),
 
-              // ── 3. Promotional Carousel ──
-              _buildHeroPromoCarousel(context),
+              if (!widget.state.isLocationCovered) ...[
+                _buildServingSoonView(context),
+              ] else ...[
+                // ── 3. Promotional Carousel ──
+                _buildHeroPromoCarousel(context),
 
-              const SizedBox(height: 18),
-
-              // ── 4. Active Subscription Snapshot (if any) ──
-              if (activeSub != null) ...[
-                _buildActiveSubscriptionCard(context, activeSub),
                 const SizedBox(height: 18),
+
+                // ── 4. Active Subscription Snapshot (if any) ──
+                if (activeSub != null) ...[
+                  _buildActiveSubscriptionCard(context, activeSub),
+                  const SizedBox(height: 18),
+                ],
+
+                // ── 5. PROMINENT 4 CORE CATEGORIES MEGA SHOWCASE ──
+                _buildMegaCategoriesShowcase(context),
+
+                const SizedBox(height: 18),
+
+                // ── 6. Search Bar & Category Quick Chips ──
+                _buildSearchAndFilterBar(context),
+
+                const SizedBox(height: 16),
+
+                // ── 7. Catalog Section Header ──
+                _buildSectionHeader(
+                  context,
+                  _selectedCategory == 'MILK'
+                      ? '🥛 Farm Fresh Milk & Dairy'
+                      : _selectedCategory == 'MEAT'
+                          ? '🥩 Tender Meat & Chicken'
+                          : _selectedCategory == 'EGGS'
+                              ? '🥚 Farm Fresh Eggs'
+                              : _selectedCategory == 'WATER_CAN'
+                                  ? '💧 Mineral & Purified Water Cans'
+                                  : 'Daily Essentials Catalog',
+                  '${filteredProducts.length} items available for doorstep morning 06:00 AM delivery',
+                ),
+                const SizedBox(height: 12),
+
+                // ── 8. Dynamic Product Grid ──
+                _buildProductGrid(context, filteredProducts),
+
+                const SizedBox(height: 24),
+
+                // ── 9. Trust & Quality Assurance Strip ──
+                _buildTrustAssuranceStrip(context),
               ],
-
-              // ── 5. PROMINENT 4 CORE CATEGORIES MEGA SHOWCASE ──
-              _buildMegaCategoriesShowcase(context),
-
-              const SizedBox(height: 18),
-
-              // ── 6. Search Bar & Category Quick Chips ──
-              _buildSearchAndFilterBar(context),
-
-              const SizedBox(height: 16),
-
-              // ── 7. Catalog Section Header ──
-              _buildSectionHeader(
-                context,
-                _selectedCategory == 'MILK'
-                    ? '🥛 Farm Fresh Milk & Dairy'
-                    : _selectedCategory == 'MEAT'
-                        ? '🥩 Tender Meat & Chicken'
-                        : _selectedCategory == 'EGGS'
-                            ? '🥚 Farm Fresh Eggs'
-                            : _selectedCategory == 'WATER_CAN'
-                                ? '💧 Mineral & Purified Water Cans'
-                                : 'Daily Essentials Catalog',
-                '${filteredProducts.length} items available for doorstep morning 06:00 AM delivery',
-              ),
-              const SizedBox(height: 12),
-
-              // ── 8. Dynamic Product Grid ──
-              _buildProductGrid(context, filteredProducts),
-
-              const SizedBox(height: 24),
-
-              // ── 9. Trust & Quality Assurance Strip ──
-              _buildTrustAssuranceStrip(context),
 
               const SizedBox(height: 20),
             ],
@@ -151,7 +155,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
         ),
 
         // ── Persistent Floating Smart Cart ──
-        if (widget.state.totalCartItemCount > 0)
+        if (widget.state.totalCartItemCount > 0 && widget.state.isLocationCovered)
           Positioned(
             left: 16,
             right: 16,
@@ -1675,6 +1679,130 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
               );
             },
             child: const Text('Pay & Top-Up ⚡'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServingSoonView(BuildContext context) {
+    final areaName = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEF3C7),
+              shape: BoxShape.circle,
+            ),
+            child: const Text('🚚', style: TextStyle(fontSize: 48)),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'We are Serving Soon in Your Area!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'We haven\'t expanded doorstep 06:00 AM delivery to "$areaName" yet. Our active hubs currently serve a 5.0 km radius.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+          ),
+          const SizedBox(height: 20),
+
+          // Operational Hub Badges
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📍 Active Operational Delivery Hubs:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                    SizedBox(width: 6),
+                    Text('Jubilee Hills Hub #1 (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                    SizedBox(width: 6),
+                    Text('Madhapur Tech Hub #3 (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                    SizedBox(width: 6),
+                    Text('Banjara Hills Hub #2 (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => _showLocationSelectorSheet(context),
+              icon: const Icon(Icons.location_on_rounded, size: 18),
+              label: const Text('📍 Select Active Service Zone', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D7C66),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Color(0xFF0D7C66),
+                  content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D7C66)),
+            label: const Text('🔔 Notify Me When MilkDrop Launches', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF0D7C66)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
           ),
         ],
       ),

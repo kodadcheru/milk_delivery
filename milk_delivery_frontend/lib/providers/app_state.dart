@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/customer_address_model.dart';
@@ -34,6 +35,47 @@ class AppState extends ChangeNotifier {
 
   List<ServiceAreaModel> serviceAreas = [];
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
+  List<Map<String, dynamic>> locationHubs = [];
+
+  // Distance helper in KM using Haversine formula
+  double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+    const p = 0.017453292519943295; // math.pi / 180
+    final a = 0.5 - math.cos((lat2 - lat1) * p) / 2 +
+        math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2;
+    return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+  }
+
+  Map<String, dynamic>? get nearestCoveringHub {
+    final hubs = locationHubs.isNotEmpty
+        ? locationHubs
+        : [
+            {'id': 1, 'hub_code': 'HUB-HYD-01', 'name': 'Jubilee Hills Depot #1', 'latitude': 17.4319, 'longitude': 78.4073, 'coverage_radius_km': 5.0},
+            {'id': 2, 'hub_code': 'HUB-HYD-02', 'name': 'Banjara Hills Depot #2', 'latitude': 17.4156, 'longitude': 78.4347, 'coverage_radius_km': 5.0},
+            {'id': 3, 'hub_code': 'HUB-HYD-03', 'name': 'Madhapur Tech Depot #3', 'latitude': 17.4486, 'longitude': 78.3808, 'coverage_radius_km': 5.0},
+          ];
+
+    Map<String, dynamic>? bestHub;
+    double minDistance = double.infinity;
+
+    for (var hub in hubs) {
+      final hLat = (hub['latitude'] as num?)?.toDouble() ?? 17.4319;
+      final hLon = (hub['longitude'] as num?)?.toDouble() ?? 78.4073;
+      final radius = (hub['coverage_radius_km'] as num?)?.toDouble() ?? 5.0;
+
+      final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
+      if (dist <= radius && dist < minDistance) {
+        minDistance = dist;
+        bestHub = hub;
+      }
+    }
+
+    if (bestHub == null && selectedServiceArea.status == 'ACTIVE') {
+      return hubs.first;
+    }
+    return bestHub;
+  }
+
+  bool get isLocationCovered => nearestCoveringHub != null;
 
   void selectServiceArea(ServiceAreaModel area) {
     selectedServiceArea = area;
@@ -133,6 +175,10 @@ class AppState extends ChangeNotifier {
     final dateStr = deliveryDate ?? 'Tomorrow';
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
 
+    final hub = nearestCoveringHub;
+    final hubTag = hub != null ? ' (${hub['hub_code']} - ${hub['name']})' : '';
+    final driverPlaceholder = hub != null ? 'Assigning Partner (${hub['name']})...' : 'Assigning Delivery Partner...';
+
     final newOrder = LiveOrderModel(
       id: orderId,
       orderType: 'ONE_TIME',
@@ -141,11 +187,11 @@ class AppState extends ChangeNotifier {
       status: 'PREPARING',
       deliveryDate: dateStr,
       deliverySlot: slotStr,
-      deliveryAddress: addr,
+      deliveryAddress: '$addr$hubTag',
       deliveryLatitude: currentLat,
       deliveryLongitude: currentLon,
       deliveryOtp: '${(1000 + (orderId.hashCode % 9000)).abs()}',
-      driverName: 'Assigning Delivery Partner...',
+      driverName: driverPlaceholder,
       driverPhone: '',
       paymentStatus: 'PAID (Prepaid Wallet)',
       createdAt: 'Just now',
@@ -332,6 +378,7 @@ class AppState extends ChangeNotifier {
     transactions = await ApiService.fetchWalletTransactions();
     notifications = await ApiService.fetchNotifications();
 
+    locationHubs = await ApiService.fetchHubs();
     final fetchedAreas = await ApiService.fetchServiceAreas();
     if (fetchedAreas.isNotEmpty) {
       serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
