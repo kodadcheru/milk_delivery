@@ -239,31 +239,39 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.eco_rounded, color: Colors.white, size: 20),
-                        SizedBox(width: 6),
-                        Text('Hub Shortest Path Optimized', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                      ],
+                    const Expanded(
+                      child: Row(
+                        children: [
+                          Icon(Icons.eco_rounded, color: Colors.white, size: 18),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Hub Shortest Path Optimized',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                      child: const Text('ZERO BACKTRACKING', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                      child: const Text('ZERO BACKTRACKING', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildTelemetryColumn('${_routeResult.totalDistanceKm.toStringAsFixed(1)} km', 'Total Loop Distance'),
-                    Container(width: 1, height: 28, color: Colors.white30),
-                    _buildTelemetryColumn('${_routeResult.fuelSavedLiters.toStringAsFixed(2)} L', 'Fuel Saved'),
-                    Container(width: 1, height: 28, color: Colors.white30),
-                    _buildTelemetryColumn('₹${_routeResult.fuelCostSavedRupees.toStringAsFixed(0)}', 'Petrol Savings'),
-                    Container(width: 1, height: 28, color: Colors.white30),
-                    _buildTelemetryColumn('${_routeResult.co2SavedKg.toStringAsFixed(1)} kg', 'CO2 Offset 🌱'),
+                    Expanded(child: _buildTelemetryColumn('${_routeResult.totalDistanceKm.toStringAsFixed(1)} km', 'Loop Dist')),
+                    Container(width: 1, height: 24, color: Colors.white30),
+                    Expanded(child: _buildTelemetryColumn('${_routeResult.fuelSavedLiters.toStringAsFixed(2)} L', 'Fuel Saved')),
+                    Container(width: 1, height: 24, color: Colors.white30),
+                    Expanded(child: _buildTelemetryColumn('₹${_routeResult.fuelCostSavedRupees.toStringAsFixed(0)}', 'Savings')),
+                    Container(width: 1, height: 24, color: Colors.white30),
+                    Expanded(child: _buildTelemetryColumn('${_routeResult.co2SavedKg.toStringAsFixed(1)} kg', 'CO2 Offset')),
                   ],
                 ),
               ],
