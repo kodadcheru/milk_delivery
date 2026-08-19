@@ -93,7 +93,13 @@ class ProviderProfileTab extends StatelessWidget {
                   const Divider(height: 20),
                   _buildDetailRow(Icons.schedule_rounded, 'Morning Dispatch Window', '04:30 AM (Cold Storage) – 07:00 AM Complete'),
                   const Divider(height: 20),
-                  _buildDetailRow(Icons.account_balance_rounded, 'Settlement Bank', 'HDFC Bank (A/C **4892) • Daily Auto-Payout'),
+                  _buildDetailRow(
+                    Icons.account_balance_rounded,
+                    'Settlement Bank',
+                    activeHub != null && activeHub['bank_account'] != null
+                        ? '${activeHub['bank_account']}'
+                        : 'Primary Settlement Bank • Daily Auto-Payout',
+                  ),
                 ],
               ),
             ),

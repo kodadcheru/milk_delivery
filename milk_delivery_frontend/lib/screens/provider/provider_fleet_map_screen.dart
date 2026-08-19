@@ -68,10 +68,8 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
     final drivers = widget.fleetDrivers.isNotEmpty
         ? widget.fleetDrivers
         : [
-            {'id': 1, 'name': 'Suresh Rao', 'phone': '+91 9123456789', 'hub': 'Jubilee Hills #1', 'completed_stops': 12, 'assigned_stops': 14, 'salary': '₹15,000 / mo'},
-            {'id': 2, 'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'hub': 'Jubilee Hills #1', 'completed_stops': 10, 'assigned_stops': 12, 'salary': '₹15,000 / mo'},
-            {'id': 3, 'name': 'Raju Patel', 'phone': '+91 9654321098', 'hub': 'Banjara Hills #2', 'completed_stops': 9, 'assigned_stops': 11, 'salary': '₹15,000 / mo'},
-            {'id': 4, 'name': 'Anil Kumar', 'phone': '+91 9765432109', 'hub': 'Madhapur #3', 'completed_stops': 14, 'assigned_stops': 15, 'salary': '₹15,000 / mo'},
+            {'id': 1, 'name': 'Route Partner #1', 'phone': '+91 9123456789', 'hub': _hubs.first['name'], 'completed_stops': 12, 'assigned_stops': 14, 'salary': '₹15,000 / mo'},
+            {'id': 2, 'name': 'Route Partner #2', 'phone': '+91 9876501234', 'hub': _hubs.first['name'], 'completed_stops': 10, 'assigned_stops': 12, 'salary': '₹15,000 / mo'},
           ];
 
     final offsets = [

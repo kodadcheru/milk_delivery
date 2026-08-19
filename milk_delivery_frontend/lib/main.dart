@@ -305,7 +305,7 @@ class _MainAppShellState extends State<MainAppShell> {
                 children: [
                   const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                   Text(
-                    '$hubTitle • 128 Subscribers',
+                    '$hubTitle • ${widget.state.deliveries.length} Active Deliveries',
                     style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ],

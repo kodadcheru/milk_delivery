@@ -73,6 +73,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   void _withdrawEarnings(BuildContext context, double amount) {
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -95,12 +96,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.account_balance, size: 20, color: Color(0xFF0F172A)),
-                  SizedBox(width: 8),
+                  const Icon(Icons.account_balance, size: 20, color: Color(0xFF0F172A)),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Text('HDFC Bank • A/C **4892 (IFSC: HDFC0001234)\nJubilee Hills Dairy Farm LLC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      activeHub != null && activeHub['bank_account'] != null
+                          ? '${activeHub['bank_account']}'
+                          : 'Primary Settlement Bank • Daily Auto-Payout',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
@@ -147,6 +153,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
     final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-01') : 'HUB-01';
+
+    final uniqueCustomers = tasks.map((t) => t.customerName).toSet().length;
+    final activeFamilies = uniqueCustomers > 0 ? '$uniqueCustomers Families' : '${tasks.length} Families';
+    final activeFleetCount = _liveFleet.length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -226,13 +236,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const Divider(color: Colors.white24, height: 20),
                 Row(
                   children: [
-                    Expanded(child: _buildHubStatColumn('128 Families', 'Active Subscribers')),
+                    Expanded(child: _buildHubStatColumn(activeFamilies, 'Active Subscribers')),
                     Container(width: 1, height: 28, color: Colors.white30),
                     Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Litres', 'Daily Milk Volume')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    Expanded(child: _buildHubStatColumn('4 Drivers', 'Active Fleet')),
+                    Expanded(child: _buildHubStatColumn('$activeFleetCount Drivers', 'Active Fleet')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    Expanded(child: _buildHubStatColumn('48 Bottles', 'Returned Hub')),
+                    Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Bottles', 'Crate Inventory')),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -418,8 +428,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         ...partitions.asMap().entries.map((entry) {
                           final idx = entry.key;
                           final res = entry.value;
-                          final driverNames = ['Suresh Rao', 'Vikram Sharma', 'Anil Kumar', 'Raju Patel', 'Kiran Reddy', 'Mahesh G.'];
-                          final dName = idx < driverNames.length ? driverNames[idx] : 'Driver #${idx + 1}';
+                          final dName = idx < _liveFleet.length ? (_liveFleet[idx]['name'] ?? 'Driver #${idx + 1}') : 'Driver #${idx + 1}';
                           return Container(
                             margin: const EdgeInsets.only(bottom: 6),
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -548,7 +557,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const SizedBox(width: 8),
                 _buildFilterChip(2, '⚡ Express Orders (${liveOrders.length})'),
                 const SizedBox(width: 8),
-                _buildFilterChip(3, '🛵 Assigned Fleet (4 Drivers)'),
+                _buildFilterChip(3, '🛵 Assigned Fleet (${_liveFleet.length} Drivers)'),
                 const SizedBox(width: 8),
                 _buildFilterChip(4, '📦 Crate Inventory'),
               ],
@@ -718,9 +727,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               children: [
                 const Icon(Icons.two_wheeler_rounded, size: 14, color: Color(0xFF0D7C66)),
                 const SizedBox(width: 4),
-                const Text(
-                  'Driver: Suresh Rao (Route #4)',
-                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                Text(
+                  _liveFleet.isNotEmpty
+                      ? 'Driver: ${_liveFleet[task.id % _liveFleet.length]['name']} (Route #${task.id % 5 + 1})'
+                      : 'Driver Partner (Route #${task.id % 5 + 1})',
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
