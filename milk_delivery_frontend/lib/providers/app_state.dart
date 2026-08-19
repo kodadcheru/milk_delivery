@@ -695,6 +695,22 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> sendSystemBroadcast(String title, String message) async {
+    await ApiService.sendBroadcastAlert(title, message);
+    notifications.insert(
+      0,
+      NotificationModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: title,
+        message: message,
+        notificationType: 'OFFER',
+        isRead: false,
+        createdAt: 'Just now',
+      ),
+    );
+    notifyListeners();
+  }
+
   Future<void> toggleVacationMode(bool val) async {
     isVacationMode = val;
     final todayStr = DateTime.now().toString().split(' ')[0];

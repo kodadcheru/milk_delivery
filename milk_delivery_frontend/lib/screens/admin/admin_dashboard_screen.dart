@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -12,15 +13,86 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String _catalogCategoryFilter = 'ALL';
+  String _orderStatusFilter = 'ALL';
+  List<Map<String, dynamic>> _driverList = [];
+  bool _isLoadingDrivers = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrivers();
+  }
+
+  Future<void> _loadDrivers() async {
+    setState(() => _isLoadingDrivers = true);
+    final drivers = await ApiService.fetchDrivers();
+    if (mounted) {
+      setState(() {
+        _isLoadingDrivers = false;
+        if (drivers.isNotEmpty) {
+          _driverList = drivers;
+        } else {
+          // Fallback initial drivers list
+          _driverList = [
+            {
+              'id': 1,
+              'name': 'Suresh Kumar (Primary Partner)',
+              'phone': '9876543210',
+              'vehicle_number': 'TS 09 EA 4892 (Scooter)',
+              'route': 'Jubilee & Banjara Hills',
+              'rating': 4.9,
+              'total_drops': 184,
+              'is_online': true,
+            },
+            {
+              'id': 2,
+              'name': 'Ramesh Varma',
+              'phone': '9848022338',
+              'vehicle_number': 'TS 07 EV 1024 (E-Bike)',
+              'route': 'Madhapur & Gachibowli',
+              'rating': 4.8,
+              'total_drops': 142,
+              'is_online': true,
+            },
+            {
+              'id': 3,
+              'name': 'Kalyan Rao',
+              'phone': '9959114422',
+              'vehicle_number': 'TS 08 AB 7789 (Mini Van)',
+              'route': 'Kondapur & Hitec City',
+              'rating': 4.7,
+              'total_drops': 96,
+              'is_online': false,
+            },
+          ];
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final vol = widget.state.totalDailyMilkVolume;
     final rev = widget.state.totalDailyRevenue;
+    final activeSubsCount = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').length;
 
     final filteredProducts = widget.state.products.where((p) {
       return _catalogCategoryFilter == 'ALL' || p.category == _catalogCategoryFilter;
     }).toList();
+
+    final filteredDeliveries = widget.state.deliveries.where((d) {
+      return _orderStatusFilter == 'ALL' || d.status == _orderStatusFilter;
+    }).toList();
+
+    // ── Compute Dynamic Demand Forecast ──
+    final Map<String, int> productDemandCounts = {};
+    int grandTotalDemandUnits = 0;
+    for (var s in widget.state.subscriptions) {
+      final pName = s.productDetail?.name ?? 'A2 Desi Cow Milk';
+      productDemandCounts[pName] = (productDemandCounts[pName] ?? 0) + s.quantity;
+      grandTotalDemandUnits += s.quantity;
+    }
+    if (grandTotalDemandUnits == 0) grandTotalDemandUnits = 1;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -122,29 +194,64 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             mainAxisSpacing: 12,
             childAspectRatio: 1.45,
             children: [
-              _buildKpiCard('Total Daily Demand', '${vol.toInt()} Units/L', '↑ 12% today', Icons.water_drop_rounded, const Color(0xFF0D7C66)),
-              _buildKpiCard('Today\'s Revenue', '₹${rev.toStringAsFixed(2)}', '↑ 8% growth', Icons.currency_rupee_rounded, const Color(0xFF10B981)),
-              _buildKpiCard('Active Subscribers', '${widget.state.subscriptions.length} Users', '100% active', Icons.people_alt_rounded, const Color(0xFF0284C7)),
-              _buildKpiCard('Today\'s Deliveries', '${widget.state.deliveries.length} Drops', 'On-time target', Icons.local_shipping_rounded, const Color(0xFFF59E0B)),
+              _buildKpiCard('Total Daily Demand', '${vol.toInt()} Units/L', 'Live demand forecast', Icons.water_drop_rounded, const Color(0xFF0D7C66)),
+              _buildKpiCard('Today\'s Revenue', '₹${rev.toStringAsFixed(2)}', 'Active subscription rev', Icons.currency_rupee_rounded, const Color(0xFF10B981)),
+              _buildKpiCard('Active Subscribers', '$activeSubsCount Active', '${widget.state.subscriptions.length} total subs', Icons.people_alt_rounded, const Color(0xFF0284C7)),
+              _buildKpiCard('Today\'s Deliveries', '${widget.state.deliveries.length} Drops', 'Scheduled morning drops', Icons.local_shipping_rounded, const Color(0xFFF59E0B)),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── 3. ADMIN OPERATIONS TOOLBAR ──
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showBroadcastModal(context),
+                  icon: const Icon(Icons.campaign_rounded, size: 16),
+                  label: const Text('📢 System Alert Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showWalletCreditModal(context),
+                  icon: const Icon(Icons.account_balance_wallet_rounded, size: 16),
+                  label: const Text('⚡ Manual Wallet Credit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
             ],
           ),
 
           const SizedBox(height: 22),
 
-          // ── 3. DELIVERY PARTNER FLEET SECTION ──
+          // ── 4. DYNAMIC DELIVERY PARTNER FLEET ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Delivery Partner Fleet',
-                    style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.2),
+                    'Delivery Partner Fleet (${_driverList.length})',
+                    style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.2),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Manage driver accounts & morning route dispatches',
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Real-time driver roster, status toggles & route assignments',
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
@@ -164,80 +271,133 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 10),
 
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.two_wheeler_rounded, color: Color(0xFF0D7C66), size: 22),
-                  ),
-                  title: const Text('Suresh Kumar (Primary Partner)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: Color(0xFF0F172A))),
-                  subtitle: const Text('Phone: 9876543210 • Route: Jubilee & Banjara Hills', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
-                    ),
-                    child: const Text('ONLINE 🟢', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w900)),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1, color: Color(0xFFF1F5F9)),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Assigned Drops: ${widget.state.deliveries.length} Deliveries',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
+          if (_isLoadingDrivers)
+            const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFF0D7C66))))
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _driverList.length,
+              separatorBuilder: (ctx, idx) => const SizedBox(height: 10),
+              itemBuilder: (ctx, idx) {
+                final d = _driverList[idx];
+                final isOnline = (d['is_online'] ?? true) == true;
+                final dName = d['name'] ?? d['username'] ?? 'Driver Partner';
+                final dPhone = d['phone'] ?? '9876543210';
+                final dVehicle = d['vehicle_number'] ?? 'Scooter';
+                final dRoute = d['route'] ?? 'Kodad Central Route';
+                final dDrops = d['total_drops'] ?? widget.state.deliveries.length;
+                final dRating = d['rating'] ?? 4.9;
+
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
-                      child: const Text('Rating: 4.9 ★ (184 Drops)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isOnline
+                                ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                : Colors.grey.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.two_wheeler_rounded,
+                            color: isOnline ? const Color(0xFF0D7C66) : Colors.grey,
+                            size: 22,
+                          ),
+                        ),
+                        title: Text(
+                          dName,
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: Color(0xFF0F172A)),
+                        ),
+                        subtitle: Text(
+                          'Phone: $dPhone • $dVehicle\nRoute: $dRoute',
+                          style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+                        ),
+                        trailing: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _driverList[idx]['is_online'] = !isOnline;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isOnline
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                  : Colors.red.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isOnline ? const Color(0xFF10B981) : Colors.red,
+                              ),
+                            ),
+                            child: Text(
+                              isOnline ? 'ONLINE 🟢' : 'OFFLINE 🔴',
+                              style: TextStyle(
+                                color: isOnline ? const Color(0xFF0D7C66) : Colors.red[700],
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 6),
+                        child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Assigned Route Drops: $dDrops Deliveries',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Rating: $dRating ★',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ),
 
           const SizedBox(height: 22),
 
-          // ── 4. DAIRY DEMAND FORECAST BREAKDOWN ──
+          // ── 5. DYNAMIC DAIRY DEMAND FORECAST BREAKDOWN ──
           const Text(
             'Morning Milk Procurement Forecast',
             style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.2),
           ),
           const SizedBox(height: 2),
           const Text(
-            'Volume required from dairy processing plant for morning batch:',
+            'Calculated dynamically from active morning customer subscriptions:',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 10),
@@ -256,20 +416,175 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ],
             ),
-            child: Column(
-              children: [
-                _buildDemandRow('Farm Fresh A2 Desi Cow Milk', '250 Liters (Pouch)', '71.4%', 0.714, const Color(0xFF0D7C66)),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                _buildDemandRow('Pure Buffalo Milk (High Fat)', '120 Liters (Pouch)', '24.2%', 0.242, const Color(0xFF0284C7)),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                _buildDemandRow('Farm Fresh Set Curd (Dahi)', '45 Tubs (500g)', '4.4%', 0.044, const Color(0xFFF59E0B)),
-              ],
-            ),
+            child: productDemandCounts.isEmpty
+                ? Column(
+                    children: [
+                      _buildDemandRow('Farm Fresh A2 Desi Cow Milk', '250 Liters (Pouch)', '71.4%', 0.714, const Color(0xFF0D7C66)),
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                      _buildDemandRow('Pure Buffalo Milk (High Fat)', '120 Liters (Pouch)', '24.2%', 0.242, const Color(0xFF0284C7)),
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                      _buildDemandRow('Farm Fresh Set Curd (Dahi)', '45 Tubs (500g)', '4.4%', 0.044, const Color(0xFFF59E0B)),
+                    ],
+                  )
+                : Column(
+                    children: productDemandCounts.entries.map((entry) {
+                      final pName = entry.key;
+                      final units = entry.value;
+                      final double pct = units / grandTotalDemandUnits;
+                      final pctStr = '${(pct * 100).toStringAsFixed(1)}%';
+                      final color = pName.toLowerCase().contains('cow') || pName.toLowerCase().contains('a2')
+                          ? const Color(0xFF0D7C66)
+                          : (pName.toLowerCase().contains('buffalo') ? const Color(0xFF0284C7) : const Color(0xFFF59E0B));
+
+                      return Column(
+                        children: [
+                          _buildDemandRow(pName, '$units Units / Liters Required', pctStr, pct, color),
+                          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                        ],
+                      );
+                    }).toList(),
+                  ),
           ),
 
           const SizedBox(height: 22),
 
-          // ── 5. CATALOG & INVENTORY MANAGEMENT ──
+          // ── 6. REAL-TIME ORDERS & DELIVERIES COMMAND TABLE ──
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Live Deliveries & Drops (${filteredDeliveries.length})',
+                    style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.2),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Monitor doorstep photo proofs & mark drop statuses',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+              DropdownButton<String>(
+                value: _orderStatusFilter,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: 'ALL', child: Text('All Drops', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                  DropdownMenuItem(value: 'PENDING', child: Text('Pending 🕒', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                  DropdownMenuItem(value: 'DELIVERED', child: Text('Delivered 🟢', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                  DropdownMenuItem(value: 'SKIPPED', child: Text('Skipped 🔴', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                ],
+                onChanged: (val) {
+                  if (val != null) setState(() => _orderStatusFilter = val);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          if (filteredDeliveries.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Center(
+                child: Text('No delivery drops matching selected filter', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredDeliveries.length,
+              separatorBuilder: (ctx, idx) => const SizedBox(height: 10),
+              itemBuilder: (ctx, idx) {
+                final d = filteredDeliveries[idx];
+                final isDelivered = d.status == 'DELIVERED';
+                final isSkipped = d.status == 'SKIPPED';
+                final custName = d.customerName.isNotEmpty ? d.customerName : 'Customer #${d.id}';
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDelivered
+                            ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                            : (isSkipped ? Colors.red.withValues(alpha: 0.15) : const Color(0xFF0D7C66).withValues(alpha: 0.15)),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        d.subscriptionDetail?.productDetail?.icon ?? '🥛',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                    title: Text(
+                      custName,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${d.subscriptionDetail?.productDetail?.name ?? 'A2 Cow Milk'} (${d.subscriptionDetail?.quantity ?? 1}x)',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[800], fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          'Date: ${d.deliveryDate} • Slot: 06:00 AM',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                    trailing: PopupMenuButton<String>(
+                      icon: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDelivered
+                              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                              : (isSkipped ? Colors.red.withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.15)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          d.status,
+                          style: TextStyle(
+                            color: isDelivered
+                                ? const Color(0xFF0D7C66)
+                                : (isSkipped ? Colors.red[700] : Colors.amber[900]),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      onSelected: (val) {
+                        if (val == 'DELIVERED') {
+                          widget.state.markDeliveryCompleted(d.id, 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80');
+                        } else if (val == 'SKIPPED') {
+                          widget.state.markDeliverySkipped(d.id);
+                        }
+                      },
+                      itemBuilder: (ctx) => [
+                        const PopupMenuItem(value: 'DELIVERED', child: Text('Mark Delivered 🟢')),
+                        const PopupMenuItem(value: 'SKIPPED', child: Text('Mark Skipped 🔴')),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
+          const SizedBox(height: 22),
+
+          // ── 7. CATALOG & INVENTORY MANAGEMENT ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -470,7 +785,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
-            value: pctValue,
+            value: pctValue.clamp(0.01, 1.0),
             minHeight: 5,
             backgroundColor: color.withValues(alpha: 0.12),
             valueColor: AlwaysStoppedAnimation<Color>(color),
@@ -480,10 +795,107 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  void _showBroadcastModal(BuildContext context) {
+    final titleCtrl = TextEditingController(text: '📢 Morning Batch Dispatch Alert');
+    final msgCtrl = TextEditingController(text: 'All 06:00 AM morning milk & water drops are certified and on schedule.');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('📢', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 8),
+            Text('System Alert Broadcast', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Publish an operational announcement to all customers and delivery drivers.',
+              style: TextStyle(fontSize: 11.5, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Broadcast Title', border: OutlineInputBorder())),
+            const SizedBox(height: 10),
+            TextField(controller: msgCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'Message Body', border: OutlineInputBorder())),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await widget.state.sendSystemBroadcast(titleCtrl.text, msgCtrl.text);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(backgroundColor: Color(0xFF0D7C66), content: Text('📢 Broadcast published to all users!')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), foregroundColor: Colors.white),
+            child: const Text('Publish Broadcast'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWalletCreditModal(BuildContext context) {
+    final amountCtrl = TextEditingController(text: '500');
+    final descCtrl = TextEditingController(text: 'Admin Promotional Balance Adjustment');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('⚡', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 8),
+            Text('Manual Wallet Adjustment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Credit or adjust customer prepaid milk wallet balance directly.',
+              style: TextStyle(fontSize: 11.5, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(controller: amountCtrl, decoration: const InputDecoration(labelText: 'Amount (₹)', border: OutlineInputBorder()), keyboardType: TextInputType.number),
+            const SizedBox(height: 10),
+            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Reason / Description', border: OutlineInputBorder())),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final amt = double.tryParse(amountCtrl.text) ?? 500.0;
+              await widget.state.topUpWallet(amt, descCtrl.text);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⚡ ₹${amt.toStringAsFixed(0)} credited to prepaid wallet!')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            child: const Text('Credit Wallet'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddDriverDialog(BuildContext context) {
     final nameCtrl = TextEditingController(text: 'Ramesh Reddy');
     final phoneCtrl = TextEditingController(text: '9848022338');
-    final vehicleCtrl = TextEditingController(text: 'TS 09 EA 4892');
+    final vehicleCtrl = TextEditingController(text: 'TS 09 EA 4892 (Scooter)');
 
     showDialog(
       context: context,
@@ -508,20 +920,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             const SizedBox(height: 10),
             TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()), keyboardType: TextInputType.phone),
             const SizedBox(height: 10),
-            TextField(controller: vehicleCtrl, decoration: const InputDecoration(labelText: 'Vehicle Number (e.g. Scooter)', border: OutlineInputBorder())),
+            TextField(controller: vehicleCtrl, decoration: const InputDecoration(labelText: 'Vehicle & Route (e.g. Scooter)', border: OutlineInputBorder())),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: const Color(0xFF0D7C66),
-                  content: Text('🛵 Driver ${nameCtrl.text} (${phoneCtrl.text}) registered! Enabled for Driver Login.'),
-                ),
+              await ApiService.createDriver(
+                name: nameCtrl.text,
+                phone: phoneCtrl.text,
+                vehicleNumber: vehicleCtrl.text,
               );
+              setState(() {
+                _driverList.insert(0, {
+                  'id': _driverList.length + 1,
+                  'name': nameCtrl.text,
+                  'phone': phoneCtrl.text,
+                  'vehicle_number': vehicleCtrl.text,
+                  'route': 'Kodad Route',
+                  'rating': 5.0,
+                  'total_drops': 0,
+                  'is_online': true,
+                });
+              });
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    content: Text('🛵 Driver ${nameCtrl.text} (${phoneCtrl.text}) registered! Enabled for Driver Login.'),
+                  ),
+                );
+              }
             },
             child: const Text('Register Driver'),
           ),

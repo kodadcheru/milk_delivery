@@ -707,7 +707,48 @@ class ApiService {
     return null;
   }
 
-  // ── 14. Media & Image Upload Service ──
+  // ── 14. Admin Operations & Driver Management ──
+  static Future<Map<String, dynamic>?> createDriver({
+    required String name,
+    required String phone,
+    required String vehicleNumber,
+    int? hubId,
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => _client.post(
+            Uri.parse('$baseUrl/admin/drivers/'),
+            headers: _headers,
+            body: jsonEncode({
+              'name': name,
+              'phone': phone,
+              'vehicle_number': vehicleNumber,
+              'hub_id': ?hubId,
+            }),
+          ));
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<bool> sendBroadcastAlert(String title, String message, {String targetRole = 'ALL'}) async {
+    try {
+      final res = await _executeWithRetry(() => _client.post(
+            Uri.parse('$baseUrl/admin/broadcast/'),
+            headers: _headers,
+            body: jsonEncode({
+              'title': title,
+              'message': message,
+              'target_role': targetRole,
+            }),
+          ));
+      return res.statusCode == 201 || res.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
+  // ── 15. Media & Image Upload Service ──
   static Future<String?> uploadImage(Uint8List bytes, String filename, {String folder = 'proofs'}) async {
     return ImageUploadService.uploadImageBytes(
       bytes: bytes,

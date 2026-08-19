@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
 import 'home/home_location_sheet.dart';
-import '../screens/customer/address_book_screen.dart';
 
 enum SubscriptionPlanType { weekly, monthly }
 
