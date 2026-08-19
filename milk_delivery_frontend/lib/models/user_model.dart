@@ -14,6 +14,10 @@ class UserModel {
   final double latitude;
   final double longitude;
 
+  final double monthlySalary;
+  final String vehicleNumber;
+  final String drivingLicense;
+
   UserModel({
     required this.id,
     required this.username,
@@ -29,6 +33,9 @@ class UserModel {
     this.deliverySlotPreference = '05:30 AM - 07:00 AM',
     this.latitude = 17.4319,
     this.longitude = 78.4073,
+    this.monthlySalary = 15000.0,
+    this.vehicleNumber = '',
+    this.drivingLicense = '',
   });
 
   String get fullName => '$firstName $lastName'.trim().isEmpty ? (username.isNotEmpty ? username : 'Customer') : '$firstName $lastName'.trim();
@@ -49,6 +56,9 @@ class UserModel {
       deliverySlotPreference: json['delivery_slot_preference'] ?? '05:30 AM - 07:00 AM',
       latitude: double.tryParse(json['latitude']?.toString() ?? '17.4319') ?? 17.4319,
       longitude: double.tryParse(json['longitude']?.toString() ?? '78.4073') ?? 78.4073,
+      monthlySalary: double.tryParse(json['monthly_salary']?.toString() ?? '15000') ?? 15000.0,
+      vehicleNumber: json['vehicle_number'] ?? '',
+      drivingLicense: json['driving_license'] ?? '',
     );
   }
 

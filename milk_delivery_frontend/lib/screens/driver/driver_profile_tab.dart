@@ -14,13 +14,31 @@ class DriverProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final driverUser = state.currentUser;
-    final driverName = (driverUser != null && driverUser.firstName.isNotEmpty)
+    final driverName = (driverUser != null && (driverUser.firstName.isNotEmpty || driverUser.username.isNotEmpty))
         ? '${driverUser.firstName} ${driverUser.lastName}'.trim()
-        : 'Suresh Rao';
-    final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : '+91 9123456789';
+        : (driverUser?.username.isNotEmpty == true ? driverUser!.username : 'Partner Delivery Boy');
+    final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : 'Verified Mobile Partner';
+    final driverId = driverUser != null ? 'DRV-${driverUser.id}' : 'DRV-101';
 
     final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+    final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
+        ? 'Central Operations (${activeHub['manager_phone']})'
+        : 'Central Operations (+91 8919548905)';
+
+    final salaryText = (driverUser != null && driverUser.monthlySalary > 0)
+        ? '₹${driverUser.monthlySalary.toStringAsFixed(0)}'
+        : '₹15,000';
+    final salaryDetailText = (driverUser != null && driverUser.monthlySalary > 0)
+        ? '₹${driverUser.monthlySalary.toStringAsFixed(0)} / month (Paid directly by Hub Owner)'
+        : '₹15,000 / month (Paid directly by Hub Owner)';
+
+    final vehicleText = (driverUser != null && driverUser.vehicleNumber.isNotEmpty)
+        ? driverUser.vehicleNumber
+        : 'EV Scooter (Verified)';
+    final licenseText = (driverUser != null && driverUser.drivingLicense.isNotEmpty)
+        ? '${driverUser.drivingLicense} (Active)'
+        : 'Commercial License (Active)';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -90,9 +108,9 @@ class DriverProfileTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFF10B981)),
                   ),
-                  child: const Text(
-                    '🛵 Verified Delivery Partner • ID #DRV-802',
-                    style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
+                  child: Text(
+                    '🛵 Verified Delivery Partner • ID #$driverId',
+                    style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                 ),
               ],
@@ -107,7 +125,7 @@ class DriverProfileTab extends StatelessWidget {
               const SizedBox(width: 10),
               _buildMetricCard('99.2%', 'On-Time Rate', Icons.timer_rounded, const Color(0xFF10B981)),
               const SizedBox(width: 10),
-              _buildMetricCard('₹15,000', 'Monthly Salary', Icons.payments_rounded, const Color(0xFF0D7C66)),
+              _buildMetricCard(salaryText, 'Monthly Salary', Icons.payments_rounded, const Color(0xFF0D7C66)),
             ],
           ),
           const SizedBox(height: 20),
@@ -121,15 +139,15 @@ class DriverProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildDetailRow(Icons.payments_rounded, 'Monthly Salary', '₹15,000 / month (Paid directly by Hub Owner)'),
+                  _buildDetailRow(Icons.payments_rounded, 'Monthly Salary', salaryDetailText),
                   const Divider(height: 20),
                   _buildDetailRow(Icons.map_rounded, 'Assigned Route', 'Morning Route #1 • $hubName Zone'),
                   const Divider(height: 20),
                   _buildDetailRow(Icons.schedule_rounded, 'Morning Shift Hours', '05:00 AM – 08:30 AM Daily'),
                   const Divider(height: 20),
-                  _buildDetailRow(Icons.two_wheeler_rounded, 'Registered Vehicle', 'Honda Activa 6G (TS 09 AB 1234)'),
+                  _buildDetailRow(Icons.two_wheeler_rounded, 'Registered Vehicle', vehicleText),
                   const Divider(height: 20),
-                  _buildDetailRow(Icons.badge_rounded, 'Driving License', 'DL-042019003849 (Active)'),
+                  _buildDetailRow(Icons.badge_rounded, 'Driving License', licenseText),
                 ],
               ),
             ),
@@ -147,7 +165,7 @@ class DriverProfileTab extends StatelessWidget {
                 children: [
                   _buildDetailRow(Icons.warehouse_rounded, 'Operating Hub', hubName),
                   const Divider(height: 20),
-                  _buildDetailRow(Icons.support_agent_rounded, 'Dispatch Operations', 'Central Operations (+91 8919548905)'),
+                  _buildDetailRow(Icons.support_agent_rounded, 'Dispatch Operations', managerPhone),
                 ],
               ),
             ),
