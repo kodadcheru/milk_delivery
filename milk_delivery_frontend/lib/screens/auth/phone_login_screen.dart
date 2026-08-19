@@ -326,25 +326,33 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           const SizedBox(height: 20),
 
           // Prominent Continue CTA Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleSendOTP,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 4,
+          InkWell(
+            key: const ValueKey('send_otp_btn'),
+            onTap: _isLoading ? null : _handleSendOTP,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D7C66),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
+              alignment: Alignment.center,
               child: _isLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Get OTP & Continue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, inherit: true)),
+                        Text('Get OTP & Continue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)),
                         SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, size: 18),
+                        Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
                       ],
                     ),
             ),
@@ -354,41 +362,27 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     }
 
     if (_step == 2) {
-      // Step 2: OTP Verification
+      // Step 2: OTP Verification Form
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Enter 4-Digit OTP', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-              TextButton.icon(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Enter 4-Digit OTP', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('Sent to ${_phoneController.text}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                ],
+              ),
+              TextButton(
                 onPressed: () => setState(() => _step = 1),
-                icon: const Icon(Icons.edit, color: Color(0xFF10B981), size: 13),
-                label: const Text('Edit', style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5, fontWeight: FontWeight.bold)),
+                child: const Text('Change Number', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          Text('Code sent to $_phoneNumber', style: TextStyle(color: Colors.grey[400], fontSize: 11.5)),
-          const SizedBox(height: 14),
-
-          // Test OTP Hint
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.amber, size: 16),
-                SizedBox(width: 6),
-                Text('Test OTP is fixed: 1234', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 11.5)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           TextField(
             controller: _otpController,
@@ -409,39 +403,42 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _canResend ? 'Didn\'t receive OTP?' : 'Resend in ${_resendSeconds}s',
-                style: TextStyle(color: Colors.grey[400], fontSize: 11.5),
+              const Text('💡 Test OTP Code: 1234', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
+              TextButton(
+                onPressed: _handleSendOTP,
+                child: const Text('Resend OTP', style: TextStyle(color: Colors.white70, fontSize: 11)),
               ),
-              if (_canResend)
-                TextButton(
-                  onPressed: _handleSendOTP,
-                  child: const Text('Resend OTP', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11.5)),
-                ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
-          // Prominent Verify Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleVerifyOTP,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 4,
+          InkWell(
+            key: const ValueKey('verify_otp_btn'),
+            onTap: _isLoading ? null : _handleVerifyOTP,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D7C66),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
+              alignment: Alignment.center,
               child: _isLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.lock_open_rounded, size: 18),
+                        Icon(Icons.lock_open_rounded, size: 18, color: Colors.white),
                         SizedBox(width: 8),
-                        Text('Verify OTP & Login 🔒', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                        Text('Verify OTP & Login 🔒', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)),
                       ],
                     ),
             ),
