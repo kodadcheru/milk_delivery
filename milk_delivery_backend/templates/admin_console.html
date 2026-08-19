@@ -701,22 +701,22 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-droplet"></i> Daily Milk Volume Forecast</div>
-          <div class="kpi-value" id="kpi-demand">310 Litres</div>
+          <div class="kpi-value" id="kpi-demand">0.0 Litres</div>
           <div class="kpi-desc">Required for 05:30 AM Farm Procurement</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-indian-rupee-sign"></i> Today's Gross GMV</div>
-          <div class="kpi-value" id="kpi-revenue">₹24,850.00</div>
+          <div class="kpi-value" id="kpi-revenue">₹0.00</div>
           <div class="kpi-desc">Prepaid Wallet Auto-Debited</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-users-viewfinder"></i> Active Subscribers</div>
-          <div class="kpi-value" id="kpi-subscribers">128 Families</div>
+          <div class="kpi-value" id="kpi-subscribers">0 Families</div>
           <div class="kpi-desc">Across Operating Depots</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-circle-check"></i> On-Time Delivery SLA</div>
-          <div class="kpi-value" id="kpi-fulfillment">99.4%</div>
+          <div class="kpi-value" id="kpi-fulfillment">100.0%</div>
           <div class="kpi-desc">Verified with Doorstep Photo Proof</div>
         </div>
       </div>
@@ -2210,10 +2210,16 @@
         const res = await fetch(`${baseUrl}/deliveries/summary/`);
         if (res.ok) {
           const data = await res.json();
-          document.getElementById('kpi-demand').innerText = (data.daily_volume_liters || 310) + ' Litres';
-          document.getElementById('kpi-revenue').innerText = '₹' + (data.gross_revenue || '24,850.00');
-          document.getElementById('kpi-subscribers').innerText = (data.subscribers_count || 128) + ' Families';
-          document.getElementById('kpi-fulfillment').innerText = (data.sla_rate || 99.4) + '%';
+          const vol = parseFloat(data.daily_volume_liters || 0);
+          document.getElementById('kpi-demand').innerText = `${vol.toFixed(1)} Litres`;
+          document.getElementById('kpi-revenue').innerText = `₹${data.gross_revenue || '0.00'}`;
+          document.getElementById('kpi-subscribers').innerText = `${data.subscribers_count || 0} Families`;
+          
+          if (data.total_deliveries > 0) {
+            document.getElementById('kpi-fulfillment').innerText = `${data.sla_rate}%`;
+          } else {
+            document.getElementById('kpi-fulfillment').innerText = `100% (Ready)`;
+          }
           productDemand = data.product_demand || {};
         }
       } catch (e) {}
@@ -2224,16 +2230,25 @@
           const products = await pRes.json();
           const tbody = document.getElementById('forecast-table-body');
           tbody.innerHTML = '';
+          if (products.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:24px;">No products in catalog.</td></tr>';
+            return;
+          }
           products.forEach(p => {
-            const qty = productDemand[p.name] || (p.name.includes('A2') ? 180 : (p.name.includes('Buffalo') ? 95 : 35));
+            const qty = productDemand[p.name] || 0;
+            const cost = (parseFloat(p.price_per_unit || 0) * qty).toFixed(2);
+            const statusTag = qty > 0 
+              ? '<span class="status-tag status-delivered">Procurement Required</span>'
+              : '<span class="status-tag status-pending">Ready for Orders</span>';
+
             tbody.innerHTML += `
               <tr>
                 <td><strong>${p.name}</strong></td>
                 <td>${p.unit_quantity || p.unit}</td>
-                <td>₹${p.price_per_unit}</td>
+                <td>₹${parseFloat(p.price_per_unit).toFixed(2)}</td>
                 <td><strong style="color: var(--primary-accent);">${qty} Units / Litres</strong></td>
-                <td>₹${(parseFloat(p.price_per_unit) * qty).toFixed(2)}</td>
-                <td><span class="status-tag status-delivered">Procurement Ready</span></td>
+                <td>₹${cost}</td>
+                <td>${statusTag}</td>
               </tr>
             `;
           });

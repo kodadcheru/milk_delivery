@@ -140,7 +140,7 @@ class DeliverySummaryView(APIView):
             subscribers_count = active_subs.values("customer").distinct().count()
 
         # Real SLA fulfillment rate
-        sla_rate = round((completed / total_deliveries * 100), 1) if total_deliveries > 0 else 99.4
+        sla_rate = round((completed / total_deliveries * 100), 1) if total_deliveries > 0 else 100.0
 
         # Real product breakdown demand
         product_demand = {}
