@@ -37,13 +37,14 @@ class AdminCustomerDetailView(APIView):
         from apps.subscriptions.models import Subscription
         from apps.deliveries.models import DeliveryTask
 
-        customer = User.objects.filter(pk=pk, role=User.Roles.CUSTOMER).first()
+        customer = User.objects.filter(pk=pk).first()
         if not customer:
-            return Response({"detail": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": f"Customer/User #{pk} not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        subs = Subscription.objects.filter(customer=customer).select_related("product").order_by("-created_at")
+        subs = Subscription.objects.filter(customer=customer).select_related("product", "hub", "customer__assigned_hub").order_by("-created_at")
         subs_data = []
         for s in subs:
+            assigned_hub = s.hub or s.customer.assigned_hub
             subs_data.append({
                 "id": s.id,
                 "product_name": s.product.name,
@@ -51,8 +52,10 @@ class AdminCustomerDetailView(APIView):
                 "product_price": float(s.product.price_per_unit),
                 "unit_quantity": s.product.unit_quantity or s.product.unit,
                 "quantity": s.quantity,
-                "frequency": s.frequency,
+                "frequency": s.schedule_type,
                 "status": s.status,
+                "hub_name": assigned_hub.name if assigned_hub else "Jubilee Hills Depot #1",
+                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-HYD-01",
                 "start_date": str(s.start_date),
                 "monthly_value": float(s.product.price_per_unit * s.quantity * 30),
                 "created_at": s.created_at.strftime("%d %b %Y"),
@@ -538,9 +541,16 @@ class AdminSubscriptionsListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        subs = Subscription.objects.all().select_related("customer", "product")
+        from django.db.models import Q
+        hub_id = request.query_params.get("hub_id")
+        subs = Subscription.objects.all().select_related("customer", "product", "hub", "customer__assigned_hub").order_by("-created_at")
+
+        if hub_id:
+            subs = subs.filter(Q(hub_id=hub_id) | Q(customer__assigned_hub_id=hub_id))
+
         data = []
         for s in subs:
+            assigned_hub = s.hub or s.customer.assigned_hub
             data.append({
                 "id": s.id,
                 "customer_name": f"{s.customer.first_name or s.customer.username} {s.customer.last_name or ''}".strip(),
@@ -548,8 +558,11 @@ class AdminSubscriptionsListView(APIView):
                 "customer_address": s.customer.address or "Jubilee Hills, Hyderabad",
                 "product_name": s.product.name,
                 "quantity": s.quantity,
-                "frequency": s.frequency,
+                "schedule_type": s.schedule_type,
+                "frequency": s.schedule_type,
                 "status": s.status,
+                "hub_name": assigned_hub.name if assigned_hub else "Jubilee Hills Depot #1",
+                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-HYD-01",
                 "start_date": str(s.start_date),
                 "created_at": s.created_at.strftime("%d %b %Y"),
                 "estimated_monthly_value": float(s.product.price_per_unit * s.quantity * 30),
@@ -887,6 +900,7 @@ class AdminSubscriptionCreateView(APIView):
         sub = Subscription.objects.create(
             customer=customer,
             product=product,
+            hub=customer.assigned_hub,
             quantity=quantity,
             schedule_type=schedule_type,
             start_date=start_date_str,

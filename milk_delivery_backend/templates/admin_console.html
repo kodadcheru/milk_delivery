@@ -1104,6 +1104,7 @@
                 <th>Customer Name</th>
                 <th>Phone & Address</th>
                 <th>Product & Qty</th>
+                <th>Assigned Hub</th>
                 <th>Frequency</th>
                 <th>Status</th>
                 <th>Est. Monthly Value</th>
@@ -4072,18 +4073,20 @@
       const tbody = document.getElementById('subscriptions-table-body');
       tbody.innerHTML = '';
       if (subs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No matching subscriptions found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No matching subscriptions found.</td></tr>';
         return;
       }
       subs.forEach(s => {
         const statusClass = s.status === 'ACTIVE' ? 'status-active' : 'status-paused';
+        const hubBadge = s.hub_name ? `🏢 ${s.hub_name}` : '🏢 Jubilee Hills Depot #1';
         tbody.innerHTML += `
           <tr>
             <td>#${s.id}</td>
             <td><strong>${s.customer_name}</strong></td>
             <td>${s.customer_phone}<br><small style="color:var(--text-muted);">${s.customer_address}</small></td>
             <td><strong>${s.quantity}x ${s.product_name}</strong></td>
-            <td>${s.frequency}</td>
+            <td><span class="status-tag status-active" style="font-size: 10px; background: rgba(13, 124, 102, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">${hubBadge}</span></td>
+            <td>${s.schedule_type || s.frequency}</td>
             <td><span class="status-tag ${statusClass}">${s.status}</span></td>
             <td><strong>₹${s.estimated_monthly_value.toFixed(2)}</strong></td>
             <td>
@@ -4678,7 +4681,7 @@
                 <small style="color:var(--text-muted);">${s.unit_quantity} • ₹${s.product_price}/unit</small>
               </td>
               <td><strong style="color:var(--primary-accent);">${s.quantity} units / day</strong></td>
-              <td><span class="status-tag status-active" style="font-size:11px;">${s.frequency}</span></td>
+              <td><span class="status-tag status-active" style="font-size:11px;">${s.frequency || s.schedule_type}</span><br><small style="color:var(--text-muted);">🏢 ${s.hub_name || 'Jubilee Hills Depot #1'}</small></td>
               <td><strong>₹${s.monthly_value.toFixed(2)}</strong><br><small style="color:var(--text-muted);">Est. monthly</small></td>
               <td><span class="status-tag ${badgeClass}">${s.status}</span></td>
               <td>

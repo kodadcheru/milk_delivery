@@ -17,6 +17,7 @@ class Subscription(models.Model):
 
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="subscriptions")
+    hub = models.ForeignKey("deliveries.LocationHub", on_delete=models.SET_NULL, null=True, blank=True, related_name="subscriptions")
     quantity = models.PositiveIntegerField(default=1)
     schedule_type = models.CharField(max_length=20, choices=Schedules.choices, default=Schedules.DAILY)
     start_date = models.DateField()

@@ -16,14 +16,22 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         return Subscription.objects.filter(customer=user)
 
     def perform_create(self, serializer):
-        sub = serializer.save(customer=self.request.user)
+        user = self.request.user
+        hub = user.assigned_hub
+        if not hub:
+            from apps.deliveries.models import LocationHub
+            hub = LocationHub.objects.first()
+        sub = serializer.save(customer=user, hub=hub)
         from datetime import date
         from apps.deliveries.models import DeliveryTask
+        driver = hub.delivery_partners.first() if hub else None
         DeliveryTask.objects.get_or_create(
             subscription=sub,
             delivery_date=date.today(),
             defaults={
-                "slot_time": "05:30 AM - 07:00 AM",
+                "hub": hub,
+                "driver": driver,
+                "slot_time": user.delivery_slot_preference or "05:30 AM - 07:00 AM",
                 "status": DeliveryTask.Statuses.PENDING,
             },
         )
