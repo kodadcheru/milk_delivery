@@ -756,7 +756,6 @@
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="openCreateHubModal()"><i class="fa-solid fa-plus"></i> Create New Location Hub</button>
-            <button class="btn btn-secondary" onclick="cleanupDuplicateHubs()"><i class="fa-solid fa-broom"></i> Clean Duplicate Hubs</button>
             <button class="btn btn-secondary" onclick="loadHubs()"><i class="fa-solid fa-sync"></i> Refresh Hubs</button>
           </div>
         </div>
@@ -2133,9 +2132,14 @@
     function openCreateHubModal() {
       document.getElementById('createHubModal').style.display = 'flex';
 
-      // Auto generate next hub code
-      const nextNum = (rawHubs.length + 1).toString().padStart(2, '0');
-      document.getElementById('hubCode').value = `HUB-HYD-${nextNum}`;
+      // Reset modal inputs cleanly
+      document.getElementById('hubCode').value = '';
+      document.getElementById('hubCode').placeholder = 'Search location on map to auto-generate';
+      document.getElementById('hubName').value = '';
+      document.getElementById('hubAddress').value = '';
+      document.getElementById('hubManagerName').value = '';
+      document.getElementById('hubManagerPhone').value = '';
+      document.getElementById('hubFssai').value = '';
       document.getElementById('hubPlacesSearch').value = '';
 
       setTimeout(initHubPickerMap, 300);
@@ -2342,24 +2346,6 @@
       }, 1000);
     }
 
-    async function cleanupDuplicateHubs() {
-      if (!confirm("Are you sure you want to scan and remove any duplicate hubs from the database?")) return;
-
-      try {
-        const res = await fetch(`${baseUrl}/admin/hubs/cleanup/`, { method: 'POST' });
-        if (res.ok) {
-          const data = await res.json();
-          alert(`✅ ${data.message}`);
-          loadHubs();
-          if (googleMap) refreshMapLayers();
-        } else {
-          alert("Could not deduplicate hubs.");
-        }
-      } catch (e) {
-        alert("Network error during hub deduplication.");
-      }
-    }
-
     async function submitCreateHub() {
       const code = document.getElementById('hubCode').value.trim();
       const name = document.getElementById('hubName').value.trim();
@@ -2393,9 +2379,13 @@
       }
 
       try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
         const res = await fetch(`${baseUrl}/admin/hubs/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           body: JSON.stringify({
             hub_code: code || 'AUTO',
             name: name,
@@ -2411,8 +2401,21 @@
         const data = await res.json();
         if (res.ok) {
           closeModal('createHubModal');
-          loadHubs();
+
+          // Reset modal form values
+          document.getElementById('hubCode').value = '';
+          document.getElementById('hubName').value = '';
+          document.getElementById('hubAddress').value = '';
+          document.getElementById('hubManagerName').value = '';
+          document.getElementById('hubManagerPhone').value = '';
+          document.getElementById('hubFssai').value = '';
+          document.getElementById('hubPlacesSearch').value = '';
+
+          // Reload and re-render live data
+          await loadHubs();
+          await loadServiceAreas();
           if (googleMap) refreshMapLayers();
+
           alert(`✅ Location Hub '${name}' (${data.hub_code || data.id}) registered successfully!`);
         } else {
           alert(data.detail || 'Could not save Location Hub.');
@@ -2455,9 +2458,13 @@
       }
 
       try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
         const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           body: JSON.stringify({
             name: name,
             address: addr,
@@ -2469,7 +2476,8 @@
 
         if (res.ok) {
           closeModal('editHubModal');
-          loadHubs();
+          await loadHubs();
+          await loadServiceAreas();
           if (googleMap) refreshMapLayers();
           alert('✅ Hub details updated successfully!');
         }
@@ -2482,9 +2490,16 @@
       if (!confirm(`Are you sure you want to delete Location Hub '${name}'?`)) return;
 
       try {
-        const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, { method: 'DELETE' });
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, { 
+          method: 'DELETE',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
         if (res.ok) {
-          loadHubs();
+          await loadHubs();
+          await loadServiceAreas();
           if (googleMap) refreshMapLayers();
           alert(`Hub '${name}' deleted successfully.`);
         }
@@ -2569,9 +2584,13 @@
       }
 
       try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
         const res = await fetch(`${baseUrl}/admin/fleet/create-driver/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           body: JSON.stringify({
             first_name: fn || 'Delivery',
             last_name: ln || 'Partner',
@@ -2584,8 +2603,12 @@
         if (res.ok) {
           const data = await res.json();
           closeModal('addDriverModal');
-          loadFleet();
-          loadHubs();
+          document.getElementById('drvFirstName').value = '';
+          document.getElementById('drvLastName').value = '';
+          document.getElementById('drvPhone').value = '';
+          await loadFleet();
+          await loadHubs();
+          if (googleMap) refreshMapLayers();
           alert(`✅ Delivery Partner ${fn} ${ln} successfully onboarded and affiliated with ${data.hub_name}!`);
         } else {
           alert('Could not onboard driver. Please check the details.');
@@ -2928,29 +2951,51 @@
     }
 
     async function submitAddServiceArea() {
-      const name = document.getElementById('saName').value;
-      const pincodes = document.getElementById('saPincodes').value;
+      const name = document.getElementById('saName').value.trim();
+      const pincodes = document.getElementById('saPincodes').value.trim();
       const hubId = document.getElementById('saHubId').value;
       const radius = document.getElementById('saRadius').value;
-      const societies = document.getElementById('saSocieties').value;
+      const societies = document.getElementById('saSocieties').value.trim();
       const saStatus = document.getElementById('saStatus').value;
 
-      await fetch(`${baseUrl}/admin/service-areas/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name,
-          pincodes: pincodes,
-          hub_id: hubId,
-          radius_km: radius,
-          popular_societies: societies,
-          status: saStatus
-        })
-      });
+      if (!name || !pincodes) {
+        alert('⚠️ Please provide Service Area Name and Pincodes.');
+        return;
+      }
 
-      closeModal('addServiceAreaModal');
-      loadServiceAreas();
-      alert('Geofenced Service Area saved successfully!');
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/service-areas/`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
+            name: name,
+            pincodes: pincodes,
+            hub_id: hubId || null,
+            radius_km: parseFloat(radius) || 5.0,
+            popular_societies: societies,
+            status: saStatus
+          })
+        });
+
+        if (res.ok) {
+          closeModal('addServiceAreaModal');
+          document.getElementById('saName').value = '';
+          document.getElementById('saPincodes').value = '';
+          document.getElementById('saSocieties').value = '';
+          await loadServiceAreas();
+          await loadHubs();
+          if (googleMap) refreshMapLayers();
+          alert(`✅ Geofenced Service Area '${name}' saved successfully!`);
+        } else {
+          alert('Could not save Service Area.');
+        }
+      } catch (e) {
+        alert('Network error while saving service area.');
+      }
     }
 
     async function loadDeliveries() {
