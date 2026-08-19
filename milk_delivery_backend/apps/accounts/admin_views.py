@@ -25,8 +25,120 @@ class AdminCustomerListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        customers = User.objects.filter(role=User.Roles.CUSTOMER)
-        return Response(UserSerializer(customers, many=True).data)
+        from apps.subscriptions.models import Subscription
+        customers = User.objects.filter(role=User.Roles.CUSTOMER).select_related("assigned_hub").order_by("-date_joined")
+        data = []
+        for c in customers:
+            active_subs_count = Subscription.objects.filter(customer=c, status=Subscription.Statuses.ACTIVE).count()
+            data.append({
+                "id": c.id,
+                "username": c.username,
+                "first_name": c.first_name,
+                "last_name": c.last_name,
+                "full_name": f"{c.first_name} {c.last_name}".strip() or c.username,
+                "phone": c.phone,
+                "email": c.email,
+                "address": c.address,
+                "city": c.city,
+                "wallet_balance": str(c.wallet_balance),
+                "active_subscriptions_count": active_subs_count,
+                "assigned_hub": c.assigned_hub.name if c.assigned_hub else "Kodad Depot",
+                "assigned_hub_code": c.assigned_hub.hub_code if c.assigned_hub else "HUB-KDD-01",
+                "delivery_slot_preference": c.delivery_slot_preference,
+                "delivery_instructions": c.delivery_instructions,
+                "date_joined": c.date_joined.strftime("%d %b %Y"),
+            })
+        return Response(data)
+
+    def post(self, request):
+        from apps.deliveries.models import LocationHub, CustomerAddress
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        raw_phone = request.data.get("phone", "").strip()
+        email = request.data.get("email", "").strip()
+        address = request.data.get("address", "").strip()
+        city = request.data.get("city", "Kodad").strip()
+        hub_id = request.data.get("hub_id")
+        slot_pref = request.data.get("delivery_slot_preference", "05:30 AM - 07:00 AM")
+        instructions = request.data.get("delivery_instructions", "Leave at doorstep milk basket")
+        initial_wallet = request.data.get("initial_wallet_balance", "500.00")
+
+        if not first_name:
+            return Response({"detail": "Customer First Name is mandatory."}, status=status.HTTP_400_BAD_REQUEST)
+        if not address:
+            return Response({"detail": "Delivery Address is mandatory."}, status=status.HTTP_400_BAD_REQUEST)
+
+        phone_digits = "".join(filter(str.isdigit, raw_phone))
+        if len(phone_digits) < 10:
+            return Response({"detail": "Please enter a valid 10-digit mobile number for the customer."}, status=status.HTTP_400_BAD_REQUEST)
+        last_10 = phone_digits[-10:]
+        clean_phone = f"+91 {last_10}"
+
+        if User.objects.filter(phone__endswith=last_10).exists():
+            return Response({"detail": f"A customer account with mobile number {clean_phone} already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        username = f"cust_{last_10}"
+        if User.objects.filter(username=username).exists():
+            username = f"cust_{last_10}_{User.objects.count() + 1}"
+
+        assigned_hub = None
+        if hub_id:
+            assigned_hub = LocationHub.objects.filter(pk=hub_id).first() or LocationHub.objects.filter(hub_code=str(hub_id)).first()
+        if not assigned_hub:
+            assigned_hub = LocationHub.objects.first()
+
+        try:
+            wallet_amount = Decimal(str(initial_wallet or "500.00"))
+        except Exception:
+            wallet_amount = Decimal("500.00")
+
+        customer = User.objects.create(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            phone=clean_phone,
+            email=email or f"{username}@milkdrop.in",
+            address=address,
+            city=city,
+            role=User.Roles.CUSTOMER,
+            assigned_hub=assigned_hub,
+            wallet_balance=wallet_amount,
+            delivery_slot_preference=slot_pref,
+            delivery_instructions=instructions,
+        )
+        customer.set_password("pass123")
+        customer.save()
+
+        # Log initial wallet transaction
+        if wallet_amount > 0:
+            WalletTransaction.objects.create(
+                user=customer,
+                amount=wallet_amount,
+                transaction_type=WalletTransaction.Types.CREDIT,
+                description="🎁 Welcome Initial Wallet Balance",
+            )
+
+        # Create primary CustomerAddress
+        CustomerAddress.objects.create(
+            user=customer,
+            address_type="HOME",
+            street_address=address,
+            city=city,
+            pincode="508206",
+            latitude=assigned_hub.latitude if assigned_hub else 16.9950,
+            longitude=assigned_hub.longitude if assigned_hub else 79.9670,
+            delivery_instructions=instructions,
+            is_default=True,
+        )
+
+        return Response({
+            "message": f"Customer '{first_name} {last_name}' registered successfully!",
+            "id": customer.id,
+            "username": customer.username,
+            "full_name": f"{customer.first_name} {customer.last_name}".strip(),
+            "phone": customer.phone,
+            "wallet_balance": str(customer.wallet_balance),
+        }, status=status.HTTP_201_CREATED)
 
 
 class AdminCustomerDetailView(APIView):
@@ -54,8 +166,8 @@ class AdminCustomerDetailView(APIView):
                 "quantity": s.quantity,
                 "frequency": s.schedule_type,
                 "status": s.status,
-                "hub_name": assigned_hub.name if assigned_hub else "Jubilee Hills Depot #1",
-                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-HYD-01",
+                "hub_name": assigned_hub.name if assigned_hub else "Kodad Depot",
+                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-KDD-01",
                 "start_date": str(s.start_date),
                 "monthly_value": float(s.product.price_per_unit * s.quantity * 30),
                 "created_at": s.created_at.strftime("%d %b %Y"),
@@ -116,6 +228,18 @@ class AdminCustomerDetailView(APIView):
         customer.save()
 
         return Response({"message": f"Customer profile for '{customer.first_name} {customer.last_name}' updated successfully!"})
+
+    def delete(self, request, pk):
+        from apps.accounts.models import User
+        from apps.subscriptions.models import Subscription
+        customer = User.objects.filter(pk=pk, role=User.Roles.CUSTOMER).first()
+        if not customer:
+            return Response({"detail": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        name = f"{customer.first_name} {customer.last_name}".strip() or customer.username
+        Subscription.objects.filter(customer=customer).update(status=Subscription.Statuses.CANCELLED)
+        customer.delete()
+        return Response({"message": f"Customer account '{name}' deleted successfully."})
 
 
 class AdminCreditWalletView(APIView):

@@ -35,6 +35,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "schedule_type",
             "start_date",
             "status",
+            "delivery_address",
+            "delivery_slot",
+            "delivery_latitude",
+            "delivery_longitude",
+            "delivery_instructions",
+            "pack_size",
             "vacation_pauses",
             "created_at",
         ]

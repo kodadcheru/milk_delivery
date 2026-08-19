@@ -409,61 +409,108 @@ class FloatingCartBar extends StatelessWidget {
                               final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
                               final tag = state.activeAddress?.title.toUpperCase() ?? 'DOORSTEP';
                               final icon = state.activeAddress?.icon ?? '📍';
+                              final savedAddrs = state.savedAddresses;
 
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF0FDF4),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: const Color(0xFF86EFAC)),
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(icon, style: const TextStyle(fontSize: 20)),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
+                                    Row(
+                                      children: [
+                                        Text(icon, style: const TextStyle(fontSize: 20)),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              const Text('Deliver to:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF047857))),
-                                              const SizedBox(width: 6),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFDCFCE7),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: Text(tag, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF059669))),
+                                              Row(
+                                                children: [
+                                                  const Text('Deliver to:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF047857))),
+                                                  const SizedBox(width: 6),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFDCFCE7),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(tag, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF059669))),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                currentAddr,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            currentAddr,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF0F172A)),
+                                        ),
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            HomeLocationSheet.show(context, state);
+                                          },
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            backgroundColor: const Color(0xFF0D7C66),
+                                            foregroundColor: Colors.white,
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                           ),
-                                        ],
-                                      ),
+                                          icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
+                                          label: const Text('Change', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
                                     ),
-                                    TextButton.icon(
-                                      onPressed: () {
-                                        HomeLocationSheet.show(context, state);
-                                      },
-                                      style: TextButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        backgroundColor: const Color(0xFF0D7C66),
-                                        foregroundColor: Colors.white,
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    if (savedAddrs.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      const Divider(height: 10, color: Color(0xFFBBF7D0)),
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          children: savedAddrs.map((a) {
+                                            final isSel = state.activeAddress?.id == a.id;
+                                            return Padding(
+                                              padding: const EdgeInsets.only(right: 6),
+                                              child: InkWell(
+                                                onTap: () => state.selectActiveAddress(a),
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: isSel ? const Color(0xFF0D7C66) : Colors.white,
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFF86EFAC)),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Text(a.icon, style: const TextStyle(fontSize: 11)),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        a.title,
+                                                        style: TextStyle(
+                                                          fontSize: 10.5,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
                                       ),
-                                      icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
-                                      label: const Text('Change', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               );

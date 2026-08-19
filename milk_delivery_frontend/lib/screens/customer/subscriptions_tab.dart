@@ -321,9 +321,45 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                           ),
                           const SizedBox(height: 12),
 
+                          // Delivery Address & Slot Strip
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF86EFAC)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF0D7C66)),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Deliver to: ${sub.deliveryAddress.isNotEmpty ? sub.deliveryAddress : (widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0F172A)),
+                                      ),
+                                      Text(
+                                        'Slot: ${sub.deliverySlot} ${sub.deliveryInstructions.isNotEmpty ? "• ${sub.deliveryInstructions}" : ""}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF047857), fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
                           // Delivery timing note
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(10),
@@ -331,15 +367,15 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.schedule_rounded, size: 14, color: isPaused ? Colors.grey : const Color(0xFF0D7C66)),
+                                Icon(Icons.schedule_rounded, size: 13, color: isPaused ? Colors.grey : const Color(0xFF0D7C66)),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     isPaused
                                         ? 'Deliveries paused for vacation. Resume anytime below.'
-                                        : 'Next Delivery: Tomorrow morning at 06:00 AM',
+                                        : 'Next Delivery: Tomorrow (${sub.deliverySlot})',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10.5,
                                       color: isPaused ? Colors.grey[700] : const Color(0xFF0F172A),
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -348,9 +384,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           const Divider(height: 1),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
 
                           // Action Buttons Row
                           Row(
@@ -365,7 +401,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                     SnackBar(content: Text(isPaused ? '▶️ Subscription Resumed!' : '⏸ Subscription Paused!')),
                                   );
                                 },
-                                icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 18),
+                                icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 16),
                                 label: Text(isPaused ? 'Resume' : 'Pause'),
                                 style: TextButton.styleFrom(
                                   foregroundColor: isPaused ? const Color(0xFF0D7C66) : Colors.amber[900],
@@ -373,13 +409,27 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 ),
                               ),
 
-                              // Modify Qty & Schedule Button
+                              // Address & Slot Edit Button
+                              TextButton.icon(
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  _showChangeAddressAndSlotModal(context, sub);
+                                },
+                                icon: const Icon(Icons.edit_location_alt_rounded, size: 15),
+                                label: const Text('Address / Slot'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF0D7C66),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
+
+                              // Modify Qty Button
                               TextButton.icon(
                                 onPressed: () {
                                   HapticFeedback.lightImpact();
                                   _showModifySubscriptionDialog(context, sub);
                                 },
-                                icon: const Icon(Icons.tune_rounded, size: 16),
+                                icon: const Icon(Icons.tune_rounded, size: 15),
                                 label: const Text('Modify'),
                                 style: TextButton.styleFrom(
                                   foregroundColor: const Color(0xFF0F172A),
@@ -387,14 +437,14 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 ),
                               ),
 
-                              // Vacation Date Range Button
+                              // Vacation Dates Button
                               TextButton.icon(
                                 onPressed: () {
                                   HapticFeedback.lightImpact();
                                   _showVacationDatePicker(context, sub);
                                 },
-                                icon: const Icon(Icons.calendar_month_rounded, size: 16),
-                                label: const Text('Vacation Dates'),
+                                icon: const Icon(Icons.calendar_month_rounded, size: 15),
+                                label: const Text('Vacation'),
                                 style: TextButton.styleFrom(
                                   foregroundColor: const Color(0xFF0D7C66),
                                   padding: EdgeInsets.zero,
@@ -565,6 +615,217 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
             child: const Text('Cancel Subscription'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showChangeAddressAndSlotModal(BuildContext context, SubscriptionModel sub) {
+    String selectedSlot = sub.deliverySlot.isNotEmpty ? sub.deliverySlot : '05:30 AM - 07:00 AM';
+    final instructionsCtrl = TextEditingController(text: sub.deliveryInstructions);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final savedAddrs = widget.state.savedAddresses;
+          final activeAddrStr = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              top: 20,
+              left: 20,
+              right: 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.edit_location_alt_rounded, color: Color(0xFF0D7C66)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Update Subscription Address & Slot',
+                          style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ],
+                    ),
+                    IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
+                  ],
+                ),
+                const Divider(height: 16),
+
+                // Delivery Time Slot Preference
+                const Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    '05:30 AM - 07:00 AM',
+                    '07:00 AM - 08:30 AM',
+                    '05:00 PM - 07:00 PM',
+                  ].map((slot) {
+                    final isSel = selectedSlot == slot;
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: InkWell(
+                          onTap: () => setModalState(() => selectedSlot = slot),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0)),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              slot,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: isSel ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+
+                // Saved Address Selector
+                const Text('Select Doorstep Delivery Address 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                const SizedBox(height: 8),
+                if (savedAddrs.isNotEmpty)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: savedAddrs.map((a) {
+                        final isSel = widget.state.activeAddress?.id == a.id;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            onTap: () {
+                              widget.state.selectActiveAddress(a);
+                              setModalState(() {});
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(a.icon, style: const TextStyle(fontSize: 13)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    a.title,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF059669)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          activeAddrStr,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Instructions input
+                TextField(
+                  controller: instructionsCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Doorstep Instructions (Optional)',
+                    hintText: 'e.g. Ring bell twice, leave in box',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Save button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final chosenAddr = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
+                      final chosenLat = widget.state.activeAddress?.latitude ?? widget.state.currentLat;
+                      final chosenLon = widget.state.activeAddress?.longitude ?? widget.state.currentLon;
+
+                      await widget.state.updateSubscriptionAddressAndSlot(
+                        sub.id,
+                        deliveryAddress: chosenAddr,
+                        deliverySlot: selectedSlot,
+                        deliveryLatitude: chosenLat,
+                        deliveryLongitude: chosenLon,
+                        deliveryInstructions: instructionsCtrl.text.trim(),
+                      );
+
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF0D7C66),
+                            content: Text('✅ Subscription updated to deliver at $chosenAddr ($selectedSlot)!'),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.check_circle_rounded, size: 18),
+                    label: const Text('Save Address & Slot Preference 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D7C66),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

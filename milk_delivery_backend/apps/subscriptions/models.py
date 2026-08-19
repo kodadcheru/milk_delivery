@@ -22,6 +22,12 @@ class Subscription(models.Model):
     schedule_type = models.CharField(max_length=20, choices=Schedules.choices, default=Schedules.DAILY)
     start_date = models.DateField()
     status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.ACTIVE)
+    delivery_address = models.TextField(blank=True, default="")
+    delivery_slot = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
+    delivery_latitude = models.DecimalField(max_digits=11, decimal_places=8, default=17.4319)
+    delivery_longitude = models.DecimalField(max_digits=11, decimal_places=8, default=78.4073)
+    delivery_instructions = models.CharField(max_length=255, blank=True, default="")
+    pack_size = models.CharField(max_length=50, blank=True, default="1 Litre")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

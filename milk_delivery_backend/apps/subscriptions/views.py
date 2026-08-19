@@ -21,10 +21,25 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         if not hub:
             from apps.deliveries.models import LocationHub
             hub = LocationHub.objects.first()
-        sub = serializer.save(customer=user, hub=hub)
-        
+            
         deliv_addr = self.request.data.get("delivery_address") or user.address or "Doorstep Drop"
-        
+        deliv_slot = self.request.data.get("delivery_slot") or user.delivery_slot_preference or "05:30 AM - 07:00 AM"
+        deliv_lat = self.request.data.get("delivery_latitude") or user.latitude or 17.4319
+        deliv_lon = self.request.data.get("delivery_longitude") or user.longitude or 78.4073
+        deliv_inst = self.request.data.get("delivery_instructions") or user.delivery_instructions or ""
+        pack_size = self.request.data.get("pack_size") or "1 Litre"
+
+        sub = serializer.save(
+            customer=user,
+            hub=hub,
+            delivery_address=deliv_addr,
+            delivery_slot=deliv_slot,
+            delivery_latitude=deliv_lat,
+            delivery_longitude=deliv_lon,
+            delivery_instructions=deliv_inst,
+            pack_size=pack_size,
+        )
+
         from datetime import date
         from apps.deliveries.models import DeliveryTask
         driver = hub.delivery_partners.first() if hub else None
@@ -34,7 +49,7 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             defaults={
                 "hub": hub,
                 "driver": driver,
-                "slot_time": user.delivery_slot_preference or "05:30 AM - 07:00 AM",
+                "slot_time": deliv_slot,
                 "status": DeliveryTask.Statuses.PENDING,
             },
         )

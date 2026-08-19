@@ -32,11 +32,19 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   int _selectedWeeks = 1; // 1, 2, 3 weeks
   int _selectedMonths = 1; // 1, 2, 3 months
   String _selectedPackSize = '1 Litre';
+  String _selectedSlot = '05:30 AM - 07:00 AM';
+  final _instructionsController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initDefaultPackSize();
+  }
+
+  @override
+  void dispose() {
+    _instructionsController.dispose();
+    super.dispose();
   }
 
   void _initDefaultPackSize() {
@@ -520,93 +528,181 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         ],
                       ),
                     ),
-                    // ── Delivery Location Selection Bar ──
+                    const SizedBox(height: 14),
+
+                    // ── Delivery Time Slot Preference ──
+                    const Text(
+                      'Delivery Time Slot Preference ⏰',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSlotOptionTile('05:30 AM - 07:00 AM', '⚡ Peak Morning'),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: _buildSlotOptionTile('07:00 AM - 08:30 AM', '🌅 Std Morning'),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: _buildSlotOptionTile('05:00 PM - 07:00 PM', '🌇 Evening'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── Delivery Location Selection & Address Book Chips ──
                     AnimatedBuilder(
                       animation: widget.state,
                       builder: (context, _) {
                         final currentAddr = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
                         final tag = widget.state.activeAddress?.title.toUpperCase() ?? 'DOORSTEP';
                         final icon = widget.state.activeAddress?.icon ?? '📍';
+                        final savedAddrs = widget.state.savedAddresses;
 
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: const Color(0xFF86EFAC)),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(icon, style: const TextStyle(fontSize: 20)),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
+                              Row(
+                                children: [
+                                  Text(icon, style: const TextStyle(fontSize: 20)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
-                                          'Deliver to:',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF047857),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFDCFCE7),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            tag,
-                                            style: const TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w800,
-                                              color: Color(0xFF059669),
+                                        Row(
+                                          children: [
+                                            const Text(
+                                              'Deliver to Doorstep:',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF047857),
+                                              ),
                                             ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFDCFCE7),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                tag,
+                                                style: const TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: Color(0xFF059669),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          currentAddr,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0F172A),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      currentAddr,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF0F172A),
-                                      ),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      HomeLocationSheet.show(context, widget.state);
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      backgroundColor: const Color(0xFF0D7C66),
+                                      foregroundColor: Colors.white,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
-                                  ],
-                                ),
+                                    icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
+                                    label: const Text(
+                                      'Change',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              TextButton.icon(
-                                onPressed: () {
-                                  HomeLocationSheet.show(context, widget.state);
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  backgroundColor: const Color(0xFF0D7C66),
-                                  foregroundColor: Colors.white,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              if (savedAddrs.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                const Divider(height: 10, color: Color(0xFFBBF7D0)),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: savedAddrs.map((a) {
+                                      final isSel = widget.state.activeAddress?.id == a.id;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(right: 6),
+                                        child: InkWell(
+                                          onTap: () => widget.state.selectActiveAddress(a),
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: isSel ? const Color(0xFF0D7C66) : Colors.white,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFF86EFAC)),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Text(a.icon, style: const TextStyle(fontSize: 11)),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  a.title,
+                                                  style: TextStyle(
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
-                                icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
-                                label: const Text(
-                                  'Change',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                              ],
                             ],
                           ),
                         );
                       },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Doorstep Delivery Instructions (Optional) ──
+                    TextField(
+                      controller: _instructionsController,
+                      decoration: InputDecoration(
+                        hintText: 'Doorstep instructions (e.g. Ring bell, leave in bag)',
+                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 11.5),
+                        prefixIcon: const Icon(Icons.doorbell_outlined, size: 16, color: Color(0xFF0D7C66)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -685,11 +781,21 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                               icon: item.icon,
                             );
                             Navigator.pop(context);
-                            widget.state.createNewSubscription(customProduct, _qty, _schedule);
+                            widget.state.createNewSubscription(
+                              customProduct,
+                              _qty,
+                              _schedule,
+                              deliveryAddress: widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress,
+                              deliverySlot: _selectedSlot,
+                              deliveryLatitude: widget.state.activeAddress?.latitude ?? widget.state.currentLat,
+                              deliveryLongitude: widget.state.activeAddress?.longitude ?? widget.state.currentLon,
+                              deliveryInstructions: _instructionsController.text.trim(),
+                              packSize: _selectedPackSize,
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: const Color(0xFF0D7C66),
-                                content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries of $_selectedPackSize)! First delivery tomorrow 06:00 AM.'),
+                                content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries of $_selectedPackSize)! First delivery tomorrow ($_selectedSlot).'),
                               ),
                             );
                             widget.state.setTab(1);
@@ -849,6 +955,43 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               fontWeight: FontWeight.bold,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSlotOptionTile(String slotVal, String label) {
+    final isSelected = _selectedSlot == slotVal;
+    return InkWell(
+      onTap: () => setState(() => _selectedSlot = slotVal),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0D7C66).withValues(alpha: 0.15) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0), width: isSelected ? 1.5 : 1),
+        ),
+        child: Column(
+          children: [
+            Text(
+              slotVal,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 9.5,
+                color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 8.5,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? const Color(0xFF0D7C66) : Colors.grey[600],
+              ),
+            ),
+          ],
         ),
       ),
     );

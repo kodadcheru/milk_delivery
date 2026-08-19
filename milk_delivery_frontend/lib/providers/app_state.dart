@@ -769,26 +769,45 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> createNewSubscription(ProductModel product, int qty, String schedule, {String? deliveryAddress}) async {
+  Future<void> createNewSubscription(
+    ProductModel product,
+    int qty,
+    String schedule, {
+    String? deliveryAddress,
+    String? deliverySlot,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+    String? deliveryInstructions,
+    String? packSize,
+  }) async {
+    final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
     notifications.insert(
       0,
       NotificationModel(
         id: DateTime.now().millisecondsSinceEpoch,
         title: '🥛 Subscription Confirmed: ${product.name}',
-        message: '${qty}x ${product.name} subscribed for morning 06:00 AM delivery ($schedule).',
+        message: '${qty}x ${product.name} (${packSize ?? product.unitQuantity}) subscribed for $slotStr delivery ($schedule).',
         notificationType: 'DELIVERY',
         isRead: false,
         createdAt: 'Just now',
       ),
     );
     final targetAddr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
+    final targetLat = deliveryLatitude ?? (activeAddress?.latitude ?? currentLat);
+    final targetLon = deliveryLongitude ?? (activeAddress?.longitude ?? currentLon);
+    final targetInst = deliveryInstructions ?? (activeAddress?.deliveryInstructions ?? '');
+    final pSize = packSize ?? product.unitQuantity;
+
     final newSub = await ApiService.createSubscription(
       product.id,
       qty,
       schedule,
       deliveryAddress: targetAddr,
-      deliveryLatitude: currentLat,
-      deliveryLongitude: currentLon,
+      deliverySlot: slotStr,
+      deliveryLatitude: targetLat,
+      deliveryLongitude: targetLon,
+      deliveryInstructions: targetInst,
+      packSize: pSize,
     );
     if (newSub != null) {
       await reloadAllData();
@@ -803,6 +822,12 @@ class AppState extends ChangeNotifier {
         scheduleType: schedule,
         startDate: DateTime.now().toString().split(' ')[0],
         status: 'ACTIVE',
+        deliveryAddress: targetAddr,
+        deliverySlot: slotStr,
+        deliveryLatitude: targetLat,
+        deliveryLongitude: targetLon,
+        deliveryInstructions: targetInst,
+        packSize: pSize,
       );
       subscriptions.add(sub);
       deliveries.add(
@@ -811,15 +836,55 @@ class AppState extends ChangeNotifier {
           subscriptionId: newId,
           subscriptionDetail: sub,
           deliveryDate: DateTime.now().toString().split(' ')[0],
-          slotTime: '05:30 AM - 07:00 AM',
+          slotTime: slotStr,
           status: 'PENDING',
           deliveryAddress: targetAddr,
+          deliveryInstructions: targetInst,
+          customerLatitude: targetLat,
+          customerLongitude: targetLon,
           proofImageUrl: product.imageUrl.isNotEmpty
               ? product.imageUrl
               : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
         ),
       );
       notifyListeners();
+    }
+  }
+
+  Future<bool> updateSubscriptionAddressAndSlot(
+    int subId, {
+    required String deliveryAddress,
+    required String deliverySlot,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+    String? deliveryInstructions,
+  }) async {
+    bool ok = await ApiService.updateSubscription(
+      subId,
+      deliveryAddress: deliveryAddress,
+      deliverySlot: deliverySlot,
+      deliveryLatitude: deliveryLatitude ?? currentLat,
+      deliveryLongitude: deliveryLongitude ?? currentLon,
+      deliveryInstructions: deliveryInstructions ?? '',
+    );
+    if (ok) {
+      await reloadAllData();
+      return true;
+    } else {
+      subscriptions = subscriptions.map((s) {
+        if (s.id == subId) {
+          return s.copyWith(
+            deliveryAddress: deliveryAddress,
+            deliverySlot: deliverySlot,
+            deliveryLatitude: deliveryLatitude ?? s.deliveryLatitude,
+            deliveryLongitude: deliveryLongitude ?? s.deliveryLongitude,
+            deliveryInstructions: deliveryInstructions ?? s.deliveryInstructions,
+          );
+        }
+        return s;
+      }).toList();
+      notifyListeners();
+      return true;
     }
   }
 

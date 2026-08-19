@@ -73,22 +73,30 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         return cust.phone if cust else ""
 
     def get_delivery_address(self, obj):
+        if obj.subscription and obj.subscription.delivery_address:
+            return obj.subscription.delivery_address
         if obj.order and obj.order.delivery_address:
             return obj.order.delivery_address
         cust = self._get_cust(obj)
         return cust.address if cust else ""
 
     def get_delivery_instructions(self, obj):
+        if obj.subscription and obj.subscription.delivery_instructions:
+            return obj.subscription.delivery_instructions
         cust = self._get_cust(obj)
         return cust.delivery_instructions if cust else ""
 
     def get_customer_latitude(self, obj):
+        if obj.subscription and obj.subscription.delivery_latitude:
+            return float(obj.subscription.delivery_latitude)
         if obj.order and obj.order.delivery_latitude:
             return float(obj.order.delivery_latitude)
         cust = self._get_cust(obj)
         return float(cust.latitude) if (cust and cust.latitude) else 17.4319
 
     def get_customer_longitude(self, obj):
+        if obj.subscription and obj.subscription.delivery_longitude:
+            return float(obj.subscription.delivery_longitude)
         if obj.order and obj.order.delivery_longitude:
             return float(obj.order.delivery_longitude)
         cust = self._get_cust(obj)

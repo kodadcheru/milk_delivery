@@ -369,8 +369,11 @@ class ApiService {
     int quantity,
     String scheduleType, {
     String? deliveryAddress,
+    String? deliverySlot,
     double? deliveryLatitude,
     double? deliveryLongitude,
+    String? deliveryInstructions,
+    String? packSize,
   }) async {
     try {
       final todayStr = DateTime.now().toString().split(' ')[0];
@@ -383,8 +386,11 @@ class ApiService {
               'schedule_type': scheduleType,
               'start_date': todayStr,
               'delivery_address': ?deliveryAddress,
+              'delivery_slot': ?deliverySlot,
               'delivery_latitude': ?deliveryLatitude,
               'delivery_longitude': ?deliveryLongitude,
+              'delivery_instructions': ?deliveryInstructions,
+              'pack_size': ?packSize,
             }),
           ));
       if (res.statusCode == 201) {
@@ -422,11 +428,27 @@ class ApiService {
     return false;
   }
 
-  static Future<bool> updateSubscription(int subId, {int? quantity, String? scheduleType}) async {
+  static Future<bool> updateSubscription(
+    int subId, {
+    int? quantity,
+    String? scheduleType,
+    String? deliveryAddress,
+    String? deliverySlot,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+    String? deliveryInstructions,
+    String? packSize,
+  }) async {
     try {
       final bodyMap = <String, dynamic>{};
       if (quantity != null) bodyMap['quantity'] = quantity;
       if (scheduleType != null) bodyMap['schedule_type'] = scheduleType;
+      if (deliveryAddress != null) bodyMap['delivery_address'] = deliveryAddress;
+      if (deliverySlot != null) bodyMap['delivery_slot'] = deliverySlot;
+      if (deliveryLatitude != null) bodyMap['delivery_latitude'] = deliveryLatitude;
+      if (deliveryLongitude != null) bodyMap['delivery_longitude'] = deliveryLongitude;
+      if (deliveryInstructions != null) bodyMap['delivery_instructions'] = deliveryInstructions;
+      if (packSize != null) bodyMap['pack_size'] = packSize;
 
       final res = await _executeWithRetry(() => http.patch(
             Uri.parse('$baseUrl/subscriptions/$subId/'),
