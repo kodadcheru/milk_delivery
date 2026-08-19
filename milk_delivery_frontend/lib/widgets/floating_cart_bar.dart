@@ -502,9 +502,11 @@ class FloatingCartBar extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(ctx);
+                        final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
                         final order = await state.placeExpressOrder(
                           deliveryDate: formatDate(selectedDate),
                           deliverySlot: slot,
+                          deliveryAddress: currentAddr,
                         );
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

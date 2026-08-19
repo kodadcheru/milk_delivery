@@ -22,6 +22,9 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             from apps.deliveries.models import LocationHub
             hub = LocationHub.objects.first()
         sub = serializer.save(customer=user, hub=hub)
+        
+        deliv_addr = self.request.data.get("delivery_address") or user.address or "Doorstep Drop"
+        
         from datetime import date
         from apps.deliveries.models import DeliveryTask
         driver = hub.delivery_partners.first() if hub else None

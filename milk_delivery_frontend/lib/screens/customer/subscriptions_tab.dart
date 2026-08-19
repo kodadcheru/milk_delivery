@@ -144,21 +144,15 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                       border: Border.all(color: Colors.white12),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        const Icon(Icons.alarm_on_rounded, color: Colors.amber, size: 14),
+                        const SizedBox(width: 6),
                         Expanded(
-                          child: Row(
-                            children: [
-                              const Icon(Icons.alarm_on_rounded, color: Colors.amber, size: 15),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  'Next Dispatch: $_countdownStr',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            'Next Dispatch: $_countdownStr',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -170,7 +164,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                           ),
                           child: const Text(
                             '06:00 AM Slot',
-                            style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],

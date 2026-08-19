@@ -65,7 +65,7 @@ class BookingDetailSheet extends StatelessWidget {
     final isDelivered = status == 'DELIVERED';
     final activeAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
     final rawAddress = isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress;
-    final displayAddress = (rawAddress.isNotEmpty && rawAddress != 'Doorstep Delivery Location' && rawAddress != 'Jubilee Hills, Hyderabad')
+    final displayAddress = (rawAddress.isNotEmpty && rawAddress != 'Doorstep Delivery Location')
         ? rawAddress
         : (activeAddr.isNotEmpty ? activeAddr : 'Doorstep Delivery Location');
 

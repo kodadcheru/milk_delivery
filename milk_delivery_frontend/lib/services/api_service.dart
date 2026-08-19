@@ -364,7 +364,14 @@ class ApiService {
     return [];
   }
 
-  static Future<SubscriptionModel?> createSubscription(int productId, int quantity, String scheduleType) async {
+  static Future<SubscriptionModel?> createSubscription(
+    int productId,
+    int quantity,
+    String scheduleType, {
+    String? deliveryAddress,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+  }) async {
     try {
       final todayStr = DateTime.now().toString().split(' ')[0];
       final res = await _executeWithRetry(() => http.post(
@@ -375,6 +382,9 @@ class ApiService {
               'quantity': quantity,
               'schedule_type': scheduleType,
               'start_date': todayStr,
+              'delivery_address': ?deliveryAddress,
+              'delivery_latitude': ?deliveryLatitude,
+              'delivery_longitude': ?deliveryLongitude,
             }),
           ));
       if (res.statusCode == 201) {

@@ -47,6 +47,29 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
             return CustomerAddress.objects.all()
         return CustomerAddress.objects.filter(user=user)
 
+    def perform_update(self, serializer):
+        addr = serializer.save()
+        user = addr.user
+        if addr.is_default or not user.address:
+            user.address = addr.street_address or user.address
+            user.latitude = addr.latitude
+            user.longitude = addr.longitude
+            user.save(update_fields=["address", "latitude", "longitude"])
+
+    def perform_destroy(self, instance):
+        user = instance.user
+        was_default = instance.is_default
+        instance.delete()
+        if was_default and user:
+            next_default = CustomerAddress.objects.filter(user=user).first()
+            if next_default:
+                next_default.is_default = True
+                next_default.save()
+                user.address = next_default.street_address or user.address
+                user.latitude = next_default.latitude
+                user.longitude = next_default.longitude
+                user.save(update_fields=["address", "latitude", "longitude"])
+
 
 class CustomerAddressSetDefaultView(APIView):
     permission_classes = [permissions.AllowAny]

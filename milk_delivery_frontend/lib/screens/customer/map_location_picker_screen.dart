@@ -34,6 +34,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
   String _shortAddress = 'Locating doorstep...';
   String _fullAddress = '';
   String _areaCity = '';
+  Map<String, dynamic>? _lastGeocodedData;
 
   final _houseNoController = TextEditingController();
   final _landmarkController = TextEditingController();
@@ -71,6 +72,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
 
     if (data != null) {
       setState(() {
+        _lastGeocodedData = data;
         _shortAddress = data['short_address'] ?? 'Road No. 36, Jubilee Hills';
         _fullAddress = data['full_address'] ?? '';
         _areaCity = '${data['suburb'] ?? 'Jubilee Hills'}, ${data['city'] ?? 'Hyderabad'}';
@@ -78,6 +80,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
       });
     } else {
       setState(() {
+        _lastGeocodedData = null;
         _shortAddress = 'Jubilee Hills, Hyderabad';
         _areaCity = 'Hyderabad, Telangana';
         _isGeocoding = false;
@@ -177,8 +180,22 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
 
     if (mounted) {
       setState(() => _isSavingLocation = false);
+      final payload = <String, dynamic>{
+        'lat': _currentCenter.latitude,
+        'lon': _currentCenter.longitude,
+        'short_address': _shortAddress,
+        'full_address': _fullAddress.isNotEmpty ? _fullAddress : _shortAddress,
+        'road': _lastGeocodedData?['road'] ?? '',
+        'suburb': _lastGeocodedData?['suburb'] ?? '',
+        'city': _lastGeocodedData?['city'] ?? 'Hyderabad',
+        'postcode': _lastGeocodedData?['postcode'] ?? '500033',
+        'house_no': house,
+        'landmark': landmark,
+        'tag': _selectedTag,
+        'formatted': formatted,
+      };
       if (Navigator.canPop(context)) {
-        Navigator.pop(context, true);
+        Navigator.pop(context, payload);
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -353,8 +353,9 @@ class AppState extends ChangeNotifier {
     String slot = '05:30 AM - 07:00 AM',
     String? deliveryAddress,
   }) async {
+    final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : null));
     for (var entry in cartProductsList) {
-      await createNewSubscription(entry.key, entry.value, schedule);
+      await createNewSubscription(entry.key, entry.value, schedule, deliveryAddress: addr);
     }
     cartItems.clear();
     notifyListeners();
@@ -594,6 +595,16 @@ class AppState extends ChangeNotifier {
       if (activeAddress?.id == addressId) {
         if (savedAddresses.isNotEmpty) {
           selectActiveAddress(savedAddresses.first);
+        } else {
+          activeAddress = null;
+          if (locationHubs.isNotEmpty) {
+            final h = locationHubs.first;
+            currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
+            currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
+            currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
+          } else {
+            currentDeliveryAddress = 'Select Delivery Location';
+          }
         }
       }
       notifyListeners();
@@ -758,7 +769,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> createNewSubscription(ProductModel product, int qty, String schedule) async {
+  Future<void> createNewSubscription(ProductModel product, int qty, String schedule, {String? deliveryAddress}) async {
     notifications.insert(
       0,
       NotificationModel(
@@ -770,7 +781,15 @@ class AppState extends ChangeNotifier {
         createdAt: 'Just now',
       ),
     );
-    final newSub = await ApiService.createSubscription(product.id, qty, schedule);
+    final targetAddr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
+    final newSub = await ApiService.createSubscription(
+      product.id,
+      qty,
+      schedule,
+      deliveryAddress: targetAddr,
+      deliveryLatitude: currentLat,
+      deliveryLongitude: currentLon,
+    );
     if (newSub != null) {
       await reloadAllData();
     } else {
@@ -794,7 +813,7 @@ class AppState extends ChangeNotifier {
           deliveryDate: DateTime.now().toString().split(' ')[0],
           slotTime: '05:30 AM - 07:00 AM',
           status: 'PENDING',
-          deliveryAddress: activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'),
+          deliveryAddress: targetAddr,
           proofImageUrl: product.imageUrl.isNotEmpty
               ? product.imageUrl
               : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',

@@ -505,16 +505,18 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
     _flatNoController = TextEditingController(text: e?.flatHouseNo ?? '');
     _floorController = TextEditingController(text: e?.floor ?? '');
     _buildingController = TextEditingController(text: e?.buildingName ?? '');
-    _streetController = TextEditingController(text: e?.streetAddress ?? 'Road No. 36, Jubilee Hills');
+    _streetController = TextEditingController(
+      text: e?.streetAddress ?? (widget.state.currentDeliveryAddress != 'Select Delivery Location' ? widget.state.currentDeliveryAddress : ''),
+    );
     _landmarkController = TextEditingController(text: e?.landmark ?? '');
     _cityController = TextEditingController(text: e?.city ?? 'Hyderabad');
-    _pincodeController = TextEditingController(text: e?.pincode ?? '500033');
+    _pincodeController = TextEditingController(text: e?.pincode ?? '');
     _instructionsController = TextEditingController(
-      text: e?.deliveryInstructions ?? 'Leave in doorstep milk basket, ring bell',
+      text: e?.deliveryInstructions ?? '',
     );
-    _lat = e?.latitude ?? 17.4319;
-    _lon = e?.longitude ?? 78.4073;
-    _isDefault = e?.isDefault ?? false;
+    _lat = e?.latitude ?? widget.state.currentLat;
+    _lon = e?.longitude ?? widget.state.currentLon;
+    _isDefault = e?.isDefault ?? (widget.state.savedAddresses.isEmpty);
   }
 
   @override
@@ -545,19 +547,30 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
 
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
-        _lat = result['lat'] ?? _lat;
-        _lon = result['lon'] ?? _lon;
-        if (result['full_address'] != null) {
+        _lat = (result['lat'] as num?)?.toDouble() ?? _lat;
+        _lon = (result['lon'] as num?)?.toDouble() ?? _lon;
+        if (result['full_address'] != null && result['full_address'].toString().isNotEmpty) {
           _streetController.text = result['full_address'];
+        } else if (result['short_address'] != null && result['short_address'].toString().isNotEmpty) {
+          _streetController.text = result['short_address'];
         }
-        if (result['city'] != null) {
+        if (result['city'] != null && result['city'].toString().isNotEmpty) {
           _cityController.text = result['city'];
         }
-        if (result['postcode'] != null) {
+        if (result['postcode'] != null && result['postcode'].toString().isNotEmpty) {
           _pincodeController.text = result['postcode'];
         }
-        if (result['suburb'] != null && _buildingController.text.isEmpty) {
+        if (result['suburb'] != null && result['suburb'].toString().isNotEmpty && _buildingController.text.isEmpty) {
           _buildingController.text = result['suburb'];
+        }
+        if (result['house_no'] != null && result['house_no'].toString().isNotEmpty && _flatNoController.text.isEmpty) {
+          _flatNoController.text = result['house_no'];
+        }
+        if (result['landmark'] != null && result['landmark'].toString().isNotEmpty && _landmarkController.text.isEmpty) {
+          _landmarkController.text = result['landmark'];
+        }
+        if (result['tag'] != null && result['tag'].toString().isNotEmpty) {
+          _addressType = result['tag'];
         }
       });
     }
