@@ -30,6 +30,7 @@ from apps.accounts.views import (
     NotificationListView,
     NotificationMarkReadView,
     RegisterView,
+    RobustTokenObtainPairView,
     UserProfileView,
     WalletBalanceView,
     WalletTopUpView,
@@ -77,7 +78,7 @@ urlpatterns = [
     path("api/auth/register-mobile/", RegisterMobileUserView.as_view(), name="auth_register_mobile"),
     # Auth & Profile endpoints
     path("api/auth/register/", RegisterView.as_view(), name="auth_register"),
-    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/token/", RobustTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/me/", UserProfileView.as_view(), name="auth_me"),
     # Notification endpoints
