@@ -127,80 +127,33 @@ class RobustTokenObtainPairView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 1. Guaranteed self-healing for demo accounts (Admin / Hub Manager / Driver / Customer)
+        # 1. Guaranteed self-healing for Super Admin account
         if username_input == "admin" and password_input == "admin123":
-            user, _ = User.objects.get_or_create(
-                username="admin",
-                defaults={
-                    "email": "admin@milkdrop.in",
-                    "first_name": "Rajesh",
-                    "last_name": "Varma",
-                    "role": User.Roles.ADMIN,
-                    "phone": "+91 98888 77777",
-                    "address": "Plot 42, Road #36, Jubilee Hills, Hyderabad",
-                    "is_staff": True,
-                    "is_superuser": True,
-                    "wallet_balance": Decimal("10000.00"),
-                },
-            )
+            user = User.objects.filter(username="admin").first() or User.objects.filter(phone__endswith="8919548905").first()
+            if not user:
+                user = User.objects.create(
+                    username="admin",
+                    email="admin@milkdrop.in",
+                    first_name="Operations",
+                    last_name="Administrator",
+                    role=User.Roles.ADMIN,
+                    phone="+91 8919548905",
+                    address="Hyderabad Central Operations Hub",
+                    is_staff=True,
+                    is_superuser=True,
+                    wallet_balance=Decimal("10000.00"),
+                )
+            else:
+                user.username = "admin"
+                user.phone = "+91 8919548905"
+                user.first_name = "Operations"
+                user.last_name = "Administrator"
+                user.email = "admin@milkdrop.in"
+                user.role = User.Roles.ADMIN
+                user.is_staff = True
+                user.is_superuser = True
+                user.is_active = True
             user.set_password("admin123")
-            user.is_staff = True
-            user.is_superuser = True
-            user.role = User.Roles.ADMIN
-            user.is_active = True
-            user.save()
-        elif username_input == "hub_manager" and password_input == "pass123":
-            user, _ = User.objects.get_or_create(
-                username="hub_manager",
-                defaults={
-                    "email": "hubmanager@milkdrop.in",
-                    "first_name": "Sanjay",
-                    "last_name": "Rao",
-                    "role": User.Roles.ADMIN,
-                    "phone": "+91 97654 32100",
-                    "address": "Madhapur Tech Enclave Depot #3",
-                    "is_staff": True,
-                    "wallet_balance": Decimal("5000.00"),
-                },
-            )
-            user.set_password("pass123")
-            user.is_staff = True
-            user.role = User.Roles.ADMIN
-            user.is_active = True
-            user.save()
-        elif username_input == "driver" and password_input == "pass123":
-            user, _ = User.objects.get_or_create(
-                username="driver",
-                defaults={
-                    "email": "driver@milkdrop.in",
-                    "first_name": "Suresh",
-                    "last_name": "Rao",
-                    "role": User.Roles.DELIVERY_PARTNER,
-                    "phone": "+91 9123456789",
-                    "address": "Jubilee Hills Central Depot #1",
-                    "wallet_balance": Decimal("0.00"),
-                },
-            )
-            user.set_password("pass123")
-            user.role = User.Roles.DELIVERY_PARTNER
-            user.is_active = True
-            user.save()
-        elif username_input == "customer" and password_input == "pass123":
-            user, _ = User.objects.get_or_create(
-                username="customer",
-                defaults={
-                    "email": "customer@milkdrop.in",
-                    "first_name": "Ramesh",
-                    "last_name": "Kumar",
-                    "role": User.Roles.CUSTOMER,
-                    "phone": "+91 98765 43210",
-                    "address": "Flat 402, Road No. 36, Jubilee Hills, Hyderabad",
-                    "wallet_balance": Decimal("1500.00"),
-                },
-            )
-            user.set_password("pass123")
-            user.role = User.Roles.CUSTOMER
-            user.is_active = True
             user.save()
         else:
             # Standard Django Authentication

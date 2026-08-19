@@ -25,8 +25,8 @@ class HubLocationModel {
     address: 'Plot 42, Road #36, Jubilee Hills, Hyderabad',
     latitude: 17.4320,
     longitude: 78.4070,
-    managerName: 'Rajesh V. (Dispatch Lead)',
-    managerPhone: '+91 98888 77777',
+    managerName: 'Operations Admin',
+    managerPhone: '+91 8919548905',
   );
 }
 

@@ -11,8 +11,8 @@ void main() {
       address: 'Jubilee Hills Central',
       latitude: 17.4320,
       longitude: 78.4070,
-      managerName: 'Rajesh V.',
-      managerPhone: '+91 98888 77777',
+      managerName: 'Operations Admin',
+      managerPhone: '+91 8919548905',
     );
 
     final mockTasks = [

@@ -1074,11 +1074,11 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
                 <label>First Name</label>
-                <input type="text" id="profFirstName" class="form-control" value="Rajesh">
+                <input type="text" id="profFirstName" class="form-control" value="Operations">
               </div>
               <div class="form-group">
                 <label>Last Name</label>
-                <input type="text" id="profLastName" class="form-control" value="Varma">
+                <input type="text" id="profLastName" class="form-control" value="Administrator">
               </div>
             </div>
 
@@ -1089,7 +1089,7 @@
               </div>
               <div class="form-group">
                 <label>Phone Number</label>
-                <input type="text" id="profPhone" class="form-control" value="+91 98888 77777">
+                <input type="text" id="profPhone" class="form-control" value="+91 8919548905">
               </div>
             </div>
 
@@ -1763,7 +1763,7 @@
       document.getElementById('profFirstName').value = user.first_name || '';
       document.getElementById('profLastName').value = user.last_name || '';
       document.getElementById('profEmail').value = user.email || '';
-      document.getElementById('profPhone').value = user.phone || '+91 98888 77777';
+      document.getElementById('profPhone').value = user.phone || '+91 8919548905';
       document.getElementById('profAddress').value = user.address || 'Plot 42, Road #36, Jubilee Hills, Hyderabad';
     }
 
@@ -2423,7 +2423,7 @@
       // 1. Plot All Location Hubs & 5km Radius Geofence Circles
       const defaultHubColors = ['#10B981', '#6366F1', '#0284C7', '#F59E0B', '#EC4899'];
       const hubsToPlot = rawHubs.length > 0 ? rawHubs : [
-        { id: 'HUB-HYD-01', name: 'Jubilee Hills Central Depot #1', address: 'Plot 42, Road #36, Jubilee Hills', manager: 'Rajesh Varma', lat: 17.4320, lng: 78.4070 },
+        { id: 'HUB-HYD-01', name: 'Jubilee Hills Central Depot #1', address: 'Plot 42, Road #36, Jubilee Hills', manager: 'Operations Admin', lat: 17.4320, lng: 78.4070 },
         { id: 'HUB-HYD-02', name: 'Banjara Hills Micro-Depot #2', address: 'Road #12, Banjara Hills', manager: 'Kavitha Reddy', lat: 17.4156, lng: 78.4350 },
         { id: 'HUB-HYD-03', name: 'Madhapur Tech Enclave Depot #3', address: 'Hitec City Main Road, Madhapur', manager: 'Sanjay Rao', lat: 17.4483, lng: 78.3915 },
       ];

@@ -144,7 +144,7 @@ class DriverProfileTab extends StatelessWidget {
                 children: [
                   _buildDetailRow(Icons.warehouse_rounded, 'Operating Hub', 'Jubilee Hills Central Depot #1'),
                   const Divider(height: 20),
-                  _buildDetailRow(Icons.support_agent_rounded, 'Dispatch Manager', 'Rajesh V. (+91 98888 77777)'),
+                  _buildDetailRow(Icons.support_agent_rounded, 'Dispatch Operations', 'Central Operations (+91 8919548905)'),
                 ],
               ),
             ),
