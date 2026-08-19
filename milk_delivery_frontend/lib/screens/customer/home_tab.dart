@@ -1778,38 +1778,55 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
 
           const SizedBox(height: 22),
 
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: () => _showLocationSelectorSheet(context),
-              icon: const Icon(Icons.location_on_rounded, size: 18),
-              label: const Text('📍 Select Active Service Zone', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          InkWell(
+            key: const ValueKey('select_zone_btn'),
+            onTap: () => _showLocationSelectorSheet(context),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D7C66),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.location_on_rounded, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('📍 Select Active Service Zone', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                ],
               ),
             ),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Color(0xFF0D7C66),
-                    content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D7C66)),
-              label: const Text('🔔 Notify Me When MilkDrop Launches', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF0D7C66)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          InkWell(
+            key: const ValueKey('notify_me_btn'),
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Color(0xFF0D7C66),
+                  content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF0D7C66)),
+              ),
+              alignment: Alignment.center,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D7C66)),
+                  SizedBox(width: 8),
+                  Text('Notify Me When MilkDrop Launches', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                ],
               ),
             ),
           ),

@@ -172,18 +172,6 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
           ),
         ),
       ),
-      builder: (context, child) {
-        // Global Error Boundary - Safe Inline Fallback
-        ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
-          debugPrint('🚨 [MilkDrop FlutterError]: ${errorDetails.exceptionAsString()}');
-          return Container(
-            padding: const EdgeInsets.all(8),
-            alignment: Alignment.center,
-            child: const Text('🥛 Loading element...', style: TextStyle(fontSize: 11, color: Colors.grey)),
-          );
-        };
-        return child!;
-      },
       home: !_isLoggedIn
           ? PhoneLoginScreen(
               state: _appState,
