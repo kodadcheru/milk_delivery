@@ -287,6 +287,69 @@ class AdminHubsView(APIView):
 class AdminHubDetailView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    def get(self, request, pk):
+        from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub, ServiceArea, DeliveryTask
+
+        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        if not hub:
+            return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        assigned_drivers = User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=hub)
+        available_drivers = User.objects.filter(role=User.Roles.DELIVERY_PARTNER).exclude(assigned_hub=hub)
+
+        assigned_data = []
+        for d in assigned_drivers:
+            stops = DeliveryTask.objects.filter(driver=d).count()
+            assigned_data.append({
+                "id": d.id,
+                "name": f"{d.first_name} {d.last_name}".strip() or d.username,
+                "phone": d.phone,
+                "salary": f"₹{int(d.monthly_salary):,} / mo",
+                "raw_salary": float(d.monthly_salary),
+                "driver_status": d.driver_status,
+                "assigned_stops": stops,
+            })
+
+        available_data = []
+        for d in available_drivers:
+            available_data.append({
+                "id": d.id,
+                "name": f"{d.first_name} {d.last_name}".strip() or d.username,
+                "phone": d.phone,
+                "current_hub": d.assigned_hub.name if d.assigned_hub else "Unassigned Pool",
+                "salary": f"₹{int(d.monthly_salary):,} / mo",
+            })
+
+        service_areas = ServiceArea.objects.filter(hub=hub)
+        sa_data = [{
+            "id": sa.id,
+            "name": sa.name,
+            "pincodes": sa.pincodes,
+            "radius_km": sa.radius_km,
+            "status": sa.status,
+            "households": sa.active_households,
+        } for sa in service_areas]
+
+        return Response({
+            "hub": {
+                "id": hub.hub_code,
+                "db_id": hub.id,
+                "hub_code": hub.hub_code,
+                "name": hub.name,
+                "address": hub.address,
+                "manager_name": hub.manager_name,
+                "manager_phone": hub.manager_phone,
+                "fssai_license": hub.fssai_license,
+                "latitude": hub.latitude,
+                "longitude": hub.longitude,
+                "created_at": hub.created_at,
+            },
+            "assigned_drivers": assigned_data,
+            "available_drivers": available_data,
+            "service_areas": sa_data,
+        })
+
     def patch(self, request, pk):
         from apps.deliveries.models import LocationHub
         hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
@@ -294,6 +357,8 @@ class AdminHubDetailView(APIView):
             return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if "name" in request.data: hub.name = request.data["name"]
+        if "hub_code" in request.data and request.data["hub_code"].strip(): 
+            hub.hub_code = request.data["hub_code"].strip().upper()
         if "address" in request.data: hub.address = request.data["address"]
         if "manager_name" in request.data: hub.manager_name = request.data["manager_name"]
         if "manager_phone" in request.data: hub.manager_phone = request.data["manager_phone"]
@@ -302,7 +367,7 @@ class AdminHubDetailView(APIView):
         if "longitude" in request.data: hub.longitude = float(request.data["longitude"])
         hub.save()
 
-        return Response({"message": f"Hub '{hub.name}' updated successfully!"})
+        return Response({"message": f"Hub '{hub.name}' updated successfully!", "hub_code": hub.hub_code})
 
     def delete(self, request, pk):
         from apps.deliveries.models import LocationHub
@@ -313,6 +378,37 @@ class AdminHubDetailView(APIView):
         name = hub.name
         hub.delete()
         return Response({"message": f"Hub '{name}' removed from operations."})
+
+
+class AdminHubAssignDriverView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub
+
+        hub = LocationHub.objects.filter(pk=pk).first() or LocationHub.objects.filter(hub_code=str(pk)).first()
+        if not hub:
+            return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        driver_id = request.data.get("driver_id")
+        action = request.data.get("action", "assign")
+
+        driver = User.objects.filter(pk=driver_id, role=User.Roles.DELIVERY_PARTNER).first()
+        if not driver:
+            return Response({"detail": "Delivery partner not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == "unassign":
+            driver.assigned_hub = None
+            driver.save()
+            msg = f"Delivery partner '{driver.first_name} {driver.last_name}' unassigned from '{hub.name}' and returned to general pool."
+        else:
+            driver.assigned_hub = hub
+            driver.address = hub.address
+            driver.save()
+            msg = f"Delivery partner '{driver.first_name} {driver.last_name}' successfully allocated to '{hub.name}'!"
+
+        return Response({"message": msg})
 
 
 class AdminHubCleanupView(APIView):

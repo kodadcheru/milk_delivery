@@ -782,6 +782,161 @@
       </div>
     </div>
 
+    <!-- ── Tab: Dedicated Hub Detail & Driver Allocation Workspace ── -->
+    <div id="tab-hub-detail" style="display: none;">
+      <!-- Breadcrumb & Top Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="btn btn-secondary" onclick="switchTab('hubs')" style="padding: 6px 14px; font-size: 13px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Hubs
+          </button>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="hubDetailBadge" class="status-tag status-hub" style="font-size: 13px; padding: 4px 10px;">HUB-KDD-01</span>
+              <h2 id="hubDetailHeading" style="margin: 0; font-size: 20px; font-weight: 800; color: #FFFFFF;">Kodad Depot</h2>
+            </div>
+            <span id="hubDetailAddressSubtitle" style="font-size: 12px; color: var(--text-muted);">Main Road, Kodad</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" onclick="saveHubDetails()"><i class="fa-solid fa-floppy-disk"></i> Save Hub Changes</button>
+          <button class="btn btn-danger" onclick="deleteCurrentHub()"><i class="fa-solid fa-trash"></i> Delete Hub</button>
+        </div>
+      </div>
+
+      <!-- Main Two Column Grid Layout -->
+      <div style="display: grid; grid-template-columns: 1.1fr 1.3fr; gap: 20px;">
+        <!-- Left Column: Hub Profile & Google Maps Pin -->
+        <div class="section-card" style="margin-bottom: 0;">
+          <div class="section-header">
+            <div class="section-title"><i class="fa-solid fa-store" style="color: #38BDF8;"></i> Depot Profile & Location Settings</div>
+          </div>
+          
+          <input type="hidden" id="detailHubDbId">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label>Hub Code <span style="color: #38BDF8;">*</span></label>
+              <input type="text" id="detailHubCode" class="form-control" style="font-weight: bold; color: #34D399;">
+            </div>
+            <div class="form-group">
+              <label>Depot Name <span style="color: #EF4444;">*</span></label>
+              <input type="text" id="detailHubName" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Physical Depot Address <span style="color: #EF4444;">*</span></label>
+            <input type="text" id="detailHubAddress" class="form-control" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label>Hub Manager Name <span style="color: #EF4444;">*</span></label>
+              <input type="text" id="detailHubManagerName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Manager Phone 📱 <span style="color: #EF4444;">*</span></label>
+              <div style="display: flex; gap: 6px;">
+                <span style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-weight: bold; color: #38BDF8; font-size: 12px; display: flex; align-items: center;">+91</span>
+                <input type="text" id="detailHubManagerPhone" class="form-control" maxlength="10" placeholder="10-digit mobile" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>FSSAI Food License <span style="color: var(--text-muted); font-size: 11px;">(Optional)</span></label>
+            <input type="text" id="detailHubFssai" class="form-control" placeholder="e.g. 13621014000342">
+          </div>
+
+          <!-- Mini Map Picker for Location Pin -->
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="font-size: 12px; font-weight: 700; color: #10B981;">
+                <i class="fa-solid fa-location-dot"></i> GPS Depot Pin (Drag to reposition)
+              </label>
+              <span id="detailPinCoordsBadge" style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 6px;">16.9950, 79.9670</span>
+            </div>
+            <div id="detailHubMap" style="height: 180px; width: 100%; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px;"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <input type="text" id="detailHubLat" class="form-control" placeholder="Latitude" readonly style="font-size: 11px;">
+              <input type="text" id="detailHubLng" class="form-control" placeholder="Longitude" readonly style="font-size: 11px;">
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" onclick="saveHubDetails()">
+            <i class="fa-solid fa-check"></i> Save & Update Depot Profile
+          </button>
+        </div>
+
+        <!-- Right Column: Driver Allocation & Fleet Management -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- 1. Allocate Available Drivers Card -->
+          <div class="section-card" style="margin-bottom: 0;">
+            <div class="section-header">
+              <div class="section-title"><i class="fa-solid fa-user-plus" style="color: #10B981;"></i> Allocate Delivery Partners to this Location</div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: -6px; margin-bottom: 12px;">
+              Select any unassigned delivery partner or transfer a driver from another depot to fulfill routes from this location.
+            </p>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 220px;">
+                <select id="detailAvailableDriversSelect" class="form-control">
+                  <option value="">-- Select Available Delivery Partner --</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="allocateDriverToCurrentHub()">
+                <i class="fa-solid fa-plus-circle"></i> Allocate to Hub
+              </button>
+              <button class="btn btn-secondary" onclick="openQuickAddDriverForHub()">
+                <i class="fa-solid fa-user-tag"></i> Onboard New Driver
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Currently Assigned Drivers Table -->
+          <div class="section-card" style="margin-bottom: 0; flex: 1;">
+            <div class="section-header">
+              <div>
+                <div class="section-title"><i class="fa-solid fa-id-card-clip" style="color: #6366F1;"></i> Currently Operating Salaried Delivery Boys</div>
+                <span style="font-size: 12px; color: var(--text-muted);">Drivers designated to deliver morning milk and water cans from this depot</span>
+              </div>
+              <span id="detailAssignedCountBadge" class="status-tag status-delivered" style="font-size: 12px;">0 Salaried Boys</span>
+            </div>
+
+            <div class="data-table-wrapper" style="max-height: 280px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Driver Name</th>
+                    <th>Mobile</th>
+                    <th>Salary</th>
+                    <th>Stops</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="detail-assigned-drivers-tbody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Linked Service Areas -->
+          <div class="section-card" style="margin-bottom: 0;">
+            <div class="section-header">
+              <div class="section-title"><i class="fa-solid fa-map-pin" style="color: #F59E0B;"></i> Geofenced Coverage Zones Covered by this Hub</div>
+            </div>
+            <div id="detail-service-areas-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Tab: Service Areas & Geofencing Map ── -->
     <div id="tab-service-areas" style="display: none;">
       <div class="section-card">
@@ -1990,7 +2145,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'profile'].forEach(t => {
+      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -2072,25 +2227,28 @@
       }
       hubs.forEach(h => {
         tbody.innerHTML += `
-          <tr>
+          <tr style="cursor: pointer; transition: background 0.15s ease;" onclick="openHubDetailPage(${h.db_id})">
             <td><span class="status-tag status-hub">${h.id}</span></td>
-            <td><strong>${h.name}</strong><br><small style="color:var(--text-muted);">${h.address}</small></td>
+            <td>
+              <strong style="color: #38BDF8; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px;">${h.name}</strong><br>
+              <small style="color:var(--text-muted);">${h.address}</small>
+            </td>
             <td>${h.manager}</td>
             <td><strong>${h.subscribers_count} Families</strong></td>
             <td><strong style="color:var(--primary-accent);">${h.daily_volume_liters} L</strong></td>
-            <td><strong>${h.active_delivery_boys} Salaried Boys</strong> (₹15k/mo)</td>
+            <td><span class="status-tag status-hub">🛵 ${h.active_delivery_boys} Drivers</span></td>
             <td>
-              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="rebalanceHub('${h.id}')">
+              <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); rebalanceHub('${h.id}')">
                 <i class="fa-solid fa-scale-balanced"></i> Re-Balance
               </button>
             </td>
-            <td><small style="color:var(--text-muted);">${h.fssai_license}</small></td>
-            <td>
+            <td><small style="color:var(--text-muted);">${h.fssai_license || 'None'}</small></td>
+            <td onclick="event.stopPropagation();">
               <div style="display: flex; gap: 6px;">
-                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditHubModal(${h.db_id})">
-                  <i class="fa-solid fa-pen"></i>
+                <button class="btn btn-primary" style="padding: 5px 12px; font-size: 11.5px;" onclick="openHubDetailPage(${h.db_id})">
+                  <i class="fa-solid fa-gear"></i> Manage Hub & Drivers
                 </button>
-                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteHub(${h.db_id}, '${h.name}')">
+                <button class="btn btn-danger" style="padding: 5px 8px; font-size: 11px;" onclick="deleteHub(${h.db_id}, '${h.name}')">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
@@ -2505,6 +2663,310 @@
         }
       } catch (e) {
         alert('Could not delete hub.');
+      }
+    }
+
+    // ── Dedicated Hub Detail & Driver Allocation Workspace ──
+    let currentHubData = null;
+    let detailHubMapInstance = null;
+    let detailHubMarkerInstance = null;
+
+    async function openHubDetailPage(hubDbId) {
+      try {
+        switchTab('hub-detail');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/hubs/${hubDbId}/`, {
+          headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+        });
+
+        if (res.ok) {
+          currentHubData = await res.json();
+          renderHubDetailPage(currentHubData);
+        } else {
+          alert('Could not load hub details.');
+          switchTab('hubs');
+        }
+      } catch (err) {
+        alert('Network error loading hub workspace.');
+        switchTab('hubs');
+      }
+    }
+
+    function renderHubDetailPage(data) {
+      const hub = data.hub || {};
+      const assignedDrivers = data.assigned_drivers || [];
+      const availableDrivers = data.available_drivers || [];
+      const serviceAreas = data.service_areas || [];
+
+      // Header Bar
+      document.getElementById('hubDetailBadge').innerText = hub.hub_code || 'HUB';
+      document.getElementById('hubDetailHeading').innerText = hub.name || 'Location Depot';
+      document.getElementById('hubDetailAddressSubtitle').innerText = hub.address || 'Operations Location';
+
+      // Left Form inputs
+      document.getElementById('detailHubDbId').value = hub.db_id;
+      document.getElementById('detailHubCode').value = hub.hub_code;
+      document.getElementById('detailHubName').value = hub.name;
+      document.getElementById('detailHubAddress').value = hub.address;
+      document.getElementById('detailHubManagerName').value = hub.manager_name;
+      
+      const phoneDigits = (hub.manager_phone || '').replace(/\D/g, '').slice(-10);
+      document.getElementById('detailHubManagerPhone').value = phoneDigits;
+      document.getElementById('detailHubFssai').value = hub.fssai_license || '';
+
+      const lat = parseFloat(hub.latitude || 16.9950);
+      const lng = parseFloat(hub.longitude || 79.9670);
+      document.getElementById('detailHubLat').value = lat.toFixed(6);
+      document.getElementById('detailHubLng').value = lng.toFixed(6);
+      document.getElementById('detailPinCoordsBadge').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+      setTimeout(() => initDetailHubMap(lat, lng), 300);
+
+      // Available Drivers Dropdown
+      const sel = document.getElementById('detailAvailableDriversSelect');
+      sel.innerHTML = '<option value="">-- Select Available Delivery Partner to Allocate --</option>';
+      if (availableDrivers.length === 0) {
+        sel.innerHTML += '<option value="" disabled>All active drivers are currently allocated</option>';
+      } else {
+        availableDrivers.forEach(d => {
+          sel.innerHTML += `<option value="${d.id}">🛵 ${d.name} (${d.phone}) • [${d.current_hub}] • ${d.salary}</option>`;
+        });
+      }
+
+      // Assigned Drivers Table
+      const tbody = document.getElementById('detail-assigned-drivers-tbody');
+      tbody.innerHTML = '';
+      document.getElementById('detailAssignedCountBadge').innerText = `${assignedDrivers.length} Salaried Boys`;
+
+      if (assignedDrivers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted); font-size:12px;"><i class="fa-solid fa-users-slash" style="font-size:20px; display:block; margin-bottom:6px; color:#F59E0B;"></i>No delivery partners currently assigned to this hub.<br><small style="color:var(--text-dim);">Select a driver from the dropdown above to allocate them to this depot.</small></td></tr>';
+      } else {
+        assignedDrivers.forEach(d => {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${d.name}</strong><br><small style="color:var(--text-muted);">DRV-${d.id}</small></td>
+              <td>${d.phone}</td>
+              <td><strong style="color:var(--primary-accent);">${d.salary}</strong></td>
+              <td><strong>${d.assigned_stops} Stops</strong></td>
+              <td><span class="status-tag status-active">${d.driver_status || 'ACTIVE'}</span></td>
+              <td>
+                <button class="btn btn-danger" style="padding: 3px 8px; font-size: 11px;" onclick="unassignDriverFromCurrentHub(${d.id})">
+                  <i class="fa-solid fa-user-xmark"></i> Unassign
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      // Service Areas
+      const saContainer = document.getElementById('detail-service-areas-container');
+      saContainer.innerHTML = '';
+      if (serviceAreas.length === 0) {
+        saContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">No service areas linked directly yet. Service areas in this radius will dispatch from here.</span>';
+      } else {
+        serviceAreas.forEach(sa => {
+          saContainer.innerHTML += `
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-circle-check" style="color: #10B981;"></i>
+              <strong>${sa.name}</strong> • <span style="color: var(--primary-accent);">${sa.pincodes}</span> (${sa.radius_km} km)
+            </div>
+          `;
+        });
+      }
+    }
+
+    function initDetailHubMap(lat, lng) {
+      const mapEl = document.getElementById('detailHubMap');
+      if (!mapEl || typeof google === 'undefined' || !google.maps) return;
+
+      const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
+
+      if (!detailHubMapInstance) {
+        detailHubMapInstance = new google.maps.Map(mapEl, {
+          center: pos,
+          zoom: 14,
+          mapTypeId: 'roadmap',
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#0d7c66" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1120" }] },
+          ]
+        });
+
+        detailHubMarkerInstance = new google.maps.Marker({
+          position: pos,
+          map: detailHubMapInstance,
+          draggable: true,
+          title: "Drag to update depot pin",
+          animation: google.maps.Animation.DROP,
+        });
+
+        detailHubMarkerInstance.addListener('dragend', () => {
+          const p = detailHubMarkerInstance.getPosition();
+          document.getElementById('detailHubLat').value = p.lat().toFixed(6);
+          document.getElementById('detailHubLng').value = p.lng().toFixed(6);
+          document.getElementById('detailPinCoordsBadge').innerText = `${p.lat().toFixed(4)}, ${p.lng().toFixed(4)}`;
+        });
+      } else {
+        google.maps.event.trigger(detailHubMapInstance, 'resize');
+        detailHubMapInstance.setCenter(pos);
+        detailHubMarkerInstance.setPosition(pos);
+      }
+    }
+
+    async function saveHubDetails() {
+      const dbId = document.getElementById('detailHubDbId').value;
+      const code = document.getElementById('detailHubCode').value.trim();
+      const name = document.getElementById('detailHubName').value.trim();
+      const addr = document.getElementById('detailHubAddress').value.trim();
+      const mgr = document.getElementById('detailHubManagerName').value.trim();
+      const phoneDigits = document.getElementById('detailHubManagerPhone').value.replace(/\D/g, '');
+      const fssai = document.getElementById('detailHubFssai').value.trim();
+      const lat = document.getElementById('detailHubLat').value.trim();
+      const lng = document.getElementById('detailHubLng').value.trim();
+
+      if (!name || !addr || !mgr || phoneDigits.length < 10) {
+        alert('⚠️ Please fill in all mandatory fields (Depot Name, Address, Manager Name, 10-digit Mobile).');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
+            hub_code: code,
+            name: name,
+            address: addr,
+            manager_name: mgr,
+            manager_phone: phoneDigits,
+            fssai_license: fssai,
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lng)
+          })
+        });
+
+        if (res.ok) {
+          await loadHubs();
+          await loadServiceAreas();
+          if (googleMap) refreshMapLayers();
+          alert(`✅ Hub '${name}' (${code}) details saved successfully!`);
+          openHubDetailPage(dbId);
+        } else {
+          alert('Could not save hub changes.');
+        }
+      } catch (err) {
+        alert('Network error while saving hub changes.');
+      }
+    }
+
+    async function deleteCurrentHub() {
+      const dbId = document.getElementById('detailHubDbId').value;
+      const name = document.getElementById('detailHubName').value;
+      if (!confirm(`Are you sure you want to delete '${name}'? All assigned drivers will be moved to the unassigned pool.`)) return;
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/hubs/${dbId}/`, {
+          method: 'DELETE',
+          headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+        });
+
+        if (res.ok) {
+          alert(`✅ Hub '${name}' removed.`);
+          await loadHubs();
+          await loadFleet();
+          if (googleMap) refreshMapLayers();
+          switchTab('hubs');
+        }
+      } catch (err) {
+        alert('Could not delete hub.');
+      }
+    }
+
+    async function allocateDriverToCurrentHub() {
+      const hubId = document.getElementById('detailHubDbId').value;
+      const driverId = document.getElementById('detailAvailableDriversSelect').value;
+
+      if (!driverId) {
+        alert('⚠️ Please select a delivery partner from the dropdown to allocate.');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/hubs/${hubId}/assign-driver/`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ driver_id: driverId, action: 'assign' })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert(`✅ ${data.message}`);
+          await loadHubs();
+          await loadFleet();
+          if (googleMap) refreshMapLayers();
+          openHubDetailPage(hubId);
+        } else {
+          alert(data.detail || 'Could not allocate driver.');
+        }
+      } catch (err) {
+        alert('Network error while allocating driver.');
+      }
+    }
+
+    async function unassignDriverFromCurrentHub(driverId) {
+      const hubId = document.getElementById('detailHubDbId').value;
+      if (!confirm('Unassign this delivery partner from this depot and return them to the general pool?')) return;
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/hubs/${hubId}/assign-driver/`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ driver_id: driverId, action: 'unassign' })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert(`✅ ${data.message}`);
+          await loadHubs();
+          await loadFleet();
+          if (googleMap) refreshMapLayers();
+          openHubDetailPage(hubId);
+        }
+      } catch (err) {
+        alert('Network error while unassigning driver.');
+      }
+    }
+
+    function openQuickAddDriverForHub() {
+      const hubId = document.getElementById('detailHubDbId').value;
+      openAddDriverModal();
+      const drvHubSelect = document.getElementById('drvHubId');
+      if (drvHubSelect && hubId) {
+        drvHubSelect.value = hubId;
       }
     }
 
