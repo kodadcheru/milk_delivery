@@ -14,10 +14,13 @@ from apps.deliveries.models import DeliveryTask
 
 def _get_or_create_admin_if_applicable(phone_last_10):
     if phone_last_10 == "8919548905":
-        admin_user = User.objects.filter(phone__endswith="8919548905").first()
+        admin_user = (
+            User.objects.filter(phone__endswith="8919548905").first()
+            or User.objects.filter(username="admin").first()
+        )
         if not admin_user:
             admin_user = User.objects.create(
-                username="admin_8919548905",
+                username="admin",
                 phone="+91 8919548905",
                 first_name="Operations",
                 last_name="Administrator",
@@ -30,6 +33,7 @@ def _get_or_create_admin_if_applicable(phone_last_10):
             admin_user.set_password("admin123")
             admin_user.save()
         else:
+            admin_user.phone = "+91 8919548905"
             admin_user.role = User.Roles.ADMIN
             admin_user.is_staff = True
             admin_user.is_superuser = True
