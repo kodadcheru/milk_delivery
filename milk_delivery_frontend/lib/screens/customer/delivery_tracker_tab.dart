@@ -185,7 +185,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
             if (_selectedFilterIndex == 0 || _selectedFilterIndex == 2) ...[
               if (subscriptions.isNotEmpty) ...[
-                _buildSectionHeader('🥛 Daily Morning Subscriptions (06:00 AM)', '${subscriptions.length} deliveries'),
+                _buildSectionHeader('🥛 Morning Subscriptions (6 AM)', '${subscriptions.length} deliveries'),
                 const SizedBox(height: 10),
                 ...subscriptions.map((task) => _buildSubscriptionDeliveryCard(task)),
               ] else if (_selectedFilterIndex == 2) ...[
@@ -611,10 +611,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   ],
                 ),
               ] else ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  height: 36,
+                  height: 42,
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Navigator.push(
@@ -631,11 +631,12 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       );
                     },
-                    icon: const Icon(Icons.location_searching_rounded, size: 15, color: Color(0xFF0D7C66)),
-                    label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                    icon: const Icon(Icons.location_searching_rounded, size: 16, color: Color(0xFF0D7C66)),
+                    label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF0D7C66)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      side: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
                 ),
