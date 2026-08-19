@@ -202,12 +202,11 @@ class BookingDetailSheet extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  Flexible(
+                                  Expanded(
                                     child: Text(
                                       driverName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5),
+                                      maxLines: 2,
+                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                                     ),
                                   ),
                                   const SizedBox(width: 4),

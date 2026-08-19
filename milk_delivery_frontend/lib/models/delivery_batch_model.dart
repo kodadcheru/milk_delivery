@@ -20,9 +20,9 @@ class HubLocationModel {
   });
 
   static const HubLocationModel defaultHub = HubLocationModel(
-    id: 'HUB-JUBILEE-01',
-    name: 'Jubilee Hills Central Depot #1',
-    address: 'Plot 42, Road #36, Jubilee Hills, Hyderabad',
+    id: 'HUB-01',
+    name: 'Central Operations Hub',
+    address: 'Operations Depot Base',
     latitude: 17.4320,
     longitude: 78.4070,
     managerName: 'Operations Admin',

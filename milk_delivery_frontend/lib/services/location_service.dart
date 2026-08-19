@@ -56,8 +56,8 @@ class LocationService {
             return {
               'short_address': shortAddr,
               'full_address': fullAddr,
-              'road': road.isNotEmpty ? road : 'Road No. 36',
-              'suburb': suburb.isNotEmpty ? suburb : 'Jubilee Hills',
+              'road': road.isNotEmpty ? road : 'Main Road',
+              'suburb': suburb.isNotEmpty ? suburb : 'City Sector',
               'city': city,
               'postcode': postcode,
               'lat': lat,
@@ -77,11 +77,11 @@ class LocationService {
         final data = jsonDecode(res.body);
         final addr = data['address'] ?? {};
 
-        final road = addr['road'] ?? addr['suburb'] ?? addr['neighbourhood'] ?? 'Road No. 36';
-        final suburb = addr['suburb'] ?? addr['residential'] ?? addr['neighbourhood'] ?? 'Jubilee Hills';
-        final city = addr['city'] ?? addr['town'] ?? addr['state_district'] ?? 'Hyderabad';
-        final state = addr['state'] ?? 'Telangana';
-        final postcode = addr['postcode'] ?? '500033';
+        final road = addr['road'] ?? addr['suburb'] ?? addr['neighbourhood'] ?? 'Main Road';
+        final suburb = addr['suburb'] ?? addr['residential'] ?? addr['neighbourhood'] ?? 'Local Area';
+        final city = addr['city'] ?? addr['town'] ?? addr['state_district'] ?? 'City';
+        final state = addr['state'] ?? 'State';
+        final postcode = addr['postcode'] ?? '500001';
 
         final shortAddress = '$road, $suburb, $city';
         final fullAddress = '$road, $suburb, $city, $state - $postcode';
@@ -101,12 +101,12 @@ class LocationService {
 
     // Fallback default coordinates
     return {
-      'short_address': 'Road No. 36, Jubilee Hills, Hyderabad',
-      'full_address': 'Flat 402, Green Acres, Road No. 36, Jubilee Hills, Hyderabad - 500033',
-      'road': 'Road No. 36',
-      'suburb': 'Jubilee Hills',
-      'city': 'Hyderabad',
-      'postcode': '500033',
+      'short_address': 'Live GPS Location',
+      'full_address': 'Doorstep Delivery Location',
+      'road': 'Main Street',
+      'suburb': 'Local Area',
+      'city': 'City',
+      'postcode': '500001',
       'lat': lat,
       'lon': lon,
     };

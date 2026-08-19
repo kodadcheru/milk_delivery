@@ -46,18 +46,12 @@ class AppState extends ChangeNotifier {
   }
 
   Map<String, dynamic>? get nearestCoveringHub {
-    final hubs = locationHubs.isNotEmpty
-        ? locationHubs
-        : [
-            {'id': 1, 'hub_code': 'HUB-HYD-01', 'name': 'Jubilee Hills Depot #1', 'latitude': 17.4319, 'longitude': 78.4073, 'coverage_radius_km': 5.0},
-            {'id': 2, 'hub_code': 'HUB-HYD-02', 'name': 'Banjara Hills Depot #2', 'latitude': 17.4156, 'longitude': 78.4347, 'coverage_radius_km': 5.0},
-            {'id': 3, 'hub_code': 'HUB-HYD-03', 'name': 'Madhapur Tech Depot #3', 'latitude': 17.4486, 'longitude': 78.3808, 'coverage_radius_km': 5.0},
-          ];
+    if (locationHubs.isEmpty) return null;
 
     Map<String, dynamic>? bestHub;
     double minDistance = double.infinity;
 
-    for (var hub in hubs) {
+    for (var hub in locationHubs) {
       final hLat = (hub['latitude'] as num?)?.toDouble() ?? 17.4319;
       final hLon = (hub['longitude'] as num?)?.toDouble() ?? 78.4073;
       final radius = (hub['coverage_radius_km'] as num?)?.toDouble() ?? 5.0;
@@ -69,9 +63,6 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    if (bestHub == null && selectedServiceArea.status == 'ACTIVE') {
-      return hubs.first;
-    }
     return bestHub;
   }
 

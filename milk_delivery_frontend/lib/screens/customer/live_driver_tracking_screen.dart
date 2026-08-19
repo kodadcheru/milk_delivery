@@ -22,9 +22,9 @@ class LiveDriverTrackingScreen extends StatefulWidget {
     required this.state,
     this.liveOrder,
     this.orderTitle = 'Fresh Farm Milk & Morning Essentials',
-    this.deliveryAddress = 'Flat 402, Green Acres, Jubilee Hills, Hyderabad',
-    this.driverName = 'Suresh Rao (MilkDrop Partner)',
-    this.driverPhone = '+91 9123456789',
+    this.deliveryAddress = 'Doorstep Delivery Location',
+    this.driverName = 'Assigned Partner',
+    this.driverPhone = '',
     this.deliveryOtp = '4892',
   });
 
