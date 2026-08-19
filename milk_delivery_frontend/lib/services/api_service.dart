@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../models/user_model.dart';
+import '../models/customer_address_model.dart';
 import '../models/product_model.dart';
 import '../models/subscription_model.dart';
 import '../models/delivery_task_model.dart';
@@ -472,6 +473,71 @@ class ApiService {
             }),
           ));
       return res.statusCode == 201 || res.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
+  // ── 12. Customer Address Book APIs ──
+  static Future<List<CustomerAddressModel>> fetchCustomerAddresses() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/accounts/addresses/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((item) => CustomerAddressModel.fromJson(item)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<CustomerAddressModel?> createCustomerAddress(CustomerAddressModel address) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/accounts/addresses/'),
+            headers: _headers,
+            body: jsonEncode(address.toJson()),
+          ));
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        return CustomerAddressModel.fromJson(jsonDecode(res.body));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<CustomerAddressModel?> updateCustomerAddress(CustomerAddressModel address) async {
+    try {
+      final res = await _executeWithRetry(() => http.patch(
+            Uri.parse('$baseUrl/accounts/addresses/${address.id}/'),
+            headers: _headers,
+            body: jsonEncode(address.toJson()),
+          ));
+      if (res.statusCode == 200) {
+        return CustomerAddressModel.fromJson(jsonDecode(res.body));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<bool> deleteCustomerAddress(int addressId) async {
+    try {
+      final res = await _executeWithRetry(() => http.delete(
+            Uri.parse('$baseUrl/accounts/addresses/$addressId/'),
+            headers: _headers,
+          ));
+      return res.statusCode == 204 || res.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
+  static Future<bool> setDefaultCustomerAddress(int addressId) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/accounts/addresses/$addressId/set-default/'),
+            headers: _headers,
+          ));
+      return res.statusCode == 200;
     } catch (_) {}
     return false;
   }

@@ -66,3 +66,42 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"
+
+
+class CustomerAddress(models.Model):
+    class AddressTypes(models.TextChoices):
+        HOME = "HOME", "Home 🏠"
+        WORK = "WORK", "Work / Office 💼"
+        OTHER = "OTHER", "Other Location 📍"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_addresses")
+    address_type = models.CharField(max_length=20, choices=AddressTypes.choices, default=AddressTypes.HOME)
+    custom_tag = models.CharField(max_length=100, blank=True, default="", help_text="e.g. Parents Villa, Vacation House")
+    flat_house_no = models.CharField(max_length=100, blank=True, default="")
+    floor = models.CharField(max_length=50, blank=True, default="")
+    building_name = models.CharField(max_length=150, blank=True, default="")
+    street_address = models.CharField(max_length=255, default="Road No. 36, Jubilee Hills")
+    landmark = models.CharField(max_length=150, blank=True, default="")
+    city = models.CharField(max_length=100, default="Hyderabad")
+    pincode = models.CharField(max_length=20, default="500033")
+    latitude = models.DecimalField(max_digits=11, decimal_places=8, default=Decimal("17.43190000"))
+    longitude = models.DecimalField(max_digits=11, decimal_places=8, default=Decimal("78.40730000"))
+    delivery_instructions = models.CharField(max_length=255, blank=True, default="Leave in doorstep milk basket, ring bell")
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-is_default", "-created_at"]
+        verbose_name_plural = "Customer Addresses"
+
+    def __str__(self):
+        type_str = self.custom_tag if self.address_type == self.AddressTypes.OTHER and self.custom_tag else self.get_address_type_display()
+        return f"{type_str} - {self.flat_house_no}, {self.building_name}, {self.street_address} ({self.user.username})"
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            # Unset is_default on any other address for this user
+            CustomerAddress.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+

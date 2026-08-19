@@ -8,9 +8,9 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/product_detail_sheet.dart';
 import '../../widgets/service_area_sheet.dart';
 import '../../widgets/shimmer_loading.dart';
+import 'address_book_screen.dart';
 import 'category_products_screen.dart';
 import 'map_location_picker_screen.dart';
-import 'help_support_screen.dart';
 
 class CustomerHomeTab extends StatefulWidget {
   final AppState state;
@@ -37,6 +37,11 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
     super.initState();
     _bannerController = PageController(viewportFraction: 0.92);
     _startBannerAutoSlide();
+    
+    // Automatically detect customer location & sync address book on app launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.state.initDevicePermissionsAndLocation();
+    });
   }
 
   void _startBannerAutoSlide() {
@@ -157,9 +162,12 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
     );
   }
 
-  // ── 1. Location Bar with OpenStreetMap GPS ──
+  // ── 1. Location Bar with Address Book & Live GPS ──
   Widget _buildLocationBar(BuildContext context) {
-    final address = widget.state.currentDeliveryAddress;
+    final activeAddr = widget.state.activeAddress;
+    final address = activeAddr?.summaryAddress ?? widget.state.currentDeliveryAddress;
+    final iconText = activeAddr?.icon ?? '📍';
+    final titleText = activeAddr != null ? '${activeAddr.title} • ' : '';
     final isDetecting = widget.state.isDetectingLocation;
 
     return Container(
@@ -181,12 +189,14 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981).withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.location_on_rounded, color: Color(0xFF10B981), size: 16),
+                      alignment: Alignment.center,
+                      child: Text(iconText, style: const TextStyle(fontSize: 14)),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -195,9 +205,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                         children: [
                           Row(
                             children: [
-                              const Text(
-                                'DELIVERING TO (GPS / Maps)',
-                                style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                              Text(
+                                activeAddr != null ? 'DELIVERING TO (${activeAddr.displayType.toUpperCase()})' : 'DELIVERING TO (LIVE GPS)',
+                                style: const TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                               ),
                               if (isDetecting)
                                 const Padding(
@@ -208,7 +218,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                           ),
                           const SizedBox(height: 1),
                           Text(
-                            address,
+                            '$titleText$address',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
@@ -228,7 +238,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (ctx) => HelpSupportScreen(state: widget.state),
+                  builder: (ctx) => AddressBookScreen(state: widget.state),
                 ),
               );
             },
@@ -242,9 +252,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.support_agent_rounded, color: Color(0xFF10B981), size: 18),
+                  Icon(Icons.menu_book_rounded, color: Color(0xFF10B981), size: 16),
                   SizedBox(width: 4),
-                  Text('Help', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w800, fontSize: 11.5)),
+                  Text('Book', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w800, fontSize: 11.5)),
                 ],
               ),
             ),
@@ -1283,23 +1293,195 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Select Delivery Location', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text('Select Delivery Location 📍', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
 
-              // OpenStreetMap Search Box
+              // ── Saved Addresses Section ──
+              if (widget.state.savedAddresses.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'SAVED ADDRESSES',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (c) => AddressBookScreen(state: widget.state)),
+                        );
+                      },
+                      icon: const Icon(Icons.menu_book_rounded, size: 14, color: Color(0xFF10B981)),
+                      label: const Text('Manage Book', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                    ),
+                  ],
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 180),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: widget.state.savedAddresses.length,
+                    separatorBuilder: (c, i) => const SizedBox(height: 8),
+                    itemBuilder: (c, i) {
+                      final addr = widget.state.savedAddresses[i];
+                      final isSelected = widget.state.activeAddress?.id == addr.id;
+
+                      return InkWell(
+                        onTap: () {
+                          widget.state.selectActiveAddress(addr);
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("🚀 Delivering to '${addr.title}'"),
+                              backgroundColor: const Color(0xFF10B981),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(addr.icon, style: const TextStyle(fontSize: 20)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          addr.title,
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A)),
+                                        ),
+                                        if (addr.isDefault) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                            decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(4)),
+                                            child: const Text('PRIMARY', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFFD97706))),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    Text(
+                                      addr.summaryAddress,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18)
+                              else
+                                const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF94A3B8)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1),
+                const SizedBox(height: 8),
+              ],
+
+              // 1. Current Location Button (Device GPS Auto-Fill)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.12), shape: BoxShape.circle),
+                  child: const Icon(Icons.my_location_rounded, color: Color(0xFF10B981), size: 20),
+                ),
+                title: const Text('Use Current Device GPS Location 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: const Text('Auto-detect and reverse-geocode doorstep address', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('📍 Detecting current location via GPS...')),
+                  );
+                  bool ok = await widget.state.requestDeviceGPS();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF10B981),
+                        content: Text(ok ? '📍 Location auto-filled to: ${widget.state.currentDeliveryAddress}' : 'Location permission needed.'),
+                      ),
+                    );
+                  }
+                },
+              ),
+              const Divider(height: 12),
+
+              // 2. Pick on Map Button (Zepto/Swiggy Interactive Map)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFF0284C7).withValues(alpha: 0.15), shape: BoxShape.circle),
+                  child: const Icon(Icons.map_rounded, color: Color(0xFF0284C7), size: 20),
+                ),
+                title: const Text('Pick on Google Map / Pin Doorstep 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                subtitle: const Text('Interactive map with live draggable pin & search', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF0284C7)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (c) => MapLocationPickerScreen(state: widget.state),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 12),
+
+              // 3. Geofenced Service Areas Modal Trigger
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFF6366F1).withValues(alpha: 0.15), shape: BoxShape.circle),
+                  child: const Icon(Icons.location_city_rounded, color: Color(0xFF6366F1), size: 20),
+                ),
+                title: const Text('Browse Hyderabad Service Zones 🏙️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: Text('Current Zone: ${widget.state.selectedServiceArea.name}', style: const TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
+                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF6366F1)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ServiceAreaSheet.show(context, widget.state);
+                },
+              ),
+              const Divider(height: 12),
+
+              // Search Box
               TextField(
                 controller: searchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'Search locality, street, or landmark...',
+                  hintText: 'Search new society, street, or landmark...',
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF0D7C66)),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF10B981)),
                   suffixIcon: isSearching
                       ? const Padding(
                           padding: EdgeInsets.all(12),
-                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7C66))),
+                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981))),
                         )
                       : (searchCtrl.text.isNotEmpty
                           ? IconButton(
@@ -1325,76 +1507,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   });
                 },
               ),
-              const SizedBox(height: 12),
-
-              // 1. Pick on Map Button (Zepto/Swiggy Interactive Map)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFF0284C7).withValues(alpha: 0.15), shape: BoxShape.circle),
-                  child: const Icon(Icons.map_rounded, color: Color(0xFF0284C7), size: 20),
-                ),
-                title: const Text('Pick on Map / Pin Doorstep 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                subtitle: const Text('Interactive map with live draggable pin & crosshairs', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF0284C7)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (c) => MapLocationPickerScreen(state: widget.state),
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 12),
-
-              // 1b. Geofenced Service Areas Modal Trigger
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), shape: BoxShape.circle),
-                  child: const Icon(Icons.map_rounded, color: Color(0xFF10B981), size: 20),
-                ),
-                title: const Text('Browse Geofenced Service Areas 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: Text('Current Zone: ${widget.state.selectedServiceArea.name}', style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF10B981)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  ServiceAreaSheet.show(context, widget.state);
-                },
-              ),
-              const Divider(height: 12),
-
-              // 2. Current Location Button (Device GPS Auto-Fill)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFF0D7C66).withValues(alpha: 0.12), shape: BoxShape.circle),
-                  child: const Icon(Icons.my_location_rounded, color: Color(0xFF0D7C66), size: 20),
-                ),
-                title: const Text('Use Current Device GPS Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: const Text('Auto-detect and auto-fill address via GPS', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('📍 Detecting current location via GPS...')),
-                  );
-                  bool ok = await widget.state.requestDeviceGPS();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: const Color(0xFF0D7C66),
-                        content: Text(ok ? '📍 Location auto-filled to: ${widget.state.currentDeliveryAddress}' : 'Location permission needed.'),
-                      ),
-                    );
-                  }
-                },
-              ),
-              const Divider(height: 16),
+              const SizedBox(height: 8),
 
               // Search Results List
               if (searchResults.isNotEmpty) ...[
@@ -1410,7 +1523,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                       return ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.place_outlined, color: Color(0xFF0D7C66), size: 18),
+                        leading: const Icon(Icons.place_outlined, color: Color(0xFF10B981), size: 18),
                         title: Text(item['display_name'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
                         onTap: () {
                           final lat = double.tryParse(item['lat']?.toString() ?? '17.4319') ?? 17.4319;
@@ -1418,7 +1531,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                           widget.state.updateDeliveryLocation(item['display_name'] ?? 'Custom Address', lat, lon);
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('📍 Delivery address updated!')),
+                            SnackBar(
+                              backgroundColor: const Color(0xFF10B981),
+                              content: Text('📍 Delivery address updated to: ${item['display_name']}'),
+                            ),
                           );
                         },
                       );

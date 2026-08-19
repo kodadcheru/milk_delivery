@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
+import '../models/customer_address_model.dart';
 import '../models/product_model.dart';
 import '../models/subscription_model.dart';
 import '../models/delivery_task_model.dart';
@@ -9,7 +10,6 @@ import '../models/live_order_model.dart';
 import '../models/service_area_model.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
-
 import '../services/permission_service.dart';
 
 class AppState extends ChangeNotifier {
@@ -21,13 +21,16 @@ class AppState extends ChangeNotifier {
   bool isVacationMode = false;
   int currentTabIndex = 0;
 
-  // OpenStreetMap Location & Service Area State
+  // Real-Time Location & Customer Address Book State
   String currentDeliveryAddress = 'Road No. 36, Jubilee Hills, Hyderabad';
   double currentLat = 17.4319;
   double currentLon = 78.4073;
   bool isDetectingLocation = false;
   bool hasLocationPermission = false;
   bool hasNotificationPermission = false;
+
+  List<CustomerAddressModel> savedAddresses = CustomerAddressModel.defaultSampleAddresses;
+  CustomerAddressModel? activeAddress;
 
   List<ServiceAreaModel> serviceAreas = ServiceAreaModel.defaultAreas;
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.defaultAreas.first;
@@ -316,6 +319,7 @@ class AppState extends ChangeNotifier {
       currentLon = user.longitude;
     }
 
+    await fetchSavedAddresses();
     products = await ApiService.fetchProducts();
     subscriptions = await ApiService.fetchSubscriptions();
     deliveries = await ApiService.fetchDeliveries();
@@ -333,6 +337,74 @@ class AppState extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  // ── Customer Address Book Handlers ──
+  Future<void> fetchSavedAddresses() async {
+    try {
+      final addrs = await ApiService.fetchCustomerAddresses();
+      if (addrs.isNotEmpty) {
+        savedAddresses = addrs;
+        final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
+        activeAddress = defaultAddr;
+        currentDeliveryAddress = defaultAddr.summaryAddress;
+        currentLat = defaultAddr.latitude;
+        currentLon = defaultAddr.longitude;
+      }
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  void selectActiveAddress(CustomerAddressModel addr) {
+    activeAddress = addr;
+    currentDeliveryAddress = addr.summaryAddress;
+    currentLat = addr.latitude;
+    currentLon = addr.longitude;
+    notifyListeners();
+
+    if (currentUser != null) {
+      updateUserProfile(address: addr.summaryAddress, latitude: addr.latitude, longitude: addr.longitude);
+    }
+  }
+
+  Future<bool> saveCustomerAddress(CustomerAddressModel addr) async {
+    CustomerAddressModel? result;
+    if (addr.id > 0 && savedAddresses.any((a) => a.id == addr.id)) {
+      result = await ApiService.updateCustomerAddress(addr);
+    } else {
+      result = await ApiService.createCustomerAddress(addr);
+    }
+
+    if (result != null) {
+      await fetchSavedAddresses();
+      selectActiveAddress(result);
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> deleteCustomerAddress(int addressId) async {
+    final success = await ApiService.deleteCustomerAddress(addressId);
+    if (success) {
+      savedAddresses.removeWhere((a) => a.id == addressId);
+      if (activeAddress?.id == addressId) {
+        if (savedAddresses.isNotEmpty) {
+          selectActiveAddress(savedAddresses.first);
+        }
+      }
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> setDefaultCustomerAddress(int addressId) async {
+    final success = await ApiService.setDefaultCustomerAddress(addressId);
+    if (success) {
+      await fetchSavedAddresses();
+      return true;
+    }
+    return false;
   }
 
   void setRole(String role) {

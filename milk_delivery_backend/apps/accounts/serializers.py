@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from apps.accounts.models import Notification, User, WalletTransaction
+from apps.accounts.models import CustomerAddress, Notification, User, WalletTransaction
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -72,3 +72,50 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ["id", "user", "title", "message", "notification_type", "is_read", "created_at"]
         read_only_fields = ["id", "user", "created_at"]
+
+
+class CustomerAddressSerializer(serializers.ModelSerializer):
+    formatted_address = serializers.SerializerMethodField()
+    display_type = serializers.CharField(source="get_address_type_display", read_only=True)
+
+    class Meta:
+        model = CustomerAddress
+        fields = [
+            "id",
+            "user",
+            "address_type",
+            "display_type",
+            "custom_tag",
+            "flat_house_no",
+            "floor",
+            "building_name",
+            "street_address",
+            "landmark",
+            "city",
+            "pincode",
+            "latitude",
+            "longitude",
+            "delivery_instructions",
+            "is_default",
+            "formatted_address",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
+
+    def get_formatted_address(self, obj):
+        parts = []
+        if obj.flat_house_no:
+            parts.append(obj.flat_house_no)
+        if obj.floor:
+            parts.append(obj.floor)
+        if obj.building_name:
+            parts.append(obj.building_name)
+        if obj.street_address:
+            parts.append(obj.street_address)
+        if obj.landmark:
+            parts.append(f"Near {obj.landmark}")
+        if obj.city:
+            parts.append(f"{obj.city} - {obj.pincode}")
+        return ", ".join(parts) if parts else obj.street_address
+

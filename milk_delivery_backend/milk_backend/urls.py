@@ -24,6 +24,11 @@ from apps.accounts.admin_views import (
     ServiceAreaCheckView,
     ServiceAreaListView,
 )
+from apps.accounts.address_views import (
+    CustomerAddressDetailView,
+    CustomerAddressListCreateView,
+    CustomerAddressSetDefaultView,
+)
 from apps.accounts.phone_auth_views import (
     RegisterMobileUserView,
     SendOTPView,
@@ -92,6 +97,10 @@ urlpatterns = [
     path("api/auth/token/", RobustTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/me/", UserProfileView.as_view(), name="auth_me"),
+    # Customer Address Book endpoints
+    path("api/accounts/addresses/", CustomerAddressListCreateView.as_view(), name="address_list"),
+    path("api/accounts/addresses/<int:pk>/", CustomerAddressDetailView.as_view(), name="address_detail"),
+    path("api/accounts/addresses/<int:pk>/set-default/", CustomerAddressSetDefaultView.as_view(), name="address_set_default"),
     # Notification endpoints
     path("api/notifications/", NotificationListView.as_view(), name="notification_list"),
     path("api/notifications/<int:pk>/read/", NotificationMarkReadView.as_view(), name="notification_mark_read"),

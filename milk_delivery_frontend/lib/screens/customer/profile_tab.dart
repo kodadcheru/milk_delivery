@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
+import 'address_book_screen.dart';
 import 'map_location_picker_screen.dart';
 import 'help_support_screen.dart';
 
@@ -171,27 +172,51 @@ class ProfileTab extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () async {
-                        await state.requestDeviceGPS();
-                        state.updateUserProfile(address: state.currentDeliveryAddress);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('📍 Address auto-detected via OpenStreetMap: ${state.currentDeliveryAddress}')),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.my_location_rounded, size: 13, color: Color(0xFF0D7C66)),
-                      label: const Text('Detect via OpenStreetMap GPS', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (c) => AddressBookScreen(state: state)),
+                            );
+                          },
+                          icon: const Icon(Icons.menu_book_rounded, size: 16, color: Color(0xFF10B981)),
+                          label: const Text('Address Book 📍', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF10B981)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            await state.requestDeviceGPS();
+                            state.updateUserProfile(address: state.currentDeliveryAddress);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: const Color(0xFF10B981),
+                                  content: Text('📍 Live GPS Detected: ${state.currentDeliveryAddress}'),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.my_location_rounded, size: 16, color: Color(0xFF0F172A)),
+                          label: const Text('Detect GPS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const Divider(height: 18),
                   Row(
