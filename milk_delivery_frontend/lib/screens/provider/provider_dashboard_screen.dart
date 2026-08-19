@@ -18,13 +18,45 @@ class ProviderDashboardScreen extends StatefulWidget {
 }
 
 class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
-  int _selectedFilter = 0; // 0: All Orders, 1: Morning Subscriptions, 2: Express Orders, 3: Fleet Drivers
+  int _selectedFilter = 0; // 0: All, 1: Subs, 2: Express, 3: Fleet, 4: Crates, 5: Broadcasts, 6: Payouts
   String _searchQuery = '';
   int _activeDriverCount = 4;
   int _crateStockA2 = 45;
   int _crateStockBuffalo = 22;
   int _crateStockEggs = 18;
   List<Map<String, dynamic>> _liveFleet = [];
+
+  List<Map<String, dynamic>> _broadcastAlerts = [
+    {
+      'title': '🌧️ Weather Update: Morning Dispatch Completed',
+      'time': '06:15 AM Today',
+      'recipients': 'All Subscribers',
+      'status': 'DELIVERED ✅',
+    },
+    {
+      'title': '🥛 Fresh Farm Batch Arrival: A2 Vedic Cow Milk',
+      'time': '04:30 AM Today',
+      'recipients': 'All Subscribers',
+      'status': 'DELIVERED ✅',
+    },
+  ];
+
+  List<Map<String, dynamic>> _payoutHistory = [
+    {
+      'id': 'PAY-HYD-9021',
+      'date': 'Yesterday, 08:30 PM',
+      'amount': 3375.0,
+      'status': 'SETTLED ✅',
+      'bank': 'Primary Bank (A/C **4892)',
+    },
+    {
+      'id': 'PAY-HYD-8842',
+      'date': '17 Aug 2026',
+      'amount': 4120.0,
+      'status': 'SETTLED ✅',
+      'bank': 'Primary Bank (A/C **4892)',
+    },
+  ];
 
   @override
   void initState() {
@@ -58,18 +90,104 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   void _sendWhatsAppMessage(BuildContext context, String name, String phone, String msg) async {
     final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    final encoded = Uri.encodeComponent(msg);
-    final url = 'https://wa.me/91$clean?text=$encoded';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final encodedMsg = Uri.encodeComponent(msg);
+    final whatsappUrl = Uri.parse('https://wa.me/91$clean?text=$encodedMsg');
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('💬 WhatsApp message sent to $name!')),
+          SnackBar(content: Text('📱 WhatsApp message queued for $name ($phone)')),
         );
       }
     }
+  }
+
+  void _showBroadcastDialog(BuildContext context) {
+    final controller = TextEditingController();
+    final presets = [
+      '🌧️ Morning Dispatch Alert: Rain in sector; deliveries completing by 06:45 AM.',
+      '🥛 Fresh Batch Arrived: A2 Vedic Cow Milk cold storage dispatched!',
+      '⚡ Express 15-Min Delivery active in your hub zone today.',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Text('📢', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 8),
+            Text('Hub Broadcast Alert', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Send instant push & SMS notification to all active subscribers in Hub zone:', style: TextStyle(fontSize: 11.5, color: Colors.black87)),
+              const SizedBox(height: 10),
+              const Text('Quick Presets:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66))),
+              const SizedBox(height: 4),
+              ...presets.map((p) => InkWell(
+                    onTap: () => controller.text = p,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                      child: Text(p, style: const TextStyle(fontSize: 11, color: Color(0xFF334155))),
+                    ),
+                  )),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                style: const TextStyle(fontSize: 12),
+                decoration: InputDecoration(
+                  hintText: 'Or type custom message to broadcast...',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton.icon(
+            onPressed: () {
+              if (controller.text.trim().isEmpty) return;
+              final msg = controller.text.trim();
+              Navigator.pop(ctx);
+              setState(() {
+                _broadcastAlerts.insert(0, {
+                  'title': msg,
+                  'time': 'Just Now',
+                  'recipients': '${widget.state.deliveries.length} Subscribers',
+                  'status': 'BROADCAST SENT ✅',
+                });
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFF0D7C66),
+                  content: Text('📢 Broadcast Sent to ${widget.state.deliveries.length} Subscribers in Hub Zone!'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.send_rounded, size: 15),
+            label: const Text('Send Broadcast', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D7C66),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _withdrawEarnings(BuildContext context, double amount) {
@@ -82,16 +200,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           children: [
             Icon(Icons.account_balance_rounded, color: Color(0xFF0D7C66)),
             SizedBox(width: 8),
-            Text('Withdraw Hub Earnings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Instant Bank Payout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Amount to Settle: ₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0D7C66))),
+            Text('Net Provider Balance: ₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0D7C66))),
             const SizedBox(height: 8),
-            const Text('Destination Account:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text('Destination Settlement Account:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.all(10),
@@ -104,7 +222,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     child: Text(
                       activeHub != null && activeHub['bank_account'] != null
                           ? '${activeHub['bank_account']}'
-                          : 'Primary Settlement Bank • Daily Auto-Payout',
+                          : 'Primary Bank Account (A/C **4892)\nDaily Auto-Payout • Instant Transfer',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -115,18 +233,33 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(ctx);
+              final txnId = 'PAY-HYD-${1000 + DateTime.now().second * 37}';
+              setState(() {
+                _payoutHistory.insert(0, {
+                  'id': txnId,
+                  'date': 'Just Now',
+                  'amount': amount,
+                  'status': 'SETTLED ✅',
+                  'bank': 'Primary Bank (A/C **4892)',
+                });
+              });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: const Color(0xFF0D7C66),
-                  content: Text('💸 Payout of ₹${amount.toStringAsFixed(0)} initiated! Expected in bank within 2 hours.'),
+                  content: Text('💸 Instant Payout of ₹${amount.toStringAsFixed(0)} transferred to Bank! Ref: $txnId'),
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
-            child: const Text('Confirm Instant Transfer'),
+            icon: const Icon(Icons.flash_on_rounded, size: 15),
+            label: const Text('Confirm Transfer', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D7C66),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
           ),
         ],
       ),
@@ -514,39 +647,67 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ── 3. Search Bar ──
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.search_rounded, color: Colors.grey, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    decoration: const InputDecoration(
-                      hintText: 'Search customer name, apartment, or phone...',
-                      hintStyle: TextStyle(color: Colors.grey, fontSize: 12.5),
-                      border: InputBorder.none,
-                    ),
+          // ── 3. Search Bar & Broadcast CTA ──
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search_rounded, color: Colors.grey, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          onChanged: (val) => setState(() => _searchQuery = val),
+                          decoration: const InputDecoration(
+                            hintText: 'Search customer, apartment, or phone...',
+                            hintStyle: TextStyle(color: Colors.grey, fontSize: 12.5),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      if (_searchQuery.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () => setState(() => _searchQuery = ''),
+                        ),
+                    ],
                   ),
                 ),
-                if (_searchQuery.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.clear, size: 16),
-                    onPressed: () => setState(() => _searchQuery = ''),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => _showBroadcastDialog(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0D7C66),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                    ],
                   ),
-              ],
-            ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.campaign_rounded, color: Colors.white, size: 18),
+                      SizedBox(width: 4),
+                      Text('Alert', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
 
-          // ── 4. Filter Tabs (Who Ordered / Subscriptions / Express / Fleet) ──
+          // ── 4. Filter Tabs (Who Ordered / Subscriptions / Express / Fleet / Alerts / Payouts) ──
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -560,13 +721,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 _buildFilterChip(3, '🛵 Assigned Fleet (${_liveFleet.length} Drivers)'),
                 const SizedBox(width: 8),
                 _buildFilterChip(4, '📦 Crate Inventory'),
+                const SizedBox(width: 8),
+                _buildFilterChip(5, '📢 Customer Alerts (${_broadcastAlerts.length})'),
+                const SizedBox(width: 8),
+                _buildFilterChip(6, '💰 Bank Payout Ledger (${_payoutHistory.length})'),
               ],
             ),
           ),
           const SizedBox(height: 16),
 
           // ── 5. Content Section Based on Filter ──
-          if (_selectedFilter == 4) ...[
+          if (_selectedFilter == 6) ...[
+            _buildPayoutLedgerSection(),
+          ] else if (_selectedFilter == 5) ...[
+            _buildBroadcastAlertsSection(),
+          ] else if (_selectedFilter == 4) ...[
             _buildInventoryCratesSection(),
           ] else if (_selectedFilter == 3) ...[
             _buildFleetDriversSection(),
@@ -1150,6 +1319,116 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Colors.white70, fontSize: 9),
         ),
+      ],
+    );
+  }
+
+  Widget _buildBroadcastAlertsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('📢 Sent Hub Customer Broadcasts:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            ElevatedButton.icon(
+              onPressed: () => _showBroadcastDialog(context),
+              icon: const Icon(Icons.send_rounded, size: 14),
+              label: const Text('New Alert', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D7C66),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ..._broadcastAlerts.map((b) => Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(b['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                          child: Text(b['status'] ?? 'SENT', style: const TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('🕒 ${b['time']}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                        Text('👥 Audience: ${b['recipients']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildPayoutLedgerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('💰 Settlement & Payout Receipts Ledger:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            Text('${_payoutHistory.length} Receipts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66))),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ..._payoutHistory.map((p) => Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                          child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF0D7C66), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(p['id'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+                            Text('${p['date']} • ${p['bank']}', style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('₹${(p['amount'] as num).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0D7C66))),
+                        Text(p['status'] ?? 'SETTLED', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )),
       ],
     );
   }
