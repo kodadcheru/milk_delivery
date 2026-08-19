@@ -18,8 +18,13 @@ class AddressBookScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          tooltip: 'Back',
+          onPressed: () => Navigator.maybePop(context),
+        ),
         title: const Text(
-          'Address Book 📍',
+          'Saved Addresses 📍',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
         ),
         backgroundColor: Colors.white,

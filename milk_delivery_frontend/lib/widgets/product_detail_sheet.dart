@@ -134,11 +134,23 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(item.icon, style: const TextStyle(fontSize: 56)),
-                          const SizedBox(height: 6),
+                          if (item.imageUrl.isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                item.imageUrl,
+                                height: 110,
+                                width: 140,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Text(item.icon, style: const TextStyle(fontSize: 56)),
+                              ),
+                            )
+                          else
+                            Text(item.icon, style: const TextStyle(fontSize: 56)),
+                          const SizedBox(height: 8),
                           Text(item.name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
                           const SizedBox(height: 2),
-                          Text('${item.unitQuantity} • ₹${item.pricePerUnit.toStringAsFixed(0)} / pack', style: TextStyle(color: Colors.grey[700], fontSize: 12.5, fontWeight: FontWeight.w600)),
+                          Text('${item.unitQuantity} • ₹${item.pricePerUnit.toStringAsFixed(0)} / unit', style: TextStyle(color: Colors.grey[700], fontSize: 12.5, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -272,7 +284,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                               onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
                               icon: const Icon(Icons.remove_circle_outline, color: Color(0xFF0D7C66)),
                             ),
-                            Text('$_qty Packs (${_qty * 500}ml)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text('$_qty × ${item.unitQuantity}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF0D7C66))),
                             IconButton(
                               onPressed: () => setState(() => _qty++),
                               icon: const Icon(Icons.add_circle_outline, color: Color(0xFF0D7C66)),
