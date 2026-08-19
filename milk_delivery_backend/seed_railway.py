@@ -16,30 +16,7 @@ from decimal import Decimal
 def seed():
     print("🌱 [Railway DB Seeder] Initializing database & permanent Super Admin...")
 
-    # 1. Cleanup all legacy mock service areas and demo hubs
-    ServiceArea.objects.filter(name__in=[
-        "Jubilee Hills (Sector A, B & C)",
-        "Film Nagar & Prashasan Nagar",
-        "Banjara Hills (Road 1 to 14)",
-        "Madhapur & Hitec City Core",
-        "Gachibowli Financial District",
-        "Kondapur & Botanical Garden",
-        "Kukatpally Housing Board (KPHB)",
-    ]).delete()
-    LocationHub.objects.filter(hub_code__in=["HUB-HYD-01", "HUB-HYD-02", "HUB-HYD-03"]).delete()
-
-    # 2. Cleanup legacy mock users (Ramesh Kumar, Suresh Rao, etc.) before configuring Super Admin
-    User.objects.filter(username__in=[
-        "customer", "driver", "hub_manager", "customer_ramesh", "driver_suresh", 
-        "admin_owner", "suresh_driver", "vikram_driver", "raju_driver", "anil_driver", 
-        "cust_9876543210", "cust_8099118003", "cust_9888877777", "cust_7794893990"
-    ]).delete()
-    User.objects.filter(phone__in=["+91 9876543210", "+91 9123456789", "+91 98765 43210", "+91 91234 56789"]).delete()
-
-    # If both admin and admin_8919548905 exist, remove the duplicate
-    User.objects.filter(username="admin_8919548905").delete()
-
-    # 3. Configure the Permanent Super Admin (Protected across all Railway deployments)
+    # 1. Configure the Permanent Super Admin (Protected across all Railway deployments)
     admin = User.objects.filter(username="admin").first()
     if not admin:
         admin = User.objects.filter(phone__endswith="8919548905").first()
@@ -65,8 +42,7 @@ def seed():
         admin.role = User.Roles.ADMIN
         admin.is_staff = True
         admin.is_superuser = True
-        admin.wallet_balance = Decimal("10000.00")
-        
+
     admin.set_password("admin123")
     admin.save()
 
@@ -75,12 +51,7 @@ def seed():
     print("   • Phone OTP: +91 8919548905 (OTP: 1234)")
     print("   • Role: ADMIN (is_staff=True, is_superuser=True)")
 
-    # 4. Clean legacy mock subscriptions
-    Subscription.objects.all().delete()
-    DeliveryTask.objects.all().delete()
-    print("🧹 Subscriptions and delivery tasks cleaned.")
-
-    # 5. Standard Categories (Storefront Structure)
+    # 2. Standard Categories (Storefront Structure)
     cat_milk, _ = Category.objects.get_or_create(
         slug="milk",
         defaults={"name": "Milk & Dairy", "icon": "🥛", "display_order": 1, "description": "Farm Fresh A2, Buffalo, and Whole Cow Milk"}
@@ -98,7 +69,7 @@ def seed():
         defaults={"name": "Water Cans", "icon": "💧", "display_order": 4, "description": "20L RO Purified Mineral Water Can Drops"}
     )
 
-    # 6. Core Products
+    # 3. Core Products
     p1, _ = Product.objects.get_or_create(
         name="A2 Vedic Desi Cow Milk",
         defaults={
@@ -141,7 +112,7 @@ def seed():
         },
     )
 
-    print("🎉 [Railway DB Seeder] Permanent Admin active. Database ready for self-managed Drivers, Hubs & Customers!")
+    print("🎉 [Railway DB Seeder] Database safe & persistent! All registered users, subscriptions & tasks preserved across deployments.")
 
 
 if __name__ == "__main__":
