@@ -58,11 +58,12 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
     }
 
     if (productCounts.isEmpty) {
-      return const [
+      final actualStopsCount = widget.state.deliveries.isNotEmpty ? widget.state.deliveries.length : 1;
+      return [
         CrateItemManifest(
           productName: 'Fresh A2 Cow Milk',
           icon: '🥛',
-          totalUnits: 10,
+          totalUnits: actualStopsCount,
           unitVolume: '1 Litre Pouch',
           crateLabel: 'Crate #A1 (Insulated Blue)',
         ),
