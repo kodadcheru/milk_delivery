@@ -4,6 +4,7 @@ import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
@@ -362,27 +363,60 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   style: TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 40,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => MorningBatchScreen(state: widget.state),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: SizedBox(
+                        height: 40,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => MorningBatchScreen(state: widget.state),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.rocket_launch_rounded, size: 16),
+                          label: const Text('Start Route 🚀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.rocket_launch_rounded, size: 16),
-                    label: const Text('Start Morning Batch Route 🚀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 5,
+                      child: SizedBox(
+                        height: 40,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => DriverRouteMapScreen(
+                                  state: widget.state,
+                                  tasks: widget.state.deliveries,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.map_rounded, size: 16, color: Color(0xFF38BDF8)),
+                          label: const Text('Route Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF0284C7)),
+                            backgroundColor: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

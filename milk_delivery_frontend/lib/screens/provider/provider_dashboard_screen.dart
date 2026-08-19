@@ -6,6 +6,7 @@ import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../services/route_optimizer.dart';
+import 'provider_fleet_map_screen.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -221,6 +222,32 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Container(width: 1, height: 28, color: Colors.white30),
                     _buildHubStatColumn('48 Bottles', 'Returned to Hub 🍾'),
                   ],
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => ProviderFleetMapScreen(
+                            state: widget.state,
+                            fleetDrivers: _liveFleet,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.radar_rounded, size: 16, color: Colors.white),
+                    label: const Text('Live Fleet Radar & Depot Coverage Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
                 ),
               ],
             ),

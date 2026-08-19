@@ -93,4 +93,6 @@ class DeliveryTaskModel {
       customerLongitude: customerLongitude,
     );
   }
+
+  bool get isDelivered => status == 'DELIVERED';
 }
