@@ -1732,41 +1732,46 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
           const SizedBox(height: 20),
 
           // Operational Hub Badges
+          // Operational Hub Badges
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('📍 Active Operational Delivery Hubs:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
-                    SizedBox(width: 6),
-                    Text('Jubilee Hills Hub #1 (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                  ],
-                ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
-                    SizedBox(width: 6),
-                    Text('Madhapur Tech Hub #3 (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                  ],
-                ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
-                    SizedBox(width: 6),
-                    Text('Banjara Hills Hub #2 (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                  ],
-                ),
+                const Text('📍 Active Operational Delivery Hubs:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                const SizedBox(height: 8),
+                if (widget.state.locationHubs.isNotEmpty)
+                  ...widget.state.locationHubs.map(
+                    (h) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${h['name']} (${(h['coverage_radius_km'] as num?)?.toDouble() ?? 5.0} km Radius)',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  const Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                      SizedBox(width: 6),
+                      Text('Central Operations Hub (5.0 km Radius)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -1788,20 +1793,24 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
             ),
           ),
           const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Color(0xFF0D7C66),
-                  content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D7C66)),
-            label: const Text('🔔 Notify Me When MilkDrop Launches', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF0D7C66)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Color(0xFF0D7C66),
+                    content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D7C66)),
+              label: const Text('🔔 Notify Me When MilkDrop Launches', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF0D7C66)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
             ),
           ),
         ],
