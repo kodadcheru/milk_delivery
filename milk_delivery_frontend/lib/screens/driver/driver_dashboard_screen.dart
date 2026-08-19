@@ -171,6 +171,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final tasks = widget.state.deliveries;
     final expressOrders = widget.state.liveOrders;
 
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+    final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+
     final completedCount = tasks.where((t) => t.status == 'DELIVERED').length;
     final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
     final totalStops = tasks.length;
@@ -183,8 +186,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         final matchesName = t.customerName.toLowerCase().contains(query);
-        final matchesAddress = t.deliveryAddress.toLowerCase().contains(query);
-        return matchesName || matchesAddress;
+        final matchesAddr = t.deliveryAddress.toLowerCase().contains(query);
+        return matchesName || matchesAddr;
       }
       return true;
     }).toList();
@@ -209,50 +212,58 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _isGpsBroadcastActive ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _isGpsBroadcastActive ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _isGpsBroadcastActive ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
+                              color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.grey,
+                              size: 18,
+                            ),
                           ),
-                          child: Icon(
-                            _isGpsBroadcastActive ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
-                            color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.grey,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _isGpsBroadcastActive ? 'GPS Broadcast ACTIVE' : 'GPS Broadcast PAUSED',
-                                  style: TextStyle(
-                                    color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.white70,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        _isGpsBroadcastActive ? 'GPS Broadcast ACTIVE' : 'GPS Broadcast PAUSED',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.white70,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    if (_isGpsBroadcastActive)
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                                      ),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                if (_isGpsBroadcastActive)
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-                                  ),
+                                const Text(
+                                  'Broadcasting live coordinates to map',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.white60, fontSize: 10),
+                                ),
                               ],
                             ),
-                            const Text(
-                              'Broadcasting live coordinates to customers on map',
-                              style: TextStyle(color: Colors.white60, fontSize: 10),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                     Switch(
                       value: _isGpsBroadcastActive,
@@ -322,27 +333,34 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Text('🥛', style: TextStyle(fontSize: 22)),
-                        SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Morning Batch Delivery Mode',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Text('🥛', style: TextStyle(fontSize: 22)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Morning Batch Delivery Mode',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                ),
+                                const Text(
+                                  '05:00 AM – 07:00 AM Shift • Hub-Origin TSP',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '05:00 AM – 07:00 AM Shift • Hub-Origin TSP',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
@@ -351,16 +369,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         children: [
                           Icon(Icons.eco_rounded, color: Color(0xFF10B981), size: 12),
                           SizedBox(width: 3),
-                          Text('SAVE 56% FUEL', style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.w900)),
+                          Text('SAVE 56% FUEL', style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.w900)),
                         ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Optimizes route directly from Jubilee Hills Depot. Eliminates zig-zag backtracking and saves fuel with rapid doorstep drop mode.',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                Text(
+                  'Optimizes route directly from $hubName. Eliminates zig-zag backtracking and saves fuel with rapid doorstep drop mode.',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 const SizedBox(height: 12),
                 Row(

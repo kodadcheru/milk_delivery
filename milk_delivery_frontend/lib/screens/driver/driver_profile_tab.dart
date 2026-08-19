@@ -19,6 +19,9 @@ class DriverProfileTab extends StatelessWidget {
         : 'Suresh Rao';
     final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : '+91 9123456789';
 
+    final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
+    final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -120,7 +123,7 @@ class DriverProfileTab extends StatelessWidget {
                 children: [
                   _buildDetailRow(Icons.payments_rounded, 'Monthly Salary', '₹15,000 / month (Paid directly by Hub Owner)'),
                   const Divider(height: 20),
-                  _buildDetailRow(Icons.map_rounded, 'Assigned Route', 'Route #4 • Jubilee Hills Hub (Sector A & B)'),
+                  _buildDetailRow(Icons.map_rounded, 'Assigned Route', 'Morning Route #1 • $hubName Zone'),
                   const Divider(height: 20),
                   _buildDetailRow(Icons.schedule_rounded, 'Morning Shift Hours', '05:00 AM – 08:30 AM Daily'),
                   const Divider(height: 20),
@@ -142,7 +145,7 @@ class DriverProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildDetailRow(Icons.warehouse_rounded, 'Operating Hub', 'Jubilee Hills Central Depot #1'),
+                  _buildDetailRow(Icons.warehouse_rounded, 'Operating Hub', hubName),
                   const Divider(height: 20),
                   _buildDetailRow(Icons.support_agent_rounded, 'Dispatch Operations', 'Central Operations (+91 8919548905)'),
                 ],
