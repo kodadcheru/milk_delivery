@@ -900,14 +900,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildFleetDriversSection() {
-    final defaultDrivers = [
-      {'name': 'Suresh Rao', 'phone': '+91 9123456789', 'route': 'Route #4 • Jubilee Hills Sector A & B', 'stops': '12/12 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo', 'hub': 'Jubilee Hills Depot #1'},
-      {'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'route': 'Route #2 • Film Nagar Highrises', 'stops': '14/14 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo', 'hub': 'Jubilee Hills Depot #1'},
-      {'name': 'Anil Kumar', 'phone': '+91 9765432109', 'route': 'Route #1 • Madhapur Tech Enclave', 'stops': '10/10 Stops', 'status': '🟢 Completed Morning Shift', 'salary': '₹15,000/mo', 'hub': 'Madhapur Tech Depot #3'},
-      {'name': 'Raju Patel', 'phone': '+91 9654321098', 'route': 'Route #3 • Banjara Hills Villas', 'stops': '15/15 Stops', 'status': '🔴 Shift Ended / Depot Return', 'salary': '₹15,000/mo', 'hub': 'Banjara Hills Depot #2'},
-    ];
-
-    final drivers = _liveFleet.isNotEmpty ? _liveFleet : defaultDrivers;
+    final drivers = _liveFleet;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -915,7 +908,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('🛵 Assigned Hub Salaried Fleet:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            Text('🛵 Assigned Hub Fleet (${drivers.length}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
             ElevatedButton.icon(
               onPressed: () => _showAddDriverDialog(context),
               icon: const Icon(Icons.person_add_rounded, size: 14),
@@ -931,11 +924,32 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         ),
         const SizedBox(height: 10),
 
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: drivers.length,
-          separatorBuilder: (c, i) => const SizedBox(height: 10),
+        if (drivers.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Center(
+              child: Column(
+                children: [
+                  Icon(Icons.delivery_dining_rounded, size: 36, color: Color(0xFF94A3B8)),
+                  SizedBox(height: 8),
+                  Text('No delivery boys onboarded yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
+                  SizedBox(height: 4),
+                  Text('Tap "Add Delivery Boy" to onboard drivers to this hub.', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                ],
+              ),
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: drivers.length,
+            separatorBuilder: (c, i) => const SizedBox(height: 10),
           itemBuilder: (ctx, idx) {
             final drv = drivers[idx];
             final hubName = drv['hub'] ?? 'Jubilee Hills Central Depot #1';

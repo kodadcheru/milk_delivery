@@ -624,8 +624,12 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             state: widget.state,
                             orderTitle: product?.name ?? 'Morning Milk Subscription',
                             deliveryAddress: task.deliveryAddress,
-                            driverName: 'Suresh Rao (Vedic Route 4)',
-                            driverPhone: '+91 9123456789',
+                            driverName: task.driverDetail?.fullName.isNotEmpty == true
+                                ? task.driverDetail!.fullName
+                                : 'Assigned Hub Driver',
+                            driverPhone: task.driverDetail?.phone.isNotEmpty == true
+                                ? task.driverDetail!.phone
+                                : '+91 8919548905',
                             deliveryOtp: '06AM',
                           ),
                         ),

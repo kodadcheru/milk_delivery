@@ -79,9 +79,13 @@ class ApiService {
 
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
+      } else {
+        final err = jsonDecode(res.body);
+        return {'success': false, 'error': err['detail'] ?? err['message'] ?? 'Failed to send OTP'};
       }
-    } catch (_) {}
-    return {'success': true, 'phone': phone, 'is_existing_user': phone.contains('9876543210')};
+    } catch (e) {
+      return {'success': false, 'error': 'Network connection error. Please check your connection.'};
+    }
   }
 
   static Future<Map<String, dynamic>> verifyOTP(String phone, String otp) async {
@@ -100,22 +104,11 @@ class ApiService {
         return data;
       } else {
         final err = jsonDecode(res.body);
-        return {'success': false, 'error': err['message'] ?? err['detail'] ?? 'Invalid OTP'};
+        return {'success': false, 'error': err['message'] ?? err['detail'] ?? 'Invalid OTP code'};
       }
-    } catch (_) {}
-
-    if (otp == '1234') {
-      bool isExisting = phone.contains('9876543210');
-      final mockToken = 'mock_jwt_token_$phone';
-      await saveAuthToken(mockToken);
-      return {
-        'success': true,
-        'is_new_user': !isExisting,
-        'access': mockToken,
-        'phone': phone,
-      };
+    } catch (_) {
+      return {'success': false, 'error': 'Network connection error. Please try again.'};
     }
-    return {'success': false, 'error': 'Invalid OTP code. Use test OTP 1234.'};
   }
 
   static Future<Map<String, dynamic>> registerMobileUser({
@@ -123,8 +116,8 @@ class ApiService {
     required String firstName,
     required String email,
     required String gender,
-    String address = 'Jubilee Hills, Hyderabad',
-    String deliveryInstructions = 'Ring bell twice and leave near doorstep box',
+    String address = '',
+    String deliveryInstructions = '',
   }) async {
     try {
       final res = await _executeWithRetry(() => http.post(
@@ -140,32 +133,33 @@ class ApiService {
             }),
           ));
 
-      if (res.statusCode == 201) {
+      if (res.statusCode == 201 || res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['access'] != null) {
           await saveAuthToken(data['access']);
         }
         return data;
+      } else {
+        final err = jsonDecode(res.body);
+        return {'success': false, 'error': err['detail'] ?? err['message'] ?? 'Registration failed'};
+      }
+    } catch (_) {
+      return {'success': false, 'error': 'Network connection error. Please try again.'};
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchDrivers({int? hubId}) async {
+    try {
+      final uri = hubId != null
+          ? Uri.parse('$baseUrl/admin/drivers/?hub_id=$hubId')
+          : Uri.parse('$baseUrl/admin/drivers/');
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((e) => Map<String, dynamic>.from(e)).toList();
       }
     } catch (_) {}
-
-    final mockToken = 'mock_jwt_token_new_$phone';
-    await saveAuthToken(mockToken);
-    return {
-      'success': true,
-      'access': mockToken,
-      'user': {
-        'id': 99,
-        'username': 'cust_new',
-        'first_name': firstName,
-        'email': email,
-        'phone': phone,
-        'role': 'CUSTOMER',
-        'address': address,
-        'wallet_balance': '500.00',
-        'delivery_instructions': deliveryInstructions,
-      }
-    };
+    return [];
   }
 
   // ── 2. Standard Auth & Profile ──

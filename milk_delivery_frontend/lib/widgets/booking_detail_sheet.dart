@@ -63,8 +63,8 @@ class BookingDetailSheet extends StatelessWidget {
     final status = isExpress ? liveOrder!.status : subscriptionTask!.status;
     final isDelivered = status == 'DELIVERED';
     final address = isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress;
-    final driverName = isExpress ? liveOrder!.driverName : (subscriptionTask!.driverDetail?.firstName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Suresh Rao (MilkDrop Partner)');
-    final driverPhone = isExpress ? liveOrder!.driverPhone : (subscriptionTask!.driverDetail?.phone.isNotEmpty == true ? subscriptionTask!.driverDetail!.phone : '+91 9123456789');
+    final driverName = isExpress ? liveOrder!.driverName : (subscriptionTask!.driverDetail?.fullName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Assigning Delivery Partner...');
+    final driverPhone = isExpress ? liveOrder!.driverPhone : (subscriptionTask!.driverDetail?.phone.isNotEmpty == true ? subscriptionTask!.driverDetail!.phone : '');
     final slot = isExpress ? liveOrder!.deliverySlot : subscriptionTask!.slotTime;
     final proofUrl = isExpress ? '' : subscriptionTask!.proofImageUrl;
     final otp = isExpress ? liveOrder!.deliveryOtp : '06AM';

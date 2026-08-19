@@ -22,7 +22,7 @@ class AppState extends ChangeNotifier {
   int currentTabIndex = 0;
 
   // Real-Time Location & Customer Address Book State
-  String currentDeliveryAddress = 'Road No. 36, Jubilee Hills, Hyderabad';
+  String currentDeliveryAddress = 'Select Delivery Location';
   double currentLat = 17.4319;
   double currentLon = 78.4073;
   bool isDetectingLocation = false;
@@ -129,7 +129,7 @@ class AppState extends ChangeNotifier {
 
     final total = totalCartPrice;
     final orderId = 'MD-${8000 + liveOrders.length + 1}';
-    final addr = deliveryAddress ?? currentDeliveryAddress;
+    final addr = deliveryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop');
     final dateStr = deliveryDate ?? 'Tomorrow';
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
 
@@ -145,8 +145,8 @@ class AppState extends ChangeNotifier {
       deliveryLatitude: currentLat,
       deliveryLongitude: currentLon,
       deliveryOtp: '${(1000 + (orderId.hashCode % 9000)).abs()}',
-      driverName: 'Suresh Rao (Partner #4)',
-      driverPhone: '+91 9123456789',
+      driverName: 'Assigning Delivery Partner...',
+      driverPhone: '',
       paymentStatus: 'PAID (Prepaid Wallet)',
       createdAt: 'Just now',
     );
