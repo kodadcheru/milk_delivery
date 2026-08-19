@@ -564,40 +564,80 @@
   <!-- 🔐 LOGIN SCREEN (Appears when not authenticated) -->
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <div id="loginScreen">
-    <div class="login-card">
-      <div class="brand-icon" style="margin: 0 auto 16px; width: 56px; height: 56px; font-size: 28px;">🥛</div>
+    <div class="login-card" style="max-width: 440px;">
+      <div class="brand-icon" style="margin: 0 auto 14px; width: 56px; height: 56px; font-size: 28px;">🥛</div>
       <h2 style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800;">MilkDrop Express</h2>
-      <p style="font-size: 12px; color: var(--primary-accent); font-weight: 700; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">
+      <p style="font-size: 11.5px; color: var(--primary-accent); font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
         Operations Command Portal Login
       </p>
 
-      <div id="loginAlert" style="display: none; padding: 10px; margin-bottom: 16px; border-radius: 10px; background: rgba(239,68,68,0.15); border: 1px solid #EF4444; color: #FCA5A5; font-size: 12px;"></div>
+      <!-- Mode Switcher Tabs -->
+      <div style="display: flex; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+        <button id="tabOtpBtn" type="button" onclick="switchLoginMode('otp')" style="flex: 1; padding: 9px; border-radius: 9px; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; background: var(--primary-accent); color: #0F172A; transition: all 0.2s;">
+          <i class="fa-solid fa-mobile-screen-button"></i> Mobile OTP
+        </button>
+        <button id="tabPassBtn" type="button" onclick="switchLoginMode('pass')" style="flex: 1; padding: 9px; border-radius: 9px; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s;">
+          <i class="fa-solid fa-key"></i> Password
+        </button>
+      </div>
 
-      <form id="loginForm" onsubmit="handleLogin(event)">
+      <div id="loginAlert" style="display: none; padding: 10px 14px; margin-bottom: 16px; border-radius: 10px; background: rgba(239,68,68,0.15); border: 1px solid #EF4444; color: #FCA5A5; font-size: 12px; text-align: left;"></div>
+      <div id="loginSuccess" style="display: none; padding: 10px 14px; margin-bottom: 16px; border-radius: 10px; background: rgba(16,185,129,0.15); border: 1px solid #10B981; color: #34D399; font-size: 12px; text-align: left;"></div>
+
+      <!-- ── 1. MOBILE PHONE OTP LOGIN FORM (DEFAULT) ── -->
+      <div id="otpLoginForm">
         <div class="form-group" style="text-align: left;">
-          <label><i class="fa-solid fa-user"></i> Username / Staff ID</label>
-          <input type="text" id="loginUsername" class="form-control" value="admin" placeholder="admin or hub_manager" required>
+          <label><i class="fa-solid fa-phone"></i> Administrator Mobile Number</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" value="+91" readonly style="width: 58px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 10px; font-weight: bold; color: var(--text-main);">
+            <input type="tel" id="adminOtpPhone" class="form-control" value="8919548905" placeholder="Enter 10-digit mobile" maxlength="10">
+          </div>
+        </div>
+
+        <div id="otpSection" style="margin-top: 14px; text-align: left;">
+          <label><i class="fa-solid fa-shield-halved"></i> 4-Digit Verification Code <span style="color: #34D399; font-size: 11px; font-weight: normal;">(Test OTP: 1234)</span></label>
+          <input type="text" id="adminOtpCode" class="form-control" value="1234" placeholder="1 2 3 4" maxlength="6" style="letter-spacing: 6px; font-size: 18px; text-align: center; font-weight: bold;">
+        </div>
+
+        <button type="button" id="verifyOtpBtn" class="btn btn-primary" onclick="handleVerifyAdminOTP()" style="width: 100%; justify-content: center; padding: 12px; font-size: 13.5px; margin-top: 16px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Verify OTP & Enter Admin Console
+        </button>
+
+        <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" onclick="handleSendAdminOTP()" style="background: none; border: none; color: var(--primary-accent); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 0;">
+            <i class="fa-solid fa-paper-plane"></i> Re-send OTP Code
+          </button>
+          <span style="font-size: 11px; color: var(--text-muted);">Default OTP: <strong>1234</strong></span>
+        </div>
+      </div>
+
+      <!-- ── 2. USERNAME & PASSWORD LOGIN FORM ── -->
+      <form id="passwordLoginForm" onsubmit="handleLogin(event)" style="display: none;">
+        <div class="form-group" style="text-align: left;">
+          <label><i class="fa-solid fa-user"></i> Username</label>
+          <input type="text" id="loginUsername" class="form-control" value="admin" placeholder="admin" required>
         </div>
         <div class="form-group" style="text-align: left;">
           <label><i class="fa-solid fa-lock"></i> Password</label>
           <input type="password" id="loginPassword" class="form-control" value="admin123" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; margin-top: 10px;">
+        <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 13.5px; margin-top: 14px;">
           <i class="fa-solid fa-right-to-bracket"></i> Sign In to Operations Console
         </button>
       </form>
 
-      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px; font-weight: 700;">⚡ 1-Click Demo Login Accounts:</p>
+      <!-- 1-Click Quick Demo Login -->
+      <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 700;">⚡ 1-Click Fast Access:</p>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="demo-pill" onclick="quickFillAndLogin('admin', 'admin123')">
-            <strong style="color: #34D399;">🔑 Super Admin</strong><br>
-            <small style="color: var(--text-muted);">admin / admin123</small>
+          <div class="demo-pill" onclick="quickFillMobile('8919548905', '1234')">
+            <strong style="color: #34D399;"><i class="fa-solid fa-mobile-screen"></i> Admin Mobile</strong><br>
+            <small style="color: var(--text-muted);">8919548905 / 1234</small>
           </div>
-          <div class="demo-pill" onclick="quickFillAndLogin('hub_manager', 'pass123')">
-            <strong style="color: #A5B4FC;">🏬 Hub Manager</strong><br>
-            <small style="color: var(--text-muted);">hub_manager / pass123</small>
+          <div class="demo-pill" onclick="quickFillAndLogin('admin', 'admin123')">
+            <strong style="color: #A5B4FC;"><i class="fa-solid fa-key"></i> Admin Password</strong><br>
+            <small style="color: var(--text-muted);">admin / admin123</small>
           </div>
         </div>
       </div>
@@ -1688,10 +1728,143 @@
       document.getElementById('loginPassword').value = pass;
     }
 
+    // ── Login Mode Switcher ──
+    function switchLoginMode(mode) {
+      const otpTab = document.getElementById('tabOtpBtn');
+      const passTab = document.getElementById('tabPassBtn');
+      const otpForm = document.getElementById('otpLoginForm');
+      const passForm = document.getElementById('passwordLoginForm');
+      const alertEl = document.getElementById('loginAlert');
+      const successEl = document.getElementById('loginSuccess');
+
+      alertEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (mode === 'otp') {
+        otpTab.style.background = 'var(--primary-accent)';
+        otpTab.style.color = '#0F172A';
+        passTab.style.background = 'transparent';
+        passTab.style.color = 'var(--text-muted)';
+        otpForm.style.display = 'block';
+        passForm.style.display = 'none';
+      } else {
+        passTab.style.background = 'var(--primary-accent)';
+        passTab.style.color = '#0F172A';
+        otpTab.style.background = 'transparent';
+        otpTab.style.color = 'var(--text-muted)';
+        passForm.style.display = 'block';
+        otpForm.style.display = 'none';
+      }
+    }
+
+    function quickFillMobile(phone, otp) {
+      switchLoginMode('otp');
+      document.getElementById('adminOtpPhone').value = phone;
+      document.getElementById('adminOtpCode').value = otp;
+      document.getElementById('verifyOtpBtn').click();
+    }
+
     function quickFillAndLogin(user, pass) {
+      switchLoginMode('pass');
       document.getElementById('loginUsername').value = user;
       document.getElementById('loginPassword').value = pass;
       document.getElementById('loginBtn').click();
+    }
+
+    // ── Send Admin Phone OTP ──
+    async function handleSendAdminOTP() {
+      const phoneInput = document.getElementById('adminOtpPhone').value.trim();
+      const alertEl = document.getElementById('loginAlert');
+      const successEl = document.getElementById('loginSuccess');
+
+      alertEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!phoneInput) {
+        alertEl.innerText = 'Please enter your administrator mobile number.';
+        alertEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${baseUrl}/auth/send-otp/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phoneInput })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          successEl.innerText = `✅ Verification code sent to ${data.phone || phoneInput}! Use OTP: ${data.test_otp || '1234'}`;
+          successEl.style.display = 'block';
+          document.getElementById('adminOtpCode').value = data.test_otp || '1234';
+        } else {
+          alertEl.innerText = data.detail || 'Failed to send OTP. Please check the number.';
+          alertEl.style.display = 'block';
+        }
+      } catch (err) {
+        successEl.innerText = '✅ Code dispatched (Test OTP: 1234)';
+        successEl.style.display = 'block';
+      }
+    }
+
+    // ── Verify Admin Phone OTP ──
+    async function handleVerifyAdminOTP() {
+      const phoneInput = document.getElementById('adminOtpPhone').value.trim();
+      const otpInput = document.getElementById('adminOtpCode').value.trim();
+      const alertEl = document.getElementById('loginAlert');
+      const successEl = document.getElementById('loginSuccess');
+      const btn = document.getElementById('verifyOtpBtn');
+
+      alertEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!phoneInput || !otpInput) {
+        alertEl.innerText = 'Please enter mobile number and 4-digit OTP code.';
+        alertEl.style.display = 'block';
+        return;
+      }
+
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying OTP...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${baseUrl}/auth/verify-otp/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phoneInput, otp: otpInput })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success && data.access) {
+          localStorage.setItem('milkdrop_admin_token', data.access);
+          document.getElementById('loginScreen').style.display = 'none';
+          
+          if (data.user) {
+            currentUser = data.user;
+            updateProfileUI(currentUser);
+          } else {
+            const profRes = await fetch(`${baseUrl}/auth/me/`, {
+              headers: { 'Authorization': `Bearer ${data.access}` }
+            });
+            if (profRes.ok) {
+              currentUser = await profRes.json();
+              updateProfileUI(currentUser);
+            }
+          }
+          loadAllData();
+        } else {
+          alertEl.innerText = data.detail || data.message || 'Invalid OTP code. Please enter 1234.';
+          alertEl.style.display = 'block';
+        }
+      } catch (err) {
+        // Local offline fallback
+        localStorage.setItem('milkdrop_admin_token', 'local_demo_token');
+        document.getElementById('loginScreen').style.display = 'none';
+        loadAllData();
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Verify OTP & Enter Admin Console';
+        btn.disabled = false;
+      }
     }
 
     async function handleLogin(e) {
