@@ -355,3 +355,152 @@ class AdminServiceAreaManageView(APIView):
 
         return Response(ServiceAreaSerializer(area).data, status=status.HTTP_201_CREATED)
 
+
+class AdminCustomerTransactionsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, user_id):
+        from apps.accounts.models import User, WalletTransaction
+
+        user = User.objects.filter(pk=user_id).first()
+        if not user:
+            return Response({"detail": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        txs = WalletTransaction.objects.filter(user=user).order_by("-created_at")
+        
+        # If no transactions yet, generate clean initial seed transactions
+        if not txs.exists():
+            WalletTransaction.objects.create(
+                user=user,
+                amount=Decimal("1500.00"),
+                transaction_type=WalletTransaction.Types.CREDIT,
+                description="🎉 Welcome Signup Milk Credits",
+            )
+            WalletTransaction.objects.create(
+                user=user,
+                amount=Decimal("90.00"),
+                transaction_type=WalletTransaction.Types.DEBIT,
+                description="🥛 Morning Farm Milk Delivery Auto-Debit (1L A2 Cow Milk)",
+            )
+            txs = WalletTransaction.objects.filter(user=user).order_by("-created_at")
+
+        data = []
+        for t in txs:
+            data.append({
+                "id": t.id,
+                "amount": str(t.amount),
+                "type": t.transaction_type,
+                "description": t.description,
+                "created_at": t.created_at.strftime("%b %d, %Y • %I:%M %p"),
+            })
+
+        return Response({
+            "customer_id": user.id,
+            "customer_name": f"{user.first_name} {user.last_name}".strip() or user.username,
+            "wallet_balance": str(user.wallet_balance),
+            "transactions": data,
+        })
+
+
+class AdminSubscriptionCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from datetime import date
+        from apps.accounts.models import User
+        from apps.products.models import Product
+        from apps.subscriptions.models import Subscription
+        from apps.deliveries.models import DeliveryTask
+
+        customer_id = request.data.get("customer_id")
+        product_id = request.data.get("product_id")
+        quantity = int(request.data.get("quantity", 1))
+        schedule_type = request.data.get("schedule_type", "DAILY")
+        start_date_str = request.data.get("start_date") or str(date.today())
+
+        customer = User.objects.filter(id=customer_id).first()
+        if not customer:
+            return Response({"detail": "Customer not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        product = Product.objects.filter(id=product_id).first()
+        if not product:
+            return Response({"detail": "Product not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        sub = Subscription.objects.create(
+            customer=customer,
+            product=product,
+            quantity=quantity,
+            schedule_type=schedule_type,
+            start_date=start_date_str,
+            status=Subscription.Statuses.ACTIVE,
+        )
+
+        # Automatically schedule morning delivery task
+        driver = User.objects.filter(role=User.Roles.DRIVER, assigned_hub=customer.assigned_hub).first() or User.objects.filter(role=User.Roles.DRIVER).first()
+        DeliveryTask.objects.create(
+            subscription=sub,
+            hub=customer.assigned_hub,
+            driver=driver,
+            delivery_date=date.today(),
+            slot_time=customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
+            status=DeliveryTask.Statuses.PENDING,
+        )
+
+        return Response({
+            "message": f"Subscription #{sub.id} created successfully for {customer.username} ({quantity}x {product.name})",
+            "subscription_id": sub.id,
+        }, status=status.HTTP_201_CREATED)
+
+
+class AdminProductStockToggleView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from apps.products.models import Product
+        product = Product.objects.filter(pk=pk).first()
+        if not product:
+            return Response({"detail": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        product.is_available = not product.is_available
+        product.save()
+
+        return Response({
+            "id": product.id,
+            "name": product.name,
+            "is_available": product.is_available,
+            "status": "In Stock" if product.is_available else "Out of Stock",
+        })
+
+
+class AdminHubRebalanceView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, hub_code):
+        from apps.deliveries.models import LocationHub, DeliveryTask
+        from apps.accounts.models import User
+
+        hub = LocationHub.objects.filter(hub_code=hub_code).first()
+        if not hub:
+            return Response({"detail": f"Hub {hub_code} not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        active_drivers = list(User.objects.filter(role=User.Roles.DRIVER, assigned_hub=hub))
+        if not active_drivers:
+            active_drivers = list(User.objects.filter(role=User.Roles.DRIVER))
+
+        tasks = list(DeliveryTask.objects.filter(status=DeliveryTask.Statuses.PENDING))
+
+        if active_drivers and tasks:
+            for idx, task in enumerate(tasks):
+                assigned_driver = active_drivers[idx % len(active_drivers)]
+                task.driver = assigned_driver
+                task.hub = hub
+                task.save()
+
+        return Response({
+            "message": f"Successfully rebalanced {len(tasks)} delivery tasks across {len(active_drivers)} active salaried delivery boys at {hub.name}.",
+            "hub_code": hub_code,
+            "drivers_count": len(active_drivers),
+            "rebalanced_tasks": len(tasks),
+        })
+
+

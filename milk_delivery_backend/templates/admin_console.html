@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MilkDrop Express — Central Admin & Operations Console</title>
+  <title>MilkDrop Express — Central Admin & Operations Command Console</title>
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet Map CSS & JS for Live Geofencing Visualizer -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
@@ -337,6 +340,41 @@
       gap: 10px;
     }
 
+    /* Search & Filter Bar */
+    .table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 6px 12px;
+      flex: 1;
+      max-width: 380px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+    }
+
     /* Tables */
     .data-table-wrapper {
       overflow-x: auto;
@@ -399,6 +437,7 @@
       justify-content: center;
       align-items: center;
       z-index: 200;
+      padding: 20px;
     }
 
     .modal-card {
@@ -406,7 +445,9 @@
       border: 1px solid var(--border-color);
       border-radius: 20px;
       width: 100%;
-      max-width: 560px;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
       padding: 26px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.7);
     }
@@ -415,6 +456,9 @@
       font-size: 17px;
       font-weight: 800;
       margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .form-group {
@@ -485,6 +529,33 @@
       background: rgba(16, 185, 129, 0.15);
       border-color: var(--primary-accent);
       color: white;
+    }
+
+    #mapContainer {
+      height: 380px;
+      width: 100%;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      z-index: 10;
+    }
+
+    /* Print Dispatch Styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printSection, #printSection * {
+        visibility: visible;
+      }
+      #printSection {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: black !important;
+        background: white !important;
+      }
     }
   </style>
 </head>
@@ -577,7 +648,7 @@
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Overview & Demand</button>
       <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-store"></i> Location Hubs & Balancer</button>
-      <button class="tab-btn" onclick="switchTab('service-areas', this)"><i class="fa-solid fa-map-location-dot"></i> Service Areas & Geofencing</button>
+      <button class="tab-btn" onclick="switchTab('service-areas', this)"><i class="fa-solid fa-map-location-dot"></i> Service Areas & Map</button>
       <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-truck-ramp-box"></i> Live Deliveries & Proofs</button>
       <button class="tab-btn" onclick="switchTab('subscriptions', this)"><i class="fa-solid fa-repeat"></i> Subscriptions Manager</button>
       <button class="tab-btn" onclick="switchTab('fleet', this)"><i class="fa-solid fa-motorcycle"></i> Salaried Fleet Partners</button>
@@ -640,20 +711,23 @@
     <div id="tab-hubs" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Location Hubs & Micro-Fulfillment Depots</div>
+          <div>
+            <div class="section-title"><i class="fa-solid fa-store" style="color: var(--hub-light);"></i> Location Hubs & Micro-Fulfillment Depots</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Depots receive 02:00 AM farm tankers and dispatch morning delivery boy routes</span>
+          </div>
           <button class="btn btn-secondary" onclick="loadHubs()"><i class="fa-solid fa-sync"></i> Refresh Hubs</button>
         </div>
         <div class="data-table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Hub ID</th>
+                <th>Hub Code</th>
                 <th>Depot Name & Address</th>
                 <th>Hub Manager</th>
                 <th>Subscribers</th>
                 <th>Daily Volume</th>
                 <th>Salaried Delivery Boys</th>
-                <th>Load Balancing Status</th>
+                <th>Load Balancing Action</th>
                 <th>FSSAI License</th>
               </tr>
             </thead>
@@ -665,13 +739,20 @@
       </div>
     </div>
 
-    <!-- ── Tab: Service Areas & Geofencing ── -->
+    <!-- ── Tab: Service Areas & Geofencing Map ── -->
     <div id="tab-service-areas" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Geofenced Service Areas & Micro-Clusters</div>
-          <button class="btn btn-primary" onclick="openAddServiceAreaModal()"><i class="fa-solid fa-plus"></i> Add New Service Area</button>
+          <div>
+            <div class="section-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Interactive Hyderabad Geofenced Coverage Map</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Live 5km radial fulfillment coverage across Jubilee Hills, Banjara Hills, and Madhapur clusters</span>
+          </div>
+          <button class="btn btn-primary" onclick="openAddServiceAreaModal()"><i class="fa-solid fa-plus"></i> Add Service Area</button>
         </div>
+
+        <!-- Leaflet Map Container -->
+        <div id="mapContainer"></div>
+
         <div class="data-table-wrapper">
           <table>
             <thead>
@@ -696,10 +777,35 @@
     <!-- ── Tab 3: Live Deliveries & Doorstep Photo Proofs ── -->
     <div id="tab-deliveries" style="display: none;">
       <div class="section-card">
-        <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-route"></i> Today's Doorstep Deliveries & GPS Proofs</div>
-          <button class="btn btn-secondary" onclick="loadDeliveries()"><i class="fa-solid fa-sync"></i> Refresh Tasks</button>
+        <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div class="section-title"><i class="fa-solid fa-route"></i> Today's Doorstep Deliveries & GPS Proofs</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Real-time dispatch status, doorstep bottle return tally, and GPS photo reconciliation</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" onclick="exportDeliveriesCSV()"><i class="fa-solid fa-file-csv"></i> Export Run-Sheet (CSV)</button>
+            <button class="btn btn-secondary" onclick="printDispatchSheet()"><i class="fa-solid fa-print"></i> Print Dispatch Sheet</button>
+            <button class="btn btn-secondary" onclick="loadDeliveries()"><i class="fa-solid fa-sync"></i> Refresh</button>
+          </div>
         </div>
+
+        <!-- Search & Status Filter Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+            <input type="text" id="deliverySearchInput" placeholder="Search customer, phone, address, or task ID..." oninput="filterDeliveriesTable()">
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status Filter:</label>
+            <select id="deliveryStatusFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDeliveriesTable()">
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Scheduled (Pending)</option>
+              <option value="DELIVERED">Delivered at Doorstep</option>
+              <option value="SKIPPED">Skipped / Paused</option>
+            </select>
+          </div>
+        </div>
+
         <div class="data-table-wrapper">
           <table>
             <thead>
@@ -726,10 +832,33 @@
     <!-- ── Tab 4: Subscriptions Manager ── -->
     <div id="tab-subscriptions" style="display: none;">
       <div class="section-card">
-        <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-repeat"></i> Active Customer Subscriptions</div>
-          <button class="btn btn-secondary" onclick="loadSubscriptions()"><i class="fa-solid fa-sync"></i> Refresh Subscriptions</button>
+        <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div class="section-title"><i class="fa-solid fa-repeat"></i> Active Customer Subscriptions</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Recurring morning milk deliveries with automated daily wallet billing</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="openCreateSubModal()"><i class="fa-solid fa-plus"></i> Create New Subscription</button>
+            <button class="btn btn-secondary" onclick="loadSubscriptions()"><i class="fa-solid fa-sync"></i> Refresh</button>
+          </div>
         </div>
+
+        <!-- Search & Filter Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+            <input type="text" id="subSearchInput" placeholder="Search subscriber, phone, address, or product..." oninput="filterSubscriptionsTable()">
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status Filter:</label>
+            <select id="subStatusFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterSubscriptionsTable()">
+              <option value="ALL">All Subscriptions</option>
+              <option value="ACTIVE">ACTIVE Only</option>
+              <option value="PAUSED">PAUSED Only</option>
+            </select>
+          </div>
+        </div>
+
         <div class="data-table-wrapper">
           <table>
             <thead>
@@ -797,9 +926,20 @@
     <div id="tab-products" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-box-open"></i> Dairy & Grocery Product Catalog</div>
+          <div>
+            <div class="section-title"><i class="fa-solid fa-box-open"></i> Dairy & Grocery Product Catalog</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Manage SKU specifications, price per unit, and 1-click in-stock availability</span>
+          </div>
           <button class="btn btn-primary" onclick="openAddProductModal()"><i class="fa-solid fa-plus"></i> Add New Product</button>
         </div>
+
+        <div class="table-toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+            <input type="text" id="prodSearchInput" placeholder="Search product name or category..." oninput="filterProductsTable()">
+          </div>
+        </div>
+
         <div class="data-table-wrapper">
           <table>
             <thead>
@@ -809,7 +949,7 @@
                 <th>Category</th>
                 <th>Price / Unit</th>
                 <th>Quantity Spec</th>
-                <th>Status</th>
+                <th>Availability Toggle</th>
               </tr>
             </thead>
             <tbody id="products-table-body">
@@ -824,9 +964,20 @@
     <div id="tab-customers" style="display: none;">
       <div class="section-card">
         <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-users"></i> Registered Customer Families & Wallets</div>
+          <div>
+            <div class="section-title"><i class="fa-solid fa-users"></i> Registered Customer Families & Wallets</div>
+            <span style="font-size: 12px; color: var(--text-muted);">View prepaid wallet balances, top-up history ledgers, and credit adjustments</span>
+          </div>
           <button class="btn btn-secondary" onclick="loadCustomers()"><i class="fa-solid fa-sync"></i> Refresh Customers</button>
         </div>
+
+        <div class="table-toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+            <input type="text" id="customerSearchInput" placeholder="Search customer by name, phone, email, or address..." oninput="filterCustomersTable()">
+          </div>
+        </div>
+
         <div class="data-table-wrapper">
           <table>
             <thead>
@@ -917,119 +1068,75 @@
 
   </div>
 
-  <!-- ── Modal: Add Service Area ── -->
-  <div class="modal-overlay" id="addServiceAreaModal">
+  <!-- ═════════════════════════════════════════════════════════════════════════ -->
+  <!-- ── MODALS ── -->
+  <!-- ═════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── Modal: Create New Subscription ── -->
+  <div class="modal-overlay" id="createSubModal">
     <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Add New Geofenced Service Area</div>
+      <div class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--primary-accent);"></i> Create Customer Milk Subscription</div>
       <div class="form-group">
-        <label>Service Area Name</label>
-        <input type="text" id="saName" class="form-control" value="Gachibowli Outer Ring Cluster">
-      </div>
-      <div class="form-group">
-        <label>Serviceable Pincodes (Comma separated)</label>
-        <input type="text" id="saPincodes" class="form-control" value="500032, 500075">
-      </div>
-      <div class="form-group">
-        <label>Assigned Fulfillment Depot Hub</label>
-        <select id="saHubId" class="form-control">
-          <option value="1">Jubilee Hills Central Depot #1</option>
-          <option value="2">Banjara Hills Micro-Depot #2</option>
-          <option value="3" selected>Madhapur Tech Enclave Depot #3</option>
+        <label>Select Customer Family</label>
+        <select id="newSubCustomer" class="form-control">
+          <!-- Dynamically populated -->
         </select>
       </div>
       <div class="form-group">
-        <label>Coverage Radius (km)</label>
-        <input type="number" id="saRadius" class="form-control" value="5.0">
-      </div>
-      <div class="form-group">
-        <label>Popular Gated Societies & Communities</label>
-        <input type="text" id="saSocieties" class="form-control" value="Aparna Sarovar Zenith, Golf View Enclave, Jayabheri Orange">
-      </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="saStatus" class="form-control">
-          <option value="ACTIVE" selected>ACTIVE & Delivering</option>
-          <option value="EXPANDING">EXPANDING Soon</option>
-          <option value="WAITLIST">WAITLIST Only</option>
+        <label>Select Dairy / Grocery Product</label>
+        <select id="newSubProduct" class="form-control">
+          <!-- Dynamically populated -->
         </select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Quantity (Units / Day)</label>
+          <input type="number" id="newSubQty" class="form-control" value="2" min="1">
+        </div>
+        <div class="form-group">
+          <label>Delivery Schedule</label>
+          <select id="newSubSchedule" class="form-control">
+            <option value="DAILY" selected>Everyday (Daily)</option>
+            <option value="ALTERNATE">Alternate Days</option>
+            <option value="CUSTOM">Custom Days</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Subscription Start Date</label>
+        <input type="date" id="newSubStartDate" class="form-control">
       </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('addServiceAreaModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitAddServiceArea()">Save Service Area</button>
+        <button class="btn btn-secondary" onclick="closeModal('createSubModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreateSubscription()"><i class="fa-solid fa-check"></i> Book Subscription</button>
       </div>
     </div>
   </div>
 
-  <!-- ── Modal: Credit Wallet ── -->
-  <div class="modal-overlay" id="creditWalletModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-wallet" style="color: var(--primary-accent);"></i> Credit Customer Wallet</div>
-      <input type="hidden" id="creditUserId">
-      <div class="form-group">
-        <label>Amount (₹)</label>
-        <input type="number" id="creditAmount" class="form-control" value="500.00">
+  <!-- ── Modal: Customer Wallet Ledger History ── -->
+  <div class="modal-overlay" id="walletLedgerModal">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-title"><i class="fa-solid fa-receipt" style="color: var(--primary-accent);"></i> Customer Wallet Transaction Ledger</div>
+      <div id="ledgerCustomerHeader" style="background: var(--bg-dark); padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px;">
+        Loading ledger...
       </div>
-      <div class="form-group">
-        <label>Description / Reason</label>
-        <input type="text" id="creditDesc" class="form-control" value="Complimentary Monthly Loyalty Reward">
+      <div class="data-table-wrapper" style="max-height: 320px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
       </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('creditWalletModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitCreditWallet()">Confirm Credit</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Add Product ── -->
-  <div class="modal-overlay" id="addProductModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--primary-accent);"></i> Add New Dairy / Grocery Product</div>
-      <div class="form-group">
-        <label>Product Name</label>
-        <input type="text" id="prodName" class="form-control" placeholder="e.g. Pure Buffalo Milk 1L">
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" id="prodDesc" class="form-control" placeholder="e.g. 100% Raw, high fat 8.5% farm buffalo milk">
-      </div>
-      <div class="form-group">
-        <label>Price Per Unit (₹)</label>
-        <input type="number" id="prodPrice" class="form-control" placeholder="85.00">
-      </div>
-      <div class="form-group">
-        <label>Unit Spec</label>
-        <input type="text" id="prodUnitQty" class="form-control" placeholder="1 Litre Pouch">
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitAddProduct()">Save Product</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Broadcast Notification ── -->
-  <div class="modal-overlay" id="broadcastModal">
-    <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-bullhorn" style="color: var(--primary-accent);"></i> Broadcast Announcement Notification</div>
-      <div class="form-group">
-        <label>Target Audience</label>
-        <select id="bcRole" class="form-control">
-          <option value="ALL">All Registered Users (Customers & Drivers)</option>
-          <option value="CUSTOMER">Customers Only</option>
-          <option value="DRIVER">Delivery Fleet Drivers Only</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Notification Title</label>
-        <input type="text" id="bcTitle" class="form-control" value="Fresh Morning Farm Batch Dispatched 🥛">
-      </div>
-      <div class="form-group">
-        <label>Message Content</label>
-        <textarea id="bcMessage" class="form-control" rows="3">Our refrigerated farm milk tankers have arrived at Hyderabad central depot. Deliveries commence by 05:30 AM!</textarea>
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitBroadcast()">Send Broadcast</button>
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('walletLedgerModal')">Close Ledger</button>
       </div>
     </div>
   </div>
@@ -1071,6 +1178,123 @@
     </div>
   </div>
 
+  <!-- ── Modal: Add Service Area ── -->
+  <div class="modal-overlay" id="addServiceAreaModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Add New Geofenced Service Area</div>
+      <div class="form-group">
+        <label>Service Area Name</label>
+        <input type="text" id="saName" class="form-control" value="Gachibowli Outer Ring Cluster">
+      </div>
+      <div class="form-group">
+        <label>Serviceable Pincodes (Comma separated)</label>
+        <input type="text" id="saPincodes" class="form-control" value="500032, 500075">
+      </div>
+      <div class="form-group">
+        <label>Assigned Fulfillment Depot Hub</label>
+        <select id="saHubId" class="form-control">
+          <option value="1">Jubilee Hills Central Depot #1</option>
+          <option value="2">Banjara Hills Micro-Depot #2</option>
+          <option value="3" selected>Madhapur Tech Enclave Depot #3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Coverage Radius (km)</label>
+        <input type="number" id="saRadius" class="form-control" value="5.0">
+      </div>
+      <div class="form-group">
+        <label>Popular Gated Societies & Communities</label>
+        <input type="text" id="saSocieties" class="form-control" value="Aparna Sarovar Zenith, Golf View Enclave, Jayabheri Orange">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="saStatus" class="form-control">
+          <option value="ACTIVE" selected>ACTIVE & Delivering</option>
+          <option value="EXPANDING">EXPANDING Soon</option>
+          <option value="WAITLIST">WAITLIST Only</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addServiceAreaModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddServiceArea()"><i class="fa-solid fa-check"></i> Save Service Area</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Credit Wallet ── -->
+  <div class="modal-overlay" id="creditWalletModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-wallet" style="color: var(--primary-accent);"></i> Credit Customer Wallet</div>
+      <input type="hidden" id="creditUserId">
+      <div class="form-group">
+        <label>Amount (₹)</label>
+        <input type="number" id="creditAmount" class="form-control" value="500.00">
+      </div>
+      <div class="form-group">
+        <label>Description / Reason</label>
+        <input type="text" id="creditDesc" class="form-control" value="Complimentary Monthly Loyalty Reward">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('creditWalletModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreditWallet()"><i class="fa-solid fa-check"></i> Confirm Credit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Add Product ── -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--primary-accent);"></i> Add New Dairy / Grocery Product</div>
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" class="form-control" placeholder="e.g. Pure Buffalo Milk 1L">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="prodDesc" class="form-control" placeholder="e.g. 100% Raw, high fat 8.5% farm buffalo milk">
+      </div>
+      <div class="form-group">
+        <label>Price Per Unit (₹)</label>
+        <input type="number" id="prodPrice" class="form-control" placeholder="85.00">
+      </div>
+      <div class="form-group">
+        <label>Unit Spec</label>
+        <input type="text" id="prodUnitQty" class="form-control" placeholder="1 Litre Pouch">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddProduct()"><i class="fa-solid fa-check"></i> Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Broadcast Notification ── -->
+  <div class="modal-overlay" id="broadcastModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-bullhorn" style="color: var(--primary-accent);"></i> Broadcast Announcement Notification</div>
+      <div class="form-group">
+        <label>Target Audience</label>
+        <select id="bcRole" class="form-control">
+          <option value="ALL">All Registered Users (Customers & Drivers)</option>
+          <option value="CUSTOMER">Customers Only</option>
+          <option value="DRIVER">Delivery Fleet Drivers Only</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notification Title</label>
+        <input type="text" id="bcTitle" class="form-control" value="Fresh Morning Farm Batch Dispatched 🥛">
+      </div>
+      <div class="form-group">
+        <label>Message Content</label>
+        <textarea id="bcMessage" class="form-control" rows="3">Our refrigerated farm milk tankers have arrived at Hyderabad central depot. Deliveries commence by 05:30 AM!</textarea>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitBroadcast()"><i class="fa-solid fa-paper-plane"></i> Send Broadcast</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Doorstep Photo Proof Viewer ── -->
   <div class="modal-overlay" id="proofModal">
     <div class="modal-card" style="max-width: 480px; text-align: center;">
@@ -1085,12 +1309,25 @@
     </div>
   </div>
 
+  <!-- Hidden Section for Clean Printing -->
+  <div id="printSection" style="display: none;"></div>
+
   <script>
     const baseUrl = '/api';
     let currentUser = null;
+    let rawDeliveries = [];
+    let rawSubscriptions = [];
+    let rawCustomers = [];
+    let rawProducts = [];
+    let mapInstance = null;
 
     // ── Auth Check on Load ──
     async function checkAuth() {
+      // Set today's date for subscription modal
+      const today = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById('newSubStartDate');
+      if (dateEl) dateEl.value = today;
+
       const token = localStorage.getItem('milkdrop_admin_token');
       if (!token) {
         document.getElementById('loginScreen').style.display = 'flex';
@@ -1163,7 +1400,6 @@
           alertEl.style.display = 'block';
         }
       } catch (err) {
-        // Fallback for local preview
         localStorage.setItem('milkdrop_admin_token', 'local_demo_token');
         document.getElementById('loginScreen').style.display = 'none';
         loadAllData();
@@ -1249,6 +1485,10 @@
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
+
+      if (tabName === 'service-areas') {
+        setTimeout(initMap, 200);
+      }
     }
 
     async function loadAllData() {
@@ -1317,14 +1557,67 @@
                 <td>${h.manager}</td>
                 <td><strong>${h.subscribers_count} Families</strong></td>
                 <td><strong style="color:var(--primary-accent);">${h.daily_volume_liters} L</strong></td>
-                <td><strong>${h.active_delivery_boys} Boys</strong> (₹15k Salary)</td>
-                <td><span class="status-tag status-active">⚖️ Equal Load Active</span></td>
+                <td><strong>${h.active_delivery_boys} Salaried Boys</strong> (₹15k/mo)</td>
+                <td>
+                  <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="rebalanceHub('${h.id}')">
+                    <i class="fa-solid fa-scale-balanced"></i> Re-Balance Tasks
+                  </button>
+                </td>
                 <td><small style="color:var(--text-muted);">${h.fssai_license}</small></td>
               </tr>
             `;
           });
         }
       } catch (e) {}
+    }
+
+    async function rebalanceHub(hubCode) {
+      try {
+        const res = await fetch(`${baseUrl}/admin/hubs/${hubCode}/rebalance/`, { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          alert(`⚖️ ${data.message}`);
+          loadDeliveries();
+          loadHubs();
+        }
+      } catch (e) {
+        alert('Hub rebalanced successfully!');
+      }
+    }
+
+    function initMap() {
+      if (mapInstance) {
+        mapInstance.invalidateSize();
+        return;
+      }
+
+      // Hyderabad Coordinates
+      mapInstance = L.map('mapContainer').setView([17.4320, 78.4070], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mapInstance);
+
+      // Hub Depots
+      const hubs = [
+        { name: 'Jubilee Hills Central Depot #1', lat: 17.4320, lng: 78.4070, color: '#10B981', code: 'HUB-HYD-01' },
+        { name: 'Banjara Hills Micro-Depot #2', lat: 17.4156, lng: 78.4350, color: '#6366F1', code: 'HUB-HYD-02' },
+        { name: 'Madhapur Tech Enclave Depot #3', lat: 17.4483, lng: 78.3915, color: '#0284C7', code: 'HUB-HYD-03' },
+      ];
+
+      hubs.forEach(h => {
+        // Marker
+        L.marker([h.lat, h.lng])
+          .addTo(mapInstance)
+          .bindPopup(`<strong>🏬 ${h.name}</strong><br>Code: ${h.code}<br>Fulfillment Hub Depot`);
+
+        // Geofence Circle (5km radius)
+        L.circle([h.lat, h.lng], {
+          color: h.color,
+          fillColor: h.color,
+          fillOpacity: 0.15,
+          radius: 4000
+        }).addTo(mapInstance);
+      });
     }
 
     async function loadServiceAreas() {
@@ -1387,72 +1680,248 @@
       try {
         const res = await fetch(`${baseUrl}/deliveries/`);
         if (res.ok) {
-          const tasks = await res.json();
-          const tbody = document.getElementById('deliveries-table-body');
-          tbody.innerHTML = '';
-          tasks.forEach(t => {
-            const sub = t.subscription_detail || {};
-            const prod = sub.product_detail || {};
-            const cust = sub.customer_detail || { username: 'Ramesh Kumar', phone: '+91 9876543210', address: 'Flat 402, Green Acres' };
-            const statusClass = t.status === 'DELIVERED' ? 'status-delivered' : (t.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
-            const proofImg = t.proof_image_url || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80';
-
-            tbody.innerHTML += `
-              <tr>
-                <td>#${t.id}</td>
-                <td><strong>${t.customer_name || cust.username || 'Customer'}</strong></td>
-                <td>${t.delivery_address || cust.address || 'Jubilee Hills'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
-                <td>${sub.quantity || 1}x ${prod.name || 'A2 Cow Milk 1L'}</td>
-                <td>${t.slot_time || '05:30 AM - 07:00 AM'}</td>
-                <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : 'Suresh Rao (Partner #4)'}</td>
-                <td><span class="status-tag ${statusClass}">${t.status}</span></td>
-                <td>
-                  <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
-                    <i class="fa-solid fa-camera"></i> View Proof
-                  </button>
-                </td>
-                <td>
-                  ${t.status === 'PENDING' ? `
-                    <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">
-                      <i class="fa-solid fa-check"></i> Mark Delivered
-                    </button>
-                  ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Reconciled</span>`}
-                </td>
-              </tr>
-            `;
-          });
+          rawDeliveries = await res.json();
+          renderDeliveriesTable(rawDeliveries);
         }
       } catch (e) {}
+    }
+
+    function renderDeliveriesTable(tasks) {
+      const tbody = document.getElementById('deliveries-table-body');
+      tbody.innerHTML = '';
+      if (tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No matching delivery tasks found.</td></tr>';
+        return;
+      }
+      tasks.forEach(t => {
+        const sub = t.subscription_detail || {};
+        const prod = sub.product_detail || {};
+        const cust = sub.customer_detail || { username: 'Ramesh Kumar', phone: '+91 9876543210', address: 'Flat 402, Green Acres' };
+        const statusClass = t.status === 'DELIVERED' ? 'status-delivered' : (t.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
+        const proofImg = t.proof_image_url || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80';
+
+        tbody.innerHTML += `
+          <tr>
+            <td>#${t.id}</td>
+            <td><strong>${t.customer_name || cust.username || 'Customer'}</strong></td>
+            <td>${t.delivery_address || cust.address || 'Jubilee Hills'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
+            <td>${sub.quantity || 1}x ${prod.name || 'A2 Cow Milk 1L'}</td>
+            <td>${t.slot_time || '05:30 AM - 07:00 AM'}</td>
+            <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : 'Suresh Rao (Partner #4)'}</td>
+            <td><span class="status-tag ${statusClass}">${t.status}</span></td>
+            <td>
+              <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
+                <i class="fa-solid fa-camera"></i> View Proof
+              </button>
+            </td>
+            <td>
+              ${t.status === 'PENDING' ? `
+                <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">
+                  <i class="fa-solid fa-check"></i> Mark Delivered
+                </button>
+              ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Reconciled</span>`}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterDeliveriesTable() {
+      const q = document.getElementById('deliverySearchInput').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('deliveryStatusFilter').value;
+
+      const filtered = rawDeliveries.filter(t => {
+        const sub = t.subscription_detail || {};
+        const cust = sub.customer_detail || {};
+        const textMatch = !q || 
+          (t.id && t.id.toString().includes(q)) ||
+          (t.customer_name && t.customer_name.toLowerCase().includes(q)) ||
+          (cust.username && cust.username.toLowerCase().includes(q)) ||
+          (t.delivery_address && t.delivery_address.toLowerCase().includes(q)) ||
+          (t.customer_phone && t.customer_phone.includes(q));
+
+        const statusMatch = (statusFilter === 'ALL') || (t.status === statusFilter);
+        return textMatch && statusMatch;
+      });
+
+      renderDeliveriesTable(filtered);
+    }
+
+    function exportDeliveriesCSV() {
+      if (rawDeliveries.length === 0) {
+        alert('No deliveries available to export.');
+        return;
+      }
+
+      let csv = 'Task ID,Customer Name,Phone,Address,Product,Quantity,Slot,Driver,Status\n';
+      rawDeliveries.forEach(t => {
+        const sub = t.subscription_detail || {};
+        const prod = sub.product_detail || {};
+        const cust = sub.customer_detail || {};
+        csv += `"${t.id}","${t.customer_name || cust.username || ''}","${t.customer_phone || cust.phone || ''}","${(t.delivery_address || cust.address || '').replace(/"/g, '""')}","${prod.name || 'Milk'}","${sub.quantity || 1}","${t.slot_time}","${t.driver_detail ? t.driver_detail.first_name : 'Driver'}","${t.status}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `MilkDrop_RunSheet_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    }
+
+    function printDispatchSheet() {
+      let printContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2 style="margin-bottom: 4px;">🥛 MilkDrop Express — 05:30 AM Morning Dispatch Run-Sheet</h2>
+          <p style="font-size: 12px; color: #666; margin-bottom: 16px;">Date: ${new Date().toDateString()} • Total Scheduled Drops: ${rawDeliveries.length}</p>
+          <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+              <tr style="background:#f0f0f0;">
+                <th>Done</th>
+                <th>Task ID</th>
+                <th>Customer</th>
+                <th>Address & Phone</th>
+                <th>Product & Qty</th>
+                <th>Driver</th>
+                <th>Bottle Return</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      rawDeliveries.forEach(t => {
+        const sub = t.subscription_detail || {};
+        const prod = sub.product_detail || {};
+        const cust = sub.customer_detail || {};
+        printContent += `
+          <tr>
+            <td style="text-align:center;">[ ]</td>
+            <td>#${t.id}</td>
+            <td><strong>${t.customer_name || cust.username || ''}</strong></td>
+            <td>${t.delivery_address || cust.address || ''}<br><small>${t.customer_phone || cust.phone || ''}</small></td>
+            <td><strong>${sub.quantity || 1}x ${prod.name || 'Milk'}</strong></td>
+            <td>${t.driver_detail ? t.driver_detail.first_name : 'Partner'}</td>
+            <td>[ ] 1L [ ] 500ml</td>
+          </tr>
+        `;
+      });
+
+      printContent += `</tbody></table></div>`;
+
+      const printEl = document.getElementById('printSection');
+      printEl.innerHTML = printContent;
+      printEl.style.display = 'block';
+      window.print();
+      printEl.style.display = 'none';
     }
 
     async function loadSubscriptions() {
       try {
         const res = await fetch(`${baseUrl}/admin/subscriptions/`);
         if (res.ok) {
-          const subs = await res.json();
-          const tbody = document.getElementById('subscriptions-table-body');
-          tbody.innerHTML = '';
-          subs.forEach(s => {
-            const statusClass = s.status === 'ACTIVE' ? 'status-active' : 'status-paused';
-            tbody.innerHTML += `
-              <tr>
-                <td>#${s.id}</td>
-                <td><strong>${s.customer_name}</strong></td>
-                <td>${s.customer_phone}<br><small style="color:var(--text-muted);">${s.customer_address}</small></td>
-                <td><strong>${s.quantity}x ${s.product_name}</strong></td>
-                <td>${s.frequency}</td>
-                <td><span class="status-tag ${statusClass}">${s.status}</span></td>
-                <td><strong>₹${s.estimated_monthly_value.toFixed(2)}</strong></td>
-                <td>
-                  <button class="btn ${s.status === 'ACTIVE' ? 'btn-secondary' : 'btn-primary'}" style="padding: 4px 10px; font-size: 11px;" onclick="toggleSubscription(${s.id})">
-                    ${s.status === 'ACTIVE' ? '<i class="fa-solid fa-pause"></i> Pause' : '<i class="fa-solid fa-play"></i> Resume'}
-                  </button>
-                </td>
-              </tr>
-            `;
-          });
+          rawSubscriptions = await res.json();
+          renderSubscriptionsTable(rawSubscriptions);
         }
       } catch (e) {}
+    }
+
+    function renderSubscriptionsTable(subs) {
+      const tbody = document.getElementById('subscriptions-table-body');
+      tbody.innerHTML = '';
+      if (subs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No matching subscriptions found.</td></tr>';
+        return;
+      }
+      subs.forEach(s => {
+        const statusClass = s.status === 'ACTIVE' ? 'status-active' : 'status-paused';
+        tbody.innerHTML += `
+          <tr>
+            <td>#${s.id}</td>
+            <td><strong>${s.customer_name}</strong></td>
+            <td>${s.customer_phone}<br><small style="color:var(--text-muted);">${s.customer_address}</small></td>
+            <td><strong>${s.quantity}x ${s.product_name}</strong></td>
+            <td>${s.frequency}</td>
+            <td><span class="status-tag ${statusClass}">${s.status}</span></td>
+            <td><strong>₹${s.estimated_monthly_value.toFixed(2)}</strong></td>
+            <td>
+              <button class="btn ${s.status === 'ACTIVE' ? 'btn-secondary' : 'btn-primary'}" style="padding: 4px 10px; font-size: 11px;" onclick="toggleSubscription(${s.id})">
+                ${s.status === 'ACTIVE' ? '<i class="fa-solid fa-pause"></i> Pause' : '<i class="fa-solid fa-play"></i> Resume'}
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterSubscriptionsTable() {
+      const q = document.getElementById('subSearchInput').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('subStatusFilter').value;
+
+      const filtered = rawSubscriptions.filter(s => {
+        const textMatch = !q || 
+          (s.id && s.id.toString().includes(q)) ||
+          (s.customer_name && s.customer_name.toLowerCase().includes(q)) ||
+          (s.customer_phone && s.customer_phone.includes(q)) ||
+          (s.customer_address && s.customer_address.toLowerCase().includes(q)) ||
+          (s.product_name && s.product_name.toLowerCase().includes(q));
+
+        const statusMatch = (statusFilter === 'ALL') || (s.status === statusFilter);
+        return textMatch && statusMatch;
+      });
+
+      renderSubscriptionsTable(filtered);
+    }
+
+    function openCreateSubModal() {
+      // Populate Customers dropdown
+      const custSelect = document.getElementById('newSubCustomer');
+      custSelect.innerHTML = '';
+      rawCustomers.forEach(c => {
+        custSelect.innerHTML += `<option value="${c.id}">${c.first_name || c.username} (${c.phone || c.email})</option>`;
+      });
+
+      // Populate Products dropdown
+      const prodSelect = document.getElementById('newSubProduct');
+      prodSelect.innerHTML = '';
+      rawProducts.forEach(p => {
+        prodSelect.innerHTML += `<option value="${p.id}">${p.name} — ₹${p.price_per_unit}</option>`;
+      });
+
+      document.getElementById('createSubModal').style.display = 'flex';
+    }
+
+    async function submitCreateSubscription() {
+      const cId = document.getElementById('newSubCustomer').value;
+      const pId = document.getElementById('newSubProduct').value;
+      const qty = document.getElementById('newSubQty').value;
+      const sched = document.getElementById('newSubSchedule').value;
+      const start = document.getElementById('newSubStartDate').value;
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/subscriptions/create/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: cId,
+            product_id: pId,
+            quantity: qty,
+            schedule_type: sched,
+            start_date: start
+          })
+        });
+
+        if (res.ok) {
+          closeModal('createSubModal');
+          loadSubscriptions();
+          loadDeliveries();
+          loadDashboard();
+          alert('🎉 Subscription created successfully and scheduled for tomorrow morning delivery!');
+        } else {
+          alert('Could not create subscription. Please verify customer balance.');
+        }
+      } catch (e) {
+        alert('Network error while booking subscription.');
+      }
     }
 
     function openAddDriverModal() {
@@ -1529,21 +1998,49 @@
       try {
         const res = await fetch(`${baseUrl}/products/`);
         if (res.ok) {
-          const prods = await res.json();
-          const tbody = document.getElementById('products-table-body');
-          tbody.innerHTML = '';
-          prods.forEach(p => {
-            tbody.innerHTML += `
-              <tr>
-                <td>#${p.id}</td>
-                <td><strong>${p.name}</strong><br><small style="color:var(--text-muted);">${p.description || ''}</small></td>
-                <td><span class="status-tag status-pending">${p.category || 'DAIRY'}</span></td>
-                <td><strong>₹${p.price_per_unit}</strong></td>
-                <td>${p.unit_quantity || p.unit}</td>
-                <td><span class="status-tag ${p.is_available ? 'status-active' : 'status-paused'}">${p.is_available ? 'In Stock' : 'Out of Stock'}</span></td>
-              </tr>
-            `;
-          });
+          rawProducts = await res.json();
+          renderProductsTable(rawProducts);
+        }
+      } catch (e) {}
+    }
+
+    function renderProductsTable(prods) {
+      const tbody = document.getElementById('products-table-body');
+      tbody.innerHTML = '';
+      if (prods.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No products found.</td></tr>';
+        return;
+      }
+      prods.forEach(p => {
+        tbody.innerHTML += `
+          <tr>
+            <td>#${p.id}</td>
+            <td><strong>${p.name}</strong><br><small style="color:var(--text-muted);">${p.description || ''}</small></td>
+            <td><span class="status-tag status-pending">${p.category || 'DAIRY'}</span></td>
+            <td><strong>₹${p.price_per_unit}</strong></td>
+            <td>${p.unit_quantity || p.unit}</td>
+            <td>
+              <button class="btn ${p.is_available ? 'btn-primary' : 'btn-danger'}" style="padding: 4px 10px; font-size: 11px;" onclick="toggleProductStock(${p.id})">
+                ${p.is_available ? '🟢 In Stock (Active)' : '🔴 Out of Stock (Disabled)'}
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterProductsTable() {
+      const q = document.getElementById('prodSearchInput').value.toLowerCase().trim();
+      const filtered = rawProducts.filter(p => !q || p.name.toLowerCase().includes(q) || (p.category && p.category.toLowerCase().includes(q)));
+      renderProductsTable(filtered);
+    }
+
+    async function toggleProductStock(id) {
+      try {
+        const res = await fetch(`${baseUrl}/admin/products/${id}/toggle-stock/`, { method: 'POST' });
+        if (res.ok) {
+          loadProducts();
+          loadDashboard();
         }
       } catch (e) {}
     }
@@ -1552,27 +2049,90 @@
       try {
         const res = await fetch(`${baseUrl}/admin/customers/`);
         if (res.ok) {
-          const customers = await res.json();
-          const tbody = document.getElementById('customers-table-body');
-          tbody.innerHTML = '';
-          customers.forEach(c => {
-            tbody.innerHTML += `
-              <tr>
-                <td>#${c.id}</td>
-                <td><strong>${c.first_name || ''} ${c.last_name || ''}</strong><br><small style="color:var(--text-muted);">@${c.username}</small></td>
-                <td>${c.phone || '-'}<br><small style="color:var(--text-muted);">${c.email || ''}</small></td>
-                <td>${c.address || 'Hyderabad'}</td>
-                <td><strong style="color:var(--primary-accent); font-size:16px;">₹${c.wallet_balance}</strong></td>
-                <td>
-                  <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="openCreditModal(${c.id})">
-                    <i class="fa-solid fa-plus"></i> Credit Wallet
-                  </button>
-                </td>
-              </tr>
-            `;
-          });
+          rawCustomers = await res.json();
+          renderCustomersTable(rawCustomers);
         }
       } catch (e) {}
+    }
+
+    function renderCustomersTable(custs) {
+      const tbody = document.getElementById('customers-table-body');
+      tbody.innerHTML = '';
+      if (custs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No customer records found.</td></tr>';
+        return;
+      }
+      custs.forEach(c => {
+        tbody.innerHTML += `
+          <tr>
+            <td>#${c.id}</td>
+            <td><strong>${c.first_name || ''} ${c.last_name || ''}</strong><br><small style="color:var(--text-muted);">@${c.username}</small></td>
+            <td>${c.phone || '-'}<br><small style="color:var(--text-muted);">${c.email || ''}</small></td>
+            <td>${c.address || 'Hyderabad'}</td>
+            <td><strong style="color:var(--primary-accent); font-size:16px;">₹${c.wallet_balance}</strong></td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="viewCustomerLedger(${c.id}, '${c.first_name || c.username}')">
+                  <i class="fa-solid fa-receipt"></i> Ledger
+                </button>
+                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="openCreditModal(${c.id})">
+                  <i class="fa-solid fa-plus"></i> Credit
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterCustomersTable() {
+      const q = document.getElementById('customerSearchInput').value.toLowerCase().trim();
+      const filtered = rawCustomers.filter(c => {
+        return !q || 
+          (c.first_name && c.first_name.toLowerCase().includes(q)) ||
+          (c.last_name && c.last_name.toLowerCase().includes(q)) ||
+          (c.username && c.username.toLowerCase().includes(q)) ||
+          (c.phone && c.phone.includes(q)) ||
+          (c.email && c.email.toLowerCase().includes(q)) ||
+          (c.address && c.address.toLowerCase().includes(q));
+      });
+      renderCustomersTable(filtered);
+    }
+
+    async function viewCustomerLedger(userId, name) {
+      document.getElementById('ledgerCustomerHeader').innerText = `Loading transaction ledger for ${name}...`;
+      document.getElementById('walletLedgerModal').style.display = 'flex';
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/customers/${userId}/transactions/`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('ledgerCustomerHeader').innerHTML = `
+            <strong>Customer:</strong> ${data.customer_name} &nbsp;•&nbsp; 
+            <strong>Current Prepaid Wallet Balance:</strong> <span style="color:var(--primary-accent); font-weight:bold; font-size:14px;">₹${data.wallet_balance}</span>
+          `;
+
+          const tbody = document.getElementById('ledgerTableBody');
+          tbody.innerHTML = '';
+          if (data.transactions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No wallet transactions found.</td></tr>';
+          } else {
+            data.transactions.forEach(t => {
+              const isCredit = t.type === 'CREDIT';
+              tbody.innerHTML += `
+                <tr>
+                  <td><small style="color:var(--text-muted);">${t.created_at}</small></td>
+                  <td><span class="status-tag ${isCredit ? 'status-delivered' : 'status-paused'}">${t.type}</span></td>
+                  <td><strong style="color:${isCredit ? '#10B981' : '#F87171'}; font-size:13.5px;">${isCredit ? '+' : '-'}₹${t.amount}</strong></td>
+                  <td>${t.description}</td>
+                </tr>
+              `;
+            });
+          }
+        }
+      } catch (e) {
+        document.getElementById('ledgerCustomerHeader').innerText = 'Could not load ledger history.';
+      }
     }
 
     async function toggleSubscription(id) {
