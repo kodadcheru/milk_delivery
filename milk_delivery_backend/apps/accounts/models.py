@@ -7,10 +7,12 @@ class User(AbstractUser):
     class Roles(models.TextChoices):
         CUSTOMER = "CUSTOMER", "Customer"
         DELIVERY_PARTNER = "DRIVER", "Delivery Partner"
+        HUB_MANAGER = "PROVIDER", "Location Hub Owner / Provider"
         ADMIN = "ADMIN", "Administrator"
 
-    # Convenient alias
+    # Convenient aliases
     Roles.DRIVER = Roles.DELIVERY_PARTNER
+    Roles.PROVIDER = Roles.HUB_MANAGER
 
     role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.CUSTOMER)
     phone = models.CharField(max_length=20, unique=True)

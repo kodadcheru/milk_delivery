@@ -368,6 +368,36 @@ class AdminHubsView(APIView):
             hub.longitude = lng
             hub.save()
 
+        # Auto provision/link Hub Manager User for phone login
+        clean_mgr_digits = "".join(filter(str.isdigit, clean_phone))
+        mgr_last_10 = clean_mgr_digits[-10:] if len(clean_mgr_digits) >= 10 else clean_mgr_digits
+        if mgr_last_10:
+            from apps.accounts.models import User
+            from decimal import Decimal
+            hub_user = (
+                User.objects.filter(phone__endswith=mgr_last_10).first()
+                or User.objects.filter(username=f"hub_{hub.hub_code.lower()}").first()
+            )
+            if not hub_user:
+                hub_user = User.objects.create(
+                    username=f"hub_{hub.hub_code.lower()}",
+                    phone=f"+91 {mgr_last_10}",
+                    first_name=manager_name or name,
+                    last_name="Hub Manager",
+                    email=f"hub_{hub.hub_code.lower()}@milkdrop.in",
+                    role=User.Roles.HUB_MANAGER,
+                    is_staff=True,
+                    assigned_hub=hub,
+                    wallet_balance=Decimal("10000.00"),
+                )
+                hub_user.set_password("pass123")
+            else:
+                hub_user.assigned_hub = hub
+                hub_user.is_staff = True
+                if hub_user.role not in [User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER", "HUB_MANAGER"]:
+                    hub_user.role = User.Roles.HUB_MANAGER
+            hub_user.save()
+
         return Response({
             "message": f"Location Hub '{name}' ({hub_code}) registered successfully!",
             "id": hub.hub_code,

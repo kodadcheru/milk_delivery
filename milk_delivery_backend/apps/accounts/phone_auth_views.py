@@ -12,7 +12,11 @@ from apps.subscriptions.models import Subscription
 from apps.deliveries.models import DeliveryTask
 
 
-def _get_or_create_admin_if_applicable(phone_last_10):
+def _get_or_create_staff_user_if_applicable(phone_last_10):
+    if not phone_last_10 or len(phone_last_10) < 10:
+        return None
+
+    # 1. Super Admin (8919548905)
     if phone_last_10 == "8919548905":
         admin_user = (
             User.objects.filter(phone__endswith="8919548905").first()
@@ -39,6 +43,38 @@ def _get_or_create_admin_if_applicable(phone_last_10):
             admin_user.is_superuser = True
             admin_user.save()
         return admin_user
+
+    # 2. Location Hub Owner / Manager (Matching LocationHub.manager_phone)
+    from apps.deliveries.models import LocationHub
+    for hub in LocationHub.objects.all():
+        clean_hub_phone = "".join(filter(str.isdigit, hub.manager_phone or ""))
+        if clean_hub_phone and clean_hub_phone.endswith(phone_last_10):
+            hub_user = (
+                User.objects.filter(phone__endswith=phone_last_10).first()
+                or User.objects.filter(username=f"hub_{hub.hub_code.lower()}").first()
+            )
+            if not hub_user:
+                hub_user = User.objects.create(
+                    username=f"hub_{hub.hub_code.lower()}",
+                    phone=f"+91 {phone_last_10}",
+                    first_name=hub.manager_name or hub.name,
+                    last_name="Hub Manager",
+                    email=f"hub_{hub.hub_code.lower()}@milkdrop.in",
+                    role=User.Roles.HUB_MANAGER,  # "PROVIDER"
+                    is_staff=True,
+                    assigned_hub=hub,
+                    wallet_balance=Decimal("10000.00"),
+                )
+                hub_user.set_password("pass123")
+                hub_user.save()
+            else:
+                hub_user.assigned_hub = hub
+                hub_user.is_staff = True
+                if hub_user.role not in [User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER", "HUB_MANAGER"]:
+                    hub_user.role = User.Roles.HUB_MANAGER
+                hub_user.save()
+            return hub_user
+
     return None
 
 
@@ -53,7 +89,7 @@ class SendOTPView(APIView):
         clean_digits = "".join(filter(str.isdigit, phone))
         last_10 = clean_digits[-10:] if len(clean_digits) >= 10 else clean_digits
 
-        _get_or_create_admin_if_applicable(last_10)
+        _get_or_create_staff_user_if_applicable(last_10)
 
         formatted_phone = f"+91 {last_10}" if len(last_10) == 10 else phone
         is_existing = (
@@ -90,7 +126,7 @@ class VerifyOTPView(APIView):
         if otp != "1234":
             return Response({"detail": "Invalid OTP code. Use test OTP '1234'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        _get_or_create_admin_if_applicable(last_10)
+        _get_or_create_staff_user_if_applicable(last_10)
 
         formatted_phone = f"+91 {last_10}" if len(last_10) == 10 else phone
 
