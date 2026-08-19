@@ -150,39 +150,4 @@ class CustomerAddressModel {
       formattedAddress: formattedAddress ?? this.formattedAddress,
     );
   }
-
-  static List<CustomerAddressModel> get defaultSampleAddresses => [
-    CustomerAddressModel(
-      id: 1,
-      addressType: 'HOME',
-      customTag: 'Home',
-      flatHouseNo: 'Flat 402, Block C',
-      floor: '4th Floor',
-      buildingName: 'My Home Bhooja',
-      streetAddress: 'Road No. 36, Jubilee Hills',
-      landmark: 'Near Peddamma Temple',
-      city: 'Hyderabad',
-      pincode: '500033',
-      latitude: 17.4319,
-      longitude: 78.4073,
-      deliveryInstructions: 'Leave in milk box at doorstep. Do not ring bell before 06:00 AM.',
-      isDefault: true,
-    ),
-    CustomerAddressModel(
-      id: 2,
-      addressType: 'WORK',
-      customTag: 'Office',
-      flatHouseNo: 'Tower 3, 8th Floor',
-      floor: '8th Floor',
-      buildingName: 'Cyber Towers Tech Park',
-      streetAddress: 'Hitec City Main Road, Madhapur',
-      landmark: 'Near Hitec City Metro',
-      city: 'Hyderabad',
-      pincode: '500081',
-      latitude: 17.4483,
-      longitude: 78.3915,
-      deliveryInstructions: 'Handover to 8th Floor reception desk.',
-      isDefault: false,
-    ),
-  ];
 }

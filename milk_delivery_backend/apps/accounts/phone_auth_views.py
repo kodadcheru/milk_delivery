@@ -175,27 +175,9 @@ class RegisterMobileUserView(APIView):
         Notification.objects.create(
             user=user,
             title="🥛 Welcome to MilkDrop Express!",
-            message=f"Hello {first_name}! ₹500 welcome bonus credited to your prepaid wallet. Subscribe to fresh milk for daily 6 AM doorstep delivery.",
+            message=f"Hello {first_name}! ₹500 welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
             notification_type=Notification.Types.WALLET,
         )
-
-        # Auto-subscribe to Farm Fresh A2 Cow Milk if products exist
-        product = Product.objects.filter(is_available=True).first()
-        if product:
-            sub = Subscription.objects.create(
-                customer=user,
-                product=product,
-                quantity=1,
-                schedule_type=Subscription.Schedules.DAILY,
-                start_date=date.today(),
-                status=Subscription.Statuses.ACTIVE,
-            )
-            DeliveryTask.objects.create(
-                subscription=sub,
-                delivery_date=date.today(),
-                slot_time="05:30 AM - 07:00 AM",
-                status=DeliveryTask.Statuses.PENDING,
-            )
 
         refresh = RefreshToken.for_user(user)
 

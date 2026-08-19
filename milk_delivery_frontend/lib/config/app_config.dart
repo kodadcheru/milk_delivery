@@ -12,17 +12,10 @@ class AppConfig {
   /// In Android emulator: 10.0.2.2:8000
   /// In production cloud: https://api.milkdrop.com
   static String get apiBaseUrl {
-    switch (environment) {
-      case AppEnvironment.production:
-        return const String.fromEnvironment(
-          'API_BASE_URL',
-          defaultValue: 'https://milk-delivery-backend-production.up.railway.app/api',
-        );
-      case AppEnvironment.staging:
-        return 'https://milk-delivery-backend-production.up.railway.app/api';
-      case AppEnvironment.development:
-        return 'http://127.0.0.1:8000/api';
-    }
+    return const String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: 'https://milk-delivery-backend-production.up.railway.app/api',
+    );
   }
 
   static const Duration requestTimeout = Duration(seconds: 12);

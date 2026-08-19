@@ -13,9 +13,6 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         if not user or not user.is_authenticated:
-            # Fallback to demo customer for guest testing
-            user = User.objects.filter(role=User.Roles.CUSTOMER).first()
-        if not user:
             return CustomerAddress.objects.none()
         return CustomerAddress.objects.filter(user=user).order_by("-is_default", "-created_at")
 

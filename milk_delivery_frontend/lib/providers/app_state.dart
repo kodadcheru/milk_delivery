@@ -29,7 +29,7 @@ class AppState extends ChangeNotifier {
   bool hasLocationPermission = false;
   bool hasNotificationPermission = false;
 
-  List<CustomerAddressModel> savedAddresses = CustomerAddressModel.defaultSampleAddresses;
+  List<CustomerAddressModel> savedAddresses = [];
   CustomerAddressModel? activeAddress;
 
   List<ServiceAreaModel> serviceAreas = ServiceAreaModel.defaultAreas;
@@ -241,7 +241,8 @@ class AppState extends ChangeNotifier {
     if (savedToken != null) {
       await reloadAllData();
     } else {
-      await loginAndSync('customer', 'pass123', 'CUSTOMER');
+      products = await ApiService.fetchProducts();
+      notifyListeners();
     }
   }
 
@@ -343,13 +344,15 @@ class AppState extends ChangeNotifier {
   Future<void> fetchSavedAddresses() async {
     try {
       final addrs = await ApiService.fetchCustomerAddresses();
+      savedAddresses = addrs;
       if (addrs.isNotEmpty) {
-        savedAddresses = addrs;
         final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
         activeAddress = defaultAddr;
         currentDeliveryAddress = defaultAddr.summaryAddress;
         currentLat = defaultAddr.latitude;
         currentLon = defaultAddr.longitude;
+      } else {
+        activeAddress = null;
       }
     } catch (_) {}
     notifyListeners();
@@ -427,6 +430,11 @@ class AppState extends ChangeNotifier {
   Future<void> onUserAuthenticated(UserModel user) async {
     currentUser = user;
     currentRole = user.role;
+    savedAddresses = [];
+    subscriptions = [];
+    deliveries = [];
+    transactions = [];
+    activeAddress = null;
     await reloadAllData();
   }
 
