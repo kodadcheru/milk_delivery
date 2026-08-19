@@ -271,34 +271,29 @@ class AdminHubsView(APIView):
         from apps.deliveries.models import LocationHub
         from apps.subscriptions.models import Subscription
 
-        LocationHub.objects.get_or_create(
-            hub_code="HUB-KDD-01",
-            defaults={
-                "name": "Kodad Depot",
-                "address": "Main Road, Kodad, Suryapet, Telangana 508206",
-                "manager_name": "Operations Manager",
-                "manager_phone": "+91 8919548905",
-                "coverage_radius_km": 25.0,
-                "latitude": 16.9950,
-                "longitude": 79.9670,
-                "fssai_license": "13621014000342",
-            },
-        )
-        LocationHub.objects.get_or_create(
-            hub_code="HUB-HYD-01",
-            defaults={
-                "name": "Hyderabad Central Depot",
-                "address": "Road No 36, Jubilee Hills, Hyderabad 500033",
-                "manager_name": "Regional Operations Manager",
-                "manager_phone": "+91 8919548905",
-                "coverage_radius_km": 25.0,
-                "latitude": 17.4319,
-                "longitude": 78.4073,
-                "fssai_license": "13621014000343",
-            },
-        )
-        # Ensure all existing hubs have at least 25km radius
-        LocationHub.objects.filter(coverage_radius_km__lt=25.0).update(coverage_radius_km=25.0)
+        if not LocationHub.objects.exists():
+            LocationHub.objects.create(
+                hub_code="HUB-KDD-01",
+                name="Kodad Depot",
+                address="Main Road, Kodad, Suryapet, Telangana 508206",
+                manager_name="Operations Manager",
+                manager_phone="+91 8919548905",
+                coverage_radius_km=25.0,
+                latitude=16.9950,
+                longitude=79.9670,
+                fssai_license="13621014000342",
+            )
+            LocationHub.objects.create(
+                hub_code="HUB-HYD-01",
+                name="Hyderabad Central Depot",
+                address="Road No 36, Jubilee Hills, Hyderabad 500033",
+                manager_name="Regional Operations Manager",
+                manager_phone="+91 8919548905",
+                coverage_radius_km=25.0,
+                latitude=17.4319,
+                longitude=78.4073,
+                fssai_license="13621014000343",
+            )
 
         hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)
@@ -439,25 +434,19 @@ class AdminHubsView(APIView):
 
 def _resolve_hub_by_pk_or_code(pk):
     from apps.deliveries.models import LocationHub
+    if pk is None:
+        return None
     pk_str = str(pk).strip()
+    if not pk_str:
+        return None
     if pk_str.isdigit():
-        hub = LocationHub.objects.filter(pk=int(pk_str)).first() or LocationHub.objects.filter(hub_code=pk_str).first()
+        hub = LocationHub.objects.filter(pk=int(pk_str)).first()
         if hub:
             return hub
-    hub = LocationHub.objects.filter(hub_code__iexact=pk_str).first() or LocationHub.objects.filter(hub_code__icontains=pk_str).first() or LocationHub.objects.first()
-    if not hub:
-        hub = LocationHub.objects.create(
-            hub_code="HUB-KDD-01",
-            name="Kodad Depot",
-            address="Main Road, Kodad, Suryapet, Telangana 508206",
-            manager_name="Operations Manager",
-            manager_phone="+91 8919548905",
-            coverage_radius_km=5.0,
-            latitude=16.9950,
-            longitude=79.9670,
-            fssai_license="13621014000342",
-        )
-    return hub
+    return (
+        LocationHub.objects.filter(hub_code__iexact=pk_str).first()
+        or LocationHub.objects.filter(hub_code__icontains=pk_str).first()
+    )
 
 
 class AdminHubDetailView(APIView):
