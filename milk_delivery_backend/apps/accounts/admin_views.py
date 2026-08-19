@@ -271,6 +271,19 @@ class AdminHubsView(APIView):
         from apps.deliveries.models import LocationHub
         from apps.subscriptions.models import Subscription
 
+        if not LocationHub.objects.exists():
+            LocationHub.objects.create(
+                hub_code="HUB-KDD-01",
+                name="Kodad Depot",
+                address="Main Road, Kodad, Suryapet, Telangana 508206",
+                manager_name="Operations Manager",
+                manager_phone="+91 8919548905",
+                coverage_radius_km=5.0,
+                latitude=16.9950,
+                longitude=79.9670,
+                fssai_license="13621014000342",
+            )
+
         hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)
 
@@ -415,8 +428,20 @@ def _resolve_hub_by_pk_or_code(pk):
         hub = LocationHub.objects.filter(pk=int(pk_str)).first() or LocationHub.objects.filter(hub_code=pk_str).first()
         if hub:
             return hub
-    hub = LocationHub.objects.filter(hub_code__iexact=pk_str).first() or LocationHub.objects.filter(hub_code__icontains=pk_str).first()
-    return hub or LocationHub.objects.first()
+    hub = LocationHub.objects.filter(hub_code__iexact=pk_str).first() or LocationHub.objects.filter(hub_code__icontains=pk_str).first() or LocationHub.objects.first()
+    if not hub:
+        hub = LocationHub.objects.create(
+            hub_code="HUB-KDD-01",
+            name="Kodad Depot",
+            address="Main Road, Kodad, Suryapet, Telangana 508206",
+            manager_name="Operations Manager",
+            manager_phone="+91 8919548905",
+            coverage_radius_km=5.0,
+            latitude=16.9950,
+            longitude=79.9670,
+            fssai_license="13621014000342",
+        )
+    return hub
 
 
 class AdminHubDetailView(APIView):
