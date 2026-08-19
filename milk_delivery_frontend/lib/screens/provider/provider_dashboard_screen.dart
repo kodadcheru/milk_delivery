@@ -238,7 +238,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
-                  height: 38,
+                  height: 44,
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.push(
@@ -252,7 +252,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       );
                     },
                     icon: const Icon(Icons.radar_rounded, size: 16, color: Colors.white),
-                    label: const Text('Live Fleet Radar & Depot Coverage Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    label: const Text('Live Fleet Radar & Depot Coverage Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
                       foregroundColor: Colors.white,
@@ -295,7 +295,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   'Equal Load Balancer & Fleet Dispatch',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
                                 const Text(
                                   'Auto-partitions hub orders equally across active boys',
@@ -383,7 +383,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 // Partitioned Fleet Preview
                 SizedBox(
                   width: double.infinity,
-                  height: 38,
+                  height: 44,
                   child: ElevatedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -394,7 +394,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       );
                     },
                     icon: const Icon(Icons.hub_rounded, size: 16),
-                    label: Text('Auto-Balance & Dispatch $_activeDriverCount Equal Batches 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    label: Text('Auto-Balance & Dispatch $_activeDriverCount Equal Batches 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
@@ -1116,7 +1116,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       children: [
         Text(val, style: const TextStyle(color: Color(0xFF10B981), fontSize: 12.5, fontWeight: FontWeight.w900)),
         const SizedBox(height: 1),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white70, fontSize: 9),
+        ),
       ],
     );
   }
@@ -1124,9 +1130,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget _buildHubStatColumn(String val, String label) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+        Text(val, style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w900)),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white70, fontSize: 9),
+        ),
       ],
     );
   }
