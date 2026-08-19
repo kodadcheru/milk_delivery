@@ -228,6 +228,20 @@ class AppState extends ChangeNotifier {
       ),
     );
 
+    if (currentUser != null && currentUser!.walletBalance < 150.0) {
+      notifications.insert(
+        0,
+        NotificationModel(
+          id: notifications.length + 2,
+          title: '⚠️ Wallet Balance Low (₹${currentUser!.walletBalance.toStringAsFixed(0)})',
+          message: 'Your balance is below ₹150. Re-charge now for smooth morning milk drops!',
+          notificationType: 'WALLET',
+          isRead: false,
+          createdAt: 'Just now',
+        ),
+      );
+    }
+
     cartItems.clear();
     notifyListeners();
     return newOrder;

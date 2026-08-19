@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/delivery_task_model.dart';
 import '../models/live_order_model.dart';
 import '../providers/app_state.dart';
+import '../services/api_service.dart';
 import '../screens/customer/help_support_screen.dart';
 import '../screens/customer/live_driver_tracking_screen.dart';
 
@@ -344,6 +345,108 @@ class BookingDetailSheet extends StatelessWidget {
                             children: [
                               const Text('Subscription Schedule', style: TextStyle(fontSize: 12, color: Colors.grey)),
                               Text(subscriptionTask!.subscriptionDetail?.scheduleType ?? 'DAILY', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                            ],
+                          ),
+                          const Divider(height: 16),
+                          // ── Subscription Management Controls ──
+                          const Text('Subscription Controls ⚙️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Daily Qty:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.remove_circle_outline, size: 18, color: Color(0xFF0D7C66)),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            onPressed: () async {
+                                              final sub = subscriptionTask!.subscriptionDetail;
+                                              if (sub != null && sub.quantity > 1) {
+                                                final success = await ApiService.updateSubscription(sub.id, quantity: sub.quantity - 1);
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity - 1}' : 'Failed to update subscription')),
+                                                  );
+                                                  if (success) state.reloadAllData();
+                                                }
+                                              }
+                                            },
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                                            child: Text('${subscriptionTask!.subscriptionDetail?.quantity ?? 1}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.add_circle_outline, size: 18, color: Color(0xFF0D7C66)),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            onPressed: () async {
+                                              final sub = subscriptionTask!.subscriptionDetail;
+                                              if (sub != null) {
+                                                final success = await ApiService.updateSubscription(sub.id, quantity: sub.quantity + 1);
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity + 1}' : 'Failed to update subscription')),
+                                                  );
+                                                  if (success) state.reloadAllData();
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final sub = subscriptionTask!.subscriptionDetail;
+                                  if (sub == null) return;
+                                  final now = DateTime.now();
+                                  final picked = await showDateRangePicker(
+                                    context: context,
+                                    firstDate: now,
+                                    lastDate: now.add(const Duration(days: 90)),
+                                    helpText: 'Select Vacation Dates to Pause Milk Drops',
+                                  );
+                                  if (picked != null && context.mounted) {
+                                    final startStr = picked.start.toIso8601String().split('T')[0];
+                                    final endStr = picked.end.toIso8601String().split('T')[0];
+                                    final success = await ApiService.pauseSubscription(sub.id, startStr, endStr);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: success ? const Color(0xFF0D7C66) : Colors.red,
+                                          content: Text(success ? '🌴 Vacation Mode Active: Paused drops from $startStr to $endStr' : 'Failed to activate vacation mode'),
+                                        ),
+                                      );
+                                      if (success) state.reloadAllData();
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.beach_access_rounded, size: 14),
+                                label: const Text('Vacation 🌴', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0D7C66),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  elevation: 0,
+                                ),
+                              ),
                             ],
                           ),
                         ],
