@@ -178,6 +178,7 @@ class AdminHubsView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        from apps.accounts.models import User
         from apps.deliveries.models import LocationHub
         from apps.subscriptions.models import Subscription
 
@@ -190,7 +191,7 @@ class AdminHubsView(APIView):
         hubs_data = []
         for idx, h in enumerate(hubs_qs, 1):
             service_areas_count = h.service_areas.count()
-            real_boys = h.delivery_partners.filter(role=User.Roles.DRIVER).count()
+            real_boys = h.delivery_partners.filter(role=User.Roles.DELIVERY_PARTNER).count()
 
             hubs_data.append({
                 "id": h.hub_code,
@@ -401,7 +402,7 @@ class AdminFleetListView(APIView):
         from apps.deliveries.models import DeliveryTask
 
         hub_id = request.query_params.get("hub_id")
-        drivers = User.objects.filter(role=User.Roles.DRIVER).select_related("assigned_hub")
+        drivers = User.objects.filter(role=User.Roles.DELIVERY_PARTNER).select_related("assigned_hub")
 
         if hub_id:
             drivers = drivers.filter(assigned_hub_id=hub_id)
@@ -448,7 +449,7 @@ class AdminFleetDetailView(APIView):
         from apps.accounts.models import User
         from apps.deliveries.models import LocationHub
 
-        driver = User.objects.filter(pk=pk, role=User.Roles.DRIVER).first()
+        driver = User.objects.filter(pk=pk, role=User.Roles.DELIVERY_PARTNER).first()
         if not driver:
             return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -469,7 +470,7 @@ class AdminFleetDetailView(APIView):
 
     def delete(self, request, pk):
         from apps.accounts.models import User
-        driver = User.objects.filter(pk=pk, role=User.Roles.DRIVER).first()
+        driver = User.objects.filter(pk=pk, role=User.Roles.DELIVERY_PARTNER).first()
         if not driver:
             return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -505,7 +506,7 @@ class HubDriverCreateView(APIView):
                 "first_name": first_name,
                 "last_name": last_name,
                 "password": make_password("pass123"),
-                "role": User.Roles.DRIVER,
+                "role": User.Roles.DELIVERY_PARTNER,
                 "assigned_hub": hub,
                 "monthly_salary": salary,
                 "address": hub.address if hub else "Depot",
@@ -680,7 +681,7 @@ class AdminSubscriptionCreateView(APIView):
         )
 
         # Automatically schedule morning delivery task
-        driver = User.objects.filter(role=User.Roles.DRIVER, assigned_hub=customer.assigned_hub).first() or User.objects.filter(role=User.Roles.DRIVER).first()
+        driver = User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=customer.assigned_hub).first() or User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
         DeliveryTask.objects.create(
             subscription=sub,
             hub=customer.assigned_hub,
@@ -727,9 +728,9 @@ class AdminHubRebalanceView(APIView):
         if not hub:
             return Response({"detail": f"Hub {hub_code} not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        active_drivers = list(User.objects.filter(role=User.Roles.DRIVER, assigned_hub=hub))
+        active_drivers = list(User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=hub))
         if not active_drivers:
-            active_drivers = list(User.objects.filter(role=User.Roles.DRIVER))
+            active_drivers = list(User.objects.filter(role=User.Roles.DELIVERY_PARTNER))
 
         tasks = list(DeliveryTask.objects.filter(status=DeliveryTask.Statuses.PENDING))
 

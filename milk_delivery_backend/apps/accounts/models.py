@@ -9,6 +9,9 @@ class User(AbstractUser):
         DELIVERY_PARTNER = "DRIVER", "Delivery Partner"
         ADMIN = "ADMIN", "Administrator"
 
+    # Convenient alias
+    Roles.DRIVER = Roles.DELIVERY_PARTNER
+
     role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.CUSTOMER)
     phone = models.CharField(max_length=20, unique=True)
     address = models.TextField(blank=True, default="")

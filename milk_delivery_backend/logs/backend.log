@@ -309,3 +309,12 @@
 [2026-08-19 01:24:52,674] INFO [django.server:212] "GET /api/wallet/transactions/ HTTP/1.1" 200 165
 [2026-08-19 01:24:52,677] INFO [django.server:212] "GET /api/notifications/ HTTP/1.1" 200 298
 [2026-08-19 01:24:52,683] INFO [django.server:212] "GET /api/service-areas/ HTTP/1.1" 200 4162
+[2026-08-19 15:46:58,366] ERROR [django.request:61] Unhandled Exception in <apps.accounts.admin_views.AdminHubsView object at 0x10a38b8c0>: type object 'Roles' has no attribute 'DRIVER'
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/accounts/admin_views.py", line 193, in get
+    real_boys = h.delivery_partners.filter(role=User.Roles.DRIVER).count()
+                                                ^^^^^^^^^^^^^^^^^
+AttributeError: type object 'Roles' has no attribute 'DRIVER'
+[2026-08-19 15:46:58,368] ERROR [django.request:246] Internal Server Error: /api/admin/hubs/
