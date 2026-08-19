@@ -15,8 +15,48 @@ from datetime import date
 def seed():
     print("🌱 [Railway DB Seeder] Checking database records...")
 
-    # 1. Admin & Users
-    admin, created = User.objects.get_or_create(
+    # 1. Ensure Hubs exist
+    hub1, _ = LocationHub.objects.get_or_create(
+        hub_code="HUB-HYD-01",
+        defaults={
+            "name": "Jubilee Hills Central Depot #1",
+            "address": "Plot 42, Road #36, Jubilee Hills, Hyderabad",
+            "latitude": 17.4320,
+            "longitude": 78.4070,
+            "manager_name": "Rajesh Varma",
+            "manager_phone": "+91 98888 77777",
+            "fssai_license": "13621014000342",
+        }
+    )
+
+    hub2, _ = LocationHub.objects.get_or_create(
+        hub_code="HUB-HYD-02",
+        defaults={
+            "name": "Banjara Hills Micro-Depot #2",
+            "address": "Road #12, Banjara Hills, Hyderabad",
+            "latitude": 17.4156,
+            "longitude": 78.4350,
+            "manager_name": "Kavitha Reddy",
+            "manager_phone": "+91 98765 43211",
+            "fssai_license": "13621014000889",
+        }
+    )
+
+    hub3, _ = LocationHub.objects.get_or_create(
+        hub_code="HUB-HYD-03",
+        defaults={
+            "name": "Madhapur Tech Enclave Depot #3",
+            "address": "Hitec City Main Road, Madhapur, Hyderabad",
+            "latitude": 17.4483,
+            "longitude": 78.3915,
+            "manager_name": "Sanjay Rao",
+            "manager_phone": "+91 97654 32100",
+            "fssai_license": "13621014000912",
+        }
+    )
+
+    # 2. Admin & Staff Users
+    admin, _ = User.objects.get_or_create(
         username="admin",
         defaults={
             "password": make_password("admin123"),
@@ -26,12 +66,14 @@ def seed():
             "role": "ADMIN",
             "phone": "+91 98888 77777",
             "address": "Plot 42, Road #36, Jubilee Hills, Hyderabad",
+            "assigned_hub": hub1,
             "is_staff": True,
             "is_superuser": True,
             "wallet_balance": 10000.0,
         },
     )
     admin.set_password("admin123")
+    admin.assigned_hub = hub1
     admin.is_staff = True
     admin.is_superuser = True
     admin.role = "ADMIN"
@@ -48,31 +90,50 @@ def seed():
             "role": "ADMIN",
             "phone": "+91 97654 32100",
             "address": "Madhapur Tech Enclave Depot #3",
+            "assigned_hub": hub3,
             "is_staff": True,
             "wallet_balance": 5000.0,
         },
     )
     hub_mgr.set_password("pass123")
+    hub_mgr.assigned_hub = hub3
     hub_mgr.is_staff = True
     hub_mgr.save()
     print("✅ Hub Manager verified: hub_manager / pass123")
 
-    driver, _ = User.objects.get_or_create(
-        username="driver",
-        defaults={
-            "password": make_password("pass123"),
-            "email": "driver@milkdrop.in",
-            "first_name": "Suresh",
-            "last_name": "Rao",
-            "role": "DRIVER",
-            "phone": "+91 9123456789",
-            "address": "Jubilee Hills Central Depot #1",
-            "wallet_balance": 0.0,
-        },
-    )
-    driver.set_password("pass123")
-    driver.save()
+    # 3. Delivery Boys Assigned to Specific Hubs
+    hub_drivers = [
+        ("driver", "Suresh", "Rao", "+91 9123456789", hub1),
+        ("suresh_driver", "Suresh", "Rao", "+91 9123456788", hub1),
+        ("vikram_driver", "Vikram", "Sharma", "+91 9876501234", hub1),
+        ("raju_driver", "Raju", "Patel", "+91 9654321098", hub2),
+        ("anil_driver", "Anil", "Kumar", "+91 9765432109", hub3),
+    ]
 
+    for uname, fn, ln, ph, hub in hub_drivers:
+        d_user, _ = User.objects.get_or_create(
+            username=uname,
+            defaults={
+                "password": make_password("pass123"),
+                "email": f"{uname}@milkdrop.in",
+                "first_name": fn,
+                "last_name": ln,
+                "role": "DRIVER",
+                "phone": ph,
+                "address": hub.address,
+                "assigned_hub": hub,
+                "monthly_salary": 15000.0,
+                "driver_status": "ACTIVE",
+                "wallet_balance": 0.0,
+            }
+        )
+        d_user.set_password("pass123")
+        d_user.assigned_hub = hub
+        d_user.monthly_salary = 15000.0
+        d_user.save()
+    print(f"✅ {len(hub_drivers)} Delivery Boys assigned to Hubs (#1, #2, #3)")
+
+    # 4. Customer
     cust, _ = User.objects.get_or_create(
         username="customer",
         defaults={
@@ -83,13 +144,15 @@ def seed():
             "role": "CUSTOMER",
             "phone": "+91 98765 43210",
             "address": "Flat 402, Road No. 36, Jubilee Hills, Hyderabad",
+            "assigned_hub": hub1,
             "wallet_balance": 1500.0,
         },
     )
     cust.set_password("pass123")
+    cust.assigned_hub = hub1
     cust.save()
 
-    # 2. Products
+    # 5. Products
     p1, _ = Product.objects.get_or_create(
         name="A2 Vedic Desi Cow Milk",
         defaults={
@@ -101,19 +164,8 @@ def seed():
             "image_url": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80",
         },
     )
-    p2, _ = Product.objects.get_or_create(
-        name="Buffalo Gold Cream Milk",
-        defaults={
-            "description": "Rich 8.5% fat traditional farm fresh buffalo milk",
-            "category": "MILK",
-            "price_per_unit": 85.00,
-            "unit_quantity": "1 Litre Pouch",
-            "is_available": True,
-            "image_url": "https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?w=500&q=80",
-        },
-    )
 
-    # 3. Subscriptions & Deliveries
+    # 6. Subscriptions & Deliveries
     sub, _ = Subscription.objects.get_or_create(
         customer=cust,
         product=p1,
@@ -125,18 +177,20 @@ def seed():
         },
     )
 
+    suresh = User.objects.get(username="driver")
     DeliveryTask.objects.get_or_create(
         subscription=sub,
         delivery_date=date.today(),
         defaults={
-            "driver": driver,
+            "hub": hub1,
+            "driver": suresh,
             "slot_time": "05:30 AM - 07:00 AM",
             "status": "PENDING",
             "proof_image_url": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80",
         },
     )
 
-    print("🎉 [Railway DB Seeder] Database seeded and verified successfully!")
+    print("🎉 [Railway DB Seeder] All Hub-affiliated drivers and tasks seeded successfully!")
 
 
 if __name__ == "__main__":

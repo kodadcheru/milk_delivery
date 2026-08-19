@@ -755,9 +755,20 @@
     <!-- ── Tab 5: Salaried Fleet Partners ── -->
     <div id="tab-fleet" style="display: none;">
       <div class="section-card">
-        <div class="section-header">
-          <div class="section-title"><i class="fa-solid fa-motorcycle" style="color: var(--primary-accent);"></i> Fixed Salaried Delivery Partners (₹15,000 / mo)</div>
-          <span style="font-size: 12px; color: var(--text-muted);">Salaries paid directly by Location Hubs with zero customer delivery fees</span>
+        <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div class="section-title"><i class="fa-solid fa-motorcycle" style="color: var(--primary-accent);"></i> Hub-Centric Salaried Delivery Partners (₹15,000 / mo)</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Delivery boys are affiliated strictly with Location Hubs and paid fixed monthly salaries</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="fleetHubFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="loadFleet(this.value)">
+              <option value="">🏢 All Location Hubs</option>
+              <option value="1">HUB-HYD-01: Jubilee Hills Depot #1</option>
+              <option value="2">HUB-HYD-02: Banjara Hills Depot #2</option>
+              <option value="3">HUB-HYD-03: Madhapur Tech Depot #3</option>
+            </select>
+            <button class="btn btn-primary" onclick="openAddDriverModal()"><i class="fa-solid fa-user-plus"></i> Onboard Delivery Boy</button>
+          </div>
         </div>
         <div class="data-table-wrapper">
           <table>
@@ -766,7 +777,7 @@
                 <th>Driver ID</th>
                 <th>Partner Name</th>
                 <th>Contact</th>
-                <th>Assigned Depot</th>
+                <th>Affiliated Depot Hub</th>
                 <th>Sector Route</th>
                 <th>Shift Progress</th>
                 <th>On-Time Rate</th>
@@ -1019,6 +1030,43 @@
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitBroadcast()">Send Broadcast</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Onboard Delivery Partner ── -->
+  <div class="modal-overlay" id="addDriverModal">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--primary-accent);"></i> Onboard Salaried Delivery Partner</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="drvFirstName" class="form-control" placeholder="e.g. Ramesh">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="drvLastName" class="form-control" placeholder="e.g. Varma">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number (Unique Login)</label>
+        <input type="text" id="drvPhone" class="form-control" placeholder="+91 98765 00123">
+      </div>
+      <div class="form-group">
+        <label>Affiliated Location Fulfillment Hub</label>
+        <select id="drvHubId" class="form-control">
+          <option value="1">HUB-HYD-01: Jubilee Hills Central Depot #1</option>
+          <option value="2">HUB-HYD-02: Banjara Hills Micro-Depot #2</option>
+          <option value="3">HUB-HYD-03: Madhapur Tech Enclave Depot #3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fixed Monthly Salary (₹)</label>
+        <input type="number" id="drvSalary" class="form-control" value="15000">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addDriverModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddDriver()"><i class="fa-solid fa-check"></i> Onboard & Affiliate with Hub</button>
       </div>
     </div>
   </div>
@@ -1407,9 +1455,53 @@
       } catch (e) {}
     }
 
-    async function loadFleet() {
+    function openAddDriverModal() {
+      document.getElementById('addDriverModal').style.display = 'flex';
+    }
+
+    async function submitAddDriver() {
+      const fn = document.getElementById('drvFirstName').value.trim();
+      const ln = document.getElementById('drvLastName').value.trim();
+      const ph = document.getElementById('drvPhone').value.trim();
+      const hubId = document.getElementById('drvHubId').value;
+      const sal = document.getElementById('drvSalary').value;
+
+      if (!ph) {
+        alert('Please enter a valid phone number for the delivery partner');
+        return;
+      }
+
       try {
-        const res = await fetch(`${baseUrl}/admin/fleet/`);
+        const res = await fetch(`${baseUrl}/admin/fleet/create-driver/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: fn || 'Delivery',
+            last_name: ln || 'Partner',
+            phone: ph,
+            hub_id: hubId,
+            monthly_salary: sal
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          closeModal('addDriverModal');
+          loadFleet();
+          loadHubs();
+          alert(`✅ Delivery Partner ${fn} ${ln} successfully onboarded and affiliated with ${data.hub_name}!`);
+        } else {
+          alert('Could not onboard driver. Please check the details.');
+        }
+      } catch (err) {
+        alert('Network error while onboarding driver.');
+      }
+    }
+
+    async function loadFleet(hubId = '') {
+      try {
+        const url = hubId ? `${baseUrl}/admin/fleet/?hub_id=${hubId}` : `${baseUrl}/admin/fleet/`;
+        const res = await fetch(url);
         if (res.ok) {
           const fleet = await res.json();
           const tbody = document.getElementById('fleet-table-body');
@@ -1420,7 +1512,7 @@
                 <td><strong>DRV-${f.id}</strong></td>
                 <td><strong>${f.name}</strong></td>
                 <td>${f.phone}</td>
-                <td><span class="status-tag status-hub">${f.hub}</span></td>
+                <td><span class="status-tag status-hub">🏢 ${f.hub}</span></td>
                 <td>${f.route}</td>
                 <td><strong>${f.completed_stops}/${f.assigned_stops} Stops</strong></td>
                 <td><strong style="color:var(--primary-accent);">${f.on_time_rate}</strong></td>

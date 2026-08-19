@@ -19,8 +19,14 @@ class User(AbstractUser):
     latitude = models.DecimalField(max_digits=11, decimal_places=8, default=Decimal("17.43190000"))
     longitude = models.DecimalField(max_digits=11, decimal_places=8, default=Decimal("78.40730000"))
 
+    # Hub Affiliation & Salaried Employment Fields
+    assigned_hub = models.ForeignKey("deliveries.LocationHub", on_delete=models.SET_NULL, null=True, blank=True, related_name="delivery_partners")
+    monthly_salary = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("15000.00"))
+    driver_status = models.CharField(max_length=20, default="ACTIVE")
+
     def __str__(self):
-        return f"{self.first_name or self.username} ({self.role}) - ₹{self.wallet_balance}"
+        hub_info = f" • {self.assigned_hub.name}" if self.assigned_hub else ""
+        return f"{self.first_name or self.username} ({self.role}{hub_info}) - ₹{self.wallet_balance}"
 
 
 class WalletTransaction(models.Model):

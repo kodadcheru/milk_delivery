@@ -791,12 +791,93 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // ══════════════════════════════════════════════════════════════════════════
   // FLEET DRIVERS SECTION
   // ══════════════════════════════════════════════════════════════════════════
+  void _showAddDriverDialog(BuildContext context) {
+    final fnCtrl = TextEditingController();
+    final lnCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final salaryCtrl = TextEditingController(text: '15000');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF0D7C66)),
+            SizedBox(width: 8),
+            Text('Onboard Delivery Boy to Hub', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: fnCtrl,
+                decoration: const InputDecoration(labelText: 'First Name', hintText: 'e.g. Ramesh'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: lnCtrl,
+                decoration: const InputDecoration(labelText: 'Last Name', hintText: 'e.g. Varma'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'Phone Number', hintText: '+91 98765 00000'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: salaryCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Fixed Monthly Salary (₹)', hintText: '15000'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D7C66),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              if (phoneCtrl.text.trim().isEmpty) return;
+              final success = await ApiService.createHubDriver(
+                firstName: fnCtrl.text.trim().isEmpty ? 'Delivery' : fnCtrl.text.trim(),
+                lastName: lnCtrl.text.trim().isEmpty ? 'Partner' : lnCtrl.text.trim(),
+                phone: phoneCtrl.text.trim(),
+                hubId: 1,
+                monthlySalary: double.tryParse(salaryCtrl.text.trim()) ?? 15000.0,
+              );
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (success) {
+                _loadLiveFleet();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Color(0xFF0D7C66),
+                      content: Text('🎉 Delivery Partner successfully onboarded & assigned to this Hub!'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Onboard Partner'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFleetDriversSection() {
     final defaultDrivers = [
-      {'name': 'Suresh Rao', 'phone': '+91 9123456789', 'route': 'Route #4 • Jubilee Hills Sector A & B', 'stops': '12/12 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo'},
-      {'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'route': 'Route #2 • Film Nagar Highrises', 'stops': '14/14 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo'},
-      {'name': 'Anil Kumar', 'phone': '+91 9765432109', 'route': 'Route #1 • Madhapur Tech Enclave', 'stops': '10/10 Stops', 'status': '🟢 Completed Morning Shift', 'salary': '₹15,000/mo'},
-      {'name': 'Raju Patel', 'phone': '+91 9654321098', 'route': 'Route #3 • Banjara Hills Villas', 'stops': '15/15 Stops', 'status': '🔴 Shift Ended / Depot Return', 'salary': '₹15,000/mo'},
+      {'name': 'Suresh Rao', 'phone': '+91 9123456789', 'route': 'Route #4 • Jubilee Hills Sector A & B', 'stops': '12/12 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo', 'hub': 'Jubilee Hills Depot #1'},
+      {'name': 'Vikram Sharma', 'phone': '+91 9876501234', 'route': 'Route #2 • Film Nagar Highrises', 'stops': '14/14 Stops', 'status': '🟢 Active & Broadcasting GPS', 'salary': '₹15,000/mo', 'hub': 'Jubilee Hills Depot #1'},
+      {'name': 'Anil Kumar', 'phone': '+91 9765432109', 'route': 'Route #1 • Madhapur Tech Enclave', 'stops': '10/10 Stops', 'status': '🟢 Completed Morning Shift', 'salary': '₹15,000/mo', 'hub': 'Madhapur Tech Depot #3'},
+      {'name': 'Raju Patel', 'phone': '+91 9654321098', 'route': 'Route #3 • Banjara Hills Villas', 'stops': '15/15 Stops', 'status': '🔴 Shift Ended / Depot Return', 'salary': '₹15,000/mo', 'hub': 'Banjara Hills Depot #2'},
     ];
 
     final drivers = _liveFleet.isNotEmpty ? _liveFleet : defaultDrivers;
@@ -804,7 +885,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('🛵 Assigned Hub Salaried Fleet:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('🛵 Assigned Hub Salaried Fleet:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            ElevatedButton.icon(
+              onPressed: () => _showAddDriverDialog(context),
+              icon: const Icon(Icons.person_add_rounded, size: 14),
+              label: const Text('Add Delivery Boy', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D7C66),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
 
         ListView.separated(
@@ -814,6 +911,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           separatorBuilder: (c, i) => const SizedBox(height: 10),
           itemBuilder: (ctx, idx) {
             final drv = drivers[idx];
+            final hubName = drv['hub'] ?? 'Jubilee Hills Central Depot #1';
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -833,22 +931,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(drv['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text(drv['route']!, style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+                        Text(drv['name'] ?? 'Driver', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('📍 $hubName', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
+                        Text(drv['route'] ?? 'Sector Route', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                         const SizedBox(height: 2),
-                        Text(drv['status']!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF0D7C66))),
+                        Text(drv['status'] ?? '🟢 Active', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF0D7C66))),
                       ],
                     ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(drv['salary']!, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0D7C66))),
-                      Text(drv['stops']!, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                      Text(drv['salary'] ?? '₹15,000/mo', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0D7C66))),
+                      Text(drv['stops'] ?? '12 Stops', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                       const SizedBox(height: 4),
                       IconButton(
                         icon: const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF0D7C66)),
-                        onPressed: () => _callPhone(context, drv['phone']!),
+                        onPressed: () => _callPhone(context, drv['phone'] ?? '+91 9123456789'),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),

@@ -439,15 +439,40 @@ class ApiService {
     return [];
   }
 
-  // ── 11. Salaried Delivery Fleet ──
-  static Future<List<Map<String, dynamic>>> fetchFleet() async {
+  // ── 11. Salaried Delivery Fleet & Hub Onboarding ──
+  static Future<List<Map<String, dynamic>>> fetchFleet({int? hubId}) async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/fleet/')));
+      final url = hubId != null ? '$baseUrl/admin/fleet/?hub_id=$hubId' : '$baseUrl/admin/fleet/';
+      final res = await _executeWithRetry(() => http.get(Uri.parse(url)));
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
       }
     } catch (_) {}
     return [];
+  }
+
+  static Future<bool> createHubDriver({
+    required String firstName,
+    required String lastName,
+    required String phone,
+    required int hubId,
+    double monthlySalary = 15000.0,
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/admin/fleet/create-driver/'),
+            headers: _headers,
+            body: jsonEncode({
+              'first_name': firstName,
+              'last_name': lastName,
+              'phone': phone,
+              'hub_id': hubId,
+              'monthly_salary': monthlySalary,
+            }),
+          ));
+      return res.statusCode == 201 || res.statusCode == 200;
+    } catch (_) {}
+    return false;
   }
 }

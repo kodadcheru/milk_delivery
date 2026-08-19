@@ -47,6 +47,7 @@ class DeliveryTask(models.Model):
         SKIPPED = "SKIPPED", "Skipped / Paused"
 
     subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.CASCADE, related_name="deliveries")
+    hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_deliveries")
     delivery_date = models.DateField()
     slot_time = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")

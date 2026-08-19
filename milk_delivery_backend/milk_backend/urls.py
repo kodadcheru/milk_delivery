@@ -13,6 +13,7 @@ from apps.accounts.admin_views import (
     AdminServiceAreaManageView,
     AdminSubscriptionToggleView,
     AdminSubscriptionsListView,
+    HubDriverCreateView,
     ServiceAreaCheckView,
     ServiceAreaListView,
 )
@@ -57,6 +58,7 @@ urlpatterns = [
     path("api/admin/subscriptions/", AdminSubscriptionsListView.as_view(), name="admin_subscriptions"),
     path("api/admin/subscriptions/<int:pk>/toggle/", AdminSubscriptionToggleView.as_view(), name="admin_subscription_toggle"),
     path("api/admin/fleet/", AdminFleetListView.as_view(), name="admin_fleet"),
+    path("api/admin/fleet/create-driver/", HubDriverCreateView.as_view(), name="admin_create_driver"),
     # Service Area endpoints
     path("api/service-areas/", ServiceAreaListView.as_view(), name="service_areas_list"),
     path("api/service-areas/check/", ServiceAreaCheckView.as_view(), name="service_areas_check"),

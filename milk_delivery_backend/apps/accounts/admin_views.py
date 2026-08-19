@@ -122,10 +122,12 @@ class AdminHubsView(APIView):
             # Distribute realistic load across hubs based on service areas
             assigned_subs = int(total_sub_count * (0.4 if idx == 1 else (0.35 if idx == 2 else 0.25)))
             assigned_vol = round(total_vol * (0.4 if idx == 1 else (0.35 if idx == 2 else 0.25)), 1)
-            active_boys = max(2, int(assigned_vol / 60))
+            real_boys = h.delivery_partners.filter(role=User.Roles.DRIVER).count()
+            active_boys = real_boys if real_boys > 0 else max(2, int(assigned_vol / 60))
 
             hubs_data.append({
                 "id": h.hub_code,
+                "db_id": h.id,
                 "name": h.name,
                 "address": h.address,
                 "manager": f"{h.manager_name} ({h.manager_phone})",
@@ -197,28 +199,11 @@ class AdminFleetListView(APIView):
         from apps.accounts.models import User
         from apps.deliveries.models import DeliveryTask
 
-        drivers = User.objects.filter(role=User.Roles.DRIVER)
+        hub_id = request.query_params.get("hub_id")
+        drivers = User.objects.filter(role=User.Roles.DRIVER).select_related("assigned_hub")
 
-        # If no driver records, ensure drivers exist in database
-        if not drivers.exists():
-            default_drivers = [
-                ("suresh_driver", "Suresh", "Rao", "+91 9123456789"),
-                ("vikram_driver", "Vikram", "Sharma", "+91 9876501234"),
-                ("anil_driver", "Anil", "Kumar", "+91 9765432109"),
-                ("raju_driver", "Raju", "Patel", "+91 9654321098"),
-            ]
-            for u, fn, ln, ph in default_drivers:
-                User.objects.get_or_create(
-                    username=u,
-                    defaults={
-                        "first_name": fn,
-                        "last_name": ln,
-                        "phone": ph,
-                        "role": User.Roles.DRIVER,
-                        "address": "Jubilee Hills Central Depot #1",
-                    },
-                )
-            drivers = User.objects.filter(role=User.Roles.DRIVER)
+        if hub_id:
+            drivers = drivers.filter(assigned_hub_id=hub_id)
 
         fleet_data = []
         for d in drivers:
@@ -228,22 +213,75 @@ class AdminFleetListView(APIView):
             if completed_stops == 0 and total_stops > 0:
                 completed_stops = total_stops
 
+            hub_name = d.assigned_hub.name if d.assigned_hub else "Central Hub #1"
+            hub_code = d.assigned_hub.hub_code if d.assigned_hub else "HUB-HYD-01"
+
             fleet_data.append({
                 "id": d.id,
                 "name": f"{d.first_name} {d.last_name}".strip() or d.username,
                 "phone": d.phone or "+91 9123456789",
-                "hub": "Jubilee Hills Depot #1",
+                "hub": hub_name,
+                "hub_id": d.assigned_hub_id or 1,
+                "hub_code": hub_code,
                 "route": f"Sector Route #{d.id} • Dynamic Polar Cluster",
                 "assigned_stops": total_stops,
                 "completed_stops": completed_stops,
                 "on_time_rate": "100%",
-                "status": "🟢 Shift Active & GPS Live",
+                "status": f"🟢 {d.driver_status} & GPS Live",
                 "employment": "Fixed Salaried Staff",
-                "salary": "₹15,000 / month",
+                "salary": f"₹{int(d.monthly_salary):,} / month",
                 "bottles_collected": total_stops + 2,
             })
 
         return Response(fleet_data)
+
+
+class HubDriverCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth.hashers import make_password
+        from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub
+
+        first_name = request.data.get("first_name", "Delivery")
+        last_name = request.data.get("last_name", "Boy")
+        phone = request.data.get("phone", "").strip()
+        hub_id = request.data.get("hub_id")
+        salary = float(request.data.get("monthly_salary", 15000.0))
+
+        if not phone:
+            return Response({"detail": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        hub = LocationHub.objects.filter(id=hub_id).first() if hub_id else LocationHub.objects.first()
+        uname = f"driver_{phone.replace(' ', '')[-4:]}"
+
+        driver, created = User.objects.get_or_create(
+            phone=phone,
+            defaults={
+                "username": uname,
+                "first_name": first_name,
+                "last_name": last_name,
+                "password": make_password("pass123"),
+                "role": User.Roles.DRIVER,
+                "assigned_hub": hub,
+                "monthly_salary": salary,
+                "address": hub.address if hub else "Depot",
+                "driver_status": "ACTIVE",
+            }
+        )
+
+        if not created:
+            driver.assigned_hub = hub
+            driver.monthly_salary = salary
+            driver.save()
+
+        return Response({
+            "message": f"Delivery partner {first_name} {last_name} successfully affiliated with {hub.name if hub else 'Hub'}.",
+            "driver_id": driver.id,
+            "hub_name": hub.name if hub else "Depot",
+            "salary": f"₹{int(salary):,} / month",
+        }, status=status.HTTP_201_CREATED)
 
 
 class ServiceAreaListView(APIView):
