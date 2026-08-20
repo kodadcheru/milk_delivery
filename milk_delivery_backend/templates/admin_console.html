@@ -4248,7 +4248,7 @@
         const prod = sub.product_detail || {};
         const cust = sub.customer_detail || { username: t.customer_name || 'Customer', phone: t.customer_phone || '', address: t.delivery_address || '' };
         const statusClass = t.status === 'DELIVERED' ? 'status-delivered' : (t.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
-        const proofImg = t.proof_image_url || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80';
+        const proofImg = t.proof_image_url || '';
 
         tbody.innerHTML += `
           <tr>
@@ -4260,14 +4260,19 @@
             <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : (t.driver_name || 'Unassigned')}</td>
             <td><span class="status-tag ${statusClass}">${t.status}</span></td>
             <td>
-              <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
-                <i class="fa-solid fa-camera"></i> Proof
-              </button>
+              ${proofImg ? `
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
+                  <i class="fa-solid fa-camera"></i> Proof
+                </button>
+              ` : `<span style="font-size: 11px; color: var(--text-muted);">No Proof</span>`}
             </td>
             <td>
               ${t.status === 'PENDING' ? `
                 <button class="btn btn-primary" style="padding: 4px 10px; font-size:11px;" onclick="completeDelivery(${t.id})">
                   <i class="fa-solid fa-check"></i> Deliver
+                </button>
+                <button class="btn" style="padding: 4px 10px; font-size:11px; background: var(--accent-blue); color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 4px;" onclick="openReassignModal(${t.id})">
+                  <i class="fa-solid fa-arrows-rotate"></i> Reassign
                 </button>
               ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Done</span>`}
             </td>
@@ -5640,7 +5645,7 @@
       await fetch(`${baseUrl}/deliveries/${id}/complete/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
-        body: JSON.stringify({ proof_image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80' })
+        body: JSON.stringify({ proof_image_url: '' })
       });
       loadDeliveries();
       loadDashboard();

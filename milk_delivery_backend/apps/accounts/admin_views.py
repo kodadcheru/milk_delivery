@@ -1090,10 +1090,13 @@ class AdminSubscriptionCreateView(APIView):
         if not product:
             return Response({"detail": "Product not found"}, status=status.HTTP_400_BAD_REQUEST)
 
+        from apps.deliveries.hub_resolver import resolve_hub_for_location
+        hub = customer.assigned_hub or resolve_hub_for_location(customer.latitude, customer.longitude)
+
         sub = Subscription.objects.create(
             customer=customer,
             product=product,
-            hub=customer.assigned_hub,
+            hub=hub,
             quantity=quantity,
             schedule_type=schedule_type,
             start_date=start_date_str,
@@ -1101,10 +1104,10 @@ class AdminSubscriptionCreateView(APIView):
         )
 
         # Automatically schedule morning delivery task
-        driver = User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=customer.assigned_hub).first() or User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
+        driver = User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=hub).first() or User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
         DeliveryTask.objects.create(
             subscription=sub,
-            hub=customer.assigned_hub,
+            hub=hub,
             driver=driver,
             delivery_date=date.today(),
             slot_time=customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
