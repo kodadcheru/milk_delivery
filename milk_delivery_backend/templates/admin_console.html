@@ -2701,7 +2701,7 @@
     async function loadDashboard() {
       let productDemand = {};
       try {
-        const res = await fetch(`${baseUrl}/deliveries/summary/`);
+        const res = await fetch(`${baseUrl}/deliveries/summary/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           const data = await res.json();
           const vol = parseFloat(data.daily_volume_liters || 0);
@@ -2754,7 +2754,7 @@
     // ── Location Hubs Operations ──
     async function loadHubs() {
       try {
-        const res = await fetch(`${baseUrl}/admin/hubs/`);
+        const res = await fetch(`${baseUrl}/admin/hubs/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           rawHubs = await res.json();
           renderHubsTable(rawHubs);
@@ -3573,7 +3573,7 @@
 
     async function rebalanceHub(hubCode) {
       try {
-        const res = await fetch(`${baseUrl}/admin/hubs/${hubCode}/rebalance/`, { method: 'POST' });
+        const res = await fetch(`${baseUrl}/admin/hubs/${hubCode}/rebalance/`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           const data = await res.json();
           alert(`⚖️ ${data.message}`);
@@ -3894,7 +3894,7 @@
       if (!confirm(`Are you sure you want to remove delivery partner '${name}'?`)) return;
 
       try {
-        const res = await fetch(`${baseUrl}/admin/fleet/${drvId}/`, { method: 'DELETE' });
+        const res = await fetch(`${baseUrl}/admin/fleet/${drvId}/`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           loadFleet();
           loadHubs();
@@ -4227,7 +4227,7 @@
 
     async function loadDeliveries() {
       try {
-        const res = await fetch(`${baseUrl}/deliveries/`);
+        const res = await fetch(`${baseUrl}/deliveries/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           const dData = await res.json();
           rawDeliveries = Array.isArray(dData) ? dData : (dData.results || []);
@@ -4367,7 +4367,7 @@
 
     async function loadSubscriptions() {
       try {
-        const res = await fetch(`${baseUrl}/admin/subscriptions/`);
+        const res = await fetch(`${baseUrl}/admin/subscriptions/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           rawSubscriptions = await res.json();
           renderSubscriptionsTable(rawSubscriptions);
@@ -4869,7 +4869,7 @@
 
     async function toggleProductStock(id) {
       try {
-        const res = await fetch(`${baseUrl}/admin/products/${id}/toggle-stock/`, { method: 'POST' });
+        const res = await fetch(`${baseUrl}/admin/products/${id}/toggle-stock/`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           loadProducts();
           loadDashboard();
@@ -4879,7 +4879,7 @@
 
     async function loadCustomers() {
       try {
-        const res = await fetch(`${baseUrl}/admin/customers/`);
+        const res = await fetch(`${baseUrl}/admin/customers/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           rawCustomers = await res.json();
           renderCustomersTable(rawCustomers);
@@ -5590,7 +5590,7 @@
       document.getElementById('walletLedgerModal').style.display = 'flex';
 
       try {
-        const res = await fetch(`${baseUrl}/admin/customers/${userId}/transactions/`);
+        const res = await fetch(`${baseUrl}/admin/customers/${userId}/transactions/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           const data = await res.json();
           document.getElementById('ledgerCustomerHeader').innerHTML = `
