@@ -135,14 +135,15 @@ class MilkBackendAPITests(TestCase):
         )
         task = DeliveryTask.objects.create(
             subscription=sub,
-            delivery_date="2026-08-18",
+            delivery_date="2026-08-25",
         )
         res = self.client.get(reverse("delivery_list"))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(res.data), 1)
-        first_task = res.data[0]
-        self.assertAlmostEqual(first_task["customer_latitude"], 17.4325, places=3)
-        self.assertAlmostEqual(first_task["customer_longitude"], 78.4089, places=3)
+        tasks_data = res.data.get("results", res.data) if isinstance(res.data, dict) else res.data
+        self.assertGreaterEqual(len(tasks_data), 1)
+        target_task = next((t for t in tasks_data if t["id"] == task.id), tasks_data[0])
+        self.assertAlmostEqual(target_task["customer_latitude"], 17.4325, places=3)
+        self.assertAlmostEqual(target_task["customer_longitude"], 78.4089, places=3)
 
     def test_admin_fixed_number_role(self):
         # Fixed Admin number 8919548905

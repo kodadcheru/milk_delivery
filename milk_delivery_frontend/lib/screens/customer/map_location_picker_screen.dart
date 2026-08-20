@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import '../../providers/app_state.dart';
 import '../../services/location_service.dart';
 import '../../theme/app_theme.dart';
@@ -23,7 +23,7 @@ class MapLocationPickerScreen extends StatefulWidget {
 }
 
 class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with SingleTickerProviderStateMixin {
-  late final MapController _mapController;
+  GoogleMapController? _mapController;
   late LatLng _currentCenter;
   bool _isDragging = false;
   bool _isGeocoding = false;
@@ -49,7 +49,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    // GoogleMapController set via onMapCreated
     final lat = widget.initialLat ?? widget.state.currentLat;
     final lon = widget.initialLon ?? widget.state.currentLon;
     _currentCenter = LatLng(lat, lon);
@@ -90,22 +90,6 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     }
   }
 
-  void _onPositionChanged(MapCamera camera, bool hasGesture) {
-    if (hasGesture) {
-      if (!_isDragging) {
-        setState(() => _isDragging = true);
-        AppTheme.hapticLight();
-      }
-      _currentCenter = camera.center;
-
-      _debounceTimer?.cancel();
-      _debounceTimer = Timer(const Duration(milliseconds: 250), () {
-        if (!mounted) return;
-        setState(() => _isDragging = false);
-        _reverseGeocodeLocation(_currentCenter.latitude, _currentCenter.longitude);
-      });
-    }
-  }
 
   Future<void> _useCurrentDeviceLocation() async {
     setState(() => _isLocating = true);
@@ -115,7 +99,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
         final lat = widget.state.currentLat;
         final lon = widget.state.currentLon;
         _currentCenter = LatLng(lat, lon);
-        _mapController.move(_currentCenter, 16.5);
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_currentCenter, 16.5));
         await _reverseGeocodeLocation(lat, lon);
 
         if (mounted) {
@@ -151,7 +135,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     final lat = place['lat'] as double;
     final lon = place['lon'] as double;
     _currentCenter = LatLng(lat, lon);
-    _mapController.move(_currentCenter, 16.5);
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_currentCenter, 16.5));
     _searchController.clear();
     setState(() => _searchResults = []);
     FocusScope.of(context).unfocus();
@@ -216,24 +200,30 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // ── 1. Interactive Flutter Map with High-Resolution Tiles ──
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentCenter,
-              initialZoom: 16.0,
-              minZoom: 4.0,
-              maxZoom: 18.5,
-              onPositionChanged: _onPositionChanged,
+          // ── 1. Google Maps ──
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: _currentCenter,
+              zoom: 16.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: LocationService.googleMapsTileUrl,
-                subdomains: LocationService.googleMapsSubdomains,
-                userAgentPackageName: 'com.milkdrop.express.app',
-                maxZoom: 20,
-              ),
-            ],
+            onMapCreated: (controller) => _mapController = controller,
+            onCameraMove: (CameraPosition pos) {
+              if (!_isDragging) {
+                setState(() => _isDragging = true);
+                AppTheme.hapticLight();
+              }
+              _currentCenter = pos.target;
+            },
+            onCameraIdle: () {
+              if (_isDragging) {
+                setState(() => _isDragging = false);
+                _reverseGeocodeLocation(_currentCenter.latitude, _currentCenter.longitude);
+              }
+            },
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
           ),
 
           // ── 2. Fixed Animated Center Crosshairs Pin (Zepto/Swiggy Style) ──

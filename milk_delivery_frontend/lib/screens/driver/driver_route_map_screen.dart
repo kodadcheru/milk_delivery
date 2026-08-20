@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../providers/app_state.dart';
@@ -20,7 +20,7 @@ class DriverRouteMapScreen extends StatefulWidget {
 }
 
 class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
-  late final MapController _mapController;
+  GoogleMapController? _mapController;
   int _selectedTaskIndex = 0;
 
   // Depot location — read from active hub, fallback to defaults
@@ -40,7 +40,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    // GoogleMapController set via onMapCreated
     _driverLocation = LatLng(_depotLocation.latitude + 0.004, _depotLocation.longitude + 0.003);
   }
 
@@ -155,144 +155,77 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
           IconButton(
             icon: const Icon(Icons.my_location, color: Color(0xFF10B981)),
             onPressed: () {
-              _mapController.move(_driverLocation, 14.5);
+              _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 14.5));
             },
           ),
         ],
       ),
       body: Stack(
         children: [
-          // ── Interactive Map View ──
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _depotLocation,
-              initialZoom: 13.8,
-              minZoom: 11.0,
-              maxZoom: 18.0,
+          // ── Google Maps View ──
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: _depotLocation,
+              zoom: 13.8,
             ),
-            children: [
-              // Google Maps Styled / CartoDB Tile Layer
-              TileLayer(
-                urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                subdomains: const ['a', 'b', 'c', 'd'],
-                userAgentPackageName: 'com.milkdrop.express',
+            onMapCreated: (controller) => _mapController = controller,
+            myLocationEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            polylines: {
+              Polyline(
+                polylineId: const PolylineId('driver_route'),
+                points: routePoints,
+                width: 4,
+                color: const Color(0xFF0D7C66),
               ),
-
-              // Route Polyline connecting Depot to all stops
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: routePoints,
-                    strokeWidth: 4.5,
-                    color: const Color(0xFF0D7C66),
-                    pattern: const StrokePattern.dotted(),
-                  ),
-                ],
+            },
+            markers: {
+              // 1. Hub Depot Marker
+              Marker(
+                markerId: const MarkerId('depot'),
+                position: _depotLocation,
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+                infoWindow: const InfoWindow(title: 'Fulfillment Depot Hub'),
               ),
+              // 2. Driver Live Location Marker
+              Marker(
+                markerId: const MarkerId('driver'),
+                position: _driverLocation,
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+                infoWindow: const InfoWindow(title: 'Your Location (Live)'),
+              ),
+              // 3. Customer Stop Markers
+              ...tasks.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final task = entry.value;
+                final isDelivered = task.isDelivered;
+                final isSelected = idx == _selectedTaskIndex;
 
-              // Markers for Depot, Driver, and Customer Stops
-              MarkerLayer(
-                markers: [
-                  // 1. Hub Depot Marker
-                  Marker(
-                    point: _depotLocation,
-                    width: 50,
-                    height: 50,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1B4B),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF6366F1), width: 2.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.5),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text('🏬', style: TextStyle(fontSize: 20)),
-                      ),
-                    ),
+                return Marker(
+                  markerId: MarkerId('task_${task.id}'),
+                  position: LatLng(task.customerLatitude, task.customerLongitude),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                    isDelivered
+                        ? BitmapDescriptor.hueGreen
+                        : (isSelected ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueRed),
                   ),
-
-                  // 2. Delivery Partner Live GPS Marker
-                  Marker(
-                    point: _driverLocation,
-                    width: 52,
-                    height: 52,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D7C66),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.6),
-                            blurRadius: 12,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.two_wheeler, color: Colors.white, size: 26),
-                      ),
-                    ),
+                  infoWindow: InfoWindow(
+                    title: 'Stop #${idx + 1}: ${task.customerName}',
+                    snippet: '${task.subscriptionDetail?.productDetail?.name ?? "Fresh Milk"} - ${task.status}',
                   ),
-
-                  // 3. Customer Stops
-                  ...tasks.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final task = entry.value;
-                    final isDelivered = task.isDelivered;
-                    final isSelected = idx == _selectedTaskIndex;
-
-                    return Marker(
-                      point: LatLng(task.customerLatitude, task.customerLongitude),
-                      width: 44,
-                      height: 44,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedTaskIndex = idx);
-                          _mapController.move(LatLng(task.customerLatitude, task.customerLongitude), 15.0);
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: isDelivered
-                                ? const Color(0xFF10B981)
-                                : (isSelected ? const Color(0xFF0284C7) : const Color(0xFFEF4444)),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: isSelected ? 3.0 : 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: isDelivered
-                                ? const Icon(Icons.check, color: Colors.white, size: 20)
-                                : Text(
-                                    '${idx + 1}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                          ),
-                        ),
+                  onTap: () {
+                    setState(() => _selectedTaskIndex = idx);
+                    _mapController?.animateCamera(
+                      CameraUpdate.newLatLngZoom(
+                        LatLng(task.customerLatitude, task.customerLongitude),
+                        15.0,
                       ),
                     );
-                  }),
-                ],
-              ),
-            ],
+                  },
+                );
+              }),
+            },
           ),
 
           // ── Top Route Summary Pill ──

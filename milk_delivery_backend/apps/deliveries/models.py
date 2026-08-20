@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+from datetime import date
+import random
 from apps.subscriptions import models as sub_models
 
 
@@ -89,13 +91,13 @@ class LiveOrder(models.Model):
     order_type = models.CharField(max_length=30, choices=OrderTypes.choices, default=OrderTypes.ONE_TIME)
     status = models.CharField(max_length=30, choices=Statuses.choices, default=Statuses.PREPARING)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    delivery_date = models.CharField(max_length=50, default="Tomorrow")
+    delivery_date = models.DateField(default=date.today)
     delivery_slot = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
-    delivery_address = models.TextField(default="Doorstep Delivery Location")
-    delivery_latitude = models.DecimalField(max_digits=11, decimal_places=8, default=17.4319)
-    delivery_longitude = models.DecimalField(max_digits=11, decimal_places=8, default=78.4073)
-    delivery_otp = models.CharField(max_length=10, default="4892")
-    payment_status = models.CharField(max_length=50, default="PAID (Prepaid Wallet)")
+    delivery_address = models.TextField(default="")
+    delivery_latitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
+    delivery_longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
+    delivery_otp = models.CharField(max_length=10, default="")
+    payment_status = models.CharField(max_length=50, default="PENDING")
     proof_image_url = models.URLField(blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

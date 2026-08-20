@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 
@@ -19,7 +19,7 @@ class ProviderFleetMapScreen extends StatefulWidget {
 }
 
 class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
-  late final MapController _mapController;
+  GoogleMapController? _mapController;
   Map<String, dynamic>? _selectedDriver;
 
   List<Map<String, dynamic>> get _hubs {
@@ -50,7 +50,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    // GoogleMapController set via onMapCreated
   }
 
   void _callDriver(String phone) async {
@@ -111,96 +111,59 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
       ),
       body: Stack(
         children: [
-          // ── Map View ──
-          FlutterMap(
-            mapController: _mapController,
-            options: const MapOptions(
-              initialCenter: LatLng(17.4320, 78.4070),
-              initialZoom: 12.8,
-              minZoom: 10.0,
-              maxZoom: 18.0,
+          // ── Google Maps View ──
+          GoogleMap(
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(17.4320, 78.4070),
+              zoom: 12.8,
             ),
-            children: [
-              // Google Maps CartoDB Tile Layer
-              TileLayer(
-                urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                subdomains: const ['a', 'b', 'c', 'd'],
-                userAgentPackageName: 'com.milkdrop.express',
-              ),
+            onMapCreated: (controller) => _mapController = controller,
+            myLocationEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            circles: _hubs.map((h) {
+              return Circle(
+                circleId: CircleId('hub_circle_${h['code']}'),
+                center: LatLng(h['lat'], h['lng']),
+                radius: 4000,
+                fillColor: (h['color'] as Color).withValues(alpha: 0.12),
+                strokeColor: (h['color'] as Color).withValues(alpha: 0.6),
+                strokeWidth: 2,
+              );
+            }).toSet(),
+            markers: {
+              // 1. Hub Markers
+              ..._hubs.map((h) {
+                return Marker(
+                  markerId: MarkerId('hub_${h['code']}'),
+                  position: LatLng(h['lat'], h['lng']),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+                  infoWindow: InfoWindow(title: '${h['name']} (${h['code']})'),
+                );
+              }),
 
-              // Hub Geofence Circles (5km radius coverage)
-              CircleLayer(
-                circles: _hubs.map((h) {
-                  return CircleMarker(
-                    point: LatLng(h['lat'], h['lng']),
-                    color: (h['color'] as Color).withValues(alpha: 0.12),
-                    borderColor: (h['color'] as Color).withValues(alpha: 0.6),
-                    borderStrokeWidth: 2.0,
-                    useRadiusInMeter: true,
-                    radius: 4000,
-                  );
-                }).toList(),
-              ),
+              // 2. Salaried Delivery Partners
+              ...driversWithCoords.map((d) {
+                final isSelected = _selectedDriver != null && _selectedDriver!['id'] == d['id'];
+                final LatLng pt = d['coord'] as LatLng;
 
-              // Markers for Hubs and Drivers
-              MarkerLayer(
-                markers: [
-                  // 1. Hub Markers
-                  ..._hubs.map((h) {
-                    return Marker(
-                      point: LatLng(h['lat'], h['lng']),
-                      width: 48,
-                      height: 48,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E1B4B),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: h['color'] as Color, width: 2.5),
-                          boxShadow: [
-                            BoxShadow(color: (h['color'] as Color).withValues(alpha: 0.5), blurRadius: 10),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text('🏬', style: TextStyle(fontSize: 20)),
-                        ),
-                      ),
-                    );
-                  }),
-
-                  // 2. Salaried Delivery Boys Moving Live
-                  ...driversWithCoords.map((d) {
-                    final isSelected = _selectedDriver != null && _selectedDriver!['id'] == d['id'];
-                    final LatLng pt = d['coord'] as LatLng;
-
-                    return Marker(
-                      point: pt,
-                      width: 48,
-                      height: 48,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedDriver = d);
-                          _mapController.move(pt, 14.5);
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0D7C66),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: isSelected ? const Color(0xFF38BDF8) : Colors.white, width: isSelected ? 3.0 : 1.5),
-                            boxShadow: [
-                              BoxShadow(color: const Color(0xFF10B981).withValues(alpha: 0.6), blurRadius: 10),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.two_wheeler, color: Colors.white, size: 22),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ],
+                return Marker(
+                  markerId: MarkerId('driver_${d['id']}'),
+                  position: pt,
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                    isSelected ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueGreen,
+                  ),
+                  infoWindow: InfoWindow(
+                    title: d['name'] ?? 'Driver',
+                    snippet: 'Salary: ${d['salary']} | Stops: ${d['completed_stops']}/${d['assigned_stops']}',
+                  ),
+                  onTap: () {
+                    setState(() => _selectedDriver = d);
+                    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(pt, 14.5));
+                  },
+                );
+              }),
+            },
           ),
 
           // ── Bottom Driver Profile Card ──

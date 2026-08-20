@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
-import '../../services/location_service.dart';
 import 'help_support_screen.dart';
 
 class LiveDriverTrackingScreen extends StatefulWidget {
@@ -33,7 +32,7 @@ class LiveDriverTrackingScreen extends StatefulWidget {
 }
 
 class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> with TickerProviderStateMixin {
-  late final MapController _mapController;
+  GoogleMapController? _mapController;
   late final AnimationController _radarAnimController;
 
   // Customer doorstep coordinates (Jubilee Hills, Hyderabad default or user profile GPS)
@@ -54,7 +53,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    // GoogleMapController set via onMapCreated
 
     _radarAnimController = AnimationController(
       vsync: this,
@@ -106,7 +105,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         // Smoothly adjust map view between driver & customer
         final centerLat = (_driverLocation.latitude + _customerLocation.latitude) / 2;
         final centerLon = (_driverLocation.longitude + _customerLocation.longitude) / 2;
-        _mapController.move(LatLng(centerLat, centerLon), 15.0);
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(LatLng(centerLat, centerLon), 15.0));
       } else {
         // Driver has reached doorstep
         setState(() {
@@ -121,7 +120,6 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   void dispose() {
     _driverMovementTimer?.cancel();
     _radarAnimController.dispose();
-    _mapController.dispose();
     super.dispose();
   }
 
@@ -168,109 +166,43 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       ),
       body: Stack(
         children: [
-          // ── 1. Interactive Real-Time Map ──
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: LatLng(
+          // ── 1. Google Maps Real-Time Map ──
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(
                 (_driverLocation.latitude + _customerLocation.latitude) / 2,
                 (_driverLocation.longitude + _customerLocation.longitude) / 2,
               ),
-              initialZoom: 14.8,
-              minZoom: 10,
-              maxZoom: 18,
+              zoom: 14.8,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: LocationService.googleMapsTileUrl,
-                subdomains: LocationService.googleMapsSubdomains,
-                userAgentPackageName: 'com.milkdrop.express.app',
-                maxZoom: 20,
+            onMapCreated: (controller) => _mapController = controller,
+            myLocationEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            markers: {
+              // Customer Doorstep Pin
+              Marker(
+                markerId: const MarkerId('customer'),
+                position: _customerLocation,
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                infoWindow: const InfoWindow(title: 'Your Doorstep'),
               ),
-
-              // Polyline Route Path (Glowing Green)
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: _routePoints,
-                    strokeWidth: 5.0,
-                    color: const Color(0xFF0D7C66),
-                    borderStrokeWidth: 2.0,
-                    borderColor: const Color(0xFF10B981),
-                  ),
-                ],
+              // Moving Driver Marker
+              Marker(
+                markerId: const MarkerId('driver'),
+                position: _driverLocation,
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+                infoWindow: InfoWindow(title: widget.driverName, snippet: '🛵 On the way'),
               ),
-
-              // Marker Layer
-              MarkerLayer(
-                markers: [
-                  // Customer Doorstep Pin (Home)
-                  Marker(
-                    point: _customerLocation,
-                    width: 70,
-                    height: 70,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        AnimatedBuilder(
-                          animation: _radarAnimController,
-                          builder: (ctx, child) {
-                            return Container(
-                              width: 60 * _radarAnimController.value,
-                              height: 60 * _radarAnimController.value,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFF0D7C66).withValues(alpha: 1.0 - _radarAnimController.value),
-                              ),
-                            );
-                          },
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF0F172A),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(color: Colors.black38, blurRadius: 8, offset: Offset(0, 3)),
-                            ],
-                          ),
-                          child: const Icon(Icons.home_rounded, color: Color(0xFF10B981), size: 22),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Moving Driver Scooter Marker
-                  Marker(
-                    point: _driverLocation,
-                    width: 64,
-                    height: 64,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 500),
-                      builder: (ctx, val, child) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0D7C66),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF0D7C66).withValues(alpha: 0.5),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          alignment: Alignment.center,
-                          child: const Text('🛵', style: TextStyle(fontSize: 26)),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+            },
+            polylines: {
+              Polyline(
+                polylineId: const PolylineId('route'),
+                points: _routePoints,
+                width: 5,
+                color: const Color(0xFF0D7C66),
               ),
-            ],
+            },
           ),
 
           // ── 2. Top Floating ETA Card ──
