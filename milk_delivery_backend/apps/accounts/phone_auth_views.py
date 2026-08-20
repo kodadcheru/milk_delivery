@@ -99,16 +99,18 @@ class SendOTPView(APIView):
             or User.objects.filter(phone__endswith=last_10).exists()
         )
 
-        return Response(
-            {
-                "success": True,
-                "message": "OTP sent successfully to phone number.",
-                "phone": formatted_phone,
-                "is_existing_user": is_existing,
-                "test_otp": "1234",
-            },
-            status=status.HTTP_200_OK,
-        )
+        response_data = {
+            "success": True,
+            "message": "OTP sent successfully to phone number.",
+            "phone": formatted_phone,
+            "is_existing_user": is_existing,
+        }
+
+        from django.conf import settings
+        if settings.DEBUG:
+            response_data["test_otp"] = "1234"
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class VerifyOTPView(APIView):
@@ -170,8 +172,9 @@ class RegisterMobileUserView(APIView):
         last_name = request.data.get("last_name", "").strip()
         email = request.data.get("email", "").strip()
         gender = request.data.get("gender", "Male").strip()
-        address = request.data.get("address", "Jubilee Hills, Hyderabad").strip()
+        address = request.data.get("address", "").strip()
         instructions = request.data.get("delivery_instructions", "Ring bell twice and leave near doorstep box").strip()
+        city = request.data.get("city", "").strip()
 
         if not phone or not first_name:
             return Response({"detail": "Phone and Name are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -195,8 +198,8 @@ class RegisterMobileUserView(APIView):
             first_name=first_name,
             last_name=last_name,
             email=email,
-            address=address or "Jubilee Hills, Hyderabad",
-            city="Hyderabad",
+            address=address,
+            city=city,
             role=User.Roles.CUSTOMER,
             wallet_balance=Decimal("500.00"),
             delivery_instructions=instructions,

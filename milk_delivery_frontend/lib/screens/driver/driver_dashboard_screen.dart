@@ -198,7 +198,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         ? '₹${driverUser.monthlySalary.toStringAsFixed(0)}'
         : '₹15,000';
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      color: const Color(0xFF0D7C66),
+      onRefresh: () => widget.state.reloadAllData(),
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -683,6 +687,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           const SizedBox(height: 24),
         ],
       ),
+    ),
     );
   }
 

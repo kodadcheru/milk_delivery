@@ -60,7 +60,11 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final expressCount = liveOrders.length;
     final subsCount = subscriptions.length;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      color: const Color(0xFF0D7C66),
+      onRefresh: () => widget.state.reloadAllData(),
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,6 +205,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           ],
         ],
       ),
+    ),
     );
   }
 

@@ -150,7 +150,12 @@ class AppState extends ChangeNotifier {
     if (qty <= 0) {
       removeFromCart(productId);
     } else {
-      decreaseCartQty(productId);
+      for (var entry in cartItems.entries) {
+        if (entry.value.key.id == productId) {
+          cartItems[entry.key] = MapEntry(entry.value.key, qty);
+          break;
+        }
+      }
     }
     notifyListeners();
   }
@@ -372,6 +377,8 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> reloadAllData() async {
+    isLoading = true;
+    notifyListeners();
     try {
       final results = await Future.wait([
         ApiService.fetchUserProfile(),
@@ -460,6 +467,7 @@ class AppState extends ChangeNotifier {
       debugPrint('🚨 [MilkDrop Concurrent Reload Error]: $e');
     }
 
+    isLoading = false;
     notifyListeners();
   }
 
@@ -1020,7 +1028,7 @@ class AppState extends ChangeNotifier {
         total += (d.subscriptionDetail?.quantity ?? 1);
       }
     }
-    return total > 0 ? total : 250.0;
+    return total;
   }
 
   double get totalDailyRevenue {
@@ -1032,6 +1040,6 @@ class AppState extends ChangeNotifier {
         total += price * qty;
       }
     }
-    return total > 0 ? total : 4500.0;
+    return total;
   }
 }

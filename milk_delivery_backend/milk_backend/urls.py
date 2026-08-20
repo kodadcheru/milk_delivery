@@ -69,6 +69,7 @@ from apps.deliveries.views import (
     DeliveryTaskCompleteView,
     DeliveryTaskListView,
     DeliveryTaskSkipView,
+    GenerateTodayTasksView,
 )
 from apps.deliveries.order_views import (
     ExpressOrderListCreateView,
@@ -167,6 +168,7 @@ urlpatterns = [
     path("api/deliveries/<int:pk>/complete/", DeliveryTaskCompleteView.as_view(), name="delivery_complete"),
     path("api/deliveries/<int:pk>/skip/", DeliveryTaskSkipView.as_view(), name="delivery_skip"),
     path("api/deliveries/summary/", DeliverySummaryView.as_view(), name="delivery_summary"),
+    path("api/admin/generate-tasks/", GenerateTodayTasksView.as_view(), name="generate_tasks"),
     # Bottle Return Tracking endpoints
     path("api/bottles/", BottleReturnListCreateView.as_view(), name="bottle_list_create"),
     path("api/bottles/<int:pk>/", BottleReturnUpdateView.as_view(), name="bottle_update"),

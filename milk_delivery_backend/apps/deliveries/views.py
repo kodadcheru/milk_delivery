@@ -74,22 +74,32 @@ class DeliveryTaskCompleteView(APIView):
         if task.subscription and task.subscription.customer:
             customer = task.subscription.customer
             total_cost = task.subscription.product.price_per_unit * task.subscription.quantity
-            customer.wallet_balance -= total_cost
-            customer.save()
 
-            WalletTransaction.objects.create(
-                user=customer,
-                amount=total_cost,
-                transaction_type=WalletTransaction.Types.DEBIT,
-                description=f"Morning Delivery #{task.id} ({task.subscription.product.name})",
-            )
+            if customer.wallet_balance >= total_cost:
+                customer.wallet_balance -= total_cost
+                customer.save(update_fields=["wallet_balance"])
 
-            Notification.objects.create(
-                user=customer,
-                title="🥛 Morning Delivery Complete!",
-                message=f"Your delivery #{task.id} ({task.subscription.quantity}x {task.subscription.product.name}) was dropped at doorstep. ₹{total_cost} debited from wallet.",
-                notification_type=Notification.Types.DELIVERY,
-            )
+                WalletTransaction.objects.create(
+                    user=customer,
+                    amount=total_cost,
+                    transaction_type=WalletTransaction.Types.DEBIT,
+                    description=f"Morning Delivery #{task.id} ({task.subscription.product.name})",
+                )
+
+                Notification.objects.create(
+                    user=customer,
+                    title="🥛 Morning Delivery Complete!",
+                    message=f"Your delivery #{task.id} ({task.subscription.quantity}x {task.subscription.product.name}) was dropped at doorstep. ₹{total_cost} debited from wallet.",
+                    notification_type=Notification.Types.DELIVERY,
+                )
+            else:
+                # Insufficient balance — still complete delivery but notify customer to top up
+                Notification.objects.create(
+                    user=customer,
+                    title="⚠️ Low Wallet Balance!",
+                    message=f"Delivery #{task.id} completed but wallet balance (₹{customer.wallet_balance}) is insufficient for ₹{total_cost}. Please top up your wallet to avoid service disruption.",
+                    notification_type=Notification.Types.WALLET,
+                )
 
         return Response(
             {
@@ -281,3 +291,132 @@ class BottleReturnUpdateView(APIView):
             "returned_date": str(bottle.returned_date) if bottle.returned_date else None,
         })
 
+
+class GenerateTodayTasksView(APIView):
+    """Admin / Hub Manager endpoint to trigger daily delivery task generation."""
+    permission_classes = [IsAdminOrStaff]
+
+    def post(self, request):
+        from datetime import timedelta
+        from apps.subscriptions.models import VacationPause
+
+        target_date_str = request.data.get("date")
+        if target_date_str:
+            target_date = date.fromisoformat(target_date_str)
+        else:
+            target_date = date.today()
+
+        # Auto-resume expired vacation pauses
+        resumed_count = 0
+        expired_pauses = VacationPause.objects.filter(
+            end_date__lt=target_date,
+            subscription__status=Subscription.Statuses.PAUSED,
+        ).select_related("subscription", "subscription__customer", "subscription__product")
+
+        for pause in expired_pauses:
+            sub = pause.subscription
+            sub.status = Subscription.Statuses.ACTIVE
+            sub.save(update_fields=["status"])
+            Notification.objects.create(
+                user=sub.customer,
+                title="🔔 Subscription Resumed",
+                message=f"Your vacation pause has ended. Daily deliveries of {sub.product.name} resume from {target_date}.",
+                notification_type=Notification.Types.VACATION,
+            )
+            resumed_count += 1
+
+        # Generate tasks for active subscriptions
+        active_subs = (
+            Subscription.objects
+            .filter(status=Subscription.Statuses.ACTIVE, start_date__lte=target_date)
+            .select_related("customer", "product", "hub", "customer__assigned_hub")
+        )
+
+        created_count = 0
+        skipped_count = 0
+        hub_drivers = {}
+        hub_driver_indices = {}
+
+        for sub in active_subs:
+            if DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).exists():
+                skipped_count += 1
+                continue
+
+            # Check active vacation pause
+            active_pause = VacationPause.objects.filter(
+                subscription=sub,
+                start_date__lte=target_date,
+                end_date__gte=target_date,
+            ).exists()
+            if active_pause:
+                skipped_count += 1
+                continue
+
+            # Schedule eligibility
+            if sub.schedule_type == Subscription.Schedules.ALTERNATE:
+                days_since = (target_date - sub.start_date).days
+                if days_since % 2 != 0:
+                    skipped_count += 1
+                    continue
+            elif sub.schedule_type == Subscription.Schedules.CUSTOM:
+                if target_date.weekday() not in (0, 2, 4):
+                    skipped_count += 1
+                    continue
+            elif sub.schedule_type == Subscription.Schedules.ONCE:
+                if DeliveryTask.objects.filter(subscription=sub).exists():
+                    skipped_count += 1
+                    continue
+
+            # Resolve hub and driver
+            hub = sub.hub or getattr(sub.customer, "assigned_hub", None)
+            driver = self._get_next_driver(hub, hub_drivers, hub_driver_indices)
+
+            DeliveryTask.objects.create(
+                subscription=sub,
+                hub=hub,
+                driver=driver,
+                delivery_date=target_date,
+                slot_time=sub.delivery_slot or getattr(sub.customer, "delivery_slot_preference", None) or "05:30 AM - 07:00 AM",
+                status=DeliveryTask.Statuses.PENDING,
+            )
+            created_count += 1
+
+        return Response({
+            "message": f"Task generation complete for {target_date}.",
+            "date": str(target_date),
+            "tasks_created": created_count,
+            "subscriptions_skipped": skipped_count,
+            "vacations_resumed": resumed_count,
+        })
+
+    def _get_next_driver(self, hub, hub_drivers, hub_driver_indices):
+        if hub is None:
+            return User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
+
+        hub_id = hub.id
+        if hub_id not in hub_drivers:
+            drivers = list(
+                User.objects.filter(
+                    role=User.Roles.DELIVERY_PARTNER,
+                    assigned_hub=hub,
+                    driver_status="ACTIVE",
+                )
+            )
+            if not drivers:
+                drivers = list(
+                    User.objects.filter(
+                        role=User.Roles.DELIVERY_PARTNER,
+                        driver_status="ACTIVE",
+                    )
+                )
+            hub_drivers[hub_id] = drivers
+            hub_driver_indices[hub_id] = 0
+
+        drivers = hub_drivers[hub_id]
+        if not drivers:
+            return None
+
+        idx = hub_driver_indices[hub_id]
+        driver = drivers[idx % len(drivers)]
+        hub_driver_indices[hub_id] = idx + 1
+        return driver

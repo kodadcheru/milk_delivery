@@ -893,6 +893,25 @@ class ApiService {
     return null;
   }
 
+  static Future<Map<String, dynamic>?> generateTodayTasks({String? date}) async {
+    try {
+      final body = <String, dynamic>{};
+      if (date != null) body['date'] = date;
+
+      final res = await _executeWithRetry(() => _client.post(
+            Uri.parse('$baseUrl/admin/generate-tasks/'),
+            headers: _headers,
+            body: jsonEncode(body),
+          ));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) { lastError = e.toString(); }
+    return null;
+  }
+
   static Future<bool> sendBroadcastAlert(String title, String message, {String targetRole = 'ALL'}) async {
     try {
       final res = await _executeWithRetry(() => _client.post(
