@@ -1371,3 +1371,128 @@ class AdminDeliveryReassignView(APIView):
             "new_driver_id": driver.id,
             "new_driver_name": new_driver,
         })
+
+
+class AdminSupportAgentListCreateView(APIView):
+    """
+    List all active support agents or create a new support executive user.
+    GET  /api/admin/support-agents/
+    POST /api/admin/support-agents/create/
+    """
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        agents = User.objects.filter(role=User.Roles.SUPPORT_AGENT).select_related("assigned_hub").order_by("-date_joined")
+        data = []
+        for a in agents:
+            data.append({
+                "id": a.id,
+                "username": a.username,
+                "first_name": a.first_name,
+                "last_name": a.last_name,
+                "full_name": f"{a.first_name} {a.last_name}".strip() or a.username,
+                "phone": a.phone,
+                "email": a.email,
+                "role": a.role,
+                "is_active": a.is_active,
+                "assigned_hub": a.assigned_hub.name if a.assigned_hub else "Kodad Central Hub",
+                "assigned_hub_code": a.assigned_hub.hub_code if a.assigned_hub else "HUB-KDD-01",
+                "date_joined": a.date_joined.strftime("%d %b %Y"),
+            })
+        return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        from apps.deliveries.models import LocationHub
+
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        phone = request.data.get("phone", "").strip()
+        email = request.data.get("email", "").strip()
+        password = request.data.get("password", "").strip() or "Support@123"
+        hub_code = request.data.get("hub_code", "").strip()
+
+        if not phone:
+            return Response({"error": "Mobile phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not first_name:
+            return Response({"error": "First name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Normalize phone
+        clean_phone = phone.replace("+91", "").replace(" ", "").replace("-", "").strip()
+        if len(clean_phone) == 10:
+            formatted_phone = f"+91{clean_phone}"
+        else:
+            formatted_phone = phone
+
+        if User.objects.filter(phone=formatted_phone).exists():
+            return Response({"error": f"A user with phone {formatted_phone} already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        username = request.data.get("username", "").strip() or f"support_{clean_phone[-6:]}"
+        if User.objects.filter(username=username).exists():
+            username = f"support_{clean_phone[-6:]}_{uuid.uuid4().hex[:4]}"
+
+        hub = None
+        if hub_code:
+            hub = LocationHub.objects.filter(hub_code=hub_code).first()
+        if not hub:
+            hub = LocationHub.objects.first()
+
+        agent = User.objects.create_user(
+            username=username,
+            phone=formatted_phone,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            role=User.Roles.SUPPORT_AGENT,
+            is_staff=True,
+            assigned_hub=hub,
+        )
+
+        return Response({
+            "message": f"Support Executive '{agent.first_name} {agent.last_name}' created successfully!",
+            "agent": {
+                "id": agent.id,
+                "username": agent.username,
+                "full_name": f"{agent.first_name} {agent.last_name}".strip(),
+                "phone": agent.phone,
+                "email": agent.email,
+                "role": agent.role,
+                "assigned_hub": agent.assigned_hub.name if agent.assigned_hub else "Kodad Central Hub",
+                "assigned_hub_code": agent.assigned_hub.hub_code if agent.assigned_hub else "HUB-KDD-01",
+                "date_joined": agent.date_joined.strftime("%d %b %Y"),
+            }
+        }, status=status.HTTP_201_CREATED)
+
+
+class AdminSupportAgentDetailView(APIView):
+    """
+    Deactivate or toggle support agent status.
+    PATCH  /api/admin/support-agents/<id>/
+    DELETE /api/admin/support-agents/<id>/
+    """
+    permission_classes = [IsAdminOrStaff]
+
+    def patch(self, request, pk):
+        agent = User.objects.filter(pk=pk, role=User.Roles.SUPPORT_AGENT).first()
+        if not agent:
+            return Response({"detail": "Support agent not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        is_active = request.data.get("is_active")
+        if is_active is not None:
+            agent.is_active = bool(is_active)
+            agent.save()
+
+        return Response({
+            "message": f"Support agent status updated (is_active: {agent.is_active})",
+            "id": agent.id,
+            "is_active": agent.is_active,
+        })
+
+    def delete(self, request, pk):
+        agent = User.objects.filter(pk=pk, role=User.Roles.SUPPORT_AGENT).first()
+        if not agent:
+            return Response({"detail": "Support agent not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        agent_name = f"{agent.first_name} {agent.last_name}".strip() or agent.username
+        agent.delete()
+        return Response({"message": f"Support agent '{agent_name}' deleted successfully."}, status=status.HTTP_200_OK)

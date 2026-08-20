@@ -722,6 +722,7 @@
       <button class="tab-btn" onclick="switchTab('express-orders', this)"><i class="fa-solid fa-bolt"></i> Express Orders</button>
       <button class="tab-btn" onclick="switchTab('bottle-returns', this)"><i class="fa-solid fa-wine-bottle"></i> Bottle Returns</button>
       <button class="tab-btn" onclick="switchTab('payouts', this)"><i class="fa-solid fa-money-bill-transfer"></i> Provider Payouts</button>
+      <button class="tab-btn" onclick="switchTab('support', this)"><i class="fa-solid fa-headset"></i> Support Desk & Live Chat</button>
       <button class="tab-btn" id="tabBtnProfile" onclick="switchTab('profile', this)"><i class="fa-solid fa-user-shield"></i> Admin Profile & Security</button>
     </div>
 
@@ -1688,6 +1689,113 @@
           </tbody>
         </table>
       </div>
+    <!-- ── Tab: Support Desk & Executives ── -->
+    <div id="tab-support" style="display: none;">
+      <div class="section-header">
+        <div>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-headset" style="color: #38BDF8;"></i> 24x7 Customer Support Desk & Live Chat</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Manage support executive staff, monitor live incoming chat sessions, and reply in real-time via Redis</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="openCreateSupportUserModal()" style="padding: 8px 16px; background: linear-gradient(135deg, #0284C7, #0D7C66); border: none;">
+            <i class="fa-solid fa-user-plus"></i> + Create Support User
+          </button>
+          <button class="btn btn-secondary" onclick="loadSupportDesk()" style="padding: 8px 16px;">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Support KPIs -->
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="stat-value" id="supp-total-agents" style="color: #38BDF8;">0</div>
+          <div class="stat-label">Support Executives</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="supp-active-agents" style="color: #10B981;">0</div>
+          <div class="stat-label">Active on Desk</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="supp-active-threads" style="color: #F59E0B;">0</div>
+          <div class="stat-label">Live Chat Threads</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: #A855F7;">0.09 ms</div>
+          <div class="stat-label">Redis Engine Latency ⚡</div>
+        </div>
+      </div>
+
+      <!-- Support Executives Table -->
+      <div style="margin-bottom: 25px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-users-gear" style="color: #38BDF8;"></i> Support Staff Roster
+        </h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Assigned Hub</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="supportAgentsTableBody">
+              <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading support executives...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Live Chat Console Grid (Left: Active Threads, Right: Live Conversation) -->
+      <div>
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-comments" style="color: #10B981;"></i> Redis Live Helpdesk Console
+        </h3>
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; min-height: 480px;">
+          <!-- Left: Threads List -->
+          <div style="border-right: 1px solid rgba(255, 255, 255, 0.08); padding-right: 12px; display: flex; flex-direction: column;">
+            <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between;">
+              <span>Active Customer Chats</span>
+              <button onclick="loadSupportChatThreads()" style="background: none; border: none; color: #38BDF8; cursor: pointer; font-size: 12px;"><i class="fa-solid fa-sync"></i></button>
+            </div>
+            <div id="supportThreadsList" style="overflow-y: auto; flex: 1; max-height: 420px;">
+              <div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 12px;">No active chat threads found.</div>
+            </div>
+          </div>
+
+          <!-- Right: Live Conversation View -->
+          <div id="supportChatMainView" style="display: flex; flex-direction: column; justify-content: space-between; padding-left: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; margin-bottom: 12px;">
+              <div>
+                <span id="activeChatCustName" style="font-weight: bold; font-size: 15px; color: #fff;">Select a Customer Thread</span>
+                <div id="activeChatCustPhone" style="font-size: 12px; color: var(--text-muted);">Click on any customer from the left to view messages</div>
+              </div>
+              <span id="activeChatBadge" class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10B981; display: none;">Live Redis Stream</span>
+            </div>
+
+            <!-- Messages Box -->
+            <div id="supportChatMessagesBox" style="overflow-y: auto; height: 320px; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="margin: auto; text-align: center; color: var(--text-muted); font-size: 13px;">
+                <i class="fa-solid fa-headset" style="font-size: 32px; color: rgba(255,255,255,0.1); margin-bottom: 8px; display: block;"></i>
+                Select a chat thread to view real-time messages and reply
+              </div>
+            </div>
+
+            <!-- Reply Input Bar -->
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="adminSupportReplyInput" class="form-control" placeholder="Type support reply to customer..." style="flex: 1; border-radius: 24px; padding: 10px 18px;" onkeypress="if(event.key==='Enter') sendAdminSupportReply()">
+              <button class="btn btn-primary" onclick="sendAdminSupportReply()" style="border-radius: 24px; padding: 10px 20px; background: #0D7C66; border: none;">
+                <i class="fa-solid fa-paper-plane"></i> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -2375,6 +2483,54 @@
     </div>
   </div>
 
+  <!-- ── Modal: Create Support Executive User ── -->
+  <div class="modal-overlay" id="createSupportUserModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-title"><i class="fa-solid fa-headset" style="color: #38BDF8;"></i> Create Support Executive Account</div>
+      <form onsubmit="submitCreateSupportUser(event)">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>First Name *</label>
+            <input type="text" id="suppFirstName" class="form-control" placeholder="e.g. Priya" required>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="suppLastName" class="form-control" placeholder="e.g. Sharma">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Mobile Number (Login) *</label>
+            <input type="text" id="suppPhone" class="form-control" placeholder="10-digit mobile" required>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="suppEmail" class="form-control" placeholder="support@milkdrop.in">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Temporary Password</label>
+            <input type="password" id="suppPassword" class="form-control" placeholder="Default: Support@123">
+          </div>
+          <div class="form-group">
+            <label>Assigned Hub / Desk</label>
+            <select id="suppHubSelect" class="form-control">
+              <option value="HUB-KDD-01">Kodad Central Hub (HUB-KDD-01)</option>
+            </select>
+          </div>
+        </div>
+        <div id="suppUserAlert" style="display: none; padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 10px; background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.4);"></div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('createSupportUserModal')">Cancel</button>
+          <button type="submit" id="btnSubmitSupportUser" class="btn btn-primary" style="background: linear-gradient(135deg, #0284C7, #0D7C66); border: none;">
+            <i class="fa-solid fa-check"></i> Create Support Executive
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Hidden Section for Clean Printing -->
   <div id="printSection" style="display: none;"></div>
 
@@ -2680,13 +2836,15 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'profile'].forEach(t => {
+      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'support', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
 
       if (tabName === 'service-areas') {
         setTimeout(initMap, 200);
+      } else if (tabName === 'support') {
+        loadSupportDesk();
       }
     }
 
@@ -2704,6 +2862,7 @@
         loadExpressOrders(),
         loadBottleReturns(),
         loadPayouts(),
+        loadSupportDesk(),
         loadVacationPauses()
       ]);
     }
@@ -5704,6 +5863,294 @@
 
       closeModal('broadcastModal');
       alert('Notification broadcast sent successfully!');
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // ── SUPPORT DESK & REDIS LIVE CHAT LOGIC ──
+    // ═════════════════════════════════════════════════════════════════════════
+    let rawSupportAgents = [];
+    let activeSupportChatPhone = null;
+    let activeSupportChatName = null;
+    let supportChatPollInterval = null;
+
+    async function loadSupportDesk() {
+      await Promise.all([
+        loadSupportAgents(),
+        loadSupportChatThreads()
+      ]);
+    }
+
+    async function loadSupportAgents() {
+      try {
+        const res = await fetch(`${baseUrl}/admin/support-agents/`, {
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') }
+        });
+        if (res.ok) {
+          rawSupportAgents = await res.json();
+          renderSupportAgentsTable(rawSupportAgents);
+          
+          document.getElementById('supp-total-agents').innerText = rawSupportAgents.length;
+          document.getElementById('supp-active-agents').innerText = rawSupportAgents.filter(a => a.is_active).length;
+        }
+      } catch (err) {
+        console.error('Error loading support agents:', err);
+      }
+    }
+
+    function renderSupportAgentsTable(agents) {
+      const tbody = document.getElementById('supportAgentsTableBody');
+      if (!tbody) return;
+
+      if (!agents || agents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No support executives found. Click "+ Create Support User" above to add your first executive.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = agents.map(a => {
+        const activeBadge = a.is_active
+          ? '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Active</span>'
+          : '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Inactive</span>';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #0284C7, #0D7C66); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold;">
+                  ${(a.first_name || a.username)[0].toUpperCase()}
+                </div>
+                ${a.full_name || a.username}
+              </div>
+            </td>
+            <td><code>${a.phone}</code></td>
+            <td>${a.email || '<span style="color: var(--text-muted);">None</span>'}</td>
+            <td><span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8;">${a.assigned_hub}</span></td>
+            <td>${a.date_joined || 'Recent'}</td>
+            <td>${activeBadge}</td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onclick="toggleSupportAgentStatus(${a.id}, ${a.is_active})">
+                  ${a.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; color: #EF4444;" onclick="deleteSupportAgent(${a.id}, '${(a.full_name || a.username).replace(/'/g, "\\'")}')">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openCreateSupportUserModal() {
+      const select = document.getElementById('suppHubSelect');
+      if (select && rawHubs && rawHubs.length > 0) {
+        select.innerHTML = rawHubs.map(h => `<option value="${h.hub_code}">${h.name} (${h.hub_code})</option>`).join('');
+      }
+      document.getElementById('suppFirstName').value = '';
+      document.getElementById('suppLastName').value = '';
+      document.getElementById('suppPhone').value = '';
+      document.getElementById('suppEmail').value = '';
+      document.getElementById('suppPassword').value = '';
+      document.getElementById('suppUserAlert').style.display = 'none';
+      openModal('createSupportUserModal');
+    }
+
+    async function submitCreateSupportUser(e) {
+      e.preventDefault();
+      const first_name = document.getElementById('suppFirstName').value.trim();
+      const last_name = document.getElementById('suppLastName').value.trim();
+      const phone = document.getElementById('suppPhone').value.trim();
+      const email = document.getElementById('suppEmail').value.trim();
+      const password = document.getElementById('suppPassword').value.trim();
+      const hub_code = document.getElementById('suppHubSelect').value;
+      const alertEl = document.getElementById('suppUserAlert');
+      const btn = document.getElementById('btnSubmitSupportUser');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+      alertEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/support-agents/create/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
+          },
+          body: JSON.stringify({ first_name, last_name, phone, email, password, hub_code })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          closeModal('createSupportUserModal');
+          alert(`Support Executive '${data.agent.full_name}' created successfully!`);
+          loadSupportAgents();
+        } else {
+          alertEl.innerText = data.error || data.detail || 'Failed to create support executive.';
+          alertEl.style.display = 'block';
+        }
+      } catch (err) {
+        alertEl.innerText = 'Network error. Please try again.';
+        alertEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Create Support Executive';
+      }
+    }
+
+    async function toggleSupportAgentStatus(id, currentStatus) {
+      try {
+        const res = await fetch(`${baseUrl}/admin/support-agents/${id}/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
+          },
+          body: JSON.stringify({ is_active: !currentStatus })
+        });
+        if (res.ok) {
+          loadSupportAgents();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteSupportAgent(id, name) {
+      if (!confirm(`Are you sure you want to remove support executive "${name}"?`)) return;
+      try {
+        const res = await fetch(`${baseUrl}/admin/support-agents/${id}/`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') }
+        });
+        if (res.ok) {
+          loadSupportAgents();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ── Live Support Chat Console Logic (Redis-backed) ──
+    async function loadSupportChatThreads() {
+      try {
+        const res = await fetch(`${baseUrl}/admin/support/threads/`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('supp-active-threads').innerText = data.count || 0;
+          renderSupportChatThreads(data.threads || []);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderSupportChatThreads(threads) {
+      const container = document.getElementById('supportThreadsList');
+      if (!container) return;
+
+      if (!threads || threads.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 12px;"><i class="fa-solid fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.4;"></i>No active customer chats in Redis yet.</div>';
+        return;
+      }
+
+      container.innerHTML = threads.map(t => {
+        const isSelected = activeSupportChatPhone === t.phone;
+        const timeStr = t.last_timestamp ? new Date(t.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div onclick="openSupportChatThread('${t.phone}', '${(t.customer_name || 'Customer').replace(/'/g, "\\'")}')" 
+               style="padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(13, 124, 102, 0.25)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${isSelected ? '#0D7C66' : 'rgba(255, 255, 255, 0.06)'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-weight: 600; font-size: 13px; color: ${isSelected ? '#38BDF8' : '#fff'};">${t.customer_name || 'Customer'}</span>
+              <span style="font-size: 10.5px; color: var(--text-muted);">${timeStr}</span>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${t.last_message || 'Active thread'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openSupportChatThread(phone, customerName) {
+      activeSupportChatPhone = phone;
+      activeSupportChatName = customerName;
+
+      document.getElementById('activeChatCustName').innerText = customerName;
+      document.getElementById('activeChatCustPhone').innerText = `📞 ${phone} • Live Session`;
+      document.getElementById('activeChatBadge').style.display = 'inline-block';
+
+      loadSupportChatThreads();
+      await fetchAndRenderChatMessages(phone);
+
+      if (supportChatPollInterval) clearInterval(supportChatPollInterval);
+      supportChatPollInterval = setInterval(() => {
+        if (activeSupportChatPhone) fetchAndRenderChatMessages(activeSupportChatPhone);
+      }, 3000);
+    }
+
+    async function fetchAndRenderChatMessages(phone) {
+      try {
+        const res = await fetch(`${baseUrl}/support/chat/history/?phone=${encodeURIComponent(phone)}`);
+        if (res.ok) {
+          const data = await res.json();
+          renderSupportChatMessages(data.messages || []);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderSupportChatMessages(messages) {
+      const box = document.getElementById('supportChatMessagesBox');
+      if (!box) return;
+
+      if (!messages || messages.length === 0) {
+        box.innerHTML = '<div style="margin: auto; text-align: center; color: var(--text-muted); font-size: 12px;">No messages exchanged yet in this session.</div>';
+        return;
+      }
+
+      box.innerHTML = messages.map(m => {
+        const isAgent = m.sender_type === 'agent';
+        return `
+          <div style="display: flex; flex-direction: column; align-items: ${isAgent ? 'flex-end' : 'flex-start'};">
+            <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">${m.sender_name || (isAgent ? 'Support' : 'Customer')}</div>
+            <div style="max-width: 75%; padding: 8px 14px; border-radius: 14px; font-size: 12.5px; line-height: 1.4; background: ${isAgent ? 'linear-gradient(135deg, #0D7C66, #0284C7)' : 'rgba(255, 255, 255, 0.08)'}; color: #fff; border: 1px solid ${isAgent ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)'};">
+              ${m.text}
+            </div>
+          </div>
+        `;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendAdminSupportReply() {
+      if (!activeSupportChatPhone) {
+        alert('Please select a customer chat thread from the left first.');
+        return;
+      }
+      const input = document.getElementById('adminSupportReplyInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+
+      try {
+        await fetch(`${baseUrl}/support/chat/send/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: activeSupportChatPhone,
+            sender_type: 'agent',
+            sender_name: 'Support Executive',
+            text: text
+          })
+        });
+        fetchAndRenderChatMessages(activeSupportChatPhone);
+        loadSupportChatThreads();
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     // Initial Load & Auth Check

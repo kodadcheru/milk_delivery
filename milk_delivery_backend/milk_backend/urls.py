@@ -34,6 +34,13 @@ from apps.accounts.admin_views import (
     AdminVacationPausesView,
     AdminCustomerExportView,
     AdminDeliveryReassignView,
+    AdminSupportAgentListCreateView,
+    AdminSupportAgentDetailView,
+)
+from apps.core.chat_views import (
+    SupportChatSendView,
+    SupportChatHistoryView,
+    AdminSupportChatThreadsView,
 )
 from apps.accounts.address_views import (
     CustomerAddressDetailView,
@@ -108,6 +115,14 @@ urlpatterns = [
     path("api/admin/fleet/", AdminFleetListView.as_view(), name="admin_fleet"),
     path("api/admin/fleet/<int:pk>/", AdminFleetDetailView.as_view(), name="admin_fleet_detail"),
     path("api/admin/fleet/create-driver/", HubDriverCreateView.as_view(), name="admin_create_driver"),
+    # Support Agents Management & Live Chat Desk
+    path("api/admin/support-agents/", AdminSupportAgentListCreateView.as_view(), name="admin_support_agents"),
+    path("api/admin/support-agents/create/", AdminSupportAgentListCreateView.as_view(), name="admin_support_agent_create"),
+    path("api/admin/support-agents/<int:pk>/", AdminSupportAgentDetailView.as_view(), name="admin_support_agent_detail"),
+    path("api/admin/support/threads/", AdminSupportChatThreadsView.as_view(), name="admin_support_threads"),
+    # Customer Live Support Chat endpoints (Redis-backed)
+    path("api/support/chat/send/", SupportChatSendView.as_view(), name="support_chat_send"),
+    path("api/support/chat/history/", SupportChatHistoryView.as_view(), name="support_chat_history"),
     # Bottle Returns & Provider Payouts
     path("api/admin/bottle-returns/", AdminBottleReturnsView.as_view(), name="admin_bottle_returns"),
     path("api/admin/payouts/", AdminPayoutsView.as_view(), name="admin_payouts"),
