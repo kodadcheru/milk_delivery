@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/customer_address_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/location_service.dart';
+import '../../services/permission_service.dart';
+import '../../theme/app_theme.dart';
 import 'map_location_picker_screen.dart';
 
 class AddressBookScreen extends StatelessWidget {
@@ -137,6 +140,67 @@ class AddressBookScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+
+              // ── Quick 1-Tap "Use Current GPS Location" Action Card ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: InkWell(
+                  onTap: () {
+                    AppTheme.hapticLight();
+                    _openAddEditAddressSheet(context, state, autoDetectGps: true);
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF10B981), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.my_location_rounded, color: Color(0xFF0F766E), size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Use Current GPS Location 📍',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Auto-detect exact live coordinates & autofill address',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF10B981)),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
@@ -459,12 +523,21 @@ class AddressBookScreen extends StatelessWidget {
     );
   }
 
-  static void _openAddEditAddressSheet(BuildContext context, AppState state, {CustomerAddressModel? existing}) {
+  static void _openAddEditAddressSheet(
+    BuildContext context,
+    AppState state, {
+    CustomerAddressModel? existing,
+    bool autoDetectGps = false,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _AddEditAddressModal(state: state, existing: existing),
+      builder: (ctx) => _AddEditAddressModal(
+        state: state,
+        existing: existing,
+        autoDetectGps: autoDetectGps,
+      ),
     );
   }
 }
@@ -472,8 +545,13 @@ class AddressBookScreen extends StatelessWidget {
 class _AddEditAddressModal extends StatefulWidget {
   final AppState state;
   final CustomerAddressModel? existing;
+  final bool autoDetectGps;
 
-  const _AddEditAddressModal({required this.state, this.existing});
+  const _AddEditAddressModal({
+    required this.state,
+    this.existing,
+    this.autoDetectGps = false,
+  });
 
   @override
   State<_AddEditAddressModal> createState() => _AddEditAddressModalState();
@@ -495,6 +573,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
   double _lon = 78.4073;
   bool _isDefault = false;
   bool _isSaving = false;
+  bool _isDetectingGps = false;
 
   @override
   void initState() {
@@ -517,6 +596,72 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
     _lat = e?.latitude ?? widget.state.currentLat;
     _lon = e?.longitude ?? widget.state.currentLon;
     _isDefault = e?.isDefault ?? (widget.state.savedAddresses.isEmpty);
+
+    if (widget.autoDetectGps && widget.existing == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _useCurrentGPSLocation();
+      });
+    }
+  }
+
+  Future<void> _useCurrentGPSLocation() async {
+    AppTheme.hapticLight();
+    setState(() => _isDetectingGps = true);
+    try {
+      final pos = await PermissionService.getDeviceCoordinates();
+      if (pos != null) {
+        _lat = pos.latitude;
+        _lon = pos.longitude;
+        final loc = await LocationService.reverseGeocode(pos.latitude, pos.longitude);
+        if (loc != null) {
+          setState(() {
+            if (loc['full_address'] != null && loc['full_address'].toString().isNotEmpty) {
+              _streetController.text = loc['full_address'];
+            } else if (loc['short_address'] != null && loc['short_address'].toString().isNotEmpty) {
+              _streetController.text = loc['short_address'];
+            }
+            if (loc['city'] != null && loc['city'].toString().isNotEmpty) {
+              _cityController.text = loc['city'];
+            }
+            if (loc['postcode'] != null && loc['postcode'].toString().isNotEmpty) {
+              _pincodeController.text = loc['postcode'];
+            }
+            if (loc['suburb'] != null && loc['suburb'].toString().isNotEmpty && _buildingController.text.isEmpty) {
+              _buildingController.text = loc['suburb'];
+            }
+            if (loc['house_no'] != null && loc['house_no'].toString().isNotEmpty && _flatNoController.text.isEmpty) {
+              _flatNoController.text = loc['house_no'];
+            }
+            if (loc['landmark'] != null && loc['landmark'].toString().isNotEmpty && _landmarkController.text.isEmpty) {
+              _landmarkController.text = loc['landmark'];
+            }
+          });
+          AppTheme.hapticSuccess();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('📍 Current GPS location detected & populated!'),
+                backgroundColor: AppTheme.primaryMint,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ Unable to fetch GPS fix. Please ensure location is enabled.'),
+            ),
+          );
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() => _isDetectingGps = false);
+      }
+    }
   }
 
   @override
@@ -653,6 +798,74 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                   ],
 
                   const SizedBox(height: 16),
+
+                  // ── 📍 1-Tap "Use Current GPS Location" Button ──
+                  InkWell(
+                    onTap: _isDetectingGps ? null : _useCurrentGPSLocation,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F766E), Color(0xFF10B981)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: _isDetectingGps
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isDetectingGps ? 'Detecting Live GPS...' : 'Use Current GPS Location 📍',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _isDetectingGps
+                                      ? 'Reverse-geocoding street & pin code...'
+                                      : 'Auto-fill street, society, city & coordinates',
+                                  style: const TextStyle(fontSize: 11, color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.bolt_rounded, color: Color(0xFFFBBF24), size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
 
                   // Google Maps Pin Drop Button
                   InkWell(
