@@ -173,6 +173,21 @@ class SubscriptionPauseView(APIView):
             status=DeliveryTask.Statuses.PENDING,
         ).update(status=DeliveryTask.Statuses.SKIPPED)
 
+        # Notify hub manager about the pause
+        hub = sub.hub
+        if hub:
+            from apps.accounts.models import Notification
+            hub_manager = hub.manager
+            if hub_manager:
+                Notification.objects.create(
+                    user=hub_manager,
+                    title="⏸️ Subscription Paused",
+                    message=f"{sub.customer.first_name} {sub.customer.last_name} paused their "
+                            f"{sub.product.name if sub.product else 'subscription'} from {start_date} to {end_date}. "
+                            f"Reason: {reason}",
+                    notif_type=Notification.Types.VACATION,
+                )
+
         return Response(
             {
                 "message": "Vacation pause created and subscription paused.",

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
+import '../../models/subscription_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../services/route_optimizer.dart';
@@ -506,6 +507,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget build(BuildContext context) {
     final tasks = widget.state.deliveries;
     final liveOrders = widget.state.liveOrders;
+    final allSubs = widget.state.subscriptions;
+    final activeSubs = allSubs.where((s) => s.status == 'ACTIVE').toList();
+    final pausedSubs = allSubs.where((s) => s.status == 'PAUSED').toList();
     final totalRevenue = widget.state.totalDailyRevenue;
     final netEarnings = totalRevenue; // 100% money goes to Hub Owner
     final totalLitres = widget.state.totalDailyMilkVolume;
@@ -1000,24 +1004,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ── 4. Filter Tabs (Who Ordered / Subscriptions / Express / Fleet / Alerts / Payouts) ──
+          // ── 4. Filter Tabs (Active / Paused / Express / Fleet / Alerts / Payouts) ──
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip(0, '👥 Who Ordered (${filteredTasks.length + liveOrders.length})'),
+                _buildFilterChip(0, '👥 All Orders (${filteredTasks.length + liveOrders.length})'),
                 const SizedBox(width: 8),
-                _buildFilterChip(1, '🥛 Subscriptions (${filteredTasks.length})'),
+                _buildFilterChip(1, '✅ Active (${activeSubs.length})'),
                 const SizedBox(width: 8),
-                _buildFilterChip(2, '⚡ Express Orders (${liveOrders.length})'),
+                _buildFilterChip(7, '⏸️ Paused (${pausedSubs.length})'),
                 const SizedBox(width: 8),
-                _buildFilterChip(3, '🛵 Assigned Fleet (${_liveFleet.length} Drivers)'),
+                _buildFilterChip(2, '⚡ Express (${liveOrders.length})'),
                 const SizedBox(width: 8),
-                _buildFilterChip(4, '📦 Crate Inventory'),
+                _buildFilterChip(3, '🛵 Fleet (${_liveFleet.length})'),
                 const SizedBox(width: 8),
-                _buildFilterChip(5, '📢 Customer Alerts (${_broadcastAlerts.length})'),
+                _buildFilterChip(4, '📦 Crates'),
                 const SizedBox(width: 8),
-                _buildFilterChip(6, '💰 Bank Payout Ledger (${_payoutHistory.length})'),
+                _buildFilterChip(5, '📢 Alerts (${_broadcastAlerts.length})'),
+                const SizedBox(width: 8),
+                _buildFilterChip(6, '💰 Payouts (${_payoutHistory.length})'),
               ],
             ),
           ),
@@ -1032,6 +1038,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             _buildInventoryCratesSection(),
           ] else if (_selectedFilter == 3) ...[
             _buildFleetDriversSection(),
+          ] else if (_selectedFilter == 7) ...[
+            _buildSubscriptionListSection('⏸️ Paused Subscriptions', pausedSubs, 'PAUSED'),
+          ] else if (_selectedFilter == 1) ...[
+            _buildSubscriptionListSection('✅ Active Subscriptions', activeSubs, 'ACTIVE'),
+          ] else if (_selectedFilter == 2) ...[
+            _buildExpressOnlySection(liveOrders),
           ] else ...[
             _buildOrdersRosterSection(filteredTasks, liveOrders),
           ],
@@ -1072,6 +1084,200 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         // Daily Subscriptions
         if (_selectedFilter == 0 || _selectedFilter == 1)
           ...subscriptions.map((task) => _buildSubscriptionCustomerCard(task)),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ACTIVE / PAUSED SUBSCRIPTION LIST SECTION
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _buildSubscriptionListSection(String title, List<SubscriptionModel> subs, String statusType) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusType == 'PAUSED' ? UiTone.warningSoft : UiTone.successSoft,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+              ),
+              child: Text(
+                '${subs.length} ${statusType == 'PAUSED' ? 'Paused' : 'Active'}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: statusType == 'PAUSED' ? UiTone.warning : UiTone.success,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (subs.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: UiTone.surfaceMuted,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  statusType == 'PAUSED' ? Icons.pause_circle_outline_rounded : Icons.check_circle_outline_rounded,
+                  size: 48,
+                  color: UiTone.softText,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  statusType == 'PAUSED' ? 'No paused subscriptions' : 'No active subscriptions',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: UiTone.softText),
+                ),
+              ],
+            ),
+          )
+        else
+          ...subs.map((sub) => _buildSubscriptionCard(sub, statusType)),
+      ],
+    );
+  }
+
+  Widget _buildSubscriptionCard(SubscriptionModel sub, String statusType) {
+    final product = sub.productDetail;
+    final productName = product?.name ?? 'Subscription #${sub.id}';
+    final qty = sub.quantity;
+    final price = product?.pricePerUnit ?? 0.0;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        side: BorderSide(
+          color: statusType == 'PAUSED' ? UiTone.warning.withValues(alpha: 0.3) : UiTone.surfaceBorder,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            // Status indicator
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: statusType == 'PAUSED' ? UiTone.warningSoft : UiTone.primarySoft,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+              ),
+              child: Center(
+                child: Icon(
+                  statusType == 'PAUSED' ? Icons.pause_rounded : Icons.check_circle_rounded,
+                  color: statusType == 'PAUSED' ? UiTone.warning : UiTone.primary,
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    productName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Customer #${sub.customerId} • ${sub.scheduleType} • $qty units',
+                    style: const TextStyle(fontSize: 11, color: UiTone.softText),
+                  ),
+                ],
+              ),
+            ),
+            // Price
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₹${(price * qty).toStringAsFixed(0)}/day',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.primary),
+                ),
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusType == 'PAUSED' ? UiTone.warningSoft : UiTone.successSoft,
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                  ),
+                  child: Text(
+                    statusType,
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: statusType == 'PAUSED' ? UiTone.warning : UiTone.success,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // EXPRESS ONLY SECTION
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _buildExpressOnlySection(List<LiveOrderModel> express) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text('⚡ Express Orders', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: UiTone.errorSoft,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+              ),
+              child: Text(
+                '${express.length} Orders',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.error),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (express.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: UiTone.surfaceMuted,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.flash_off_rounded, size: 48, color: UiTone.softText),
+                SizedBox(height: 12),
+                Text('No express orders', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: UiTone.softText)),
+              ],
+            ),
+          )
+        else
+          ...express.map((ord) => _buildExpressOrderCard(ord)),
       ],
     );
   }
