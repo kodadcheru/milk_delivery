@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -7,7 +8,7 @@ class PermissionService {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        // Location services are not enabled on device
+        // Prompt device location settings if disabled
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -61,18 +62,43 @@ class PermissionService {
     }
   }
 
-  /// Get real-time Device GPS Coordinates
+  /// Get real-time Device GPS Coordinates with Best-For-Navigation Sensitivity
   static Future<Position?> getDeviceCoordinates() async {
     try {
       bool hasPermission = await requestLocationPermission();
       if (!hasPermission) return null;
 
-      return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 5),
-        ),
+      LocationSettings locationSettings;
+
+      if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+        locationSettings = AppleSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          activityType: ActivityType.fitness,
+          distanceFilter: 0,
+          pauseLocationUpdatesAutomatically: false,
+          showBackgroundLocationIndicator: false,
+          timeLimit: const Duration(seconds: 8),
+        );
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        locationSettings = AndroidSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          distanceFilter: 0,
+          forceLocationManager: true,
+          intervalDuration: const Duration(milliseconds: 500),
+          timeLimit: const Duration(seconds: 8),
+        );
+      } else {
+        locationSettings = const LocationSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          distanceFilter: 0,
+          timeLimit: Duration(seconds: 8),
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: locationSettings,
       );
+      return position;
     } catch (_) {
       try {
         return await Geolocator.getLastKnownPosition();

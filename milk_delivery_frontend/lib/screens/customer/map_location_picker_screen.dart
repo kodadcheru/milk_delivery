@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../providers/app_state.dart';
 import '../../services/location_service.dart';
+import '../../theme/app_theme.dart';
 
 class MapLocationPickerScreen extends StatefulWidget {
   final AppState state;
@@ -78,6 +79,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
         _areaCity = '${data['suburb'] ?? 'Jubilee Hills'}, ${data['city'] ?? 'Hyderabad'}';
         _isGeocoding = false;
       });
+      AppTheme.hapticSuccess();
     } else {
       setState(() {
         _lastGeocodedData = null;
@@ -92,11 +94,12 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     if (hasGesture) {
       if (!_isDragging) {
         setState(() => _isDragging = true);
+        AppTheme.hapticLight();
       }
       _currentCenter = camera.center;
 
       _debounceTimer?.cancel();
-      _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _debounceTimer = Timer(const Duration(milliseconds: 250), () {
         if (!mounted) return;
         setState(() => _isDragging = false);
         _reverseGeocodeLocation(_currentCenter.latitude, _currentCenter.longitude);
@@ -236,27 +239,30 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
           // ── 2. Fixed Animated Center Crosshairs Pin (Zepto/Swiggy Style) ──
           Center(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 36),
+              padding: const EdgeInsets.only(bottom: 40),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Animated Pulsating Pin
+                  // Animated Pulsating High-Precision Pin
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    transform: Matrix4.translationValues(0, _isDragging ? -14 : 0, 0),
+                    transform: Matrix4.translationValues(0, _isDragging ? -16 : 0, 0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Live Address Floating Bubble over Pin
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          constraints: const BoxConstraints(maxWidth: 240),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A),
+                            color: AppTheme.darkSlate,
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.6), width: 1.2),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
@@ -265,16 +271,38 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                             children: [
                               if (_isGeocoding)
                                 const SizedBox(
-                                  width: 10,
-                                  height: 10,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryMint),
                                 )
                               else
-                                const Icon(Icons.location_on, color: Color(0xFF10B981), size: 13),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Set Doorstep Here',
-                                style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryMint,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryMint.withValues(alpha: 0.8),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  _isGeocoding ? 'Detecting exact point...' : _shortAddress,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -282,20 +310,40 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                         const SizedBox(height: 4),
                         const Icon(
                           Icons.location_pin,
-                          size: 44,
+                          size: 46,
                           color: Color(0xFFE11D48),
                         ),
                       ],
                     ),
                   ),
-                  // Ground Target Shadow
-                  Container(
-                    width: _isDragging ? 8 : 14,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                  // High-Precision Ground Target Ring & Shadow
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: _isDragging ? 32 : 24,
+                        height: _isDragging ? 32 : 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryMint.withValues(alpha: _isDragging ? 0.25 : 0.15),
+                          border: Border.all(color: AppTheme.primaryMint, width: 1),
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryMint,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryMint.withValues(alpha: 0.9),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

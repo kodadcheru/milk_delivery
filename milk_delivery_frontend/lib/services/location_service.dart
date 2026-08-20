@@ -11,64 +11,86 @@ class LocationService {
 
   static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
   static const Map<String, String> _headers = {
-    'User-Agent': 'MilkDropExpressApp/1.0 (delivery@milkdrop.express)',
+    'User-Agent': 'MilkDropExpressApp/2.0 (delivery@milkdrop.express)',
     'Accept': 'application/json',
   };
 
-  // In-Memory Fast Response Caches
+  // In-Memory Fast Response Caches (~1.1 meter ground resolution)
   static final Map<String, Map<String, dynamic>> _reverseCache = {};
   static final Map<String, List<Map<String, dynamic>>> _searchCache = {};
 
-  // Reverse Geocoding: Convert coordinates to real street address
+  /// High-Precision Reverse Geocoding (< 5-10m Accuracy)
   static Future<Map<String, dynamic>?> reverseGeocode(double lat, double lon) async {
-    final cacheKey = '${lat.toStringAsFixed(4)},${lon.toStringAsFixed(4)}';
+    final cacheKey = '${lat.toStringAsFixed(5)},${lon.toStringAsFixed(5)}';
     if (_reverseCache.containsKey(cacheKey)) {
       return _reverseCache[cacheKey];
     }
 
-    // 1. Google Maps Geocoding API
+    // 1. Google Maps Geocoding API with Deep Hierarchical Parsing
     if (googleMapsApiKey.isNotEmpty) {
       try {
         final googleUrl = Uri.parse(
-          'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lon&key=$googleMapsApiKey',
+          'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lon&extra_computations=BUILDING_AND_ENTRANCES&key=$googleMapsApiKey',
         );
         final res = await http.get(googleUrl).timeout(const Duration(seconds: 4));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
-            final first = data['results'][0];
-            final fullAddr = first['formatted_address'] as String;
+            final List results = data['results'];
+            final first = results[0];
+            final fullAddr = first['formatted_address'] as String? ?? '';
             final components = first['address_components'] as List? ?? [];
+            final plusCodeObj = data['plus_code'] ?? first['plus_code'];
+            final plusCode = plusCodeObj != null ? (plusCodeObj['compound_code'] ?? plusCodeObj['global_code'] ?? '') : '';
 
+            String houseNo = '';
+            String building = '';
             String road = '';
-            String suburb = '';
+            String subLocality2 = '';
+            String subLocality1 = '';
             String city = 'Hyderabad';
             String postcode = '500033';
+            String landmark = '';
 
             for (var c in components) {
               final types = (c['types'] as List? ?? []).map((e) => e.toString()).toList();
-              if (types.contains('route') || types.contains('street_number')) {
-                road = c['long_name'] ?? road;
-              } else if (types.contains('sublocality') || types.contains('sublocality_level_1') || types.contains('neighborhood')) {
-                suburb = c['long_name'] ?? suburb;
+              final longName = c['long_name']?.toString() ?? '';
+
+              if (types.contains('street_number') || types.contains('subpremise')) {
+                houseNo = longName;
+              } else if (types.contains('premise') || types.contains('point_of_interest') || types.contains('establishment')) {
+                building = longName;
+              } else if (types.contains('route')) {
+                road = longName;
+              } else if (types.contains('sublocality_level_2') || types.contains('sublocality_level_3')) {
+                subLocality2 = longName;
+              } else if (types.contains('sublocality_level_1') || types.contains('sublocality') || types.contains('neighborhood')) {
+                subLocality1 = longName;
               } else if (types.contains('locality')) {
-                city = c['long_name'] ?? city;
+                city = longName;
               } else if (types.contains('postal_code')) {
-                postcode = c['long_name'] ?? postcode;
+                postcode = longName;
               }
             }
 
-            final shortAddr = suburb.isNotEmpty
-                ? '$suburb, $city'
-                : (road.isNotEmpty ? '$road, $city' : fullAddr.split(',').take(2).join(','));
+            final String suburb = [subLocality2, subLocality1].where((s) => s.isNotEmpty).join(', ');
+            final String shortAddr = building.isNotEmpty
+                ? (suburb.isNotEmpty ? '$building, $suburb' : '$building, $city')
+                : (road.isNotEmpty
+                    ? (suburb.isNotEmpty ? '$road, $suburb' : '$road, $city')
+                    : (suburb.isNotEmpty ? '$suburb, $city' : fullAddr.split(',').take(2).join(',')));
 
             final result = {
-              'short_address': shortAddr,
+              'short_address': shortAddr.isNotEmpty ? shortAddr : fullAddr,
               'full_address': fullAddr,
-              'road': road.isNotEmpty ? road : 'Main Road',
+              'house_no': houseNo,
+              'building': building,
               'suburb': suburb.isNotEmpty ? suburb : 'City Sector',
+              'road': road.isNotEmpty ? road : 'Main Road',
               'city': city,
               'postcode': postcode,
+              'plus_code': plusCode,
+              'landmark': landmark,
               'lat': lat,
               'lon': lon,
             };
@@ -79,27 +101,35 @@ class LocationService {
       } catch (_) {}
     }
 
-    // 2. OpenStreetMap Nominatim Fallback
+    // 2. High-Precision OpenStreetMap Nominatim Query (zoom=18 building level)
     try {
-      final url = Uri.parse('$_nominatimBaseUrl/reverse?format=json&lat=$lat&lon=$lon&addressdetails=1');
+      final url = Uri.parse(
+        '$_nominatimBaseUrl/reverse?format=json&lat=$lat&lon=$lon&zoom=18&addressdetails=1&namedetails=1&extratags=1',
+      );
       final res = await http.get(url, headers: _headers).timeout(const Duration(seconds: 4));
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final addr = data['address'] ?? {};
 
-        final road = addr['road'] ?? addr['suburb'] ?? addr['neighbourhood'] ?? 'Main Road';
+        final houseNumber = addr['house_number'] ?? addr['flat_number'] ?? '';
+        final building = addr['building'] ?? addr['amenity'] ?? addr['shop'] ?? addr['office'] ?? '';
+        final road = addr['road'] ?? addr['pedestrian'] ?? addr['footway'] ?? addr['neighbourhood'] ?? 'Main Road';
         final suburb = addr['suburb'] ?? addr['residential'] ?? addr['neighbourhood'] ?? 'Local Area';
-        final city = addr['city'] ?? addr['town'] ?? addr['state_district'] ?? 'City';
+        final city = addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['state_district'] ?? 'City';
         final state = addr['state'] ?? 'State';
         final postcode = addr['postcode'] ?? '500001';
 
-        final shortAddress = '$road, $suburb, $city';
+        final shortAddress = building.isNotEmpty
+            ? '$building, $suburb, $city'
+            : '$road, $suburb, $city';
         final fullAddress = '$road, $suburb, $city, $state - $postcode';
 
         final result = {
           'short_address': shortAddress,
           'full_address': fullAddress,
+          'house_no': houseNumber,
+          'building': building,
           'road': road,
           'suburb': suburb,
           'city': city,
@@ -114,8 +144,8 @@ class LocationService {
 
     // Fallback default coordinates
     final fallback = {
-      'short_address': 'Live GPS Location',
-      'full_address': 'Doorstep Delivery Location',
+      'short_address': 'Doorstep Delivery Location',
+      'full_address': 'Doorstep Delivery Point, Kodad Depot',
       'road': 'Main Street',
       'suburb': 'Local Area',
       'city': 'City',
@@ -127,7 +157,7 @@ class LocationService {
     return fallback;
   }
 
-  // Geocoding Search: High-precision search across Google Maps Geocoding & Places APIs
+  /// High-Precision Places Search across Google Maps Geocoding & Places APIs
   static Future<List<Map<String, dynamic>>> searchPlaces(String query) async {
     final normQuery = query.trim().toLowerCase();
     if (normQuery.isEmpty) return [];
@@ -139,7 +169,7 @@ class LocationService {
     // 1. Google Maps Geocoding API for exact coordinates
     if (googleMapsApiKey.isNotEmpty) {
       try {
-        final encoded = Uri.encodeComponent('$query, Hyderabad, India');
+        final encoded = Uri.encodeComponent('$query, India');
         final url = Uri.parse(
           'https://maps.googleapis.com/maps/api/geocode/json?address=$encoded&key=$googleMapsApiKey',
         );
@@ -148,81 +178,45 @@ class LocationService {
           final data = jsonDecode(res.body);
           if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
             final List results = data['results'];
-            final list = results.map((item) {
-              final geom = item['geometry']?['location'] ?? {};
-              final lat = (geom['lat'] as num?)?.toDouble() ?? 17.4319;
-              final lon = (geom['lng'] as num?)?.toDouble() ?? 78.4073;
-              final formatted = item['formatted_address'] as String? ?? query;
+            final list = <Map<String, dynamic>>[];
 
-              final parts = formatted.split(',');
-              final shortTitle = parts.isNotEmpty ? parts.take(2).join(',').trim() : query;
+            for (var r in results.take(6)) {
+              final loc = r['geometry']['location'];
+              final lat = (loc['lat'] as num).toDouble();
+              final lon = (loc['lng'] as num).toDouble();
+              final formatted = r['formatted_address'] as String;
+              final components = r['address_components'] as List? ?? [];
 
-              return {
-                'display_name': formatted,
-                'short_title': shortTitle,
-                'place_id': item['place_id'] ?? '',
-                'lat': lat,
-                'lon': lon,
-              };
-            }).toList();
+              String road = '';
+              String suburb = '';
+              String city = 'Hyderabad';
+              String postcode = '';
 
-            _searchCache[normQuery] = list;
-            return list;
-          }
-        }
-      } catch (_) {}
-
-      // 1b. Google Places Autocomplete fallback
-      try {
-        final encoded = Uri.encodeComponent(query);
-        final url = Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$encoded&components=country:in&key=$googleMapsApiKey',
-        );
-        final res = await http.get(url).timeout(const Duration(seconds: 4));
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body);
-          if (data['status'] == 'OK' && (data['predictions'] as List).isNotEmpty) {
-            final List preds = data['predictions'];
-            final List<Map<String, dynamic>> output = [];
-
-            for (var p in preds.take(5)) {
-              final desc = p['description'] as String? ?? query;
-              final mainText = p['structured_formatting']?['main_text'] as String? ?? query;
-              final placeId = p['place_id'] as String?;
-
-              // Fetch exact lat/lon for first 3 predictions
-              double lat = 17.4319;
-              double lon = 78.4073;
-
-              if (placeId != null && output.length < 3) {
-                try {
-                  final detailUrl = Uri.parse(
-                    'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&fields=geometry&key=$googleMapsApiKey',
-                  );
-                  final dRes = await http.get(detailUrl).timeout(const Duration(seconds: 2));
-                  if (dRes.statusCode == 200) {
-                    final dData = jsonDecode(dRes.body);
-                    final loc = dData['result']?['geometry']?['location'];
-                    if (loc != null) {
-                      lat = (loc['lat'] as num).toDouble();
-                      lon = (loc['lng'] as num).toDouble();
-                    }
-                  }
-                } catch (_) {}
+              for (var c in components) {
+                final types = (c['types'] as List? ?? []).map((e) => e.toString()).toList();
+                if (types.contains('route')) road = c['long_name'] ?? road;
+                if (types.contains('sublocality') || types.contains('neighborhood')) suburb = c['long_name'] ?? suburb;
+                if (types.contains('locality')) city = c['long_name'] ?? city;
+                if (types.contains('postal_code')) postcode = c['long_name'] ?? postcode;
               }
 
-              output.add({
-                'display_name': desc,
-                'short_title': mainText,
-                'place_id': placeId ?? '',
+              list.add({
+                'title': suburb.isNotEmpty ? suburb : (road.isNotEmpty ? road : formatted.split(',').first),
+                'subtitle': formatted,
+                'short_address': suburb.isNotEmpty ? '$suburb, $city' : formatted.split(',').take(2).join(','),
+                'full_address': formatted,
+                'road': road,
+                'suburb': suburb,
+                'city': city,
+                'postcode': postcode,
                 'lat': lat,
                 'lon': lon,
               });
             }
 
-            if (output.isNotEmpty) {
-              _searchCache[normQuery] = output;
-              return output;
+            if (list.isNotEmpty) {
+              _searchCache[normQuery] = list;
+              return list;
             }
           }
         }
@@ -231,27 +225,39 @@ class LocationService {
 
     // 2. OpenStreetMap Nominatim Search Fallback
     try {
-      final url = Uri.parse('$_nominatimBaseUrl/search?format=json&q=${Uri.encodeComponent(query)}&limit=5&countrycodes=in');
+      final encoded = Uri.encodeComponent(query);
+      final url = Uri.parse(
+        '$_nominatimBaseUrl/search?format=json&q=$encoded&addressdetails=1&limit=6&countrycodes=in',
+      );
       final res = await http.get(url, headers: _headers).timeout(const Duration(seconds: 4));
 
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
-        final list = data.map((item) {
-          final lat = double.tryParse(item['lat']?.toString() ?? '17.4319') ?? 17.4319;
-          final lon = double.tryParse(item['lon']?.toString() ?? '78.4073') ?? 78.4073;
-          final displayName = item['display_name'] ?? query;
+        final list = <Map<String, dynamic>>[];
 
-          final parts = displayName.split(',');
-          final shortTitle = parts.isNotEmpty ? parts.take(2).join(',').trim() : query;
+        for (var item in data) {
+          final lat = double.tryParse(item['lat']?.toString() ?? '0') ?? 0.0;
+          final lon = double.tryParse(item['lon']?.toString() ?? '0') ?? 0.0;
+          final addr = item['address'] ?? {};
 
-          return {
-            'display_name': displayName,
-            'short_title': shortTitle,
-            'place_id': item['place_id']?.toString() ?? '',
+          final road = addr['road'] ?? addr['neighbourhood'] ?? '';
+          final suburb = addr['suburb'] ?? addr['residential'] ?? '';
+          final city = addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['state_district'] ?? 'City';
+          final displayName = item['display_name'] ?? '';
+
+          list.add({
+            'title': item['name'] ?? suburb ?? road ?? 'Location',
+            'subtitle': displayName,
+            'short_address': suburb.isNotEmpty ? '$suburb, $city' : (road.isNotEmpty ? '$road, $city' : displayName.split(',').take(2).join(',')),
+            'full_address': displayName,
+            'road': road,
+            'suburb': suburb,
+            'city': city,
+            'postcode': addr['postcode'] ?? '',
             'lat': lat,
             'lon': lon,
-          };
-        }).toList();
+          });
+        }
 
         _searchCache[normQuery] = list;
         return list;
