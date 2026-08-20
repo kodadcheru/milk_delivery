@@ -50,8 +50,8 @@ class SubscriptionModel {
       status: json['status'] ?? 'ACTIVE',
       deliveryAddress: json['delivery_address'] ?? 'Doorstep Drop',
       deliverySlot: json['delivery_slot'] ?? '05:30 AM - 07:00 AM',
-      deliveryLatitude: (json['delivery_latitude'] as num?)?.toDouble() ?? 17.4319,
-      deliveryLongitude: (json['delivery_longitude'] as num?)?.toDouble() ?? 78.4073,
+      deliveryLatitude: double.tryParse(json['delivery_latitude']?.toString() ?? '17.4319') ?? 17.4319,
+      deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '78.4073') ?? 78.4073,
       deliveryInstructions: json['delivery_instructions'] ?? '',
       packSize: json['pack_size'] ?? '1 Litre',
     );

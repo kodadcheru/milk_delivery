@@ -353,9 +353,13 @@ class ApiService {
   }
 
   // ── 5. Subscriptions ──
-  static Future<List<SubscriptionModel>> fetchSubscriptions() async {
+  static Future<List<SubscriptionModel>> fetchSubscriptions({String? phone, int? customerId}) async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/subscriptions/'), headers: _headers));
+      final uri = Uri.parse('$baseUrl/subscriptions/').replace(queryParameters: {
+        if (phone != null) 'phone': phone,
+        if (customerId != null) 'customer_id': customerId.toString(),
+      });
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
       if (res.statusCode == 200) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => SubscriptionModel.fromJson(e)).toList();
