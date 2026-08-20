@@ -150,3 +150,31 @@ class MilkBackendAPITests(TestCase):
         res = self.client.post(reverse("auth_verify_otp"), {"phone": "8919548905", "otp": "1234"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["user"]["role"], User.Roles.ADMIN)
+
+    def test_catalog_write_permission_lockdown(self):
+        # Customer trying to create product -> HTTP 403 Forbidden
+        res = self.client.post(reverse("product_list"), {"name": "Hacker Milk", "price_per_unit": "10.00"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Admin user creating product -> HTTP 201 Created
+        admin_user = User.objects.create_user(username="admin_test", password="pass", role=User.Roles.ADMIN, is_staff=True)
+        self.client.force_authenticate(user=admin_user)
+        res = self.client.post(reverse("product_list"), {"name": "Admin Milk", "price_per_unit": "80.00"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_address_idor_protection(self):
+        from apps.accounts.models import CustomerAddress
+        user_a = User.objects.create_user(username="usera", password="pass", phone="+91 9111111111")
+        user_b = User.objects.create_user(username="userb", password="pass", phone="+91 9222222222")
+        addr_a = CustomerAddress.objects.create(user=user_a, street_address="User A House", is_default=True)
+
+        # User B trying to set User A's address as default -> HTTP 404 Not Found
+        self.client.force_authenticate(user=user_b)
+        res = self.client.post(reverse("address_set_default", kwargs={"pk": addr_a.pk}))
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_strict_hub_resolver_out_of_service(self):
+        from apps.deliveries.hub_resolver import find_hub_for_location
+        # Location far outside coverage (lat=1.0, lon=1.0)
+        hub = find_hub_for_location(latitude=1.0, longitude=1.0, strict=True)
+        self.assertIsNone(hub)
