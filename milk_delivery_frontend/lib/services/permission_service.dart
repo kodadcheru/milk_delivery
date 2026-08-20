@@ -8,7 +8,7 @@ class PermissionService {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        // Prompt device location settings if disabled
+        // Location services disabled on device
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -62,36 +62,38 @@ class PermissionService {
     }
   }
 
-  /// Get real-time Device GPS Coordinates with Best-For-Navigation Sensitivity
+  /// Get real-time Device GPS Coordinates with Instant Fallback
   static Future<Position?> getDeviceCoordinates() async {
     try {
       bool hasPermission = await requestLocationPermission();
-      if (!hasPermission) return null;
+      if (!hasPermission) {
+        return await Geolocator.getLastKnownPosition();
+      }
 
       LocationSettings locationSettings;
 
       if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
-          accuracy: LocationAccuracy.bestForNavigation,
-          activityType: ActivityType.fitness,
+          accuracy: LocationAccuracy.high,
+          activityType: ActivityType.otherNavigation,
           distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
           showBackgroundLocationIndicator: false,
-          timeLimit: const Duration(seconds: 8),
+          timeLimit: const Duration(seconds: 4),
         );
       } else if (defaultTargetPlatform == TargetPlatform.android) {
         locationSettings = AndroidSettings(
-          accuracy: LocationAccuracy.bestForNavigation,
+          accuracy: LocationAccuracy.high,
           distanceFilter: 0,
           forceLocationManager: true,
           intervalDuration: const Duration(milliseconds: 500),
-          timeLimit: const Duration(seconds: 8),
+          timeLimit: const Duration(seconds: 4),
         );
       } else {
         locationSettings = const LocationSettings(
-          accuracy: LocationAccuracy.bestForNavigation,
+          accuracy: LocationAccuracy.high,
           distanceFilter: 0,
-          timeLimit: Duration(seconds: 8),
+          timeLimit: Duration(seconds: 4),
         );
       }
 

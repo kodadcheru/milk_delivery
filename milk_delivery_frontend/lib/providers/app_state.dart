@@ -394,12 +394,14 @@ class AppState extends ChangeNotifier {
     isDetectingLocation = true;
     notifyListeners();
 
+    bool success = false;
     try {
       final pos = await PermissionService.getDeviceCoordinates();
       if (pos != null) {
         currentLat = pos.latitude;
         currentLon = pos.longitude;
         hasLocationPermission = true;
+        success = true;
 
         final loc = await LocationService.reverseGeocode(pos.latitude, pos.longitude);
         if (loc != null && loc['short_address'] != null) {
@@ -415,7 +417,7 @@ class AppState extends ChangeNotifier {
 
     isDetectingLocation = false;
     notifyListeners();
-    return hasLocationPermission;
+    return success;
   }
 
   Future<void> updateDeliveryLocation(String newAddress, double lat, double lon) async {

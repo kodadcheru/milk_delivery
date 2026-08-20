@@ -24,9 +24,9 @@ class LocationService {
     if (googleMapsApiKey.isNotEmpty) {
       try {
         final googleUrl = Uri.parse(
-          'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lon&extra_computations=BUILDING_AND_ENTRANCES&key=$googleMapsApiKey',
+          'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lon&key=$googleMapsApiKey',
         );
-        final res = await http.get(googleUrl).timeout(const Duration(seconds: 5));
+        final res = await http.get(googleUrl).timeout(const Duration(seconds: 4));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
