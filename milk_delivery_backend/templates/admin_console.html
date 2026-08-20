@@ -2475,7 +2475,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/send-otp/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({ phone: phoneInput })
         });
         const data = await res.json();
@@ -2516,7 +2516,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/verify-otp/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({ phone: phoneInput, otp: otpInput })
         });
 
@@ -2566,7 +2566,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/token/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({ username, password })
         });
 
@@ -3868,7 +3868,7 @@
       try {
         const res = await fetch(`${baseUrl}/admin/fleet/${drvId}/`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({
             first_name: fn,
             last_name: ln,
@@ -4450,7 +4450,7 @@
       try {
         const res = await fetch(`${baseUrl}/admin/subscriptions/create/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({
             customer_id: cId,
             product_id: pId,
@@ -4591,7 +4591,7 @@
       try {
         const res = await fetch(`${baseUrl}/categories/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({ name, icon, description: desc, display_order: order, is_active: true })
         });
 
@@ -4630,7 +4630,7 @@
       try {
         const res = await fetch(`${baseUrl}/categories/${catId}/`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({ name, icon, description: desc, display_order: order })
         });
 
@@ -4650,7 +4650,7 @@
       if (!confirm(`Are you sure you want to delete Category '${name}'?`)) return;
 
       try {
-        const res = await fetch(`${baseUrl}/categories/${catId}/`, { method: 'DELETE' });
+        const res = await fetch(`${baseUrl}/categories/${catId}/`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           loadCategories();
           loadProducts();
@@ -4767,7 +4767,7 @@
       try {
         const res = await fetch(`${baseUrl}/products/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({
             name,
             category,
@@ -4826,7 +4826,7 @@
       try {
         const res = await fetch(`${baseUrl}/products/${id}/`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({
             name,
             category,
@@ -4856,7 +4856,7 @@
       if (!confirm(`Are you sure you want to delete item '${name}' from the catalog?`)) return;
 
       try {
-        const res = await fetch(`${baseUrl}/products/${id}/`, { method: 'DELETE' });
+        const res = await fetch(`${baseUrl}/products/${id}/`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           loadProducts();
           loadCategories();
@@ -5624,7 +5624,7 @@
     async function toggleSubscription(id) {
       await fetch(`${baseUrl}/admin/subscriptions/${id}/toggle/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
         body: JSON.stringify({ action: 'toggle' })
       });
       loadSubscriptions();
@@ -5639,7 +5639,7 @@
     async function completeDelivery(id) {
       await fetch(`${baseUrl}/deliveries/${id}/complete/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
         body: JSON.stringify({ proof_image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80' })
       });
       loadDeliveries();
@@ -5666,7 +5666,7 @@
 
       await fetch(`${baseUrl}/admin/credit-wallet/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
         body: JSON.stringify({ user_id: uId, amount: amt, description: desc })
       });
 
@@ -5682,7 +5682,7 @@
 
       await fetch(`${baseUrl}/admin/broadcast-notification/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
         body: JSON.stringify({ title, message, target_role: role })
       });
 
