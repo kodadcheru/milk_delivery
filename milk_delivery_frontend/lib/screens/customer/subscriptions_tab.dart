@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import '../../models/subscription_model.dart';
 import '../../widgets/delivery_calendar_view.dart';
+import '../../widgets/subscriptions/interactive_week_scrubber.dart';
 
 class SubscriptionsTab extends StatefulWidget {
   final AppState state;
@@ -17,6 +18,7 @@ class SubscriptionsTab extends StatefulWidget {
 class _SubscriptionsTabState extends State<SubscriptionsTab> {
   late Timer _timer;
   String _countdownStr = '';
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -187,11 +189,18 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
 
-            // ── 2. Interactive Visual Monthly Calendar ──
+            // ── 2. Next-Gen Interactive Weekly Delivery Scrubber ──
+            InteractiveWeekScrubber(
+              selectedDate: _selectedDate,
+              onDateSelected: (d) => setState(() => _selectedDate = d),
+            ),
+            const SizedBox(height: 12),
+
+            // ── 3. Interactive Visual Monthly Calendar ──
             DeliveryCalendarView(state: widget.state),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             // ── 3. Subscriptions List ──
             Row(

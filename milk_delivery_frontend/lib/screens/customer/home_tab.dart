@@ -6,6 +6,8 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
+import '../../widgets/home/home_morning_dispatch_capsule.dart';
+import '../../widgets/home/home_story_reels.dart';
 import '../../widgets/home/home_wallet_vacation_card.dart';
 import '../../widgets/home/home_promo_carousel.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
@@ -103,13 +105,19 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                 onLocationTap: () => HomeLocationSheet.show(context, widget.state),
               ),
 
-              // ── 2. Prepaid Wallet Balance & Vacation Banner ──
+              // ── 2. Next-Gen Hero Morning Dispatch Countdown Capsule ──
+              HomeMorningDispatchCapsule(state: widget.state),
+
+              // ── 3. Interactive Farm Story Highlights / Reels ──
+              const HomeStoryReels(),
+
+              // ── 4. Prepaid Wallet Balance & Vacation Banner ──
               HomeWalletVacationCard(
                 state: widget.state,
                 onRechargeTap: () => HomeTopUpDialog.show(context, widget.state),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               if (!widget.state.isLocationCovered) ...[
                 HomeServingSoonView(
@@ -117,7 +125,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   onSelectZoneTap: () => HomeLocationSheet.show(context, widget.state),
                 ),
               ] else ...[
-                // ── 3. Promotional Carousel ──
+                // ── 5. Promotional Carousel ──
                 HomePromoCarousel(
                   state: widget.state,
                   controller: _bannerController,
@@ -125,12 +133,12 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
 
-                // ── 4. Active Subscription Snapshot (if any) ──
+                // ── 6. Active Subscription Snapshot (if any) ──
                 if (activeSub != null) ...[
                   HomeActiveSubscriptionCard(state: widget.state, sub: activeSub),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                 ],
 
                 // ── 5. PROMINENT 4 CORE CATEGORIES MEGA SHOWCASE ──

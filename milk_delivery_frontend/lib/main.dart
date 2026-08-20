@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'config/app_config.dart';
 import 'providers/app_state.dart';
 import 'services/api_service.dart';
+import 'theme/app_theme.dart';
+import 'widgets/next_gen_nav_bar.dart';
 import 'screens/auth/phone_login_screen.dart';
 import 'screens/customer/home_tab.dart';
 import 'screens/customer/subscriptions_tab.dart';
@@ -94,84 +96,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     return MaterialApp(
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0D7C66),
-          primary: const Color(0xFF0D7C66),
-          secondary: const Color(0xFF10B981),
-          surface: const Color(0xFFF8FAFC),
-        ),
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
-          ),
-          margin: EdgeInsets.zero,
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          height: 68,
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-          iconTheme: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Color(0xFF0D7C66), size: 24);
-            }
-            return const IconThemeData(color: Color(0xFF64748B), size: 22);
-          }),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
-                color: Color(0xFF0D7C66),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              );
-            }
-            return const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            );
-          }),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0F172A),
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            backgroundColor: const Color(0xFF0D7C66),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Color(0xFFCBD5E1)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: !_isLoggedIn
           ? PhoneLoginScreen(
               state: _appState,
@@ -612,41 +537,42 @@ class _MainAppShellState extends State<MainAppShell> {
         ],
       ),
       body: screens[widget.state.currentTabIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.15), width: 1)),
-        ),
-        child: NavigationBar(
-          selectedIndex: widget.state.currentTabIndex,
-          onDestinationSelected: (idx) => widget.state.setTab(idx),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront_rounded),
-              label: 'Store',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.autorenew_outlined),
-              selectedIcon: Icon(Icons.autorenew_rounded),
-              label: 'Subscriptions',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-              label: 'Wallet',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long_rounded),
-              label: 'Bookings',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
-        ),
+      bottomNavigationBar: NextGenBottomNavBar(
+        selectedIndex: widget.state.currentTabIndex,
+        onItemSelected: (idx) => widget.state.setTab(idx),
+        items: [
+          const NextGenNavItem(
+            icon: Icons.storefront_outlined,
+            activeIcon: Icons.storefront_rounded,
+            label: 'Store',
+          ),
+          NextGenNavItem(
+            icon: Icons.autorenew_outlined,
+            activeIcon: Icons.autorenew_rounded,
+            label: 'Subs',
+            badgeText: widget.state.subscriptions.isNotEmpty
+                ? '${widget.state.subscriptions.length}'
+                : null,
+          ),
+          NextGenNavItem(
+            icon: Icons.account_balance_wallet_outlined,
+            activeIcon: Icons.account_balance_wallet_rounded,
+            label: 'Wallet',
+            badgeText: (widget.state.currentUser?.walletBalance ?? 0) > 0
+                ? '₹${(widget.state.currentUser?.walletBalance ?? 0).toStringAsFixed(0)}'
+                : null,
+          ),
+          const NextGenNavItem(
+            icon: Icons.receipt_long_outlined,
+            activeIcon: Icons.receipt_long_rounded,
+            label: 'Orders',
+          ),
+          const NextGenNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person_rounded,
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
