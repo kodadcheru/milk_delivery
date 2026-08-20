@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/customer_address_model.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/address_book_screen.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeLocationBar extends StatelessWidget {
   final AppState state;
@@ -55,28 +56,35 @@ class HomeLocationBar extends StatelessWidget {
     final isDetecting = state.isDetectingLocation;
 
     return Container(
-      color: const Color(0xFF0F172A),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: UiTone.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           Expanded(
             child: InkWell(
               onTap: onLocationTap,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(UiRadius.sm),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  color: UiTone.shellBackground,
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                  border: Border.all(color: UiTone.surfaceBorder),
+                  boxShadow: [
+                    BoxShadow(
+                      color: UiTone.ink.withValues(alpha: 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
                     Container(
                       width: 32,
                       height: 32,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      decoration: const BoxDecoration(
+                        color: UiTone.primarySoft,
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -92,7 +100,7 @@ class HomeLocationBar extends StatelessWidget {
                               Text(
                                 townCity.toUpperCase(),
                                 style: const TextStyle(
-                                  color: Color(0xFF10B981),
+                                  color: UiTone.primary,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.3,
@@ -105,7 +113,7 @@ class HomeLocationBar extends StatelessWidget {
                                     width: 8,
                                     height: 8,
                                     child: CircularProgressIndicator(
-                                      color: Color(0xFF10B981),
+                                      color: UiTone.primary,
                                       strokeWidth: 1.5,
                                     ),
                                   ),
@@ -117,8 +125,8 @@ class HomeLocationBar extends StatelessWidget {
                             activeAddr != null ? '${activeAddr.title} • $fullAddress' : fullAddress,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
+                            style: const TextStyle(
+                              color: UiTone.softText,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -126,7 +134,7 @@ class HomeLocationBar extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70, size: 20),
+                    const Icon(Icons.keyboard_arrow_down_rounded, color: UiTone.softText, size: 20),
                   ],
                 ),
               ),
@@ -142,22 +150,22 @@ class HomeLocationBar extends StatelessWidget {
                 ),
               );
             },
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(UiRadius.sm),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                color: UiTone.primarySoft,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+                border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.menu_book_rounded, color: Color(0xFF10B981), size: 16),
+                  Icon(Icons.menu_book_rounded, color: UiTone.primary, size: 16),
                   SizedBox(width: 4),
                   Text(
                     'Book',
                     style: TextStyle(
-                      color: Color(0xFF10B981),
+                      color: UiTone.primary,
                       fontWeight: FontWeight.w800,
                       fontSize: 11.5,
                     ),

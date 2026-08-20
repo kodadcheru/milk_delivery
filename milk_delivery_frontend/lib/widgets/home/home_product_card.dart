@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
+import '../../theme/ui_tokens.dart';
 import '../../widgets/product_detail_sheet.dart';
 
 class HomeProductCard extends StatelessWidget {
@@ -20,25 +21,17 @@ class HomeProductCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.md),
         border: Border.all(
-          color: inCartQty > 0 ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+          color: inCartQty > 0 ? UiTone.primary : UiTone.surfaceBorder,
           width: inCartQty > 0 ? 1.5 : 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: inCartQty > 0
-                ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                : Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: inCartQty > 0 ? UiShadow.glowPrimary : UiShadow.card,
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(UiRadius.md),
         child: InkWell(
           onTap: () => ProductDetailSheet.show(context, item, state),
           borderRadius: BorderRadius.circular(20),

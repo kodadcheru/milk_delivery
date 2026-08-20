@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/ui_tokens.dart';
 
 class NextGenNavItem {
   final IconData icon;
@@ -31,28 +32,22 @@ class NextGenBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(UiRadius.xl),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
-            height: 66,
+            height: 68,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
-              color: AppTheme.darkSlate.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(28),
+              color: UiTone.surface.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(UiRadius.xl),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: UiTone.surfaceBorder,
                 width: 1.2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              boxShadow: UiShadow.floatingNav,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -66,21 +61,19 @@ class NextGenBottomNavBar extends StatelessWidget {
                       AppTheme.hapticLight();
                       onItemSelected(index);
                     },
-                    borderRadius: BorderRadius.circular(20),
-                    splashColor: AppTheme.primaryMint.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(UiRadius.md),
+                    splashColor: UiTone.primarySoft,
                     highlightColor: Colors.transparent,
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 260),
+                      duration: const Duration(milliseconds: 220),
                       curve: Curves.easeOutCubic,
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.primaryMint.withValues(alpha: 0.18)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(18),
+                        color: isSelected ? UiTone.primarySoft : Colors.transparent,
+                        borderRadius: BorderRadius.circular(UiRadius.md),
                         border: isSelected
                             ? Border.all(
-                                color: AppTheme.primaryMint.withValues(alpha: 0.4),
+                                color: UiTone.primary.withValues(alpha: 0.3),
                                 width: 1,
                               )
                             : null,
@@ -95,22 +88,20 @@ class NextGenBottomNavBar extends StatelessWidget {
                               Icon(
                                 isSelected ? item.activeIcon : item.icon,
                                 size: isSelected ? 22 : 20,
-                                color: isSelected
-                                    ? AppTheme.primaryMint
-                                    : AppTheme.textMuted,
+                                color: isSelected ? UiTone.primary : UiTone.softText,
                               ),
                               if (item.badgeText != null && item.badgeText!.isNotEmpty)
                                 Positioned(
-                                  right: -10,
-                                  top: -4,
+                                  right: -12,
+                                  top: -5,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                     decoration: BoxDecoration(
-                                      gradient: AppTheme.goldenSunriseGradient,
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: UiTone.secondary,
+                                      borderRadius: BorderRadius.circular(UiRadius.pill),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: AppTheme.accentAmber.withValues(alpha: 0.4),
+                                          color: UiTone.secondary.withValues(alpha: 0.3),
                                           blurRadius: 4,
                                         ),
                                       ],
@@ -119,7 +110,7 @@ class NextGenBottomNavBar extends StatelessWidget {
                                       item.badgeText!,
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 8,
+                                        fontSize: 8.5,
                                         fontWeight: FontWeight.w900,
                                       ),
                                     ),
@@ -133,11 +124,9 @@ class NextGenBottomNavBar extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppTheme.textMuted.withValues(alpha: 0.8),
+                              fontSize: 10.5,
+                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                              color: isSelected ? UiTone.primary : UiTone.softText,
                               letterSpacing: isSelected ? -0.2 : 0,
                             ),
                           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
 import '../screens/customer/subscription_address_selection_screen.dart';
+import '../theme/ui_tokens.dart';
 
 enum SubscriptionPlanType { weekly, monthly }
 
@@ -15,8 +16,8 @@ class ProductDetailSheet extends StatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: UiTone.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => ProductDetailSheet(product: product, state: state),
     );
   }
