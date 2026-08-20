@@ -113,8 +113,11 @@ class CustomerAddressSetDefaultView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        user = _resolve_customer_user(request)
+        user = request.user if request.user and request.user.is_authenticated else _resolve_customer_user(request)
         if not user:
+            return Response({"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        if request.user.is_staff:
             addr = CustomerAddress.objects.filter(pk=pk).first()
         else:
             addr = CustomerAddress.objects.filter(pk=pk, user=user).first()

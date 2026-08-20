@@ -32,6 +32,23 @@ class ApiService {
   /// Last error message from any API call — UI can read this for error display
   static String? lastError;
 
+  static String _extractErrorMsg(http.Response res) {
+    try {
+      final body = jsonDecode(res.body);
+      if (body is Map) {
+        if (body.containsKey('detail')) return body['detail'].toString();
+        if (body.containsKey('error')) return body['error'].toString();
+        if (body.containsKey('message')) return body['message'].toString();
+        if (body.isNotEmpty) {
+          final firstVal = body.values.first;
+          if (firstVal is List && firstVal.isNotEmpty) return firstVal.first.toString();
+          return firstVal.toString();
+        }
+      }
+    } catch (_) {}
+    return 'HTTP ${res.statusCode}: ${res.reasonPhrase ?? "Request failed"}';
+  }
+
   static const String _prefTokenKey = 'milkdrop_auth_token';
   static const String _prefRefreshTokenKey = 'milkdrop_refresh_token';
   static const String _prefUserKey = 'milkdrop_user_data';
@@ -790,6 +807,8 @@ class ApiService {
           ));
       if (res.statusCode == 201 || res.statusCode == 200) {
         return LiveOrderModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;

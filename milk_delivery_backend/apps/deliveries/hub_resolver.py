@@ -10,18 +10,10 @@ import math
 from apps.deliveries.models import LocationHub, ServiceArea
 
 
-def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, address=None):
+def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, address=None, strict=False):
     """
     Resolve the best hub for a given delivery location.
-
-    Args:
-        pincode: Customer's delivery pincode (e.g., "500033")
-        latitude: Customer's delivery latitude
-        longitude: Customer's delivery longitude
-        address: Customer's address string (used for text matching)
-
-    Returns:
-        LocationHub instance or None
+    If strict=True, returns None when outside all hub coverage areas.
     """
     # Strategy 1: Match pincode against active service areas
     if pincode:
@@ -66,20 +58,22 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
                     best_distance = dist
                     best_hub = hub
 
-            # If no hub within coverage radius, pick closest within 50km max
-            if not best_hub:
+            if best_hub:
+                return best_hub
+
+            if not strict:
+                # If no hub within coverage radius, pick closest within 50km max
                 best_distance = float("inf")
                 for hub in hubs:
                     dist = _haversine_km(lat, lon, hub.latitude, hub.longitude)
                     if dist < best_distance and dist <= 50.0:
                         best_distance = dist
                         best_hub = hub
+                if best_hub:
+                    return best_hub
 
-            if best_hub:
-                return best_hub
-
-    # Strategy 4: Fallback to first hub
-    return LocationHub.objects.first()
+    # Strategy 4: Fallback to first hub if not strict
+    return None if strict else LocationHub.objects.first()
 
 
 def _haversine_km(lat1, lon1, lat2, lon2):
