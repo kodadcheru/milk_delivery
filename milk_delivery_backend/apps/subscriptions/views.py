@@ -15,7 +15,7 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         customer_id = self.request.query_params.get("customer_id")
         phone = self.request.query_params.get("phone")
 
-        qs = Subscription.objects.all().select_related("customer", "product", "hub")
+        qs = Subscription.objects.all().select_related("customer", "product", "hub", "product__category_ref").order_by("-created_at")
 
         if user and user.is_authenticated:
             if getattr(user, "role", "") == User.Roles.CUSTOMER:

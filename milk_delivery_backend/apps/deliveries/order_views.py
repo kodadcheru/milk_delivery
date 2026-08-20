@@ -21,7 +21,7 @@ class ExpressOrderListCreateView(APIView):
 
     def get(self, request):
         user = request.user
-        orders = LiveOrder.objects.all().prefetch_related("items__product").select_related("customer", "hub", "driver").order_by("-created_at")
+        orders = LiveOrder.objects.all().prefetch_related("items__product__category_ref").select_related("customer", "hub", "driver").order_by("-created_at")
         if user and user.is_authenticated:
             if user.role == User.Roles.CUSTOMER:
                 orders = orders.filter(customer=user)
