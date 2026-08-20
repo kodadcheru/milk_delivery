@@ -11,6 +11,8 @@ class ProductModel {
   final String nutritionInfo;
   final String farmOrigin;
   final bool isAvailable;
+  final int availableSlots;
+  final int dailyCapacitySlots;
   final double rating;
   final String icon;
 
@@ -27,9 +29,13 @@ class ProductModel {
     this.nutritionInfo = '100% Pure & Certified Quality',
     this.farmOrigin = 'Vedic Heritage Farm',
     this.isAvailable = true,
+    this.availableSlots = 100,
+    this.dailyCapacitySlots = 100,
     this.rating = 4.9,
     this.icon = '🥛',
   });
+
+  bool get isOutOfStock => !isAvailable || availableSlots <= 0;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     String nameStr = json['name'] ?? '';
@@ -61,6 +67,8 @@ class ProductModel {
       nutritionInfo: json['nutrition_info'] ?? '100% Pure & Certified Quality',
       farmOrigin: json['farm_origin'] ?? 'Heritage Source, Hyderabad',
       isAvailable: json['is_available'] ?? true,
+      availableSlots: json['available_slots'] ?? 100,
+      dailyCapacitySlots: json['daily_capacity_slots'] ?? 100,
       rating: double.tryParse(json['rating']?.toString() ?? '4.9') ?? 4.9,
       icon: defaultIcon,
     );
@@ -80,6 +88,8 @@ class ProductModel {
       'nutrition_info': nutritionInfo,
       'farm_origin': farmOrigin,
       'is_available': isAvailable,
+      'available_slots': availableSlots,
+      'daily_capacity_slots': dailyCapacitySlots,
       'rating': rating,
     };
   }

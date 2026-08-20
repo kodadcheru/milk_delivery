@@ -218,6 +218,36 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                           Text(item.name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
                           const SizedBox(height: 2),
                           Text('$_selectedPackSize • ₹${_effectiveUnitPrice.toStringAsFixed(0)} / unit', style: TextStyle(color: Colors.grey[700], fontSize: 12.5, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: item.isOutOfStock ? const Color(0xFFFEF2F2) : const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: item.isOutOfStock ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item.isOutOfStock ? Icons.block_rounded : Icons.inventory_2_rounded,
+                                  size: 13,
+                                  color: item.isOutOfStock ? const Color(0xFFDC2626) : const Color(0xFFD97706),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  item.isOutOfStock
+                                      ? 'OUT OF STOCK ❌ (Depot Slots Full)'
+                                      : 'Hub Capacity: ${item.availableSlots} / ${item.dailyCapacitySlots} Slots Available Today 📦',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: item.isOutOfStock ? const Color(0xFF991B1B) : const Color(0xFFB45309),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -586,37 +616,39 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                       child: SizedBox(
                         height: 48,
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            final customProduct = ProductModel(
-                              id: item.id,
-                              name: item.name,
-                              category: item.category,
-                              description: item.description,
-                              pricePerUnit: _effectiveUnitPrice,
-                              unit: item.unit,
-                              unitQuantity: _selectedPackSize,
-                              imageUrl: item.imageUrl,
-                              badgeText: item.badgeText,
-                              nutritionInfo: item.nutritionInfo,
-                              farmOrigin: item.farmOrigin,
-                              isAvailable: item.isAvailable,
-                              rating: item.rating,
-                              icon: item.icon,
-                            );
-                            widget.state.addToCart(customProduct);
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                duration: const Duration(seconds: 1),
-                                backgroundColor: const Color(0xFF0F172A),
-                                content: Text('🛒 Added 1x ${item.name} ($_selectedPackSize) to Cart!'),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF0D7C66), size: 16),
-                          label: const Text('Add 1x Cart', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 12)),
+                          onPressed: item.isOutOfStock
+                              ? null
+                              : () {
+                                  final customProduct = ProductModel(
+                                    id: item.id,
+                                    name: item.name,
+                                    category: item.category,
+                                    description: item.description,
+                                    pricePerUnit: _effectiveUnitPrice,
+                                    unit: item.unit,
+                                    unitQuantity: _selectedPackSize,
+                                    imageUrl: item.imageUrl,
+                                    badgeText: item.badgeText,
+                                    nutritionInfo: item.nutritionInfo,
+                                    farmOrigin: item.farmOrigin,
+                                    isAvailable: item.isAvailable,
+                                    rating: item.rating,
+                                    icon: item.icon,
+                                  );
+                                  widget.state.addToCart(customProduct);
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      duration: const Duration(seconds: 1),
+                                      backgroundColor: const Color(0xFF0F172A),
+                                      content: Text('🛒 Added 1x ${item.name} ($_selectedPackSize) to Cart!'),
+                                    ),
+                                  );
+                                },
+                          icon: Icon(Icons.shopping_bag_outlined, color: item.isOutOfStock ? Colors.grey : const Color(0xFF0D7C66), size: 16),
+                          label: Text(item.isOutOfStock ? 'Sold Out' : 'Add 1x Cart', style: TextStyle(color: item.isOutOfStock ? Colors.grey : const Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 12)),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
+                            side: BorderSide(color: item.isOutOfStock ? Colors.grey[300]! : const Color(0xFF0D7C66), width: 1.5),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
@@ -628,47 +660,54 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                       child: SizedBox(
                         height: 48,
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            final customProduct = ProductModel(
-                              id: item.id,
-                              name: item.name,
-                              category: item.category,
-                              description: item.description,
-                              pricePerUnit: _effectiveUnitPrice,
-                              unit: item.unit,
-                              unitQuantity: _selectedPackSize,
-                              imageUrl: item.imageUrl,
-                              badgeText: item.badgeText,
-                              nutritionInfo: item.nutritionInfo,
-                              farmOrigin: item.farmOrigin,
-                              isAvailable: item.isAvailable,
-                              rating: item.rating,
-                              icon: item.icon,
-                            );
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (c) => SubscriptionAddressSelectionScreen(
-                                  product: customProduct,
-                                  quantity: _qty,
-                                  schedule: _schedule,
-                                  packSize: _selectedPackSize,
-                                  timeSlot: _selectedSlot,
-                                  durationLabel: _durationLabel,
-                                  totalDeliveryDays: _totalDeliveryDays,
-                                  singleDeliveryCost: _singleDeliveryCost,
-                                  totalCost: _totalSubscriptionCost,
-                                  deliveryInstructions: _instructionsController.text.trim(),
-                                  state: widget.state,
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
-                          label: Text('Next: Select Address 📍 (₹${_totalSubscriptionCost.toStringAsFixed(0)})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          onPressed: item.isOutOfStock
+                              ? null
+                              : () {
+                                  final customProduct = ProductModel(
+                                    id: item.id,
+                                    name: item.name,
+                                    category: item.category,
+                                    description: item.description,
+                                    pricePerUnit: _effectiveUnitPrice,
+                                    unit: item.unit,
+                                    unitQuantity: _selectedPackSize,
+                                    imageUrl: item.imageUrl,
+                                    badgeText: item.badgeText,
+                                    nutritionInfo: item.nutritionInfo,
+                                    farmOrigin: item.farmOrigin,
+                                    isAvailable: item.isAvailable,
+                                    rating: item.rating,
+                                    icon: item.icon,
+                                  );
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (c) => SubscriptionAddressSelectionScreen(
+                                        product: customProduct,
+                                        quantity: _qty,
+                                        schedule: _schedule,
+                                        packSize: _selectedPackSize,
+                                        timeSlot: _selectedSlot,
+                                        durationLabel: _durationLabel,
+                                        totalDeliveryDays: _totalDeliveryDays,
+                                        singleDeliveryCost: _singleDeliveryCost,
+                                        totalCost: _totalSubscriptionCost,
+                                        deliveryInstructions: _instructionsController.text.trim(),
+                                        state: widget.state,
+                                      ),
+                                    ),
+                                  );
+                                },
+                          icon: Icon(item.isOutOfStock ? Icons.block_rounded : Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                          label: Text(
+                            item.isOutOfStock ? 'OUT OF STOCK ❌ (Depot Slots Full)' : 'Next: Select Address 📍 (₹${_totalSubscriptionCost.toStringAsFixed(0)})',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0D7C66),
+                            backgroundColor: item.isOutOfStock ? Colors.grey[400] : const Color(0xFF0D7C66),
+                            disabledBackgroundColor: Colors.grey[400],
+                            disabledForegroundColor: Colors.white70,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,

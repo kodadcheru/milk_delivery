@@ -163,8 +163,28 @@ class HomeProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Smart Cart Stepper or Dual CTA Buttons
-                if (inCartQty > 0)
+                // Smart Cart Stepper or Dual CTA Buttons / Out of Stock Banner
+                if (item.isOutOfStock)
+                  SizedBox(
+                    height: 32,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[300],
+                        disabledBackgroundColor: Colors.grey[300],
+                        disabledForegroundColor: Colors.grey[700],
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text(
+                        'OUT OF STOCK ❌',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                else if (inCartQty > 0)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     height: 32,
