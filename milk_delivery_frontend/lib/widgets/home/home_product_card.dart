@@ -19,15 +19,17 @@ class HomeProductCard extends StatelessWidget {
     final discountPrice = item.pricePerUnit * 1.12;
     final inCartQty = state.getCartQty(item.id);
 
-    return Container(
+    return Opacity(
+      opacity: item.isOutOfStock ? 0.55 : 1.0,
+      child: Container(
       decoration: BoxDecoration(
-        color: UiTone.surface,
+        color: item.isOutOfStock ? const Color(0xFFF1F5F9) : UiTone.surface,
         borderRadius: BorderRadius.circular(UiRadius.md),
         border: Border.all(
-          color: inCartQty > 0 ? UiTone.primary : UiTone.surfaceBorder,
-          width: inCartQty > 0 ? 1.5 : 1.0,
+          color: item.isOutOfStock ? Colors.grey[300]! : (inCartQty > 0 ? UiTone.primary : UiTone.surfaceBorder),
+          width: inCartQty > 0 && !item.isOutOfStock ? 1.5 : 1.0,
         ),
-        boxShadow: inCartQty > 0 ? UiShadow.glowPrimary : UiShadow.card,
+        boxShadow: item.isOutOfStock ? [] : (inCartQty > 0 ? UiShadow.glowPrimary : UiShadow.card),
       ),
       child: Material(
         color: Colors.transparent,
@@ -48,16 +50,22 @@ class HomeProductCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                          color: item.isOutOfStock
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : const Color(0xFF0D7C66).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+                          border: Border.all(
+                            color: item.isOutOfStock
+                                ? Colors.red.withValues(alpha: 0.3)
+                                : const Color(0xFF0D7C66).withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Text(
-                          item.badgeText,
+                          item.isOutOfStock ? 'SOLD OUT' : item.badgeText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF0D7C66),
+                          style: TextStyle(
+                            color: item.isOutOfStock ? Colors.red[700] : const Color(0xFF0D7C66),
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
                           ),
@@ -87,34 +95,63 @@ class HomeProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Avatar / Image Display Container
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    height: 85,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFFF1F5F9),
-                          const Color(0xFFE2E8F0).withValues(alpha: 0.5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                // Avatar / Image Display Container with SOLD OUT overlay
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: ColorFiltered(
+                        colorFilter: item.isOutOfStock
+                            ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                            : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                        child: Container(
+                          height: 85,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFFF1F5F9),
+                                const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: item.imageUrl.isNotEmpty
+                              ? Image.network(
+                                  item.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, err, stack) => Center(
+                                    child: Text(item.icon, style: const TextStyle(fontSize: 36)),
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(item.icon, style: const TextStyle(fontSize: 36)),
+                                ),
+                        ),
                       ),
                     ),
-                    child: item.imageUrl.isNotEmpty
-                        ? Image.network(
-                            item.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (ctx, err, stack) => Center(
-                              child: Text(item.icon, style: const TextStyle(fontSize: 36)),
+                    if (item.isOutOfStock)
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            child: const Center(
+                              child: Text(
+                                'SOLD OUT',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
                             ),
-                          )
-                        : Center(
-                            child: Text(item.icon, style: const TextStyle(fontSize: 36)),
                           ),
-                  ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 10),
 
@@ -282,6 +319,7 @@ class HomeProductCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
