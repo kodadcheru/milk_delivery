@@ -175,9 +175,9 @@ class SubscriptionPauseView(APIView):
 
         # Notify hub manager about the pause
         hub = sub.hub
-        if hub:
-            from apps.accounts.models import Notification
-            hub_manager = hub.manager
+        if hub and hub.manager_phone:
+            from apps.accounts.models import Notification, User
+            hub_manager = User.objects.filter(phone__endswith=hub.manager_phone[-10:]).first()
             if hub_manager:
                 Notification.objects.create(
                     user=hub_manager,
