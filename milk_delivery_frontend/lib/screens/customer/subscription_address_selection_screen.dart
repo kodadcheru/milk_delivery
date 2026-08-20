@@ -114,11 +114,17 @@ class _SubscriptionAddressSelectionScreenState
 
   @override
   Widget build(BuildContext context) {
-    final savedAddrs = widget.state.savedAddresses;
+    return AnimatedBuilder(
+      animation: widget.state,
+      builder: (context, _) {
+        final savedAddrs = widget.state.savedAddresses;
+        if (_selectedAddress == null && savedAddrs.isNotEmpty) {
+          _selectedAddress = widget.state.activeAddress ?? savedAddrs.first;
+        }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0.5,
@@ -539,5 +545,7 @@ class _SubscriptionAddressSelectionScreenState
         ),
       ),
     );
-  }
+  },
+);
+}
 }

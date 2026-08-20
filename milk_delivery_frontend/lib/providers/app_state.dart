@@ -497,13 +497,23 @@ class AppState extends ChangeNotifier {
         currentLat = profileAddr.latitude;
         currentLon = profileAddr.longitude;
       } else {
-        activeAddress = null;
-        if (locationHubs.isNotEmpty) {
-          final h = locationHubs.first;
-          currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
-          currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
-          currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
-        }
+        final fallbackAddr = CustomerAddressModel(
+          id: -1,
+          userId: currentUser?.id,
+          addressType: 'HOME',
+          displayType: 'Home',
+          flatHouseNo: '',
+          streetAddress: (currentDeliveryAddress.isNotEmpty && currentDeliveryAddress != 'Select Delivery Location')
+              ? currentDeliveryAddress
+              : 'Kodad Town, Main Road',
+          city: 'Kodad',
+          pincode: '508206',
+          latitude: currentLat,
+          longitude: currentLon,
+          isDefault: true,
+        );
+        savedAddresses = [fallbackAddr];
+        activeAddress = fallbackAddr;
       }
     } catch (_) {}
     notifyListeners();
