@@ -2,37 +2,31 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class LocationService {
-  // Google Maps API Key for high-precision Geocoding and Places Lookup
+  // Google Maps Official API Key for high-precision Geocoding and Places Lookup
   static String googleMapsApiKey = 'AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg';
 
   // Google Maps Official Raster Tile Template
   static const String googleMapsTileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
   static const List<String> googleMapsSubdomains = ['mt0', 'mt1', 'mt2', 'mt3'];
 
-  static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
-  static const Map<String, String> _headers = {
-    'User-Agent': 'MilkDropExpressApp/2.0 (delivery@milkdrop.express)',
-    'Accept': 'application/json',
-  };
-
   // In-Memory Fast Response Caches (~1.1 meter ground resolution)
   static final Map<String, Map<String, dynamic>> _reverseCache = {};
   static final Map<String, List<Map<String, dynamic>>> _searchCache = {};
 
-  /// High-Precision Reverse Geocoding (< 5-10m Accuracy)
+  /// High-Precision Google Maps Reverse Geocoding (< 5-10m Accuracy)
   static Future<Map<String, dynamic>?> reverseGeocode(double lat, double lon) async {
     final cacheKey = '${lat.toStringAsFixed(5)},${lon.toStringAsFixed(5)}';
     if (_reverseCache.containsKey(cacheKey)) {
       return _reverseCache[cacheKey];
     }
 
-    // 1. Google Maps Geocoding API with Deep Hierarchical Parsing
+    // Google Maps Geocoding API with Deep Hierarchical Parsing
     if (googleMapsApiKey.isNotEmpty) {
       try {
         final googleUrl = Uri.parse(
           'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lon&extra_computations=BUILDING_AND_ENTRANCES&key=$googleMapsApiKey',
         );
-        final res = await http.get(googleUrl).timeout(const Duration(seconds: 4));
+        final res = await http.get(googleUrl).timeout(const Duration(seconds: 5));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
@@ -101,47 +95,6 @@ class LocationService {
       } catch (_) {}
     }
 
-    // 2. High-Precision OpenStreetMap Nominatim Query (zoom=18 building level)
-    try {
-      final url = Uri.parse(
-        '$_nominatimBaseUrl/reverse?format=json&lat=$lat&lon=$lon&zoom=18&addressdetails=1&namedetails=1&extratags=1',
-      );
-      final res = await http.get(url, headers: _headers).timeout(const Duration(seconds: 4));
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final addr = data['address'] ?? {};
-
-        final houseNumber = addr['house_number'] ?? addr['flat_number'] ?? '';
-        final building = addr['building'] ?? addr['amenity'] ?? addr['shop'] ?? addr['office'] ?? '';
-        final road = addr['road'] ?? addr['pedestrian'] ?? addr['footway'] ?? addr['neighbourhood'] ?? 'Main Road';
-        final suburb = addr['suburb'] ?? addr['residential'] ?? addr['neighbourhood'] ?? 'Local Area';
-        final city = addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['state_district'] ?? 'City';
-        final state = addr['state'] ?? 'State';
-        final postcode = addr['postcode'] ?? '500001';
-
-        final shortAddress = building.isNotEmpty
-            ? '$building, $suburb, $city'
-            : '$road, $suburb, $city';
-        final fullAddress = '$road, $suburb, $city, $state - $postcode';
-
-        final result = {
-          'short_address': shortAddress,
-          'full_address': fullAddress,
-          'house_no': houseNumber,
-          'building': building,
-          'road': road,
-          'suburb': suburb,
-          'city': city,
-          'postcode': postcode,
-          'lat': lat,
-          'lon': lon,
-        };
-        _reverseCache[cacheKey] = result;
-        return result;
-      }
-    } catch (_) {}
-
     // Fallback default coordinates
     final fallback = {
       'short_address': 'Doorstep Delivery Location',
@@ -157,7 +110,7 @@ class LocationService {
     return fallback;
   }
 
-  /// High-Precision Places Search across Google Maps Geocoding & Places APIs
+  /// High-Precision Google Maps Places & Address Search
   static Future<List<Map<String, dynamic>>> searchPlaces(String query) async {
     final normQuery = query.trim().toLowerCase();
     if (normQuery.isEmpty) return [];
@@ -166,14 +119,14 @@ class LocationService {
       return _searchCache[normQuery]!;
     }
 
-    // 1. Google Maps Geocoding API for exact coordinates
+    // Google Maps Geocoding API for exact coordinates
     if (googleMapsApiKey.isNotEmpty) {
       try {
         final encoded = Uri.encodeComponent('$query, India');
         final url = Uri.parse(
           'https://maps.googleapis.com/maps/api/geocode/json?address=$encoded&key=$googleMapsApiKey',
         );
-        final res = await http.get(url).timeout(const Duration(seconds: 4));
+        final res = await http.get(url).timeout(const Duration(seconds: 5));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
@@ -222,47 +175,6 @@ class LocationService {
         }
       } catch (_) {}
     }
-
-    // 2. OpenStreetMap Nominatim Search Fallback
-    try {
-      final encoded = Uri.encodeComponent(query);
-      final url = Uri.parse(
-        '$_nominatimBaseUrl/search?format=json&q=$encoded&addressdetails=1&limit=6&countrycodes=in',
-      );
-      final res = await http.get(url, headers: _headers).timeout(const Duration(seconds: 4));
-
-      if (res.statusCode == 200) {
-        final List data = jsonDecode(res.body);
-        final list = <Map<String, dynamic>>[];
-
-        for (var item in data) {
-          final lat = double.tryParse(item['lat']?.toString() ?? '0') ?? 0.0;
-          final lon = double.tryParse(item['lon']?.toString() ?? '0') ?? 0.0;
-          final addr = item['address'] ?? {};
-
-          final road = addr['road'] ?? addr['neighbourhood'] ?? '';
-          final suburb = addr['suburb'] ?? addr['residential'] ?? '';
-          final city = addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['state_district'] ?? 'City';
-          final displayName = item['display_name'] ?? '';
-
-          list.add({
-            'title': item['name'] ?? suburb ?? road ?? 'Location',
-            'subtitle': displayName,
-            'short_address': suburb.isNotEmpty ? '$suburb, $city' : (road.isNotEmpty ? '$road, $city' : displayName.split(',').take(2).join(',')),
-            'full_address': displayName,
-            'road': road,
-            'suburb': suburb,
-            'city': city,
-            'postcode': addr['postcode'] ?? '',
-            'lat': lat,
-            'lon': lon,
-          });
-        }
-
-        _searchCache[normQuery] = list;
-        return list;
-      }
-    } catch (_) {}
 
     return [];
   }

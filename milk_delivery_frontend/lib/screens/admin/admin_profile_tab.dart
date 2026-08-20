@@ -135,7 +135,7 @@ class AdminProfileTab extends StatelessWidget {
                 const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
                 _buildSystemStatRow('SQLite Database', 'SQLite3 WAL Mode • Auto-indexed schema', '🟢 HEALTHY'),
                 const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                _buildSystemStatRow('Geocoding Service', 'OpenStreetMap Nominatim Reverse Geocoder', '🟢 ACTIVE'),
+                _buildSystemStatRow('Geocoding Service', 'Google Maps V3 Geocoding & Places Engine', '🟢 ACTIVE'),
               ],
             ),
           ),
