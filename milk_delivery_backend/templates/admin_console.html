@@ -727,6 +727,9 @@
 
     <!-- ── Tab 1: Dashboard & Forecast ── -->
     <div id="tab-dashboard">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 14px;">
+        <button class="btn btn-secondary" onclick="loadDashboard()" style="padding: 6px 14px; font-size: 13px;"><i class="fa-solid fa-sync"></i> Refresh Dashboard</button>
+      </div>
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-title"><i class="fa-solid fa-droplet"></i> Daily Milk Volume Forecast</div>
@@ -994,7 +997,10 @@
             <div class="section-title"><i class="fa-solid fa-map-location-dot" style="color: var(--primary-accent);"></i> Live Hyderabad Geofenced Operations & Fleet Radar Map</div>
             <span style="font-size: 12px; color: var(--text-muted);">Real-time tracking of Location Depots (5km Geofences), Salaried Delivery Boys on duty, and Doorstep Delivery Drops</span>
           </div>
-          <button class="btn btn-primary" onclick="openAddServiceAreaModal()"><i class="fa-solid fa-plus"></i> Add Service Area</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="openAddServiceAreaModal()"><i class="fa-solid fa-plus"></i> Add Service Area</button>
+            <button class="btn btn-secondary" onclick="loadServiceAreas()"><i class="fa-solid fa-sync"></i> Refresh</button>
+          </div>
         </div>
 
         <!-- Google Maps Operations Layer Filter Bar -->
@@ -1183,6 +1189,7 @@
             <select id="fleetHubFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="loadFleet(this.value)">
               <option value="">🏢 All Location Hubs</option>
             </select>
+            <button class="btn btn-secondary" onclick="loadFleet()"><i class="fa-solid fa-sync"></i> Refresh</button>
             <button class="btn btn-primary" onclick="openAddDriverModal()"><i class="fa-solid fa-user-plus"></i> Onboard Delivery Partner</button>
           </div>
         </div>
@@ -1237,7 +1244,10 @@
             <div class="section-title"><i class="fa-solid fa-box-open" style="color: #38BDF8;"></i> Items & Products Inventory</div>
             <span style="font-size: 12px; color: var(--text-muted);">Manage item specifications, category assignment, price per unit, and in-stock availability</span>
           </div>
-          <button class="btn btn-primary" onclick="openAddProductModal()"><i class="fa-solid fa-plus"></i> Add New Item</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="openAddProductModal()"><i class="fa-solid fa-plus"></i> Add New Item</button>
+            <button class="btn btn-secondary" onclick="loadProducts()"><i class="fa-solid fa-sync"></i> Refresh Products</button>
+          </div>
         </div>
 
         <!-- Category Filter Pills Bar -->
