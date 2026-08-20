@@ -429,15 +429,15 @@ class ApiService {
         'quantity': quantity,
         'schedule_type': scheduleType,
         'start_date': todayStr,
-        'customer_id': ?customerId,
-        'customer_phone': ?customerPhone,
-        'delivery_address': ?deliveryAddress,
-        'delivery_slot': ?deliverySlot,
-        'delivery_latitude': ?deliveryLatitude,
-        'delivery_longitude': ?deliveryLongitude,
-        'delivery_instructions': ?deliveryInstructions,
-        'pack_size': ?packSize,
       };
+      if (customerId != null) payload['customer_id'] = customerId;
+      if (customerPhone != null) payload['customer_phone'] = customerPhone;
+      if (deliveryAddress != null) payload['delivery_address'] = deliveryAddress;
+      if (deliverySlot != null) payload['delivery_slot'] = deliverySlot;
+      if (deliveryLatitude != null) payload['delivery_latitude'] = deliveryLatitude;
+      if (deliveryLongitude != null) payload['delivery_longitude'] = deliveryLongitude;
+      if (deliveryInstructions != null) payload['delivery_instructions'] = deliveryInstructions;
+      if (packSize != null) payload['pack_size'] = packSize;
 
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/subscriptions/'),
