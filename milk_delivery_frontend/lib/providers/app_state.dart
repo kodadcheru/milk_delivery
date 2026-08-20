@@ -822,6 +822,8 @@ class AppState extends ChangeNotifier {
       product.id,
       qty,
       schedule,
+      customerId: currentUser?.id,
+      customerPhone: currentUser?.phone,
       deliveryAddress: targetAddr,
       deliverySlot: slotStr,
       deliveryLatitude: targetLat,

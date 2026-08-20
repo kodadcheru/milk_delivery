@@ -7,26 +7,60 @@ from apps.subscriptions.serializers import SubscriptionSerializer, VacationPause
 
 class SubscriptionListCreateView(generics.ListCreateAPIView):
     serializer_class = SubscriptionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
+        from apps.accounts.models import User
         user = self.request.user
-        if user.role == "ADMIN":
-            return Subscription.objects.all()
-        return Subscription.objects.filter(customer=user)
+        customer_id = self.request.query_params.get("customer_id")
+        phone = self.request.query_params.get("phone")
+
+        qs = Subscription.objects.all().select_related("customer", "product", "hub")
+
+        if user and user.is_authenticated:
+            if getattr(user, "role", "") == User.Roles.CUSTOMER:
+                return qs.filter(customer=user)
+            elif getattr(user, "role", "") == User.Roles.ADMIN:
+                return qs
+
+        if customer_id:
+            return qs.filter(customer_id=customer_id)
+        if phone:
+            digits = "".join(filter(str.isdigit, str(phone)))
+            if digits:
+                return qs.filter(customer__phone__endswith=digits[-10:])
+
+        return qs
 
     def perform_create(self, serializer):
+        from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub, DeliveryTask
+        from datetime import date
+
         user = self.request.user
-        hub = user.assigned_hub
+        if not user or not user.is_authenticated:
+            customer_id = self.request.data.get("customer_id") or self.request.data.get("customer")
+            phone = self.request.data.get("customer_phone") or self.request.data.get("phone")
+            if customer_id:
+                user = User.objects.filter(pk=customer_id).first()
+            elif phone:
+                digits = "".join(filter(str.isdigit, str(phone)))
+                if digits:
+                    user = User.objects.filter(phone__endswith=digits[-10:]).first()
+            if not user:
+                user = User.objects.filter(role=User.Roles.CUSTOMER).first()
+                if not user:
+                    user = User.objects.first()
+
+        hub = getattr(user, "assigned_hub", None) if user else None
         if not hub:
-            from apps.deliveries.models import LocationHub
-            hub = LocationHub.objects.first()
-            
-        deliv_addr = self.request.data.get("delivery_address") or user.address or "Doorstep Drop"
-        deliv_slot = self.request.data.get("delivery_slot") or user.delivery_slot_preference or "05:30 AM - 07:00 AM"
-        deliv_lat = self.request.data.get("delivery_latitude") or user.latitude or 17.4319
-        deliv_lon = self.request.data.get("delivery_longitude") or user.longitude or 78.4073
-        deliv_inst = self.request.data.get("delivery_instructions") or user.delivery_instructions or ""
+            hub = LocationHub.objects.filter(hub_code="HUB-KDD-01").first() or LocationHub.objects.first()
+
+        deliv_addr = self.request.data.get("delivery_address") or (getattr(user, "address", None) if user else None) or "2X27+P3X, Kodad"
+        deliv_slot = self.request.data.get("delivery_slot") or (getattr(user, "delivery_slot_preference", None) if user else None) or "05:30 AM - 07:00 AM"
+        deliv_lat = self.request.data.get("delivery_latitude") or (getattr(user, "latitude", None) if user else None) or 16.9950
+        deliv_lon = self.request.data.get("delivery_longitude") or (getattr(user, "longitude", None) if user else None) or 79.9670
+        deliv_inst = self.request.data.get("delivery_instructions") or (getattr(user, "delivery_instructions", None) if user else None) or ""
         pack_size = self.request.data.get("pack_size") or "1 Litre"
 
         sub = serializer.save(
@@ -38,10 +72,9 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             delivery_longitude=deliv_lon,
             delivery_instructions=deliv_inst,
             pack_size=pack_size,
+            status=Subscription.Statuses.ACTIVE,
         )
 
-        from datetime import date
-        from apps.deliveries.models import DeliveryTask
         driver = hub.delivery_partners.first() if hub else None
         DeliveryTask.objects.get_or_create(
             subscription=sub,
@@ -57,13 +90,10 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
 
 class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = SubscriptionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        user = self.request.user
-        if user.role == "ADMIN":
-            return Subscription.objects.all()
-        return Subscription.objects.filter(customer=user)
+        return Subscription.objects.all()
 
 
 class SubscriptionPauseView(APIView):

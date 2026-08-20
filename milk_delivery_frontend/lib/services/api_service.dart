@@ -368,6 +368,8 @@ class ApiService {
     int productId,
     int quantity,
     String scheduleType, {
+    int? customerId,
+    String? customerPhone,
     String? deliveryAddress,
     String? deliverySlot,
     double? deliveryLatitude,
@@ -377,23 +379,27 @@ class ApiService {
   }) async {
     try {
       final todayStr = DateTime.now().toString().split(' ')[0];
+      final Map<String, dynamic> payload = {
+        'product': productId,
+        'quantity': quantity,
+        'schedule_type': scheduleType,
+        'start_date': todayStr,
+        if (customerId != null) 'customer_id': customerId,
+        if (customerPhone != null) 'customer_phone': customerPhone,
+        if (deliveryAddress != null) 'delivery_address': deliveryAddress,
+        if (deliverySlot != null) 'delivery_slot': deliverySlot,
+        if (deliveryLatitude != null) 'delivery_latitude': deliveryLatitude,
+        if (deliveryLongitude != null) 'delivery_longitude': deliveryLongitude,
+        if (deliveryInstructions != null) 'delivery_instructions': deliveryInstructions,
+        if (packSize != null) 'pack_size': packSize,
+      };
+
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/subscriptions/'),
             headers: _headers,
-            body: jsonEncode({
-              'product': productId,
-              'quantity': quantity,
-              'schedule_type': scheduleType,
-              'start_date': todayStr,
-              'delivery_address': ?deliveryAddress,
-              'delivery_slot': ?deliverySlot,
-              'delivery_latitude': ?deliveryLatitude,
-              'delivery_longitude': ?deliveryLongitude,
-              'delivery_instructions': ?deliveryInstructions,
-              'pack_size': ?packSize,
-            }),
+            body: jsonEncode(payload),
           ));
-      if (res.statusCode == 201) {
+      if (res.statusCode == 201 || res.statusCode == 200) {
         return SubscriptionModel.fromJson(jsonDecode(res.body));
       }
     } catch (_) {}
