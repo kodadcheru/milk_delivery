@@ -42,19 +42,10 @@ class AppState extends ChangeNotifier {
       'id': 'HUB-KDD-01',
       'hub_code': 'HUB-KDD-01',
       'name': 'Kodad Depot',
-      'address': 'Main Road, Kodad, Suryapet, Telangana 508206',
-      'latitude': 16.9950,
-      'longitude': 79.9670,
-      'coverage_radius_km': 25.0,
-    },
-    {
-      'id': 'HUB-HYD-01',
-      'hub_code': 'HUB-HYD-01',
-      'name': 'Hyderabad Central Depot',
-      'address': 'Road No 36, Jubilee Hills, Hyderabad 500033',
-      'latitude': 17.4319,
-      'longitude': 78.4073,
-      'coverage_radius_km': 25.0,
+      'address': '2X27+M36, Kodad, Telangana 508206, India',
+      'latitude': 17.001734,
+      'longitude': 79.9625,
+      'coverage_radius_km': 8.5,
     },
   ];
 
@@ -69,22 +60,17 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? get nearestCoveringHub {
     if (locationHubs.isEmpty) return null;
 
-    Map<String, dynamic>? bestHub;
-    double minDistance = double.infinity;
+    final hub = locationHubs.first;
+    final hLat = (hub['latitude'] as num?)?.toDouble() ?? 17.001734;
+    final hLon = (hub['longitude'] as num?)?.toDouble() ?? 79.9625;
+    // Dynamic radius as configured in the Admin Web Console / Railway DB
+    final radius = (hub['coverage_radius_km'] as num?)?.toDouble() ?? 8.5;
 
-    for (var hub in locationHubs) {
-      final hLat = (hub['latitude'] as num?)?.toDouble() ?? 17.4319;
-      final hLon = (hub['longitude'] as num?)?.toDouble() ?? 78.4073;
-      final radius = (hub['coverage_radius_km'] as num?)?.toDouble() ?? 5.0;
-
-      final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
-      if (dist <= radius && dist < minDistance) {
-        minDistance = dist;
-        bestHub = hub;
-      }
+    final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
+    if (dist <= radius) {
+      return hub;
     }
-
-    return bestHub;
+    return hub; // Always route to Kodad Depot as single dedicated hub
   }
 
   bool get isLocationCovered => nearestCoveringHub != null;

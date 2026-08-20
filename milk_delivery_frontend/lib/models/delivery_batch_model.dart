@@ -20,13 +20,13 @@ class HubLocationModel {
   });
 
   static const HubLocationModel defaultHub = HubLocationModel(
-    id: 'HUB-01',
-    name: 'Central Operations Hub',
-    address: 'Operations Depot Base',
-    latitude: 17.4320,
-    longitude: 78.4070,
-    managerName: 'Operations Admin',
-    managerPhone: '+91 8919548905',
+    id: 'HUB-KDD-01',
+    name: 'Kodad Depot',
+    address: '2X27+M36, Kodad, Telangana 508206, India',
+    latitude: 17.001734,
+    longitude: 79.9625,
+    managerName: 'srinuvasa reddy',
+    managerPhone: '8885199878',
   );
 }
 
