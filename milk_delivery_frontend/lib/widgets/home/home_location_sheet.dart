@@ -7,6 +7,9 @@ import '../../screens/customer/map_location_picker_screen.dart';
 
 class HomeLocationSheet {
   static void show(BuildContext context, AppState state) {
+    if (state.savedAddresses.isEmpty) {
+      state.fetchSavedAddresses();
+    }
     final searchCtrl = TextEditingController();
     List<Map<String, dynamic>> searchResults = [];
     bool isSearching = false;
@@ -45,42 +48,43 @@ class HomeLocationSheet {
               ),
               const SizedBox(height: 6),
 
-              // ── Saved Addresses Section ──
-              if (state.savedAddresses.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'SAVED ADDRESSES',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF64748B),
-                        letterSpacing: 0.5,
-                      ),
+              // ── Saved Addresses Section Header ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'SAVED ADDRESSES',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 0.5,
                     ),
-                    TextButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (c) => AddressBookScreen(state: state),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.menu_book_rounded, size: 14, color: Color(0xFF10B981)),
-                      label: const Text(
-                        'Manage Book',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF10B981),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (c) => AddressBookScreen(state: state),
                         ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_location_alt_rounded, size: 14, color: Color(0xFF10B981)),
+                    label: Text(
+                      state.savedAddresses.isNotEmpty ? 'Manage Book' : '+ Add Address',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF10B981),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+
+              if (state.savedAddresses.isNotEmpty) ...[
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 180),
                   child: ListView.separated(

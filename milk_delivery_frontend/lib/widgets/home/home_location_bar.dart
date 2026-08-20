@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/customer_address_model.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/address_book_screen.dart';
 
@@ -12,12 +13,45 @@ class HomeLocationBar extends StatelessWidget {
     required this.onLocationTap,
   });
 
+  String _getTownOrCity(CustomerAddressModel? activeAddr, String rawAddress) {
+    if (activeAddr != null && activeAddr.city.isNotEmpty) {
+      final street = activeAddr.streetAddress;
+      if (street.isNotEmpty) {
+        final parts = street.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        if (parts.isNotEmpty) {
+          final lastSegment = parts.last;
+          if (lastSegment.toLowerCase() != activeAddr.city.toLowerCase() && lastSegment.length < 25) {
+            return '$lastSegment, ${activeAddr.city}';
+          }
+        }
+      }
+      return activeAddr.city;
+    }
+
+    if (rawAddress.isNotEmpty && rawAddress != 'Select Delivery Location') {
+      final parts = rawAddress.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      if (parts.length >= 2) {
+        final locality = parts[parts.length - 2].replaceAll(RegExp(r'\d+'), '').trim();
+        final city = parts.last.replaceAll(RegExp(r'\d+'), '').trim();
+        if (locality.isNotEmpty && city.isNotEmpty && locality.toLowerCase() != city.toLowerCase() && locality.length < 20) {
+          return '$locality, $city';
+        }
+        if (city.isNotEmpty) return city;
+      } else if (parts.isNotEmpty) {
+        final town = parts.last.replaceAll(RegExp(r'\d+'), '').trim();
+        if (town.isNotEmpty) return town;
+      }
+    }
+
+    return 'Kodad';
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeAddr = state.activeAddress;
-    final address = activeAddr?.summaryAddress ?? state.currentDeliveryAddress;
+    final fullAddress = activeAddr?.summaryAddress ?? state.currentDeliveryAddress;
+    final townCity = _getTownOrCity(activeAddr, fullAddress);
     final iconText = activeAddr?.icon ?? '📍';
-    final titleText = activeAddr != null ? '${activeAddr.title} • ' : '';
     final isDetecting = state.isDetectingLocation;
 
     return Container(
@@ -39,14 +73,14 @@ class HomeLocationBar extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981).withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: Text(iconText, style: const TextStyle(fontSize: 14)),
+                      child: Text(iconText, style: const TextStyle(fontSize: 16)),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -56,14 +90,12 @@ class HomeLocationBar extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                activeAddr != null
-                                    ? 'DELIVERING TO (${activeAddr.displayType.toUpperCase()})'
-                                    : 'DELIVERING TO (LIVE GPS)',
+                                townCity.toUpperCase(),
                                 style: const TextStyle(
                                   color: Color(0xFF10B981),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                               if (isDetecting)
@@ -82,19 +114,19 @@ class HomeLocationBar extends StatelessWidget {
                           ),
                           const SizedBox(height: 1),
                           Text(
-                            '$titleText$address',
+                            activeAddr != null ? '${activeAddr.title} • $fullAddress' : fullAddress,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70, size: 18),
+                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70, size: 20),
                   ],
                 ),
               ),
