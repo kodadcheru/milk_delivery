@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/route_optimizer.dart';
 
 class DriverRouteMapScreen extends StatefulWidget {
   final AppState state;
@@ -22,16 +24,18 @@ class DriverRouteMapScreen extends StatefulWidget {
 class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   GoogleMapController? _mapController;
   int _selectedTaskIndex = 0;
+  late RouteOptimizationResult _tspResult;
+  late List<DeliveryTaskModel> _orderedTasks;
 
-  // Depot location — read from active hub, fallback to defaults
+  // Depot location — read from active hub, fallback to Kodad default
   LatLng get _depotLocation {
     final hub = widget.state.nearestCoveringHub;
     if (hub != null) {
-      final lat = double.tryParse(hub['latitude']?.toString() ?? '') ?? 17.4320;
-      final lng = double.tryParse(hub['longitude']?.toString() ?? '') ?? 78.4070;
+      final lat = double.tryParse(hub['latitude']?.toString() ?? '') ?? 17.001734;
+      final lng = double.tryParse(hub['longitude']?.toString() ?? '') ?? 79.9625;
       return LatLng(lat, lng);
     }
-    return const LatLng(17.4320, 78.4070);
+    return const LatLng(17.001734, 79.9625);
   }
 
   // Delivery partner location
@@ -40,7 +44,17 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   @override
   void initState() {
     super.initState();
-    // GoogleMapController set via onMapCreated
+    final hubModel = HubLocationModel(
+      id: widget.state.nearestCoveringHub?['hub_code']?.toString() ?? 'HUB-KDD-01',
+      name: widget.state.nearestCoveringHub?['name']?.toString() ?? 'Kodad Depot',
+      address: widget.state.nearestCoveringHub?['address']?.toString() ?? '2X27+M36, Kodad, Telangana 508206, India',
+      latitude: _depotLocation.latitude,
+      longitude: _depotLocation.longitude,
+      managerName: widget.state.nearestCoveringHub?['manager_name']?.toString() ?? 'srinuvasa reddy',
+      managerPhone: widget.state.nearestCoveringHub?['manager_phone']?.toString() ?? '8885199878',
+    );
+    _tspResult = RouteOptimizer.optimizeBatchRoute(hub: hubModel, tasks: widget.tasks);
+    _orderedTasks = _tspResult.orderedStops;
     _driverLocation = LatLng(_depotLocation.latitude + 0.004, _depotLocation.longitude + 0.003);
   }
 
@@ -111,7 +125,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = widget.tasks;
+    final tasks = _orderedTasks;
     final List<LatLng> routePoints = [_depotLocation, _driverLocation];
     for (var t in tasks) {
       routePoints.add(LatLng(t.customerLatitude, t.customerLongitude));
@@ -256,11 +270,11 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Text(
-                            'Google Maps Multi-Stop Route 🗺️',
+                            'TSP Shortest Path Navigation 🚀',
                             style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'Optimized Polar Sequence (${tasks.length} Drops)',
+                            'Saved ${_tspResult.distanceSavedKm.toStringAsFixed(1)} km & ${_tspResult.fuelSavedLiters.toStringAsFixed(2)}L fuel (${tasks.length} Drops)',
                             style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                           ),
                         ],
