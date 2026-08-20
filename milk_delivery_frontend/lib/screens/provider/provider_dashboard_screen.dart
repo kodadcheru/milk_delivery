@@ -802,20 +802,40 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDone ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.orange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    isDone ? 'DELIVERED ✅' : 'SCHEDULED ⏰',
-                    style: TextStyle(
-                      color: isDone ? const Color(0xFF0D7C66) : Colors.orange[900],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
+                Builder(
+                  builder: (context) {
+                    final subStatus = sub?.status ?? '';
+                    final isSkipped = task.status == 'SKIPPED' || subStatus == 'PAUSED';
+                    String label = 'SCHEDULED ⏰';
+                    Color bg = Colors.orange.withValues(alpha: 0.15);
+                    Color fg = Colors.orange[900]!;
+
+                    if (isDone) {
+                      label = 'DELIVERED ✅';
+                      bg = const Color(0xFF10B981).withValues(alpha: 0.15);
+                      fg = const Color(0xFF0D7C66);
+                    } else if (isSkipped) {
+                      label = 'VACATION PAUSED 🏖️';
+                      bg = Colors.purple.withValues(alpha: 0.15);
+                      fg = Colors.purple[800]!;
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: fg,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

@@ -20,8 +20,10 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         if user and user.is_authenticated:
             if getattr(user, "role", "") == User.Roles.CUSTOMER:
                 return qs.filter(customer=user)
-            elif getattr(user, "role", "") == User.Roles.ADMIN:
+            elif getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
                 return qs
+            elif getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
+                return qs.filter(hub=user.assigned_hub)
 
         if customer_id:
             return qs.filter(customer_id=customer_id)
@@ -106,21 +108,35 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        from apps.accounts.models import User
+        user = self.request.user
+        if not user or not user.is_authenticated:
+            return Subscription.objects.none()
+        if user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
             return Subscription.objects.all()
-        return Subscription.objects.filter(customer=self.request.user)
+        if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
+            return Subscription.objects.filter(hub=user.assigned_hub)
+        return Subscription.objects.filter(customer=user)
 
 
 class SubscriptionPauseView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        from apps.accounts.models import User
+        from apps.deliveries.models import DeliveryTask
+
         sub = Subscription.objects.filter(pk=pk).first()
         if not sub:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if sub.customer != request.user and not request.user.is_staff:
-            return Response({"detail": "You can only pause your own subscriptions."}, status=status.HTTP_403_FORBIDDEN)
+        is_allowed = (
+            sub.customer == request.user
+            or request.user.is_staff
+            or getattr(request.user, "role", "") in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER", "ADMIN")
+        )
+        if not is_allowed:
+            return Response({"detail": "Permission denied for pausing subscription."}, status=status.HTTP_403_FORBIDDEN)
 
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
@@ -141,6 +157,14 @@ class SubscriptionPauseView(APIView):
         sub.status = Subscription.Statuses.PAUSED
         sub.save()
 
+        # Update pending delivery tasks within pause window to SKIPPED
+        DeliveryTask.objects.filter(
+            subscription=sub,
+            delivery_date__gte=start_date,
+            delivery_date__lte=end_date,
+            status=DeliveryTask.Statuses.PENDING,
+        ).update(status=DeliveryTask.Statuses.SKIPPED)
+
         return Response(
             {
                 "message": "Vacation pause created and subscription paused.",
@@ -155,15 +179,31 @@ class SubscriptionResumeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        from apps.accounts.models import User
+        from apps.deliveries.models import DeliveryTask
+        from datetime import date
+
         sub = Subscription.objects.filter(pk=pk).first()
         if not sub:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if sub.customer != request.user and not request.user.is_staff:
-            return Response({"detail": "You can only resume your own subscriptions."}, status=status.HTTP_403_FORBIDDEN)
+        is_allowed = (
+            sub.customer == request.user
+            or request.user.is_staff
+            or getattr(request.user, "role", "") in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER", "ADMIN")
+        )
+        if not is_allowed:
+            return Response({"detail": "Permission denied for resuming subscription."}, status=status.HTTP_403_FORBIDDEN)
 
         sub.status = Subscription.Statuses.ACTIVE
         sub.save()
+
+        # Resume skipped tasks for today or in the future back to PENDING
+        DeliveryTask.objects.filter(
+            subscription=sub,
+            delivery_date__gte=date.today(),
+            status=DeliveryTask.Statuses.SKIPPED,
+        ).update(status=DeliveryTask.Statuses.PENDING)
 
         return Response(
             {
