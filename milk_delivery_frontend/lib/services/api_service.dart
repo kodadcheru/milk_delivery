@@ -458,7 +458,11 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'start_date': startDate, 'end_date': endDate, 'reason': 'Vacation Mode'}),
           ));
-      return res.statusCode == 201 || res.statusCode == 200;
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
@@ -466,7 +470,11 @@ class ApiService {
   static Future<bool> resumeSubscription(int subId) async {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/subscriptions/$subId/resume/'), headers: _headers));
-      return res.statusCode == 200;
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
@@ -474,7 +482,11 @@ class ApiService {
   static Future<bool> cancelSubscription(int subId) async {
     try {
       final res = await _executeWithRetry(() => http.delete(Uri.parse('$baseUrl/subscriptions/$subId/'), headers: _headers));
-      return res.statusCode == 204 || res.statusCode == 200;
+      if (res.statusCode == 204 || res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
@@ -506,7 +518,11 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(bodyMap),
           ));
-      return res.statusCode == 200;
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
@@ -519,7 +535,11 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'amount': amount.toStringAsFixed(2), 'description': description}),
           ));
-      return res.statusCode == 200;
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
@@ -538,6 +558,8 @@ class ApiService {
       if (res.statusCode == 200) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => WalletTransactionModel.fromJson(e)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -559,6 +581,8 @@ class ApiService {
       if (res.statusCode == 200) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => DeliveryTaskModel.fromJson(e)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -571,7 +595,11 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'proof_image_url': proofUrl}),
           ));
-      return res.statusCode == 200;
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
@@ -579,7 +607,11 @@ class ApiService {
   static Future<bool> skipDelivery(int taskId) async {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/deliveries/$taskId/skip/'), headers: _headers));
-      return res.statusCode == 200;
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
     return false;
   }
