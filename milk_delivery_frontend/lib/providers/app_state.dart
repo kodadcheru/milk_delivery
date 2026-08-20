@@ -941,53 +941,88 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateSubscriptionQuantity(int subId, int newQty) async {
-    bool ok = await ApiService.updateSubscription(subId, quantity: newQty);
-    if (ok) {
-      await reloadAllData();
-    } else {
-      subscriptions = subscriptions.map((s) {
-        if (s.id == subId) return s.copyWith(quantity: newQty);
-        return s;
-      }).toList();
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      subscriptions[idx] = subscriptions[idx].copyWith(quantity: newQty);
       notifyListeners();
     }
+    await ApiService.updateSubscription(subId, quantity: newQty);
   }
 
   Future<void> updateSubscriptionSchedule(int subId, String newSchedule) async {
-    bool ok = await ApiService.updateSubscription(subId, scheduleType: newSchedule);
-    if (ok) {
-      await reloadAllData();
-    } else {
-      subscriptions = subscriptions.map((s) {
-        if (s.id == subId) return s.copyWith(scheduleType: newSchedule);
-        return s;
-      }).toList();
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      subscriptions[idx] = subscriptions[idx].copyWith(scheduleType: newSchedule);
       notifyListeners();
     }
+    await ApiService.updateSubscription(subId, scheduleType: newSchedule);
   }
 
   Future<void> toggleSubscriptionStatus(int subId) async {
-    final sub = subscriptions.firstWhere((s) => s.id == subId, orElse: () => subscriptions.first);
-    bool isPaused = sub.status == 'PAUSED';
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      final sub = subscriptions[idx];
+      final newStatus = sub.status == 'PAUSED' ? 'ACTIVE' : 'PAUSED';
+      subscriptions[idx] = sub.copyWith(status: newStatus);
+      notifyListeners();
 
-    if (isPaused) {
-      await ApiService.resumeSubscription(subId);
-    } else {
-      final todayStr = DateTime.now().toString().split(' ')[0];
-      final nextMonthStr = DateTime.now().add(const Duration(days: 30)).toString().split(' ')[0];
-      await ApiService.pauseSubscription(subId, todayStr, nextMonthStr);
+      if (newStatus == 'ACTIVE') {
+        await ApiService.resumeSubscription(subId);
+      } else {
+        final todayStr = DateTime.now().toString().split(' ')[0];
+        final nextMonthStr = DateTime.now().add(const Duration(days: 30)).toString().split(' ')[0];
+        await ApiService.pauseSubscription(subId, todayStr, nextMonthStr);
+      }
     }
-    await reloadAllData();
   }
 
   Future<void> pauseSubscriptionWithDates(int subId, String startDate, String endDate, String reason) async {
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      subscriptions[idx] = subscriptions[idx].copyWith(status: 'PAUSED');
+      notifyListeners();
+    }
     await ApiService.pauseSubscription(subId, startDate, endDate);
-    await reloadAllData();
   }
 
   Future<void> cancelSubscription(int subId) async {
+    subscriptions.removeWhere((s) => s.id == subId);
+    notifyListeners();
     await ApiService.cancelSubscription(subId);
-    await reloadAllData();
+  }
+
+  Future<void> updateSubscriptionDetails(
+    int subId, {
+    int? quantity,
+    String? scheduleType,
+    String? deliveryAddress,
+    String? deliverySlot,
+    String? deliveryInstructions,
+    String? packSize,
+  }) async {
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      final old = subscriptions[idx];
+      subscriptions[idx] = old.copyWith(
+        quantity: quantity ?? old.quantity,
+        scheduleType: scheduleType ?? old.scheduleType,
+        deliveryAddress: deliveryAddress ?? old.deliveryAddress,
+        deliverySlot: deliverySlot ?? old.deliverySlot,
+        deliveryInstructions: deliveryInstructions ?? old.deliveryInstructions,
+        packSize: packSize ?? old.packSize,
+      );
+      notifyListeners();
+    }
+
+    await ApiService.updateSubscription(
+      subId,
+      quantity: quantity,
+      scheduleType: scheduleType,
+      deliveryAddress: deliveryAddress,
+      deliverySlot: deliverySlot,
+      deliveryInstructions: deliveryInstructions,
+      packSize: packSize,
+    );
   }
 
   Future<void> markDeliveryCompleted(int taskId, String proofUrl) async {

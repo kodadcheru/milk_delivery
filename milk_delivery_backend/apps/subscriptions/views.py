@@ -100,16 +100,8 @@ class SubscriptionPauseView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        user = request.user
-        if not user or not user.is_authenticated:
-            user = User.objects.filter(role=User.Roles.CUSTOMER).first()
-
-        try:
-            if user and user.role == User.Roles.ADMIN:
-                sub = Subscription.objects.get(pk=pk)
-            else:
-                sub = Subscription.objects.get(pk=pk, customer=user)
-        except Subscription.DoesNotExist:
+        sub = Subscription.objects.filter(pk=pk).first()
+        if not sub:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
         start_date = request.data.get("start_date")
@@ -145,16 +137,8 @@ class SubscriptionResumeView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        user = request.user
-        if not user or not user.is_authenticated:
-            user = User.objects.filter(role=User.Roles.CUSTOMER).first()
-
-        try:
-            if user and user.role == User.Roles.ADMIN:
-                sub = Subscription.objects.get(pk=pk)
-            else:
-                sub = Subscription.objects.get(pk=pk, customer=user)
-        except Subscription.DoesNotExist:
+        sub = Subscription.objects.filter(pk=pk).first()
+        if not sub:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
         sub.status = Subscription.Statuses.ACTIVE
