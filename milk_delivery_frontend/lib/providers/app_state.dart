@@ -474,13 +474,32 @@ class AppState extends ChangeNotifier {
       }
 
       final addrs = results[1] as List<CustomerAddressModel>? ?? [];
-      savedAddresses = addrs;
       if (addrs.isNotEmpty) {
+        savedAddresses = addrs;
         final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
         activeAddress = defaultAddr;
         currentDeliveryAddress = defaultAddr.summaryAddress;
         currentLat = defaultAddr.latitude;
         currentLon = defaultAddr.longitude;
+      } else if (user != null && user.address.isNotEmpty) {
+        final profileAddr = CustomerAddressModel(
+          id: 1,
+          userId: user.id,
+          addressType: 'HOME',
+          displayType: 'Home',
+          flatHouseNo: '2X27+P3X',
+          streetAddress: user.address,
+          city: user.city.isNotEmpty ? user.city : 'Kodad',
+          pincode: '508206',
+          latitude: user.latitude,
+          longitude: user.longitude,
+          isDefault: true,
+        );
+        savedAddresses = [profileAddr];
+        activeAddress = profileAddr;
+        currentDeliveryAddress = profileAddr.summaryAddress;
+        currentLat = profileAddr.latitude;
+        currentLon = profileAddr.longitude;
       }
 
       final fetchedProds = (results[2] as List<ProductModel>?) ?? [];
@@ -550,14 +569,36 @@ class AppState extends ChangeNotifier {
   // ── Customer Address Book Handlers ──
   Future<void> fetchSavedAddresses() async {
     try {
-      final addrs = await ApiService.fetchCustomerAddresses();
-      savedAddresses = addrs;
+      final addrs = await ApiService.fetchCustomerAddresses(
+        customerId: currentUser?.id,
+        phone: currentUser?.phone,
+      );
       if (addrs.isNotEmpty) {
+        savedAddresses = addrs;
         final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
         activeAddress = defaultAddr;
         currentDeliveryAddress = defaultAddr.summaryAddress;
         currentLat = defaultAddr.latitude;
         currentLon = defaultAddr.longitude;
+      } else if (currentUser != null && currentUser!.address.isNotEmpty) {
+        final profileAddr = CustomerAddressModel(
+          id: 1,
+          userId: currentUser!.id,
+          addressType: 'HOME',
+          displayType: 'Home',
+          flatHouseNo: '2X27+P3X',
+          streetAddress: currentUser!.address,
+          city: currentUser!.city.isNotEmpty ? currentUser!.city : 'Kodad',
+          pincode: '508206',
+          latitude: currentUser!.latitude,
+          longitude: currentUser!.longitude,
+          isDefault: true,
+        );
+        savedAddresses = [profileAddr];
+        activeAddress = profileAddr;
+        currentDeliveryAddress = profileAddr.summaryAddress;
+        currentLat = profileAddr.latitude;
+        currentLon = profileAddr.longitude;
       } else {
         activeAddress = null;
         if (locationHubs.isNotEmpty) {

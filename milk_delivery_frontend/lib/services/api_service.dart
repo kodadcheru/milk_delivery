@@ -632,14 +632,25 @@ class ApiService {
   }
 
   // ── 12. Customer Address Book APIs ──
-  static Future<List<CustomerAddressModel>> fetchCustomerAddresses() async {
+  static Future<List<CustomerAddressModel>> fetchCustomerAddresses({int? customerId, String? phone}) async {
     try {
+      final queryParams = <String, String>{};
+      if (customerId != null) queryParams['customer_id'] = customerId.toString();
+      if (phone != null && phone.isNotEmpty) queryParams['phone'] = phone;
+
+      final uri = Uri.parse('$baseUrl/accounts/addresses/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
       final res = await _executeWithRetry(() => http.get(
-            Uri.parse('$baseUrl/accounts/addresses/'),
+            uri,
             headers: _headers,
           ));
       if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
+        final dynamic decoded = jsonDecode(res.body);
+        final List list = decoded is Map && decoded.containsKey('results')
+            ? (decoded['results'] as List)
+            : (decoded as List);
         return list.map((item) => CustomerAddressModel.fromJson(item)).toList();
       }
     } catch (_) {}
