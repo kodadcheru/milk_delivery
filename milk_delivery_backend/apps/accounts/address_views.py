@@ -76,12 +76,7 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
 class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CustomerAddressSerializer
     permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        user = _resolve_customer_user(self.request)
-        if not user:
-            return CustomerAddress.objects.all()
-        return CustomerAddress.objects.filter(user=user)
+    queryset = CustomerAddress.objects.all()
 
     def perform_update(self, serializer):
         addr = serializer.save()
@@ -96,15 +91,18 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = instance.user
         was_default = instance.is_default
         instance.delete()
-        if was_default and user:
+        if user:
             next_default = CustomerAddress.objects.filter(user=user).first()
             if next_default:
-                next_default.is_default = True
-                next_default.save()
+                if was_default:
+                    next_default.is_default = True
+                    next_default.save()
                 user.address = next_default.street_address or user.address
                 user.latitude = next_default.latitude
                 user.longitude = next_default.longitude
-                user.save(update_fields=["address", "latitude", "longitude"])
+            else:
+                user.address = ""
+            user.save(update_fields=["address", "latitude", "longitude"])
 
 
 class CustomerAddressSetDefaultView(APIView):

@@ -638,28 +638,26 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> deleteCustomerAddress(int addressId) async {
-    final success = await ApiService.deleteCustomerAddress(addressId);
-    if (success) {
-      savedAddresses.removeWhere((a) => a.id == addressId);
-      if (activeAddress?.id == addressId) {
-        if (savedAddresses.isNotEmpty) {
-          selectActiveAddress(savedAddresses.first);
+    savedAddresses.removeWhere((a) => a.id == addressId);
+    if (activeAddress?.id == addressId) {
+      if (savedAddresses.isNotEmpty) {
+        selectActiveAddress(savedAddresses.first);
+      } else {
+        activeAddress = null;
+        if (locationHubs.isNotEmpty) {
+          final h = locationHubs.first;
+          currentLat = (h['latitude'] as num?)?.toDouble() ?? 17.001734;
+          currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9625;
+          currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
         } else {
-          activeAddress = null;
-          if (locationHubs.isNotEmpty) {
-            final h = locationHubs.first;
-            currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
-            currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
-            currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
-          } else {
-            currentDeliveryAddress = 'Select Delivery Location';
-          }
+          currentDeliveryAddress = 'Select Delivery Location';
         }
       }
-      notifyListeners();
-      return true;
     }
-    return false;
+    notifyListeners();
+
+    await ApiService.deleteCustomerAddress(addressId);
+    return true;
   }
 
   Future<bool> setDefaultCustomerAddress(int addressId) async {
