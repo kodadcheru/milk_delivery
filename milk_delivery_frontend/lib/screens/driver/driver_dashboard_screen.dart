@@ -20,6 +20,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   int _selectedFilterIndex = 0; // 0: All, 1: Pending, 2: Delivered, 3: Express Orders
   bool _isGpsBroadcastActive = true;
   String _searchQuery = '';
+  String _selectedShift = 'MORNING'; // MORNING or EVENING
 
   void _callCustomer(BuildContext context, String phone) async {
     final cleanPhone = phone.replaceAll(' ', '');
@@ -317,7 +318,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ),
           const SizedBox(height: 14),
 
-          // ── Morning Batch Mode Launcher (Hub-Origin Fuel Optimized) ──
+          // ── Shift Selector & Batch Mode Launcher (Hub-Origin Fuel Optimized) ──
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -335,27 +336,76 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Shift Selector Pills
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedShift = 'MORNING'),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          decoration: BoxDecoration(
+                            color: _selectedShift == 'MORNING' ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('🌅 ', style: TextStyle(fontSize: 13)),
+                              Text('Morning Shift', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedShift = 'EVENING'),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          decoration: BoxDecoration(
+                            color: _selectedShift == 'EVENING' ? const Color(0xFF0284C7) : Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('🌇 ', style: TextStyle(fontSize: 13)),
+                              Text('Evening Shift', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Row(
                         children: [
-                          const Text('🥛', style: TextStyle(fontSize: 22)),
+                          Text(_selectedShift == 'MORNING' ? '🥛' : '🌆', style: const TextStyle(fontSize: 22)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Morning Batch Delivery Mode',
+                                Text(
+                                  _selectedShift == 'MORNING' ? 'Morning Batch Delivery Mode' : 'Evening Batch Delivery Mode',
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
                                 ),
-                                const Text(
-                                  '05:00 AM – 07:00 AM Shift • Hub-Origin TSP',
+                                Text(
+                                  _selectedShift == 'MORNING' ? '05:00 AM – 08:30 AM Shift • Hub-Origin TSP' : '05:00 PM – 07:00 PM Shift • Hub-Origin TSP',
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                                  style: TextStyle(color: _selectedShift == 'MORNING' ? const Color(0xFF10B981) : const Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -394,17 +444,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         height: 40,
                         child: ElevatedButton.icon(
                           onPressed: () {
+                            final filterTag = _selectedShift == 'MORNING' ? 'AM' : 'PM';
+                            final shiftLabel = _selectedShift == 'MORNING' ? 'Morning Batch' : 'Evening Batch';
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (ctx) => MorningBatchScreen(state: widget.state),
+                                builder: (ctx) => MorningBatchScreen(
+                                  state: widget.state,
+                                  shiftName: shiftLabel,
+                                  slotFilter: filterTag,
+                                ),
                               ),
                             );
                           },
                           icon: const Icon(Icons.rocket_launch_rounded, size: 16),
-                          label: const Text('Start Route 🚀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          label: Text(_selectedShift == 'MORNING' ? 'Start Morning 🚀' : 'Start Evening 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
+                            backgroundColor: _selectedShift == 'MORNING' ? const Color(0xFF10B981) : const Color(0xFF0284C7),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -419,12 +475,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         height: 40,
                         child: OutlinedButton.icon(
                           onPressed: () {
+                            final filterTag = _selectedShift == 'MORNING' ? 'am' : 'pm';
+                            final shiftTasks = widget.state.deliveries.where((t) => t.slotTime.toLowerCase().contains(filterTag)).toList();
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (ctx) => DriverRouteMapScreen(
                                   state: widget.state,
-                                  tasks: widget.state.deliveries,
+                                  tasks: shiftTasks.isNotEmpty ? shiftTasks : widget.state.deliveries,
                                 ),
                               ),
                             );

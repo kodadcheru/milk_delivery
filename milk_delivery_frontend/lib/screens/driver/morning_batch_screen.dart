@@ -8,8 +8,15 @@ import '../../widgets/doorstep_camera_dialog.dart';
 
 class MorningBatchScreen extends StatefulWidget {
   final AppState state;
+  final String shiftName;
+  final String? slotFilter;
 
-  const MorningBatchScreen({super.key, required this.state});
+  const MorningBatchScreen({
+    super.key,
+    required this.state,
+    this.shiftName = 'Morning Batch',
+    this.slotFilter,
+  });
 
   @override
   State<MorningBatchScreen> createState() => _MorningBatchScreenState();
@@ -96,7 +103,13 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   }
 
   void _optimizeRoute() {
-    final tasks = widget.state.deliveries;
+    var tasks = widget.state.deliveries;
+    if (widget.slotFilter != null && widget.slotFilter!.isNotEmpty) {
+      final filtered = tasks.where((t) => t.slotTime.toLowerCase().contains(widget.slotFilter!.toLowerCase())).toList();
+      if (filtered.isNotEmpty) {
+        tasks = filtered;
+      }
+    }
     _routeResult = RouteOptimizer.optimizeBatchRoute(hub: _activeHub, tasks: tasks);
   }
 
