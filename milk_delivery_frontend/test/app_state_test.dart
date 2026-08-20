@@ -3,6 +3,7 @@ import 'package:milk_delivery_frontend/models/product_model.dart';
 import 'package:milk_delivery_frontend/models/user_model.dart';
 import 'package:milk_delivery_frontend/models/delivery_task_model.dart';
 import 'package:milk_delivery_frontend/models/live_order_model.dart';
+import 'package:milk_delivery_frontend/models/customer_address_model.dart';
 import 'package:milk_delivery_frontend/providers/app_state.dart';
 
 void main() {
@@ -244,6 +245,33 @@ void main() {
       final p2 = ProductModel.fromJson(flatPayload[0]);
       expect(p2.name, '20L Mineral Water Can');
       expect(p2.pricePerUnit, 90.0);
+    });
+
+    test('CustomerAddressModel and Reverse Geocode Payload Parsing', () {
+      final addrJson = {
+        'id': 10,
+        'user': 45,
+        'address_type': 'HOME',
+        'display_type': 'Home',
+        'flat_house_no': '2X27+P3X',
+        'building_name': 'Naya Nagar',
+        'street_address': 'Main Road, Kodad',
+        'city': 'Kodad',
+        'pincode': '508206',
+        'latitude': '16.99470000',
+        'longitude': '79.97500000',
+        'is_default': true,
+        'formatted_address': 'Naya Nagar, Kodad, Telangana - 508206',
+      };
+
+      final addr = CustomerAddressModel.fromJson(addrJson);
+      expect(addr.id, 10);
+      expect(addr.city, 'Kodad');
+      expect(addr.pincode, '508206');
+      expect(addr.latitude, 16.9947);
+      expect(addr.longitude, 79.9750);
+      expect(addr.isDefault, true);
+      expect(addr.icon, '🏠');
     });
   });
 }
