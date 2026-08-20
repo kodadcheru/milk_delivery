@@ -33,7 +33,8 @@ class ProductListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         show_all = self.request.query_params.get("all") == "true"
-        queryset = Product.objects.all() if show_all else Product.objects.filter(is_available=True)
+        base_qs = Product.objects.select_related("category_ref")
+        queryset = base_qs.all() if show_all else base_qs.filter(is_available=True)
         category = self.request.query_params.get("category")
         search = self.request.query_params.get("search")
 

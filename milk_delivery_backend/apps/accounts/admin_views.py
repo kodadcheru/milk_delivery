@@ -305,15 +305,17 @@ class AdminBroadcastNotificationView(APIView):
         elif target_role == "DRIVER":
             users = users.filter(role=User.Roles.DELIVERY_PARTNER)
 
-        created_count = 0
-        for u in users:
-            Notification.objects.create(
+        notifs = [
+            Notification(
                 user=u,
                 title=title,
                 message=message,
                 notification_type=Notification.Types.OFFER,
             )
-            created_count += 1
+            for u in users
+        ]
+        Notification.objects.bulk_create(notifs, batch_size=1000)
+        created_count = len(notifs)
 
         return Response(
             {

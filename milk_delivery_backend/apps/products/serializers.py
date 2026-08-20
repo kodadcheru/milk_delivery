@@ -20,6 +20,8 @@ class CategorySerializer(serializers.ModelSerializer):
         ]
 
     def get_items_count(self, obj):
+        if hasattr(obj, "items_count_annotated"):
+            return obj.items_count_annotated
         from django.db.models import Q
         return Product.objects.filter(Q(category_ref=obj) | Q(category__iexact=obj.slug) | Q(category__iexact=obj.name)).count()
 

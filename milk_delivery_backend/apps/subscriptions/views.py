@@ -59,8 +59,16 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 latitude=deliv_lat,
                 longitude=deliv_lon,
                 address=deliv_addr,
+                strict=True,
             )
-            # Persist hub assignment on the customer for future subscriptions
+            # If strict matching failed, try general resolution before rejecting
+            if not hub:
+                hub = find_hub_for_location(
+                    pincode=pincode,
+                    latitude=deliv_lat,
+                    longitude=deliv_lon,
+                    address=deliv_addr,
+                )
             if hub and hasattr(user, "assigned_hub"):
                 user.assigned_hub = hub
                 user.save(update_fields=["assigned_hub"])
