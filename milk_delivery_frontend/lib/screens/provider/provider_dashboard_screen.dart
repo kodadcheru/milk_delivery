@@ -27,8 +27,52 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   List<Map<String, dynamic>> _liveFleet = [];
 
   final List<Map<String, dynamic>> _broadcastAlerts = [];
-
   final List<Map<String, dynamic>> _payoutHistory = [];
+
+  List<Map<String, dynamic>> _categorySlots = [
+    {
+      'id': 'milk',
+      'name': 'Fresh Cow & Buffalo Milk',
+      'icon': '🥛',
+      'capacity': 100,
+      'timeSlot': '05:30 AM - 07:00 AM',
+    },
+    {
+      'id': 'eggs',
+      'name': 'Organic Farm Eggs',
+      'icon': '🥚',
+      'capacity': 30,
+      'timeSlot': '06:00 AM - 07:30 AM',
+    },
+    {
+      'id': 'curd',
+      'name': 'Fresh Buffalo Curd & Ghee',
+      'icon': '🧈',
+      'capacity': 50,
+      'timeSlot': '05:30 AM - 07:00 AM',
+    },
+    {
+      'id': 'meat',
+      'name': 'Fresh Meat & Seafood',
+      'icon': '🥩',
+      'capacity': 40,
+      'timeSlot': '09:00 AM - 11:30 AM',
+    },
+    {
+      'id': 'water',
+      'name': 'Pure Mineral Water Cans',
+      'icon': '💧',
+      'capacity': 50,
+      'timeSlot': '07:00 AM - 09:00 AM',
+    },
+    {
+      'id': 'veggies',
+      'name': 'Organic Farm Vegetables',
+      'icon': '🥬',
+      'capacity': 60,
+      'timeSlot': '06:00 AM - 08:00 AM',
+    },
+  ];
 
   String get _activeHubName {
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
@@ -244,52 +288,206 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   void _openManageCapacitySlotsDialog(BuildContext context) {
-    int milkSlots = 100;
-    int eggSlots = 20;
-    int curdSlots = 50;
+    // Clone current slots for local editing
+    List<Map<String, dynamic>> tempSlots = List<Map<String, dynamic>>.from(
+      _categorySlots.map((s) => Map<String, dynamic>.from(s)),
+    );
+
+    // Create controllers for each category's capacity & slot timing
+    Map<String, TextEditingController> capacityControllers = {};
+    Map<String, TextEditingController> timeControllers = {};
+
+    for (var s in tempSlots) {
+      final id = s['id'] as String;
+      capacityControllers[id] = TextEditingController(text: '${s['capacity'] ?? 100}');
+      timeControllers[id] = TextEditingController(text: '${s['timeSlot'] ?? "05:30 AM - 07:00 AM"}');
+    }
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlgState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('📦 ', style: TextStyle(fontSize: 22)),
-              Expanded(
-                child: Text('Hub Capacity & Daily Slots', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Row(
+                children: [
+                  Text('📦 ', style: TextStyle(fontSize: 22)),
+                  Text('Category Slots & Timings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.5)),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                onPressed: () => Navigator.pop(ctx),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Set daily booking capacity slots for your depot. (e.g. 100 slots = 100L milk, 1 dozen eggs = 1 slot). Customers can book only up to available slots.',
-                style: TextStyle(fontSize: 11.5, color: Colors.black87),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D7C66).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('✏️ ', style: TextStyle(fontSize: 14)),
+                        Expanded(
+                          child: Text(
+                            'All category capacity limits and delivery time slots are 100% typable. Type your exact depot limits and shift hours below.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Category Slot Rows
+                  ...tempSlots.map((cat) {
+                    final id = cat['id'] as String;
+                    final capCtrl = capacityControllers[id]!;
+                    final timeCtrl = timeControllers[id]!;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text('${cat['icon']} ', style: const TextStyle(fontSize: 16)),
+                              Expanded(
+                                child: Text(
+                                  cat['name'] as String,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              // Typable Capacity
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: capCtrl,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                                  decoration: InputDecoration(
+                                    labelText: 'Daily Capacity',
+                                    labelStyle: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                                    suffixText: 'slots',
+                                    suffixStyle: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Typable Delivery Time Slot
+                              Expanded(
+                                flex: 3,
+                                child: TextField(
+                                  controller: timeCtrl,
+                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                  decoration: InputDecoration(
+                                    labelText: 'Delivery Slot (Typable ⏰)',
+                                    labelStyle: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                                    prefixIcon: const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF0D7C66)),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  // Add New Custom Category Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final newId = 'cat_${DateTime.now().millisecondsSinceEpoch}';
+                        final newCat = {
+                          'id': newId,
+                          'name': 'Custom Product Category',
+                          'icon': '✨',
+                          'capacity': 50,
+                          'timeSlot': '06:00 AM - 08:00 AM',
+                        };
+                        tempSlots.add(newCat);
+                        capacityControllers[newId] = TextEditingController(text: '50');
+                        timeControllers[newId] = TextEditingController(text: '06:00 AM - 08:00 AM');
+                        setDlgState(() {});
+                      },
+                      icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+                      label: const Text('+ Add Custom Category Slot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0D7C66),
+                        side: const BorderSide(color: Color(0xFF0D7C66)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
-              _buildSlotInputRow('🥛 Fresh Cow Milk', milkSlots, (val) => setDlgState(() => milkSlots = val)),
-              const SizedBox(height: 10),
-              _buildSlotInputRow('🥚 Organic Farm Eggs', eggSlots, (val) => setDlgState(() => eggSlots = val)),
-              const SizedBox(height: 10),
-              _buildSlotInputRow('🧈 Fresh Buffalo Curd', curdSlots, (val) => setDlgState(() => curdSlots = val)),
-            ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             ElevatedButton.icon(
               onPressed: () {
+                for (var s in tempSlots) {
+                  final id = s['id'] as String;
+                  s['capacity'] = int.tryParse(capacityControllers[id]?.text.trim() ?? '') ?? 100;
+                  s['timeSlot'] = timeControllers[id]?.text.trim().isNotEmpty == true
+                      ? timeControllers[id]!.text.trim()
+                      : '05:30 AM - 07:00 AM';
+                }
+                setState(() {
+                  _categorySlots = tempSlots;
+                });
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: const Color(0xFF0D7C66),
-                    content: Text('✅ Hub Capacity Slots updated! Milk: $milkSlots slots, Eggs: $eggSlots slots, Curd: $curdSlots slots.'),
+                    content: Text('✅ Hub Category Slots updated successfully! (${_categorySlots.length} categories configured)'),
                   ),
                 );
               },
               icon: const Icon(Icons.check_circle_rounded, size: 16),
-              label: const Text('Save Capacity Slots', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text('Save Category Slots', style: TextStyle(fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0D7C66),
                 foregroundColor: Colors.white,
@@ -298,43 +496,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSlotInputRow(String title, int currentVal, Function(int) onChanged) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Row(
-            children: [
-              IconButton(
-                onPressed: currentVal > 10 ? () => onChanged(currentVal - 10) : null,
-                icon: const Icon(Icons.remove_circle_outline, size: 20),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text('$currentVal slots', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: Color(0xFF0D7C66))),
-              ),
-              IconButton(
-                onPressed: () => onChanged(currentVal + 10),
-                icon: const Icon(Icons.add_circle_outline, size: 20),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
