@@ -815,33 +815,27 @@ class AdminFleetListView(APIView):
         fleet_data = []
         for d in drivers:
             assigned_tasks = DeliveryTask.objects.filter(driver=d)
-            total_stops = assigned_tasks.count() or 12
+            total_stops = assigned_tasks.count()
             completed_stops = assigned_tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count()
-            if completed_stops == 0 and total_stops > 0:
-                completed_stops = total_stops
 
-            hub_name = d.assigned_hub.name if d.assigned_hub else "Central Hub #1"
-            hub_code = d.assigned_hub.hub_code if d.assigned_hub else "HUB-HYD-01"
+            hub_name = d.assigned_hub.name if d.assigned_hub else "Unassigned"
+            hub_code = d.assigned_hub.hub_code if d.assigned_hub else "—"
 
             fleet_data.append({
                 "id": d.id,
                 "first_name": d.first_name,
                 "last_name": d.last_name,
                 "name": f"{d.first_name} {d.last_name}".strip() or d.username,
-                "phone": d.phone or "+91 9123456789",
+                "phone": d.phone or "—",
                 "hub": hub_name,
-                "hub_id": d.assigned_hub_id or 1,
+                "hub_id": d.assigned_hub_id,
                 "hub_code": hub_code,
                 "raw_salary": float(d.monthly_salary),
                 "driver_status": d.driver_status,
-                "route": f"Sector Route #{d.id} • Dynamic Polar Cluster",
                 "assigned_stops": total_stops,
                 "completed_stops": completed_stops,
-                "on_time_rate": "100%",
-                "status": f"🟢 {d.driver_status} & GPS Live",
-                "employment": "Fixed Salaried Staff",
                 "salary": f"₹{int(d.monthly_salary):,} / month",
-                "bottles_collected": total_stops + 2,
+                "bottles_collected": assigned_tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count(),
             })
 
         return Response(fleet_data)

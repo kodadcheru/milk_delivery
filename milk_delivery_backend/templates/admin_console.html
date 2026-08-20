@@ -1556,8 +1556,6 @@
       </div>
     </div>
 
-  </div>
-
     <!-- ── Tab: Express Orders ── -->
     <div id="tab-express-orders" style="display: none;">
       <div class="section-header">
@@ -1681,6 +1679,8 @@
         </table>
       </div>
     </div>
+
+  </div>
 
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <!-- ── MODALS ── -->
@@ -3589,7 +3589,8 @@
     async function loadFleet(hubId = '') {
       try {
         const url = hubId ? `${baseUrl}/admin/fleet/?hub_id=${hubId}` : `${baseUrl}/admin/fleet/`;
-        const res = await fetch(url);
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
         if (res.ok) {
           rawFleet = await res.json();
           renderFleetTable(rawFleet);
