@@ -1376,6 +1376,7 @@ class AdminResetCustomerDataView(APIView):
     Completely purges all customer-related test data:
     - Subscriptions & Vacation Pauses
     - Delivery Tasks & Live Orders / Items
+    - Bottle Returns
     - Wallet Transactions & Notifications
     - Customer Addresses & Customer Users
     Preserves: Admin accounts, Driver accounts, Hubs, and Product Catalog.
@@ -1384,7 +1385,7 @@ class AdminResetCustomerDataView(APIView):
 
     def post(self, request):
         from apps.subscriptions.models import Subscription, VacationPause
-        from apps.deliveries.models import DeliveryTask, LiveOrder, OrderItem
+        from apps.deliveries.models import DeliveryTask, LiveOrder, LiveOrderItem, BottleReturn
         from apps.accounts.models import CustomerAddress, Notification, WalletTransaction, User
         from django.db import transaction
 
@@ -1395,11 +1396,14 @@ class AdminResetCustomerDataView(APIView):
             tasks_count = DeliveryTask.objects.all().count()
             DeliveryTask.objects.all().delete()
 
-            items_count = OrderItem.objects.all().count()
-            OrderItem.objects.all().delete()
+            items_count = LiveOrderItem.objects.all().count()
+            LiveOrderItem.objects.all().delete()
 
             orders_count = LiveOrder.objects.all().count()
             LiveOrder.objects.all().delete()
+
+            bottles_count = BottleReturn.objects.all().count()
+            BottleReturn.objects.all().delete()
 
             subs_count = Subscription.objects.all().count()
             Subscription.objects.all().delete()
@@ -1429,6 +1433,7 @@ class AdminResetCustomerDataView(APIView):
                 "delivery_tasks": tasks_count,
                 "orders": orders_count,
                 "order_items": items_count,
+                "bottle_returns": bottles_count,
                 "wallet_transactions": tx_count,
                 "notifications": notifs_count,
             },
