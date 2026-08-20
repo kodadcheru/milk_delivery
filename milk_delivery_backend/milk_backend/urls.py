@@ -34,7 +34,6 @@ from apps.accounts.admin_views import (
     AdminVacationPausesView,
     AdminCustomerExportView,
     AdminDeliveryReassignView,
-    AdminResetCustomerDataView,
 )
 from apps.accounts.address_views import (
     CustomerAddressDetailView,
@@ -111,7 +110,6 @@ urlpatterns = [
     # Bottle Returns & Provider Payouts
     path("api/admin/bottle-returns/", AdminBottleReturnsView.as_view(), name="admin_bottle_returns"),
     path("api/admin/payouts/", AdminPayoutsView.as_view(), name="admin_payouts"),
-    path("api/admin/reset-customer-data/", AdminResetCustomerDataView.as_view(), name="admin_reset_customer_data"),
     # Service Area endpoints
     path("api/service-areas/", ServiceAreaListView.as_view(), name="service_areas_list"),
     path("api/service-areas/check/", ServiceAreaCheckView.as_view(), name="service_areas_check"),
