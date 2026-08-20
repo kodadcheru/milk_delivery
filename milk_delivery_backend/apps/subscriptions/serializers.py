@@ -17,10 +17,13 @@ class VacationPauseSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
 
+from datetime import date
+
 class SubscriptionSerializer(serializers.ModelSerializer):
     product_detail = ProductSerializer(source="product", read_only=True)
     hub_detail = HubSimpleSerializer(source="hub", read_only=True)
     vacation_pauses = VacationPauseSerializer(many=True, read_only=True)
+    start_date = serializers.DateField(required=False, default=date.today)
 
     class Meta:
         model = Subscription
