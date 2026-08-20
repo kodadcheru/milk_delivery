@@ -30,6 +30,10 @@ from apps.accounts.admin_views import (
     ServiceAreaListView,
     AdminBottleReturnsView,
     AdminPayoutsView,
+    AdminDebitWalletView,
+    AdminVacationPausesView,
+    AdminCustomerExportView,
+    AdminDeliveryReassignView,
 )
 from apps.accounts.address_views import (
     CustomerAddressDetailView,
@@ -86,6 +90,10 @@ urlpatterns = [
     path("api/admin/customers/<int:pk>/", AdminCustomerDetailView.as_view(), name="admin_customer_detail"),
     path("api/admin/customers/<int:user_id>/transactions/", AdminCustomerTransactionsView.as_view(), name="admin_customer_txs"),
     path("api/admin/credit-wallet/", AdminCreditWalletView.as_view(), name="admin_credit_wallet"),
+    path("api/admin/debit-wallet/", AdminDebitWalletView.as_view(), name="admin_debit_wallet"),
+    path("api/admin/vacation-pauses/", AdminVacationPausesView.as_view(), name="admin_vacation_pauses"),
+    path("api/admin/customers/export/", AdminCustomerExportView.as_view(), name="admin_customer_export"),
+    path("api/admin/deliveries/<int:pk>/reassign/", AdminDeliveryReassignView.as_view(), name="admin_delivery_reassign"),
     path("api/admin/broadcast-notification/", AdminBroadcastNotificationView.as_view(), name="admin_broadcast"),
     path("api/admin/hubs/", AdminHubsView.as_view(), name="admin_hubs"),
     path("api/admin/hubs/cleanup/", AdminHubCleanupView.as_view(), name="admin_hubs_cleanup"),

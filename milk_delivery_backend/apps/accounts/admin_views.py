@@ -209,6 +209,7 @@ class AdminCustomerDetailView(APIView):
                 "latitude": float(customer.latitude) if customer.latitude else 16.9950,
                 "longitude": float(customer.longitude) if customer.longitude else 79.9670,
                 "date_joined": customer.date_joined.strftime("%d %b %Y"),
+                "is_active": customer.is_active,
             },
             "subscriptions": subs_data,
             "deliveries": tasks_data,
@@ -228,6 +229,7 @@ class AdminCustomerDetailView(APIView):
         if "city" in request.data: customer.city = request.data["city"].strip()
         if "delivery_instructions" in request.data: customer.delivery_instructions = request.data["delivery_instructions"].strip()
         if "delivery_slot_preference" in request.data: customer.delivery_slot_preference = request.data["delivery_slot_preference"].strip()
+        if "is_active" in request.data: customer.is_active = bool(request.data["is_active"])
         customer.save()
 
         return Response({"message": f"Customer profile for '{customer.first_name} {customer.last_name}' updated successfully!"})
@@ -1232,3 +1234,141 @@ class AdminPayoutsView(APIView):
                 "created_at": p.created_at.isoformat() if p.created_at else None,
             })
         return Response(data)
+
+
+class AdminDebitWalletView(APIView):
+    """Debit / chargeback from a customer's wallet."""
+    permission_classes = [IsAdminOrStaff]
+
+    def post(self, request):
+        from django.db.models import F
+
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount_str = request.data.get("amount", "0")
+        desc = request.data.get("description", "Admin Wallet Debit")
+
+        try:
+            amount = Decimal(str(amount_str))
+            if amount <= 0:
+                return Response({"error": "Amount must be positive"}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(pk=user_id)
+        except (User.DoesNotExist, Exception) as e:
+            return Response({"detail": f"User not found or invalid amount: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.wallet_balance < amount:
+            return Response({"error": f"Insufficient balance. Current: ₹{user.wallet_balance}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        User.objects.filter(pk=user_id).update(wallet_balance=F('wallet_balance') - amount)
+        user.refresh_from_db()
+
+        tx = WalletTransaction.objects.create(
+            user=user,
+            amount=amount,
+            transaction_type=WalletTransaction.Types.DEBIT,
+            description=f"🔻 {desc}",
+        )
+
+        Notification.objects.create(
+            user=user,
+            title="🔻 Wallet Debit Adjustment",
+            message=f"₹{amount} debited from your wallet by Admin. Reason: {desc}. New Balance: ₹{user.wallet_balance}",
+            notification_type=Notification.Types.WALLET,
+        )
+
+        return Response({
+            "message": f"Successfully debited ₹{amount} from {user.username}'s wallet",
+            "new_balance": str(user.wallet_balance),
+            "transaction": WalletTransactionSerializer(tx).data,
+        })
+
+
+class AdminVacationPausesView(APIView):
+    """List all vacation pauses for admin dashboard."""
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        pauses = VacationPause.objects.select_related(
+            "subscription__customer", "subscription__product"
+        ).order_by("-created_at")
+
+        data = []
+        for vp in pauses:
+            sub = vp.subscription
+            cust = sub.customer if sub else None
+            data.append({
+                "id": vp.id,
+                "subscription_id": sub.id if sub else None,
+                "customer_name": f"{cust.first_name} {cust.last_name}".strip() or cust.username if cust else "",
+                "customer_phone": cust.phone if cust else "",
+                "product_name": sub.product.name if sub and sub.product else "",
+                "start_date": str(vp.start_date),
+                "end_date": str(vp.end_date),
+                "reason": vp.reason,
+                "created_at": vp.created_at.isoformat() if vp.created_at else None,
+            })
+        return Response(data)
+
+
+class AdminCustomerExportView(APIView):
+    """Export all customers as CSV."""
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        import csv
+        from django.http import HttpResponse
+        from apps.subscriptions.models import Subscription
+
+        customers = User.objects.filter(role=User.Roles.CUSTOMER).order_by("id")
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="customers_export.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "ID", "Username", "First Name", "Last Name", "Phone", "Email",
+            "City", "Address", "Wallet Balance", "Active Subscriptions",
+            "Date Joined", "Account Active"
+        ])
+
+        for c in customers:
+            active_subs = Subscription.objects.filter(customer=c, status=Subscription.Statuses.ACTIVE).count()
+            writer.writerow([
+                c.id, c.username, c.first_name, c.last_name, c.phone, c.email,
+                c.city, c.address, str(c.wallet_balance), active_subs,
+                c.date_joined.strftime("%Y-%m-%d"), "Yes" if c.is_active else "No"
+            ])
+
+        return response
+
+
+class AdminDeliveryReassignView(APIView):
+    """Reassign a delivery task to a different driver."""
+    permission_classes = [IsAdminOrHubManager]
+
+    def patch(self, request, pk):
+        driver_id = request.data.get("driver_id")
+        if not driver_id:
+            return Response({"error": "driver_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        task = DeliveryTask.objects.filter(pk=pk).first()
+        if not task:
+            return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        driver = User.objects.filter(pk=driver_id, role=User.Roles.DELIVERY_PARTNER).first()
+        if not driver:
+            return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        old_driver = f"{task.driver.first_name} {task.driver.last_name}".strip() if task.driver else "Unassigned"
+        task.driver = driver
+        task.save()
+
+        new_driver = f"{driver.first_name} {driver.last_name}".strip() or driver.username
+        return Response({
+            "message": f"Task #{task.id} reassigned from '{old_driver}' to '{new_driver}'",
+            "task_id": task.id,
+            "new_driver_id": driver.id,
+            "new_driver_name": new_driver,
+        })

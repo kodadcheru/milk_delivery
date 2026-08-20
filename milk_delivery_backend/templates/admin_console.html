@@ -1146,6 +1146,29 @@
           </table>
         </div>
       </div>
+
+      <!-- Vacation Pauses Section -->
+      <div style="margin-top: 28px;" class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 style="margin: 0 0 4px 0;">🏖️ Active Vacation Pauses</h3>
+            <p style="color: var(--text-muted); font-size: 12px;">Customer-scheduled delivery pauses</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadVacationPauses()" style="padding: 6px 14px; font-size: 13px;">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+        <div class="table-container" style="margin-top: 12px;">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Customer</th><th>Phone</th><th>Product</th><th>Pause Start</th><th>Pause End</th><th>Reason</th></tr>
+            </thead>
+            <tbody id="vacationPausesTableBody">
+              <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 20px;">Loading vacation pauses...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ── Tab 5: Salaried Fleet Partners ── -->
@@ -1261,6 +1284,7 @@
           </div>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-primary" onclick="openAddCustomerModal()"><i class="fa-solid fa-user-plus"></i> + Add New Customer</button>
+            <button class="btn btn-secondary" onclick="exportCustomersCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
             <button class="btn btn-secondary" onclick="loadCustomers()"><i class="fa-solid fa-sync"></i> Refresh</button>
           </div>
         </div>
@@ -1308,9 +1332,11 @@
             <span id="custDetailJoinedSubtitle" style="font-size: 12px; color: var(--text-muted);">Joined Member</span>
           </div>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-danger" onclick="deleteCustomerFromDetail()"><i class="fa-solid fa-trash"></i> Delete Account</button>
+          <button class="btn" id="custBlockBtn" onclick="toggleCustomerBlock()" style="padding: 6px 14px; font-size: 13px; background: var(--warning); color: #0F172A; border-radius: 10px; border: none; cursor: pointer; font-weight: 700;"><i class="fa-solid fa-ban"></i> Block</button>
           <button class="btn btn-secondary" onclick="openCreditModalForCurrentCustomer()"><i class="fa-solid fa-wallet"></i> Credit Wallet</button>
+          <button class="btn" onclick="openDebitModalForCurrentCustomer()" style="padding: 6px 14px; font-size: 13px; background: var(--danger); color: white; border-radius: 10px; border: none; cursor: pointer; font-weight: 700;"><i class="fa-solid fa-minus-circle"></i> Debit</button>
           <button class="btn btn-primary" onclick="saveCustomerProfile()"><i class="fa-solid fa-floppy-disk"></i> Save Profile Changes</button>
         </div>
       </div>
@@ -2100,6 +2126,42 @@
     </div>
   </div>
 
+  <!-- ── Modal: Debit Wallet ── -->
+  <div class="modal-overlay" id="debitWalletModal">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-title"><i class="fa-solid fa-minus-circle" style="color: var(--danger);"></i> Debit / Chargeback from Wallet</div>
+      <input type="hidden" id="debitWalletUserId">
+      <div class="form-group">
+        <label>Amount (₹)</label>
+        <input type="number" id="debitWalletAmount" class="form-control" value="100" min="1">
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <input type="text" id="debitWalletReason" class="form-control" placeholder="e.g. Chargeback, Penalty, Correction">
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('debitWalletModal')">Cancel</button>
+        <button class="btn" onclick="submitDebitWallet()" style="background: var(--danger); color: white; border: none; border-radius: 10px; padding: 8px 18px; cursor: pointer; font-weight: 700;">Confirm Debit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Reassign Delivery ── -->
+  <div class="modal-overlay" id="reassignDeliveryModal">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-title"><i class="fa-solid fa-arrows-rotate" style="color: var(--accent-blue);"></i> Reassign Delivery Task</div>
+      <input type="hidden" id="reassignTaskId">
+      <div class="form-group">
+        <label>Select Driver</label>
+        <select id="reassignDriverSelect" class="form-control"></select>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('reassignDeliveryModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReassignDelivery()">Reassign</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Add Category ── -->
   <div class="modal-overlay" id="addCategoryModal">
     <div class="modal-card">
@@ -2631,7 +2693,8 @@
         loadCustomers(),
         loadExpressOrders(),
         loadBottleReturns(),
-        loadPayouts()
+        loadPayouts(),
+        loadVacationPauses()
       ]);
     }
 
@@ -4997,6 +5060,132 @@
       }).join('');
     }
 
+    // ── Customer Block/Unblock ──
+    async function toggleCustomerBlock() {
+      const cId = document.getElementById('custDetailDbId')?.value;
+      if (!cId) return;
+      const blockBtn = document.getElementById('custBlockBtn');
+      const isCurrentlyActive = blockBtn.innerText.includes('Block') && !blockBtn.innerText.includes('Unblock');
+      const action = isCurrentlyActive ? 'block' : 'unblock';
+      if (!confirm(`Are you sure you want to ${action} this customer?`)) return;
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/customers/${cId}/`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: !isCurrentlyActive })
+        });
+        if (res.ok) { openCustomerDetailPage(cId); }
+        else { alert('Failed to update customer status.'); }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    // ── Wallet Debit ──
+    function openDebitModalForCurrentCustomer() {
+      const cId = document.getElementById('custDetailDbId')?.value;
+      if (!cId) return;
+      document.getElementById('debitWalletUserId').value = cId;
+      document.getElementById('debitWalletAmount').value = '100';
+      document.getElementById('debitWalletReason').value = '';
+      document.getElementById('debitWalletModal').style.display = 'flex';
+    }
+
+    async function submitDebitWallet() {
+      const userId = document.getElementById('debitWalletUserId').value;
+      const amount = document.getElementById('debitWalletAmount').value;
+      const reason = document.getElementById('debitWalletReason').value || 'Admin Wallet Debit';
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/debit-wallet/`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, amount: amount, description: reason })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          closeModal('debitWalletModal');
+          alert(data.message);
+          openCustomerDetailPage(userId);
+        } else {
+          alert(data.error || data.detail || 'Failed to debit wallet.');
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    // ── Customer CSV Export ──
+    function exportCustomersCSV() {
+      const token = localStorage.getItem('milkdrop_admin_token');
+      window.open(`${baseUrl}/admin/customers/export/?token=${token}`, '_blank');
+    }
+
+    // ── Delivery Reassignment ──
+    function openReassignModal(taskId) {
+      document.getElementById('reassignTaskId').value = taskId;
+      const select = document.getElementById('reassignDriverSelect');
+      select.innerHTML = rawFleet.map(d => {
+        const name = d.name || ((d.first_name || '') + ' ' + (d.last_name || '')).trim();
+        return `<option value="${d.id}">${name}</option>`;
+      }).join('');
+      document.getElementById('reassignDeliveryModal').style.display = 'flex';
+    }
+
+    async function submitReassignDelivery() {
+      const taskId = document.getElementById('reassignTaskId').value;
+      const driverId = document.getElementById('reassignDriverSelect').value;
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/deliveries/${taskId}/reassign/`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ driver_id: parseInt(driverId) })
+        });
+        if (res.ok) {
+          closeModal('reassignDeliveryModal');
+          const data = await res.json();
+          alert(data.message);
+          loadDeliveries();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(err.detail || 'Failed to reassign delivery.');
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    // ── Vacation Pauses ──
+    let rawVacationPauses = [];
+
+    async function loadVacationPauses() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/vacation-pauses/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          rawVacationPauses = await res.json();
+          renderVacationPauses(rawVacationPauses);
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    function renderVacationPauses(pauses) {
+      const tbody = document.getElementById('vacationPausesTableBody');
+      if (!pauses.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 20px;">No vacation pauses scheduled.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = pauses.map((vp, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${vp.customer_name || '—'}</td>
+          <td style="font-size: 12px;">${vp.customer_phone || '—'}</td>
+          <td>${vp.product_name || '—'}</td>
+          <td style="font-weight: 700;">${vp.start_date}</td>
+          <td style="font-weight: 700;">${vp.end_date}</td>
+          <td style="font-size: 12px; color: var(--text-muted);">${vp.reason || '—'}</td>
+        </tr>
+      `).join('');
+    }
+
     function openAddCustomerModal() {
       const hubSelect = document.getElementById('addCustHubSelect');
       hubSelect.innerHTML = '';
@@ -5218,6 +5407,20 @@
       document.getElementById('custDetailSlot').value = c.delivery_slot_preference || '05:30 AM - 07:00 AM';
       document.getElementById('custDetailInstructions').value = c.delivery_instructions || '';
       document.getElementById('custDetailWalletBalance').innerText = `₹${parseFloat(c.wallet_balance || 0).toFixed(2)}`;
+
+      // Block/Unblock button state
+      const blockBtn = document.getElementById('custBlockBtn');
+      if (blockBtn) {
+        if (c.is_active === false) {
+          blockBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Unblock';
+          blockBtn.style.background = 'var(--primary-accent)';
+          blockBtn.style.color = 'white';
+        } else {
+          blockBtn.innerHTML = '<i class="fa-solid fa-ban"></i> Block';
+          blockBtn.style.background = 'var(--warning)';
+          blockBtn.style.color = '#0F172A';
+        }
+      }
 
       // Subscriptions Table
       const subTbody = document.getElementById('cust-detail-subscriptions-tbody');
