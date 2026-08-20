@@ -106,20 +106,9 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             status=Subscription.Statuses.ACTIVE,
         )
 
-        # Only create immediate task if subscription starts today or earlier
-        # Future subscriptions will be handled by generate_daily_tasks command
-        if sub.start_date <= date.today():
-            driver = hub.delivery_partners.first() if hub else None
-            DeliveryTask.objects.get_or_create(
-                subscription=sub,
-                delivery_date=date.today(),
-                defaults={
-                    "hub": hub,
-                    "driver": driver,
-                    "slot_time": deliv_slot,
-                    "status": DeliveryTask.Statuses.PENDING,
-                },
-            )
+        # Delivery tasks are NOT auto-created here.
+        # Hub manager triggers task generation via "Generate Today's Delivery Tasks" button
+        # which calls POST /api/admin/generate-tasks/
 
 
 class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
