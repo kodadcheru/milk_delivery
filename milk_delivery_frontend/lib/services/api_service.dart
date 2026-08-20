@@ -13,11 +13,24 @@ import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
 import 'image_upload_service.dart';
 
+/// Exception type for API errors — screens can catch this to show meaningful messages
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+  ApiException(this.statusCode, this.message);
+  
+  @override
+  String toString() => 'ApiException($statusCode): $message';
+}
+
 class ApiService {
   static String get baseUrl => AppConfig.apiBaseUrl;
   static String? authToken;
   static String? refreshToken;
   static final http.Client _client = http.Client();
+  
+  /// Last error message from any API call — UI can read this for error display
+  static String? lastError;
 
   static const String _prefTokenKey = 'milkdrop_auth_token';
   static const String _prefRefreshTokenKey = 'milkdrop_refresh_token';
@@ -50,7 +63,7 @@ class ApiService {
         refreshToken = refresh;
         await prefs.setString(_prefRefreshTokenKey, refresh);
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
   }
 
   /// Refresh JWT Access Token using Refresh Token
@@ -76,7 +89,7 @@ class ApiService {
           return true;
         }
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -89,7 +102,7 @@ class ApiService {
       await prefs.remove(_prefTokenKey);
       await prefs.remove(_prefRefreshTokenKey);
       await prefs.remove(_prefUserKey);
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
   }
 
   /// Helper with retry, exponential backoff, and transparent JWT refresh on 401
@@ -212,7 +225,7 @@ class ApiService {
         final List list = jsonDecode(res.body);
         return list.map((e) => Map<String, dynamic>.from(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -230,7 +243,7 @@ class ApiService {
         await saveAuthToken(data['access'], refresh: data['refresh']);
         return {'success': true, 'token': data['access']};
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return {'success': false, 'error': 'Failed to connect to backend'};
   }
 
@@ -241,7 +254,7 @@ class ApiService {
       if (res.statusCode == 200) {
         return UserModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -255,7 +268,7 @@ class ApiService {
       if (res.statusCode == 200) {
         return UserModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -283,7 +296,7 @@ class ApiService {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => NotificationModel.fromJson(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -291,7 +304,7 @@ class ApiService {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/notifications/$id/read/'), headers: _headers));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -299,7 +312,7 @@ class ApiService {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/notifications/read-all/'), headers: _headers));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -326,7 +339,7 @@ class ApiService {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => ProductModel.fromJson(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -348,8 +361,19 @@ class ApiService {
       if (res.statusCode == 201) {
         return ProductModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
+  }
+
+  static Future<bool> toggleProductStock(int productId) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/admin/products/$productId/toggle-stock/'),
+            headers: _headers,
+          ));
+      return res.statusCode == 200;
+    } catch (e) { lastError = e.toString(); }
+    return false;
   }
 
   // ── 5. Subscriptions ──
@@ -364,7 +388,7 @@ class ApiService {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => SubscriptionModel.fromJson(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -406,7 +430,7 @@ class ApiService {
       if (res.statusCode == 201 || res.statusCode == 200) {
         return SubscriptionModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -418,7 +442,7 @@ class ApiService {
             body: jsonEncode({'start_date': startDate, 'end_date': endDate, 'reason': 'Vacation Mode'}),
           ));
       return res.statusCode == 201 || res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -426,7 +450,7 @@ class ApiService {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/subscriptions/$subId/resume/'), headers: _headers));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -434,7 +458,7 @@ class ApiService {
     try {
       final res = await _executeWithRetry(() => http.delete(Uri.parse('$baseUrl/subscriptions/$subId/'), headers: _headers));
       return res.statusCode == 204 || res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -466,7 +490,7 @@ class ApiService {
             body: jsonEncode(bodyMap),
           ));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -479,7 +503,7 @@ class ApiService {
             body: jsonEncode({'amount': amount.toStringAsFixed(2), 'description': description}),
           ));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -498,7 +522,7 @@ class ApiService {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => WalletTransactionModel.fromJson(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -519,7 +543,7 @@ class ApiService {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => DeliveryTaskModel.fromJson(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -531,7 +555,7 @@ class ApiService {
             body: jsonEncode({'proof_image_url': proofUrl}),
           ));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -539,7 +563,7 @@ class ApiService {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/deliveries/$taskId/skip/'), headers: _headers));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -550,31 +574,31 @@ class ApiService {
       if (res.statusCode == 200) {
         return jsonDecode(res.body) as Map<String, dynamic>;
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
   // ── 9. Geofenced Service Areas ──
   static Future<List<Map<String, dynamic>>> fetchServiceAreas() async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/service-areas/')));
+      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/service-areas/'), headers: _headers));
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
   // ── 10. Location Hubs ──
   static Future<List<Map<String, dynamic>>> fetchHubs() async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/hubs/')));
+      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/hubs/'), headers: _headers));
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -590,7 +614,7 @@ class ApiService {
             }),
           ));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -598,12 +622,12 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> fetchFleet({int? hubId}) async {
     try {
       final url = hubId != null ? '$baseUrl/admin/fleet/?hub_id=$hubId' : '$baseUrl/admin/fleet/';
-      final res = await _executeWithRetry(() => http.get(Uri.parse(url)));
+      final res = await _executeWithRetry(() => http.get(Uri.parse(url), headers: _headers));
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -627,7 +651,19 @@ class ApiService {
             }),
           ));
       return res.statusCode == 201 || res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
+    return false;
+  }
+
+  static Future<bool> updateDriverStatus(int driverId, String driverStatus) async {
+    try {
+      final res = await _executeWithRetry(() => http.patch(
+            Uri.parse('$baseUrl/admin/fleet/$driverId/'),
+            headers: _headers,
+            body: jsonEncode({'driver_status': driverStatus}),
+          ));
+      return res.statusCode == 200;
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -653,7 +689,7 @@ class ApiService {
             : (decoded as List);
         return list.map((item) => CustomerAddressModel.fromJson(item)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -667,7 +703,7 @@ class ApiService {
       if (res.statusCode == 201 || res.statusCode == 200) {
         return CustomerAddressModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -681,7 +717,7 @@ class ApiService {
       if (res.statusCode == 200) {
         return CustomerAddressModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -692,7 +728,7 @@ class ApiService {
             headers: _headers,
           ));
       return res.statusCode == 204 || res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -703,7 +739,7 @@ class ApiService {
             headers: _headers,
           ));
       return res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 
@@ -727,7 +763,7 @@ class ApiService {
         final list = _extractList(jsonDecode(res.body));
         return list.map((item) => LiveOrderModel.fromJson(item)).toList();
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return [];
   }
 
@@ -755,7 +791,7 @@ class ApiService {
       if (res.statusCode == 201 || res.statusCode == 200) {
         return LiveOrderModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -772,7 +808,7 @@ class ApiService {
       if (res.statusCode == 200) {
         return LiveOrderModel.fromJson(jsonDecode(res.body));
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -802,7 +838,7 @@ class ApiService {
       if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body);
       }
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return null;
   }
 
@@ -818,7 +854,7 @@ class ApiService {
             }),
           ));
       return res.statusCode == 201 || res.statusCode == 200;
-    } catch (_) {}
+    } catch (e) { lastError = e.toString(); }
     return false;
   }
 

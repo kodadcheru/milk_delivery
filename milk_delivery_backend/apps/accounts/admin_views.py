@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 from django.shortcuts import render
 from django.utils import timezone
@@ -14,6 +15,7 @@ from apps.products.models import Product
 from apps.products.serializers import ProductSerializer
 from apps.subscriptions.models import Subscription, VacationPause
 from apps.subscriptions.serializers import SubscriptionSerializer
+from apps.core.permissions import IsAdminOrStaff, IsAdminOrHubManager
 
 
 class AdminConsoleHTMLView(View):
@@ -22,7 +24,7 @@ class AdminConsoleHTMLView(View):
 
 
 class AdminCustomerListView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def get(self, request):
         from apps.subscriptions.models import Subscription
@@ -107,7 +109,7 @@ class AdminCustomerListView(APIView):
             delivery_slot_preference=slot_pref,
             delivery_instructions=instructions,
         )
-        customer.set_password("pass123")
+        customer.set_password(uuid.uuid4().hex)
         customer.save()
 
         # Log initial wallet transaction
@@ -143,7 +145,7 @@ class AdminCustomerListView(APIView):
 
 
 class AdminCustomerDetailView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def get(self, request, pk):
         from apps.accounts.models import User
@@ -244,13 +246,12 @@ class AdminCustomerDetailView(APIView):
 
 
 class AdminCreditWalletView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def post(self, request):
         user_id = request.data.get("user_id")
         if not user_id:
-            customer = User.objects.filter(role=User.Roles.CUSTOMER).first()
-            user_id = customer.id if customer else None
+            return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         amount_str = request.data.get("amount", "100.00")
         desc = request.data.get("description", "Admin Manual Wallet Bonus")
@@ -289,7 +290,7 @@ class AdminCreditWalletView(APIView):
 
 
 class AdminBroadcastNotificationView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def post(self, request):
         title = request.data.get("title", "MilkDrop Announcement")
@@ -393,7 +394,7 @@ def generate_hub_code(name, address):
 
 
 class AdminHubsView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def get(self, request):
         from apps.accounts.models import User
@@ -543,7 +544,7 @@ class AdminHubsView(APIView):
                     assigned_hub=hub,
                     wallet_balance=Decimal("10000.00"),
                 )
-                hub_user.set_password("pass123")
+                hub_user.set_password(uuid.uuid4().hex)
             else:
                 hub_user.assigned_hub = hub
                 hub_user.is_staff = True
@@ -579,7 +580,7 @@ def _resolve_hub_by_pk_or_code(pk):
 
 
 class AdminHubDetailView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def get(self, request, pk):
         from apps.accounts.models import User
@@ -675,7 +676,7 @@ class AdminHubDetailView(APIView):
 
 
 class AdminHubAssignDriverView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def post(self, request, pk):
         from apps.accounts.models import User
@@ -705,7 +706,7 @@ class AdminHubAssignDriverView(APIView):
 
 
 class AdminHubCleanupView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def post(self, request):
         from apps.deliveries.models import LocationHub
@@ -735,7 +736,7 @@ class AdminHubCleanupView(APIView):
 
 
 class AdminSubscriptionsListView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def get(self, request):
         from django.db.models import Q
@@ -768,7 +769,7 @@ class AdminSubscriptionsListView(APIView):
 
 
 class AdminSubscriptionToggleView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def post(self, request, pk):
         try:
@@ -794,7 +795,7 @@ class AdminSubscriptionToggleView(APIView):
 
 
 class AdminFleetListView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def get(self, request):
         from apps.accounts.models import User
@@ -803,8 +804,11 @@ class AdminFleetListView(APIView):
         hub_id = request.query_params.get("hub_id")
         drivers = User.objects.filter(role=User.Roles.DELIVERY_PARTNER).select_related("assigned_hub")
 
+        # Hub managers can only see drivers at their own hub
         if hub_id:
             drivers = drivers.filter(assigned_hub_id=hub_id)
+        elif hasattr(request.user, 'role') and request.user.role in (User.Roles.HUB_MANAGER, 'PROVIDER') and request.user.assigned_hub:
+            drivers = drivers.filter(assigned_hub=request.user.assigned_hub)
 
         fleet_data = []
         for d in drivers:
@@ -842,7 +846,7 @@ class AdminFleetListView(APIView):
 
 
 class AdminFleetDetailView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def patch(self, request, pk):
         from apps.accounts.models import User
@@ -879,7 +883,7 @@ class AdminFleetDetailView(APIView):
 
 
 class HubDriverCreateView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def post(self, request):
         from django.contrib.auth.hashers import make_password
@@ -899,7 +903,13 @@ class HubDriverCreateView(APIView):
             return Response({"detail": "Valid 10-digit phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
         clean_phone = f"+91 {phone_digits[-10:]}"
 
-        hub = LocationHub.objects.filter(id=hub_id).first() if hub_id else LocationHub.objects.first()
+        hub = None
+        if hub_id:
+            hub = LocationHub.objects.filter(id=hub_id).first()
+        if not hub and hasattr(request.user, 'assigned_hub') and request.user.assigned_hub:
+            hub = request.user.assigned_hub
+        if not hub:
+            hub = LocationHub.objects.first()
 
         raw_lat = request.data.get("latitude")
         raw_lng = request.data.get("longitude")
@@ -919,7 +929,7 @@ class HubDriverCreateView(APIView):
                 "username": uname,
                 "first_name": first_name,
                 "last_name": last_name,
-                "password": make_password("pass123"),
+                "password": make_password(uuid.uuid4().hex),
                 "role": User.Roles.DELIVERY_PARTNER,
                 "assigned_hub": hub,
                 "monthly_salary": Decimal(str(salary)),
@@ -997,7 +1007,7 @@ class ServiceAreaCheckView(APIView):
 
 
 class AdminServiceAreaManageView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def post(self, request):
         from apps.deliveries.models import LocationHub, ServiceArea
@@ -1025,7 +1035,7 @@ class AdminServiceAreaManageView(APIView):
 
 
 class AdminCustomerTransactionsView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def get(self, request, user_id):
         from apps.accounts.models import User, WalletTransaction
@@ -1035,22 +1045,6 @@ class AdminCustomerTransactionsView(APIView):
             return Response({"detail": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
 
         txs = WalletTransaction.objects.filter(user=user).order_by("-created_at")
-        
-        # If no transactions yet, generate clean initial seed transactions
-        if not txs.exists():
-            WalletTransaction.objects.create(
-                user=user,
-                amount=Decimal("1500.00"),
-                transaction_type=WalletTransaction.Types.CREDIT,
-                description="🎉 Welcome Signup Milk Credits",
-            )
-            WalletTransaction.objects.create(
-                user=user,
-                amount=Decimal("90.00"),
-                transaction_type=WalletTransaction.Types.DEBIT,
-                description="🥛 Morning Farm Milk Delivery Auto-Debit (1L A2 Cow Milk)",
-            )
-            txs = WalletTransaction.objects.filter(user=user).order_by("-created_at")
 
         data = []
         for t in txs:
@@ -1071,7 +1065,7 @@ class AdminCustomerTransactionsView(APIView):
 
 
 class AdminSubscriptionCreateView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def post(self, request):
         from datetime import date
@@ -1122,7 +1116,7 @@ class AdminSubscriptionCreateView(APIView):
 
 
 class AdminProductStockToggleView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def post(self, request, pk):
         from apps.products.models import Product
@@ -1142,7 +1136,7 @@ class AdminProductStockToggleView(APIView):
 
 
 class AdminHubRebalanceView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrHubManager]
 
     def post(self, request, hub_code):
         from apps.deliveries.models import LocationHub, DeliveryTask
@@ -1154,12 +1148,12 @@ class AdminHubRebalanceView(APIView):
 
         active_drivers = list(User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=hub))
         if not active_drivers:
-            active_drivers = list(User.objects.filter(role=User.Roles.DELIVERY_PARTNER))
+            return Response({"detail": f"No drivers assigned to hub {hub.name}. Assign drivers first."}, status=status.HTTP_400_BAD_REQUEST)
 
         from datetime import date
         tasks = list(DeliveryTask.objects.filter(hub=hub, status=DeliveryTask.Statuses.PENDING))
         if not tasks:
-            tasks = list(DeliveryTask.objects.filter(status=DeliveryTask.Statuses.PENDING))
+            return Response({"message": f"No pending delivery tasks found for hub {hub.name}."}, status=status.HTTP_200_OK)
 
         if active_drivers and tasks:
             for idx, task in enumerate(tasks):
@@ -1176,3 +1170,65 @@ class AdminHubRebalanceView(APIView):
         })
 
 
+class AdminBottleReturnsView(APIView):
+    """List all bottle returns for admin web console."""
+    permission_classes = [IsAdminOrHubManager]
+
+    def get(self, request):
+        from apps.deliveries.models import BottleReturn
+        returns = BottleReturn.objects.select_related("customer", "driver", "hub", "product").all()
+
+        hub_id = request.query_params.get("hub_id")
+        if hub_id:
+            returns = returns.filter(hub_id=hub_id)
+
+        data = []
+        for r in returns:
+            cust_name = f"{r.customer.first_name} {r.customer.last_name}".strip() or r.customer.username if r.customer else ""
+            driver_name = f"{r.driver.first_name} {r.driver.last_name}".strip() or r.driver.username if r.driver else ""
+            data.append({
+                "id": r.id,
+                "customer_name": cust_name,
+                "driver_name": driver_name,
+                "hub_name": r.hub.name if r.hub else "",
+                "product_name": r.product.name if r.product else "",
+                "bottles_count": r.quantity,
+                "deposit_amount": str(r.deposit_amount),
+                "status": r.status,
+                "collected_date": str(r.collected_date) if r.collected_date else None,
+                "returned_date": str(r.returned_date) if r.returned_date else None,
+                "notes": r.notes,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+        return Response(data)
+
+
+class AdminPayoutsView(APIView):
+    """List all provider payouts for admin web console."""
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        from apps.deliveries.models import ProviderPayout
+        payouts = ProviderPayout.objects.select_related("hub", "manager").all()
+
+        data = []
+        for p in payouts:
+            provider_name = f"{p.manager.first_name} {p.manager.last_name}".strip() or p.manager.username if p.manager else ""
+            data.append({
+                "id": p.id,
+                "hub_name": p.hub.name if p.hub else "",
+                "provider_name": provider_name,
+                "period_start": str(p.period_start),
+                "period_end": str(p.period_end),
+                "total_deliveries": p.total_deliveries,
+                "total_revenue": str(p.total_revenue),
+                "driver_salaries": str(p.driver_salaries),
+                "platform_commission": str(p.platform_commission),
+                "amount": str(p.net_payout),
+                "status": p.status,
+                "payment_reference": p.payment_reference,
+                "notes": p.notes,
+                "settled_at": p.paid_at.isoformat() if p.paid_at else None,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            })
+        return Response(data)

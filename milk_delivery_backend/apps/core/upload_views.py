@@ -17,13 +17,17 @@ MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 class FileUploadView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
         uploaded_file = request.FILES.get("image") or request.FILES.get("file")
         base64_data = request.data.get("base64_image") or request.data.get("image_base64")
         folder = request.data.get("folder", "proofs").strip()
+        # Sanitize folder name to prevent directory traversal
+        folder = folder.replace("/", "").replace("\\", "").replace("..", "").strip()
+        if not folder:
+            folder = "proofs"
 
         # Ensure media proofs directory exists
         proofs_dir = Path(settings.MEDIA_ROOT) / folder

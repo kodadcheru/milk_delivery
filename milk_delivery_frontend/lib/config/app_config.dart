@@ -18,6 +18,14 @@ class AppConfig {
     );
   }
 
+  /// Google Maps API Key — override via --dart-define=GOOGLE_MAPS_API_KEY=...
+  static String get googleMapsApiKey {
+    return const String.fromEnvironment(
+      'GOOGLE_MAPS_API_KEY',
+      defaultValue: 'AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg',
+    );
+  }
+
   static const Duration requestTimeout = Duration(seconds: 12);
   static const int maxRetryAttempts = 3;
   static const Duration retryDelay = Duration(milliseconds: 600);

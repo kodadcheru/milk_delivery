@@ -16,7 +16,7 @@ def _resolve_customer_user(request):
 
     if phone:
         clean_phone = str(phone).replace("+91", "").replace(" ", "").strip()
-        user = User.objects.filter(phone_number__icontains=clean_phone).first()
+        user = User.objects.filter(phone__icontains=clean_phone).first()
         if user:
             return user
 
@@ -28,12 +28,12 @@ def _resolve_customer_user(request):
         except (ValueError, TypeError):
             pass
 
-    return User.objects.filter(role=User.Roles.CUSTOMER).first()
+    return None
 
 
 class CustomerAddressListCreateView(generics.ListCreateAPIView):
     serializer_class = CustomerAddressSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = _resolve_customer_user(self.request)
@@ -75,8 +75,12 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
 
 class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CustomerAddressSerializer
-    permission_classes = [permissions.AllowAny]
-    queryset = CustomerAddress.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return CustomerAddress.objects.all()
+        return CustomerAddress.objects.filter(user=self.request.user)
 
     def perform_update(self, serializer):
         addr = serializer.save()
@@ -106,7 +110,7 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CustomerAddressSetDefaultView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         user = _resolve_customer_user(request)

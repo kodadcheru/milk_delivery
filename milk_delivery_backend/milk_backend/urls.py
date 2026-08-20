@@ -28,6 +28,8 @@ from apps.accounts.admin_views import (
     HubDriverCreateView,
     ServiceAreaCheckView,
     ServiceAreaListView,
+    AdminBottleReturnsView,
+    AdminPayoutsView,
 )
 from apps.accounts.address_views import (
     CustomerAddressDetailView,
@@ -50,6 +52,8 @@ from apps.accounts.views import (
     WalletTransactionListView,
 )
 from apps.deliveries.views import (
+    BottleReturnListCreateView,
+    BottleReturnUpdateView,
     DeliverySummaryView,
     DeliveryTaskCompleteView,
     DeliveryTaskListView,
@@ -95,6 +99,9 @@ urlpatterns = [
     path("api/admin/fleet/", AdminFleetListView.as_view(), name="admin_fleet"),
     path("api/admin/fleet/<int:pk>/", AdminFleetDetailView.as_view(), name="admin_fleet_detail"),
     path("api/admin/fleet/create-driver/", HubDriverCreateView.as_view(), name="admin_create_driver"),
+    # Bottle Returns & Provider Payouts
+    path("api/admin/bottle-returns/", AdminBottleReturnsView.as_view(), name="admin_bottle_returns"),
+    path("api/admin/payouts/", AdminPayoutsView.as_view(), name="admin_payouts"),
     # Service Area endpoints
     path("api/service-areas/", ServiceAreaListView.as_view(), name="service_areas_list"),
     path("api/service-areas/check/", ServiceAreaCheckView.as_view(), name="service_areas_check"),
@@ -135,6 +142,9 @@ urlpatterns = [
     path("api/deliveries/<int:pk>/complete/", DeliveryTaskCompleteView.as_view(), name="delivery_complete"),
     path("api/deliveries/<int:pk>/skip/", DeliveryTaskSkipView.as_view(), name="delivery_skip"),
     path("api/deliveries/summary/", DeliverySummaryView.as_view(), name="delivery_summary"),
+    # Bottle Return Tracking endpoints
+    path("api/bottles/", BottleReturnListCreateView.as_view(), name="bottle_list_create"),
+    path("api/bottles/<int:pk>/", BottleReturnUpdateView.as_view(), name="bottle_update"),
     # Express / Live Orders endpoints
     path("api/orders/express/", ExpressOrderListCreateView.as_view(), name="express_order_list_create"),
     path("api/orders/express/<str:order_id>/", ExpressOrderDetailView.as_view(), name="express_order_detail"),

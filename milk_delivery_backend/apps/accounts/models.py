@@ -18,7 +18,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, unique=True)
     address = models.TextField(blank=True, default="")
     city = models.CharField(max_length=100, default="Hyderabad")
-    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("500.00"))
+    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     delivery_instructions = models.CharField(max_length=255, blank=True, default="Ring bell and leave at door")
     delivery_slot_preference = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
     latitude = models.DecimalField(max_digits=11, decimal_places=8, default=Decimal("17.43190000"))

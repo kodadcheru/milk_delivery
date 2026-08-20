@@ -21,42 +21,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   int _selectedFilter = 0; // 0: All, 1: Subs, 2: Express, 3: Fleet, 4: Crates, 5: Broadcasts, 6: Payouts
   String _searchQuery = '';
   int _activeDriverCount = 4;
-  int _crateStockA2 = 45;
-  int _crateStockBuffalo = 22;
-  int _crateStockEggs = 18;
+  int _crateStockA2 = 0;
+  int _crateStockBuffalo = 0;
+  int _crateStockEggs = 0;
   List<Map<String, dynamic>> _liveFleet = [];
 
-  final List<Map<String, dynamic>> _broadcastAlerts = [
-    {
-      'title': '🌧️ Weather Update: Morning Dispatch Completed',
-      'time': '06:15 AM Today',
-      'recipients': 'All Subscribers',
-      'status': 'DELIVERED ✅',
-    },
-    {
-      'title': '🥛 Fresh Farm Batch Arrival: A2 Vedic Cow Milk',
-      'time': '04:30 AM Today',
-      'recipients': 'All Subscribers',
-      'status': 'DELIVERED ✅',
-    },
-  ];
+  final List<Map<String, dynamic>> _broadcastAlerts = [];
 
-  final List<Map<String, dynamic>> _payoutHistory = [
-    {
-      'id': 'PAY-HYD-9021',
-      'date': 'Yesterday, 08:30 PM',
-      'amount': 3375.0,
-      'status': 'SETTLED ✅',
-      'bank': 'Primary Bank (A/C **4892)',
-    },
-    {
-      'id': 'PAY-HYD-8842',
-      'date': '17 Aug 2026',
-      'amount': 4120.0,
-      'status': 'SETTLED ✅',
-      'bank': 'Primary Bank (A/C **4892)',
-    },
-  ];
+  final List<Map<String, dynamic>> _payoutHistory = [];
 
   String get _activeHubName {
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
@@ -275,9 +247,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget build(BuildContext context) {
     final tasks = widget.state.deliveries;
     final liveOrders = widget.state.liveOrders;
-    final totalRevenue = widget.state.totalDailyRevenue > 0 ? widget.state.totalDailyRevenue : 24850.0;
+    final totalRevenue = widget.state.totalDailyRevenue;
     final netEarnings = totalRevenue * 0.75; // 75% provider margin
-    final totalLitres = widget.state.totalDailyMilkVolume > 0 ? widget.state.totalDailyMilkVolume : 310.0;
+    final totalLitres = widget.state.totalDailyMilkVolume;
 
     // Filter tasks & orders
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {

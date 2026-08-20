@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 
 class AdminProfileTab extends StatelessWidget {
   final AppState state;
@@ -88,8 +89,8 @@ class AdminProfileTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
                   ),
-                  child: const Text(
-                    '🛡️ Master Operations Administrator • ID #ADM-001',
+                  child: Text(
+                    '🛡️ Master Operations Administrator • ID #${state.currentUser?.id ?? 0}',
                     style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w800, fontSize: 11),
                   ),
                 ),
@@ -131,11 +132,11 @@ class AdminProfileTab extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
-                _buildSystemStatRow('API Server Engine', 'http://127.0.0.1:8000 (Django 5.x REST Framework)', '🟢 ONLINE'),
+                _buildSystemStatRow('API Server', '${ApiService.baseUrl} (Django REST)', '🟢 CONNECTED'),
                 const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                _buildSystemStatRow('SQLite Database', 'SQLite3 WAL Mode • Auto-indexed schema', '🟢 HEALTHY'),
+                _buildSystemStatRow('Database', 'PostgreSQL • Railway Cloud', '🟢 HEALTHY'),
                 const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                _buildSystemStatRow('Geocoding Service', 'Google Maps V3 Geocoding & Places Engine', '🟢 ACTIVE'),
+                _buildSystemStatRow('Auth Token', ApiService.authToken != null ? 'JWT Active' : 'Not authenticated', ApiService.authToken != null ? '🟢 VALID' : '🔴 MISSING'),
               ],
             ),
           ),
@@ -163,14 +164,14 @@ class AdminProfileTab extends StatelessWidget {
                 _buildWebLinkRow(
                   context,
                   '🖥️ Operations Web Console',
-                  'http://127.0.0.1:8000/admin-console/',
+                  '${ApiService.baseUrl.replaceAll('/api', '')}/admin-console/',
                   'Real-time delivery management, wallet credits & push broadcasts',
                 ),
                 const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
                 _buildWebLinkRow(
                   context,
                   '⚙️ Django Master Admin Portal',
-                  'http://127.0.0.1:8000/admin/',
+                  '${ApiService.baseUrl.replaceAll('/api', '')}/admin/',
                   'Database models, user roles, permission groups & server logs',
                 ),
               ],

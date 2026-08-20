@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../providers/app_state.dart';
+import '../services/api_service.dart';
 
 class DeliveryCalendarView extends StatefulWidget {
   final AppState state;
@@ -126,10 +127,22 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
               return InkWell(
                 onTap: isPast
                     ? null
-                    : () {
-                        setState(() {
-                          if (_customPausedDays.contains(day)) {
+                    : () async {
+                        final now = DateTime.now();
+                        final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+                        
+                        // Find first active subscription to pause/resume
+                        final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
+                        
+                        if (_customPausedDays.contains(day)) {
+                          // Resume delivery for this day
+                          if (activeSubs.isNotEmpty) {
+                            await ApiService.resumeSubscription(activeSubs.first.id);
+                          }
+                          setState(() {
                             _customPausedDays.remove(day);
+                          });
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 1),
@@ -137,8 +150,16 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                                 content: Text('🟢 Delivery resumed for $day $monthName!'),
                               ),
                             );
-                          } else {
+                          }
+                        } else {
+                          // Pause delivery for this day
+                          if (activeSubs.isNotEmpty) {
+                            await ApiService.pauseSubscription(activeSubs.first.id, dateStr, dateStr);
+                          }
+                          setState(() {
                             _customPausedDays.add(day);
+                          });
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 1),
@@ -147,7 +168,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                               ),
                             );
                           }
-                        });
+                        }
                       },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(

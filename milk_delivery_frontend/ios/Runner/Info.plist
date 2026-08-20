@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed to upload delivery proof photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is needed to select delivery proof images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MilkDrop Express requires access to your location to accurately deliver fresh morning milk and dairy to your doorstep.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

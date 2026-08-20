@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/user_model.dart';
@@ -83,73 +84,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<ProductModel> products = [
-    ProductModel(
-      id: 101,
-      name: 'Farm Fresh A2 Desi Cow Milk',
-      category: 'MILK',
-      description: 'Raw, unpasteurized A2 beta-casein milk, chilled & delivered by 6 AM.',
-      pricePerUnit: 72.0,
-      unit: 'PACKET',
-      unitQuantity: '1 Litre',
-      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&q=80&auto=format',
-      badgeText: '👑 BESTSELLER',
-      icon: '🥛',
-      rating: 4.9,
-    ),
-    ProductModel(
-      id: 102,
-      name: 'Pure Heritage Buffalo Milk',
-      category: 'MILK',
-      description: 'Thick, creamy 7.5% fat buffalo milk, perfect for tea, coffee & curd.',
-      pricePerUnit: 80.0,
-      unit: 'PACKET',
-      unitQuantity: '1 Litre',
-      imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&q=80&auto=format',
-      badgeText: '🥛 HIGH FAT',
-      icon: '🍶',
-      rating: 4.8,
-    ),
-    ProductModel(
-      id: 103,
-      name: 'Antibiotic-Free Tender Chicken',
-      category: 'MEAT',
-      description: 'Hygienically cut, vacuum sealed, zero chemical chicken curry cut.',
-      pricePerUnit: 240.0,
-      unit: 'PACKET',
-      unitQuantity: '500g',
-      imageUrl: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&q=80&auto=format',
-      badgeText: '🥩 FRESH CUT',
-      icon: '🍗',
-      rating: 4.9,
-    ),
-    ProductModel(
-      id: 104,
-      name: 'Farm Free-Range Country Eggs',
-      category: 'EGGS',
-      description: 'Organic brown eggs from free-roaming country hens, delivered fresh daily.',
-      pricePerUnit: 90.0,
-      unit: 'PACKET',
-      unitQuantity: '6 Pack',
-      imageUrl: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=400&q=80&auto=format',
-      badgeText: '🥚 ORGANIC',
-      icon: '🥚',
-      rating: 4.9,
-    ),
-    ProductModel(
-      id: 105,
-      name: 'Mineral Pure 20L Water Can',
-      category: 'WATER_CAN',
-      description: 'Strict 8-stage RO+UV quality certified drinking water delivered to doorstep.',
-      pricePerUnit: 45.0,
-      unit: 'CAN',
-      unitQuantity: '20 Litre Can',
-      imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=400&q=80&auto=format',
-      badgeText: '💧 ESSENTIAL',
-      icon: '💧',
-      rating: 4.9,
-    ),
-  ];
+  // Products populated from API via fetchProducts() — no hardcoded fallbacks
+  List<ProductModel> products = [];
   List<SubscriptionModel> subscriptions = [];
   List<WalletTransactionModel> transactions = [];
   List<DeliveryTaskModel> deliveries = [];
@@ -503,34 +439,7 @@ class AppState extends ChangeNotifier {
       if (fetchedHubs.isNotEmpty) {
         locationHubs = fetchedHubs;
       }
-      if (notifications.isEmpty) {
-        notifications = [
-          NotificationModel(
-            id: 1,
-            title: '📸 Morning Doorstep Drop Delivered!',
-            message: 'Your 2L Farm Fresh A2 Desi Cow Milk was delivered at 06:15 AM. Photo proof uploaded.',
-            notificationType: 'DELIVERY',
-            isRead: false,
-            createdAt: '06:15 AM Today',
-          ),
-          NotificationModel(
-            id: 2,
-            title: '⚡ ₹500 Welcome Milk Credit Received',
-            message: '₹500 welcome bonus credited to your prepaid milk wallet.',
-            notificationType: 'WALLET',
-            isRead: true,
-            createdAt: 'Yesterday',
-          ),
-          NotificationModel(
-            id: 3,
-            title: '📢 Morning Batch Quality Certified',
-            message: 'All daily milk batches tested & quality certified for 06:00 AM dispatch.',
-            notificationType: 'OFFER',
-            isRead: true,
-            createdAt: '2 days ago',
-          ),
-        ];
-      }
+      // Notifications are fetched from API — no hardcoded fallbacks
       final fetchedAreas = (results[9] as List<Map<String, dynamic>>?) ?? [];
       if (fetchedAreas.isNotEmpty) {
         serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
@@ -670,6 +579,8 @@ class AppState extends ChangeNotifier {
   }
 
   void setRole(String role) {
+    // Role switching with test credentials is only available in debug builds
+    if (!kDebugMode) return;
     if (role == 'CUSTOMER') {
       loginAndSync('customer', 'pass123', 'CUSTOMER');
     } else if (role == 'DRIVER') {
@@ -1049,8 +960,13 @@ class AppState extends ChangeNotifier {
       }).toList();
 
       if (currentUser != null) {
-        double newBal = currentUser!.walletBalance - 72.0;
-        currentUser = currentUser!.copyWith(walletBalance: newBal > 0 ? newBal : 0.0);
+        // Find the actual task to get real price instead of hardcoded amount
+        final completedTask = deliveries.where((d) => d.id == taskId).firstOrNull;
+        double debitAmount = completedTask?.subscriptionDetail?.productDetail?.pricePerUnit ?? 0.0;
+        if (debitAmount > 0) {
+          double newBal = currentUser!.walletBalance - debitAmount;
+          currentUser = currentUser!.copyWith(walletBalance: newBal > 0 ? newBal : 0.0);
+        }
       }
       notifyListeners();
     }

@@ -23,8 +23,16 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   late final MapController _mapController;
   int _selectedTaskIndex = 0;
 
-  // Hyderabad Jubilee Hills Central Depot #1 coordinates
-  final LatLng _depotLocation = const LatLng(17.4320, 78.4070);
+  // Depot location — read from active hub, fallback to defaults
+  LatLng get _depotLocation {
+    final hub = widget.state.nearestCoveringHub;
+    if (hub != null) {
+      final lat = double.tryParse(hub['latitude']?.toString() ?? '') ?? 17.4320;
+      final lng = double.tryParse(hub['longitude']?.toString() ?? '') ?? 78.4070;
+      return LatLng(lat, lng);
+    }
+    return const LatLng(17.4320, 78.4070);
+  }
 
   // Delivery partner location
   late LatLng _driverLocation;

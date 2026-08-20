@@ -1,4 +1,6 @@
 from decimal import Decimal
+from django.db import transaction
+from django.db.models import F
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,28 +43,31 @@ class WalletBalanceView(APIView):
 
 
 class WalletTopUpView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = WalletTopUpSerializer(data=request.data)
         if serializer.is_valid():
             amount = serializer.validated_data["amount"]
             desc = serializer.validated_data["description"]
+            payment_method = serializer.validated_data.get("payment_method", "UPI")
+            payment_ref = serializer.validated_data.get("payment_reference", "")
 
             user = request.user
-            if not user or not user.is_authenticated:
-                user = User.objects.filter(role=User.Roles.CUSTOMER).first()
-            if not user:
-                return Response({"detail": "Customer user not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            user.wallet_balance += amount
-            user.save()
+            with transaction.atomic():
+                User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") + amount)
+                user.refresh_from_db()
+
+            tx_desc = f"{desc} via {payment_method}"
+            if payment_ref:
+                tx_desc += f" (Ref: {payment_ref})"
 
             tx = WalletTransaction.objects.create(
                 user=user,
                 amount=amount,
                 transaction_type=WalletTransaction.Types.CREDIT,
-                description=desc,
+                description=tx_desc,
             )
 
             # Auto-generate Notification for Wallet Top Up
@@ -135,48 +140,19 @@ class RobustTokenObtainPairView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 1. Guaranteed self-healing for Super Admin account
-        if username_input == "admin" and password_input == "admin123":
-            user = User.objects.filter(username="admin").first() or User.objects.filter(phone__endswith="8919548905").first()
-            if not user:
-                user = User.objects.create(
-                    username="admin",
-                    email="admin@milkdrop.in",
-                    first_name="Operations",
-                    last_name="Administrator",
-                    role=User.Roles.ADMIN,
-                    phone="+91 8919548905",
-                    address="Hyderabad Central Operations Hub",
-                    is_staff=True,
-                    is_superuser=True,
-                    wallet_balance=Decimal("10000.00"),
-                )
-            else:
-                user.username = "admin"
-                user.phone = "+91 8919548905"
-                user.first_name = "Operations"
-                user.last_name = "Administrator"
-                user.email = "admin@milkdrop.in"
-                user.role = User.Roles.ADMIN
-                user.is_staff = True
-                user.is_superuser = True
-                user.is_active = True
-            user.set_password("admin123")
-            user.save()
-        else:
-            # Standard Django Authentication
-            user = authenticate(request, username=username_input, password=password_input)
+        # Standard Django Authentication
+        user = authenticate(request, username=username_input, password=password_input)
 
-            # Try matching phone or email
-            if not user:
-                clean_phone = username_input.replace(" ", "").replace("-", "").replace("+91", "").strip()
-                user_candidate = (
-                    User.objects.filter(phone__icontains=clean_phone).first()
-                    or User.objects.filter(email__iexact=username_input).first()
-                    or User.objects.filter(username__iexact=username_input).first()
-                )
-                if user_candidate and user_candidate.check_password(password_input):
-                    user = user_candidate
+        # Try matching phone or email
+        if not user:
+            clean_phone = username_input.replace(" ", "").replace("-", "").replace("+91", "").strip()
+            user_candidate = (
+                User.objects.filter(phone__icontains=clean_phone).first()
+                or User.objects.filter(email__iexact=username_input).first()
+                or User.objects.filter(username__iexact=username_input).first()
+            )
+            if user_candidate and user_candidate.check_password(password_input):
+                user = user_candidate
 
         if not user:
             return Response(

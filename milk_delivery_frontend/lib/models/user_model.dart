@@ -98,6 +98,9 @@ class UserModel {
     String? role,
     double? latitude,
     double? longitude,
+    double? monthlySalary,
+    String? vehicleNumber,
+    String? drivingLicense,
   }) {
     return UserModel(
       id: id,
@@ -114,6 +117,9 @@ class UserModel {
       deliverySlotPreference: deliverySlotPreference ?? this.deliverySlotPreference,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      monthlySalary: monthlySalary ?? this.monthlySalary,
+      vehicleNumber: vehicleNumber ?? this.vehicleNumber,
+      drivingLicense: drivingLicense ?? this.drivingLicense,
     );
   }
 }

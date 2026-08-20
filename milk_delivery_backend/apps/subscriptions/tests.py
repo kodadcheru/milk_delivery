@@ -16,7 +16,7 @@ class SubscriptionAPITests(TestCase):
         )
         self.product = Product.objects.create(
             name="Farm Fresh A2 Desi Cow Milk",
-            category=Product.Categories.MILK,
+            category="MILK",
             price_per_unit=85.0,
             unit_quantity="1 Litre",
             is_available=True,

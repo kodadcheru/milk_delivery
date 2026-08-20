@@ -727,15 +727,15 @@ class ProfileTab extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        final res = await Navigator.push<bool>(
+                        final res = await Navigator.push<Map<String, dynamic>>(
                           context,
                           MaterialPageRoute(
                             builder: (c) => MapLocationPickerScreen(state: state),
                           ),
                         );
-                        if (res == true) {
+                        if (res != null && res['formatted'] != null) {
                           setDlgState(() {
-                            ctrl.text = state.currentDeliveryAddress;
+                            ctrl.text = res['formatted'] as String;
                           });
                         }
                       },

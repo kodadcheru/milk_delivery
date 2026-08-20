@@ -1,7 +1,9 @@
 from decimal import Decimal
 import random
+import uuid
 from datetime import date
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -15,7 +17,7 @@ from apps.products.models import Product
 
 
 class ExpressOrderListCreateView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
@@ -39,9 +41,7 @@ class ExpressOrderListCreateView(APIView):
     def post(self, request):
         user = request.user
         if not user or not user.is_authenticated:
-            user = User.objects.filter(role=User.Roles.CUSTOMER).first()
-            if not user:
-                return Response({"detail": "Authentication required to place express order."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
 
         data = request.data
         items_data = data.get("items", [])
@@ -53,12 +53,22 @@ class ExpressOrderListCreateView(APIView):
         delivery_address = data.get("delivery_address") or user.address or "Doorstep Delivery"
         delivery_lat = float(data.get("delivery_latitude") or user.latitude or 17.4319)
         delivery_lon = float(data.get("delivery_longitude") or user.longitude or 78.4073)
+        pincode = data.get("pincode", "")
 
-        active_hub = LocationHub.objects.first()
+        # Auto-resolve hub based on delivery location
+        from apps.deliveries.hub_resolver import find_hub_for_location
+        active_hub = getattr(user, "assigned_hub", None)
+        if not active_hub:
+            active_hub = find_hub_for_location(
+                pincode=pincode,
+                latitude=delivery_lat,
+                longitude=delivery_lon,
+                address=delivery_address,
+            )
 
-        order_id = f"MD-{random.randint(8000, 9999)}"
+        order_id = f"MD-{uuid.uuid4().hex[:6].upper()}"
         while LiveOrder.objects.filter(id=order_id).exists():
-            order_id = f"MD-{random.randint(8000, 9999)}"
+            order_id = f"MD-{uuid.uuid4().hex[:6].upper()}"
 
         total_amount = Decimal("0.00")
         parsed_items = []
@@ -141,13 +151,17 @@ class ExpressOrderListCreateView(APIView):
 
 
 class ExpressOrderDetailView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, order_id):
         try:
             order = LiveOrder.objects.prefetch_related("items__product").select_related("customer", "hub", "driver").get(id=order_id)
         except LiveOrder.DoesNotExist:
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({"detail": "You can only view your own orders."}, status=status.HTTP_403_FORBIDDEN)
+
         return Response(LiveOrderSerializer(order).data)
 
     def patch(self, request, order_id):
@@ -155,6 +169,9 @@ class ExpressOrderDetailView(APIView):
             order = LiveOrder.objects.get(id=order_id)
         except LiveOrder.DoesNotExist:
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({"detail": "You can only modify your own orders."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = request.data.get("status")
         if new_status and new_status in dict(LiveOrder.Statuses.choices):
@@ -164,10 +181,43 @@ class ExpressOrderDetailView(APIView):
                 order.delivered_at = timezone.now()
                 if proof_url:
                     order.proof_image_url = proof_url
+
+            # Refund wallet on cancellation (only if not already refunded)
+            if new_status == LiveOrder.Statuses.CANCELLED and order.payment_status == "PAID":
+                customer = order.customer
+                refund_amount = order.total_amount
+
+                with transaction.atomic():
+                    User.objects.filter(pk=customer.pk).update(
+                        wallet_balance=F("wallet_balance") + refund_amount
+                    )
+                    customer.refresh_from_db()
+
+                WalletTransaction.objects.create(
+                    user=customer,
+                    amount=refund_amount,
+                    transaction_type=WalletTransaction.Types.CREDIT,
+                    description=f"💰 Refund for cancelled order {order.id}",
+                )
+
+                Notification.objects.create(
+                    user=customer,
+                    title=f"💰 Order {order.id} Refunded",
+                    message=f"₹{refund_amount} has been refunded to your wallet for cancelled order {order.id}. New balance: ₹{customer.wallet_balance}",
+                    notification_type=Notification.Types.WALLET,
+                )
+
+                order.payment_status = "REFUNDED"
+
             order.save()
 
             # Also update linked DeliveryTask
-            task_status = DeliveryTask.Statuses.DELIVERED if new_status == LiveOrder.Statuses.DELIVERED else DeliveryTask.Statuses.PENDING
+            if new_status == LiveOrder.Statuses.DELIVERED:
+                task_status = DeliveryTask.Statuses.DELIVERED
+            elif new_status == LiveOrder.Statuses.CANCELLED:
+                task_status = DeliveryTask.Statuses.SKIPPED
+            else:
+                task_status = DeliveryTask.Statuses.PENDING
             DeliveryTask.objects.filter(order=order).update(
                 status=task_status,
                 proof_image_url=proof_url if proof_url else "",

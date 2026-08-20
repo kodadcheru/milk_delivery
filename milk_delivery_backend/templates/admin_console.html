@@ -719,6 +719,9 @@
       <button class="tab-btn" onclick="switchTab('fleet', this)"><i class="fa-solid fa-motorcycle"></i> Salaried Fleet Partners</button>
       <button class="tab-btn" onclick="switchTab('products', this)"><i class="fa-solid fa-box-open"></i> Product Catalog</button>
       <button class="tab-btn" onclick="switchTab('customers', this)"><i class="fa-solid fa-users"></i> Customers & Wallets</button>
+      <button class="tab-btn" onclick="switchTab('express-orders', this)"><i class="fa-solid fa-bolt"></i> Express Orders</button>
+      <button class="tab-btn" onclick="switchTab('bottle-returns', this)"><i class="fa-solid fa-wine-bottle"></i> Bottle Returns</button>
+      <button class="tab-btn" onclick="switchTab('payouts', this)"><i class="fa-solid fa-money-bill-transfer"></i> Provider Payouts</button>
       <button class="tab-btn" id="tabBtnProfile" onclick="switchTab('profile', this)"><i class="fa-solid fa-user-shield"></i> Admin Profile & Security</button>
     </div>
 
@@ -1528,6 +1531,130 @@
     </div>
 
   </div>
+
+    <!-- ── Tab: Express Orders ── -->
+    <div id="tab-express-orders" style="display: none;">
+      <div class="section-header">
+        <div>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;">⚡ Express / Live Orders</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">One-time on-demand orders placed via the app</p>
+        </div>
+        <button class="btn btn-primary" onclick="loadExpressOrders()" style="padding: 8px 16px;">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+        <div class="stat-card"><div class="stat-value" id="eo-total">0</div><div class="stat-label">Total Orders</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-preparing" style="color: #F59E0B;">0</div><div class="stat-label">Preparing</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-dispatched" style="color: #0284C7;">0</div><div class="stat-label">Dispatched</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-delivered" style="color: var(--primary-accent);">0</div><div class="stat-label">Delivered</div></div>
+      </div>
+
+      <div style="margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="filter-pill active" onclick="filterExpressOrders('ALL', this)">All</button>
+        <button class="filter-pill" onclick="filterExpressOrders('PREPARING', this)">🟡 Preparing</button>
+        <button class="filter-pill" onclick="filterExpressOrders('DISPATCHED', this)">🔵 Dispatched</button>
+        <button class="filter-pill" onclick="filterExpressOrders('DELIVERED', this)">🟢 Delivered</button>
+        <button class="filter-pill" onclick="filterExpressOrders('CANCELLED', this)">🔴 Cancelled</button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total (₹)</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expressOrdersTableBody">
+            <tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading express orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Tab: Bottle Returns ── -->
+    <div id="tab-bottle-returns" style="display: none;">
+      <div class="section-header">
+        <div>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;">🍶 Bottle Returns & Deposit Tracking</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Track glass bottle returns, crate tallies, and deposit refunds</p>
+        </div>
+        <button class="btn btn-primary" onclick="loadBottleReturns()" style="padding: 8px 16px;">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+        <div class="stat-card"><div class="stat-value" id="br-total">0</div><div class="stat-label">Total Returns Logged</div></div>
+        <div class="stat-card"><div class="stat-value" id="br-pending" style="color: #F59E0B;">0</div><div class="stat-label">Pending Collection</div></div>
+        <div class="stat-card"><div class="stat-value" id="br-collected" style="color: var(--primary-accent);">0</div><div class="stat-label">Collected</div></div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Driver</th>
+              <th>Bottles Returned</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="bottleReturnsTableBody">
+            <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No bottle returns recorded yet. Returns will appear here once drivers log collections.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Tab: Provider Payouts ── -->
+    <div id="tab-payouts" style="display: none;">
+      <div class="section-header">
+        <div>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;">💰 Provider & Hub Operator Payouts</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Compute, approve, and track hub operator settlement payments</p>
+        </div>
+        <button class="btn btn-primary" onclick="loadPayouts()" style="padding: 8px 16px;">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+        <div class="stat-card"><div class="stat-value" id="po-total">₹0</div><div class="stat-label">Total Payouts</div></div>
+        <div class="stat-card"><div class="stat-value" id="po-pending" style="color: #F59E0B;">0</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-value" id="po-settled" style="color: var(--primary-accent);">0</div><div class="stat-label">Settled</div></div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hub</th>
+              <th>Provider</th>
+              <th>Period</th>
+              <th>Amount (₹)</th>
+              <th>Status</th>
+              <th>Settled On</th>
+            </tr>
+          </thead>
+          <tbody id="payoutsTableBody">
+            <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No payouts recorded yet. Run the payout generation command to create settlement records.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <!-- ── MODALS ── -->
@@ -2354,10 +2481,9 @@
           alertEl.style.display = 'block';
         }
       } catch (err) {
-        // Local offline fallback
-        localStorage.setItem('milkdrop_admin_token', 'local_demo_token');
-        document.getElementById('loginScreen').style.display = 'none';
-        loadAllData();
+        // Show connection error instead of bypassing auth
+        alertEl.innerText = 'Connection failed. Please check your network and try again.';
+        alertEl.style.display = 'block';
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Verify OTP & Enter Admin Console';
         btn.disabled = false;
@@ -2401,9 +2527,9 @@
           alertEl.style.display = 'block';
         }
       } catch (err) {
-        localStorage.setItem('milkdrop_admin_token', 'local_demo_token');
-        document.getElementById('loginScreen').style.display = 'none';
-        loadAllData();
+        // Show connection error instead of bypassing auth
+        alertEl.innerText = 'Connection failed. Please check your network and try again.';
+        alertEl.style.display = 'block';
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In to Operations Console';
         btn.disabled = false;
@@ -2482,7 +2608,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'profile'].forEach(t => {
+      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -2502,7 +2628,10 @@
         loadFleet(),
         loadCategories(),
         loadProducts(),
-        loadCustomers()
+        loadCustomers(),
+        loadExpressOrders(),
+        loadBottleReturns(),
+        loadPayouts()
       ]);
     }
 
@@ -2520,11 +2649,11 @@
           if (data.total_deliveries > 0) {
             document.getElementById('kpi-fulfillment').innerText = `${data.sla_rate}%`;
           } else {
-            document.getElementById('kpi-fulfillment').innerText = `100% (Ready)`;
+            document.getElementById('kpi-fulfillment').innerText = `— No Drops`;
           }
           productDemand = data.product_demand || {};
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
 
       try {
         const pRes = await fetch(`${baseUrl}/products/`);
@@ -2556,7 +2685,7 @@
             `;
           });
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     // ── Location Hubs Operations ──
@@ -2568,7 +2697,7 @@
           renderHubsTable(rawHubs);
           populateHubDropdowns(rawHubs);
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function renderHubsTable(hubs) {
@@ -3402,7 +3531,7 @@
           rawFleet = await res.json();
           renderFleetTable(rawFleet);
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function renderFleetTable(fleet) {
@@ -3852,8 +3981,9 @@
 
       // 2. Plot Salaried Delivery Boys on Duty (Real Fleet from DB)
       rawFleet.forEach((d, idx) => {
-        const lat = parseFloat(d.latitude || (17.4320 + (idx * 0.005)));
-        const lng = parseFloat(d.longitude || (78.4070 + (idx * 0.005)));
+        if (!d.latitude && !d.longitude) return; // Skip drivers without GPS coordinates
+        const lat = parseFloat(d.latitude);
+        const lng = parseFloat(d.longitude);
 
         const marker = new google.maps.Marker({
           position: { lat, lng },
@@ -3898,8 +4028,10 @@
         const sub = t.subscription_detail || {};
         const cust = sub.customer_detail || {};
         const isDelivered = t.status === 'DELIVERED';
-        const lat = 17.4320 + (idx * 0.003 * (idx % 2 === 0 ? 1 : -1));
-        const lng = 78.4070 + (idx * 0.004 * (idx % 3 === 0 ? 1 : -1));
+        // Use real coordinates from delivery task or customer; skip if none available
+        const lat = parseFloat(t.latitude || cust.latitude || 0);
+        const lng = parseFloat(t.longitude || cust.longitude || 0);
+        if (lat === 0 && lng === 0) return; // Skip deliveries without coordinates
 
         const marker = new google.maps.Marker({
           position: { lat, lng },
@@ -3975,7 +4107,7 @@
             `;
           });
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function openAddServiceAreaModal() {
@@ -4038,7 +4170,7 @@
           rawDeliveries = Array.isArray(dData) ? dData : (dData.results || []);
           renderDeliveriesTable(rawDeliveries);
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function renderDeliveriesTable(tasks) {
@@ -4177,7 +4309,7 @@
           rawSubscriptions = await res.json();
           renderSubscriptionsTable(rawSubscriptions);
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function renderSubscriptionsTable(subs) {
@@ -4291,7 +4423,7 @@
           renderCategoryFilterPills();
           populateCategoryDropdowns();
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function renderCategoriesGrid(categories) {
@@ -4475,7 +4607,7 @@
           renderProductsTable(rawProducts);
           renderCategoryFilterPills();
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     function renderProductsTable(prods) {
@@ -4679,7 +4811,7 @@
           loadProducts();
           loadDashboard();
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
     }
 
     async function loadCustomers() {
@@ -4689,7 +4821,180 @@
           rawCustomers = await res.json();
           renderCustomersTable(rawCustomers);
         }
-      } catch (e) {}
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    // ── Express Orders Operations ──
+    let rawExpressOrders = [];
+    let expressOrderFilter = 'ALL';
+
+    async function loadExpressOrders() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/orders/express/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          rawExpressOrders = await res.json();
+          if (Array.isArray(rawExpressOrders)) {
+            renderExpressOrders(rawExpressOrders);
+          } else {
+            rawExpressOrders = rawExpressOrders.results || [];
+            renderExpressOrders(rawExpressOrders);
+          }
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    function filterExpressOrders(status, btn) {
+      expressOrderFilter = status;
+      document.querySelectorAll('#tab-express-orders .filter-pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const filtered = status === 'ALL' ? rawExpressOrders : rawExpressOrders.filter(o => o.status === status);
+      renderExpressOrders(filtered);
+    }
+
+    function renderExpressOrders(orders) {
+      // Update stats
+      document.getElementById('eo-total').innerText = rawExpressOrders.length;
+      document.getElementById('eo-preparing').innerText = rawExpressOrders.filter(o => o.status === 'PREPARING').length;
+      document.getElementById('eo-dispatched').innerText = rawExpressOrders.filter(o => o.status === 'DISPATCHED').length;
+      document.getElementById('eo-delivered').innerText = rawExpressOrders.filter(o => o.status === 'DELIVERED').length;
+
+      const tbody = document.getElementById('expressOrdersTableBody');
+      if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map(o => {
+        const items = (o.items || []).map(i => `${i.product_name || 'Item'} x${i.quantity}`).join(', ');
+        const statusColor = o.status === 'DELIVERED' ? 'var(--primary-accent)' :
+                           o.status === 'CANCELLED' ? 'var(--danger)' :
+                           o.status === 'DISPATCHED' ? 'var(--accent-blue)' : 'var(--warning)';
+        const payColor = o.payment_status === 'PAID' ? 'var(--primary-accent)' : 'var(--warning)';
+        const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        const custName = o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}`.trim() : 'Customer');
+        return `
+          <tr>
+            <td><span style="font-weight:700; color: var(--accent-blue);">${o.id}</span></td>
+            <td>${custName}</td>
+            <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${items || '—'}</td>
+            <td style="font-weight:700;">₹${parseFloat(o.total_amount || 0).toFixed(2)}</td>
+            <td><span style="color: ${statusColor}; font-weight: 700;">${o.status}</span></td>
+            <td><span style="color: ${payColor}; font-weight: 600;">${o.payment_status || '—'}</span></td>
+            <td style="font-size: 12px; color: var(--text-muted);">${date}</td>
+            <td>
+              ${o.status === 'PREPARING' ? `<button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DISPATCHED')" style="padding:4px 10px; font-size:11px;">Dispatch</button>` : ''}
+              ${o.status === 'DISPATCHED' ? `<button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DELIVERED')" style="padding:4px 10px; font-size:11px;">Deliver</button>` : ''}
+              ${(o.status === 'PREPARING' || o.status === 'DISPATCHED') ? `<button class="btn" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 10px; font-size:11px; background:var(--danger); color:white; border:none; border-radius:8px; cursor:pointer;">Cancel</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function updateExpressOrderStatus(orderId, newStatus) {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/orders/express/${orderId}/`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) {
+          loadExpressOrders();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(err.detail || 'Failed to update order status.');
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    // ── Bottle Returns Operations ──
+    let rawBottleReturns = [];
+
+    async function loadBottleReturns() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/bottle-returns/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          rawBottleReturns = await res.json();
+          renderBottleReturns(rawBottleReturns);
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    function renderBottleReturns(returns) {
+      document.getElementById('br-total').innerText = returns.length;
+      document.getElementById('br-pending').innerText = returns.filter(r => r.status === 'PENDING').length;
+      document.getElementById('br-collected').innerText = returns.filter(r => r.status === 'COLLECTED').length;
+
+      const tbody = document.getElementById('bottleReturnsTableBody');
+      if (!returns.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No bottle returns recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = returns.map((r, idx) => {
+        const statusColor = r.status === 'COLLECTED' ? 'var(--primary-accent)' : 'var(--warning)';
+        const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${r.customer_name || '—'}</td>
+            <td>${r.driver_name || '—'}</td>
+            <td style="font-weight: 700;">${r.bottles_count || 0}</td>
+            <td><span style="color: ${statusColor}; font-weight: 700;">${r.status || 'PENDING'}</span></td>
+            <td style="font-size: 12px; color: var(--text-muted);">${date}</td>
+            <td style="font-size: 12px; color: var(--text-muted);">${r.notes || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ── Provider Payouts Operations ──
+    let rawPayouts = [];
+
+    async function loadPayouts() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/payouts/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          rawPayouts = await res.json();
+          renderPayouts(rawPayouts);
+        }
+      } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    function renderPayouts(payouts) {
+      const totalAmount = payouts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+      document.getElementById('po-total').innerText = `₹${totalAmount.toFixed(0)}`;
+      document.getElementById('po-pending').innerText = payouts.filter(p => p.status === 'PENDING').length;
+      document.getElementById('po-settled').innerText = payouts.filter(p => p.status === 'SETTLED').length;
+
+      const tbody = document.getElementById('payoutsTableBody');
+      if (!payouts.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No payouts recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = payouts.map((p, idx) => {
+        const statusColor = p.status === 'SETTLED' ? 'var(--primary-accent)' : 'var(--warning)';
+        const settledDate = p.settled_at ? new Date(p.settled_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${p.hub_name || '—'}</td>
+            <td>${p.provider_name || '—'}</td>
+            <td style="font-size: 12px;">${p.period_start || '—'} to ${p.period_end || '—'}</td>
+            <td style="font-weight: 700;">₹${parseFloat(p.amount || 0).toFixed(2)}</td>
+            <td><span style="color: ${statusColor}; font-weight: 700;">${p.status}</span></td>
+            <td style="font-size: 12px; color: var(--text-muted);">${settledDate}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function openAddCustomerModal() {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../config/app_config.dart';
 import '../models/support_chat_model.dart';
 
 class SupportSocketService {
@@ -21,10 +22,20 @@ class SupportSocketService {
   bool get isConnected => _isConnected;
 
   Timer? _reconnectTimer;
-  String _serverUrl = 'wss://milk-delivery-backend-production.up.railway.app/ws/support/';
+  String _serverUrl = '';
+
+  String get _defaultServerUrl {
+    // Derive WebSocket URL from the API base URL
+    final base = AppConfig.apiBaseUrl
+        .replaceFirst(RegExp(r'/api/?$'), '')  // Remove trailing /api
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
+    return '$base/ws/support/';
+  }
 
   void connect({String? customUrl, String? userPhone, String? userName}) {
     if (customUrl != null) _serverUrl = customUrl;
+    if (_serverUrl.isEmpty) _serverUrl = _defaultServerUrl;
 
     try {
       final uri = Uri.parse('$_serverUrl?phone=${userPhone ?? ""}&name=${userName ?? ""}');

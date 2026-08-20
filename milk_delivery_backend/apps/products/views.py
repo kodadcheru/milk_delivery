@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 from apps.core.pagination import StandardResultsSetPagination
+from apps.core.permissions import IsAdminOrStaff
 from apps.products.models import Category, Product
 from apps.products.serializers import CategorySerializer, ProductSerializer
 
@@ -10,7 +11,7 @@ from apps.products.serializers import CategorySerializer, ProductSerializer
 class CategoryListCreateView(generics.ListCreateAPIView):
     queryset = Category.objects.filter(is_active=True).order_by("display_order", "id")
     serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         include_inactive = self.request.query_params.get("all")
@@ -22,12 +23,12 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 
 class ProductListView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -70,7 +71,7 @@ class ProductListView(generics.ListCreateAPIView):
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_update(self, serializer):
         cat_id = self.request.data.get("category_id") or self.request.data.get("category_ref")

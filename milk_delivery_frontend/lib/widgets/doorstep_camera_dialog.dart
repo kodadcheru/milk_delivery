@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/image_upload_service.dart';
 
 class DoorstepProofPreset {
@@ -322,16 +325,39 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       // Upload geo-tagged proof to backend Image Upload Service
                       String? uploadedUrl;
                       try {
-                        uploadedUrl = await ImageUploadService.uploadImageBase64(
-                          base64Image: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-                          filename: 'doorstep_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png',
-                          folder: 'proofs',
+                        // Capture photo from camera (or pick from gallery)
+                        final picker = ImagePicker();
+                        final XFile? photo = await picker.pickImage(
+                          source: ImageSource.camera,
+                          maxWidth: 1024,
+                          maxHeight: 1024,
+                          imageQuality: 80,
                         );
+                        
+                        if (photo != null) {
+                          final bytes = await File(photo.path).readAsBytes();
+                          final base64Str = base64Encode(bytes);
+                          uploadedUrl = await ImageUploadService.uploadImageBase64(
+                            base64Image: base64Str,
+                            filename: 'doorstep_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+                            folder: 'proofs',
+                          );
+                        }
                       } catch (_) {}
 
                       if (!mounted) return;
+                      if (uploadedUrl == null) {
+                        setState(() => _isCapturing = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text('📷 Photo capture failed. Please try again.'),
+                          ),
+                        );
+                        return;
+                      }
                       nav.pop();
-                      widget.onConfirmProof(uploadedUrl ?? activePreset.imageUrl);
+                      widget.onConfirmProof(uploadedUrl);
                     },
               icon: _isCapturing
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))

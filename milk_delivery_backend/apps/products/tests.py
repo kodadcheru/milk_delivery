@@ -9,28 +9,28 @@ class ProductAPITests(TestCase):
         Product.objects.all().delete()
         self.milk = Product.objects.create(
             name="Farm Fresh A2 Desi Cow Milk",
-            category=Product.Categories.MILK,
+            category="MILK",
             price_per_unit=85.0,
             unit_quantity="1 Litre",
             is_available=True,
         )
         self.meat = Product.objects.create(
             name="Tender Curry-Cut Chicken",
-            category=Product.Categories.MEAT,
+            category="MEAT",
             price_per_unit=240.0,
             unit_quantity="500 gm",
             is_available=True,
         )
         self.eggs = Product.objects.create(
             name="Country Free-Range Desi Eggs",
-            category=Product.Categories.EGGS,
+            category="EGGS",
             price_per_unit=90.0,
             unit_quantity="Pack of 6",
             is_available=True,
         )
         self.water = Product.objects.create(
             name="20L Mineral RO Water Can",
-            category=Product.Categories.WATER_CAN,
+            category="WATER_CAN",
             price_per_unit=60.0,
             unit_quantity="20 Litres",
             is_available=True,
@@ -40,17 +40,21 @@ class ProductAPITests(TestCase):
         response = self.client.get("/api/products/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(len(data), 4)
+        # ProductListView uses pagination, so results are in data['results']
+        results = data.get("results", data) if isinstance(data, dict) else data
+        self.assertEqual(len(results), 4)
 
     def test_filter_products_by_category(self):
         response = self.client.get("/api/products/?category=MILK")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]["name"], "Farm Fresh A2 Desi Cow Milk")
+        results = data.get("results", data) if isinstance(data, dict) else data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "Farm Fresh A2 Desi Cow Milk")
 
         response = self.client.get("/api/products/?category=WATER_CAN")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]["name"], "20L Mineral RO Water Can")
+        results = data.get("results", data) if isinstance(data, dict) else data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "20L Mineral RO Water Can")

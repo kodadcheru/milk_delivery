@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 class LocationService {
-  // Google Maps Official API Key for high-precision Geocoding and Places Lookup
-  static String googleMapsApiKey = 'AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg';
+  // Google Maps API Key loaded from AppConfig (configurable via --dart-define)
+  static String get googleMapsApiKey => AppConfig.googleMapsApiKey;
 
   // Google Maps Official Raster Tile Template
   static const String googleMapsTileUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';

@@ -49,6 +49,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        # Force CUSTOMER role on public registration to prevent privilege escalation
+        validated_data["role"] = "CUSTOMER"
         user = User(**validated_data)
         user.set_password(password)
         user.save()
@@ -63,8 +65,14 @@ class WalletTransactionSerializer(serializers.ModelSerializer):
 
 
 class WalletTopUpSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("1.00"))
+    amount = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("1.00"), max_value=Decimal("50000.00"))
     description = serializers.CharField(max_length=255, default="Wallet Top-Up (UPI/Card)")
+    payment_method = serializers.ChoiceField(
+        choices=["UPI", "CARD", "NETBANKING", "WALLET_TRANSFER", "ADMIN_CREDIT"],
+        default="UPI",
+        required=False,
+    )
+    payment_reference = serializers.CharField(max_length=100, required=False, default="")
 
 
 class NotificationSerializer(serializers.ModelSerializer):

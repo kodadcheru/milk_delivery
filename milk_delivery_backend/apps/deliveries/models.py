@@ -120,3 +120,60 @@ class LiveOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.order.id}: {self.quantity}x {self.product.name} @ ₹{self.unit_price}"
+
+
+class BottleReturn(models.Model):
+    """Tracks glass bottle deposits and returns for water cans, milk bottles, etc."""
+    class Statuses(models.TextChoices):
+        DEPOSITED = "DEPOSITED", "Deposit Collected"
+        RETURNED = "RETURNED", "Bottle Returned"
+        LOST = "LOST", "Bottle Lost / Not Returned"
+
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bottle_returns")
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="bottle_collections")
+    hub = models.ForeignKey(LocationHub, on_delete=models.SET_NULL, null=True, blank=True, related_name="bottle_returns")
+    product = models.ForeignKey("products.Product", on_delete=models.SET_NULL, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1)
+    deposit_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.DEPOSITED)
+    collected_date = models.DateField(auto_now_add=True)
+    returned_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Bottle #{self.id}: {self.customer.username} - {self.quantity}x ({self.status})"
+
+
+class ProviderPayout(models.Model):
+    """Tracks hub-level payout settlements for providers/hub managers."""
+    class Statuses(models.TextChoices):
+        PENDING = "PENDING", "Pending Settlement"
+        PROCESSING = "PROCESSING", "Processing"
+        COMPLETED = "COMPLETED", "Paid / Settled"
+        FAILED = "FAILED", "Failed"
+
+    hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="payouts")
+    manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payouts")
+    period_start = models.DateField()
+    period_end = models.DateField()
+    total_deliveries = models.PositiveIntegerField(default=0)
+    total_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    driver_salaries = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    platform_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_payout = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.PENDING)
+    payment_reference = models.CharField(max_length=100, blank=True, default="")
+    notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-period_end"]
+
+    def __str__(self):
+        return f"Payout #{self.id}: {self.hub.name} ({self.period_start} to {self.period_end}) - ₹{self.net_payout} ({self.status})"
+

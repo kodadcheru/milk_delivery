@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 
@@ -29,43 +30,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (mounted) {
       setState(() {
         _isLoadingDrivers = false;
-        if (drivers.isNotEmpty) {
-          _driverList = drivers;
-        } else {
-          // Fallback initial drivers list
-          _driverList = [
-            {
-              'id': 1,
-              'name': 'Suresh Kumar (Primary Partner)',
-              'phone': '9876543210',
-              'vehicle_number': 'TS 09 EA 4892 (Scooter)',
-              'route': 'Jubilee & Banjara Hills',
-              'rating': 4.9,
-              'total_drops': 184,
-              'is_online': true,
-            },
-            {
-              'id': 2,
-              'name': 'Ramesh Varma',
-              'phone': '9848022338',
-              'vehicle_number': 'TS 07 EV 1024 (E-Bike)',
-              'route': 'Madhapur & Gachibowli',
-              'rating': 4.8,
-              'total_drops': 142,
-              'is_online': true,
-            },
-            {
-              'id': 3,
-              'name': 'Kalyan Rao',
-              'phone': '9959114422',
-              'vehicle_number': 'TS 08 AB 7789 (Mini Van)',
-              'route': 'Kondapur & Hitec City',
-              'rating': 4.7,
-              'total_drops': 96,
-              'is_online': false,
-            },
-          ];
-        }
+        _driverList = drivers;
       });
     }
   }
@@ -152,22 +117,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 3),
-                      const Text(
-                        'http://127.0.0.1:8000/admin-console/',
-                        style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.w700),
+                      Text(
+                        '${ApiService.baseUrl.replaceAll('/api', '')}/admin-console/',
+                        style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Color(0xFF0D7C66),
-                        content: Text('🌐 Open http://127.0.0.1:8000/admin-console/ in your browser for full Web Console!'),
-                      ),
-                    );
+                  onPressed: () async {
+                    // Build console URL from API base (strip /api suffix)
+                    final apiBase = ApiService.baseUrl;
+                    final baseHost = apiBase.endsWith('/api') ? apiBase.substring(0, apiBase.length - 4) : apiBase;
+                    final consoleUrl = '$baseHost/admin-console/';
+                    final uri = Uri.parse(consoleUrl);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('🌐 Open $consoleUrl in your browser')),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.open_in_browser_rounded, size: 16),
                   label: const Text('Launch Console', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
@@ -222,7 +193,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _showWalletCreditModal(context),
+                  onPressed: () => _showWalletCreditDialog(context),
                   icon: const Icon(Icons.account_balance_wallet_rounded, size: 16),
                   label: const Text('⚡ Manual Wallet Credit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
@@ -331,10 +302,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           style: const TextStyle(fontSize: 11.5, color: Colors.grey),
                         ),
                         trailing: InkWell(
-                          onTap: () {
-                            setState(() {
-                              _driverList[idx]['is_online'] = !isOnline;
-                            });
+                          onTap: () async {
+                            final driverId = _driverList[idx]['id'];
+                            final newStatus = isOnline ? 'INACTIVE' : 'ACTIVE';
+                            final ok = await ApiService.updateDriverStatus(driverId, newStatus);
+                            if (ok) {
+                              setState(() {
+                                _driverList[idx]['is_online'] = !isOnline;
+                                _driverList[idx]['driver_status'] = newStatus;
+                              });
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -417,14 +394,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
             child: productDemandCounts.isEmpty
-                ? Column(
-                    children: [
-                      _buildDemandRow('Farm Fresh A2 Desi Cow Milk', '250 Liters (Pouch)', '71.4%', 0.714, const Color(0xFF0D7C66)),
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                      _buildDemandRow('Pure Buffalo Milk (High Fat)', '120 Liters (Pouch)', '24.2%', 0.242, const Color(0xFF0284C7)),
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                      _buildDemandRow('Farm Fresh Set Curd (Dahi)', '45 Tubs (500g)', '4.4%', 0.044, const Color(0xFFF59E0B)),
-                    ],
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text('No active subscriptions yet. Demand forecast will appear when customers subscribe.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ),
                   )
                 : Column(
                     children: productDemandCounts.entries.map((entry) {
@@ -540,7 +514,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           style: TextStyle(fontSize: 12, color: Colors.grey[800], fontWeight: FontWeight.w600),
                         ),
                         Text(
-                          'Date: ${d.deliveryDate} • Slot: 06:00 AM',
+                          'Date: ${d.deliveryDate} • Slot: ${d.slotTime}',
                           style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                         ),
                       ],
@@ -567,7 +541,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       onSelected: (val) {
                         if (val == 'DELIVERED') {
-                          widget.state.markDeliveryCompleted(d.id, 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80');
+                          widget.state.markDeliveryCompleted(d.id, '');
                         } else if (val == 'SKIPPED') {
                           widget.state.markDeliverySkipped(d.id);
                         }
@@ -664,10 +638,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   trailing: Switch(
                     value: p.isAvailable,
                     activeThumbColor: const Color(0xFF10B981),
-                    onChanged: (val) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${p.name} stock status toggled.')),
-                      );
+                    onChanged: (val) async {
+                      final ok = await ApiService.toggleProductStock(p.id);
+                      if (ok) {
+                        await widget.state.reloadAllData();
+                      }
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(ok ? '${p.name} stock status toggled.' : '❌ Failed to toggle stock.')),
+                        );
+                      }
                     },
                   ),
                 ),
@@ -843,9 +823,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  void _showWalletCreditModal(BuildContext context) {
+  void _showWalletCreditDialog(BuildContext context) {
+    final userIdCtrl = TextEditingController();
     final amountCtrl = TextEditingController(text: '500');
-    final descCtrl = TextEditingController(text: 'Admin Promotional Balance Adjustment');
+    final descCtrl = TextEditingController(text: 'Admin Wallet Credit');
 
     showDialog(
       context: context,
@@ -866,6 +847,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               style: TextStyle(fontSize: 11.5, color: Colors.grey),
             ),
             const SizedBox(height: 12),
+            TextField(controller: userIdCtrl, decoration: const InputDecoration(labelText: 'Customer User ID', border: OutlineInputBorder(), hintText: 'Enter customer ID number'), keyboardType: TextInputType.number),
+            const SizedBox(height: 10),
             TextField(controller: amountCtrl, decoration: const InputDecoration(labelText: 'Amount (₹)', border: OutlineInputBorder()), keyboardType: TextInputType.number),
             const SizedBox(height: 10),
             TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Reason / Description', border: OutlineInputBorder())),
@@ -875,15 +858,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
+              final uid = int.tryParse(userIdCtrl.text);
+              if (uid == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(backgroundColor: Colors.red, content: Text('❌ Please enter a valid Customer User ID')),
+                );
+                return;
+              }
               Navigator.pop(ctx);
               final amt = double.tryParse(amountCtrl.text) ?? 500.0;
-              final ok = await ApiService.adminCreditWallet(amount: amt, description: descCtrl.text);
+              final ok = await ApiService.adminCreditWallet(userId: uid, amount: amt, description: descCtrl.text);
               if (ok) {
                 await widget.state.reloadAllData();
               }
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⚡ ₹${amt.toStringAsFixed(0)} credited to customer prepaid wallet!')),
+                  SnackBar(
+                    backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.red,
+                    content: Text(ok ? '⚡ ₹${amt.toStringAsFixed(0)} credited to customer #$uid wallet!' : '❌ Failed to credit wallet. Check user ID.'),
+                  ),
                 );
               }
             },
@@ -896,9 +889,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   void _showAddDriverDialog(BuildContext context) {
-    final nameCtrl = TextEditingController(text: 'Ramesh Reddy');
-    final phoneCtrl = TextEditingController(text: '9848022338');
-    final vehicleCtrl = TextEditingController(text: 'TS 09 EA 4892 (Scooter)');
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final vehicleCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -936,18 +929,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 phone: phoneCtrl.text,
                 vehicleNumber: vehicleCtrl.text,
               );
-              setState(() {
-                _driverList.insert(0, {
-                  'id': _driverList.length + 1,
-                  'name': nameCtrl.text,
-                  'phone': phoneCtrl.text,
-                  'vehicle_number': vehicleCtrl.text,
-                  'route': 'Kodad Route',
-                  'rating': 5.0,
-                  'total_drops': 0,
-                  'is_online': true,
-                });
-              });
+              // Reload drivers from API instead of inserting fake local data
+              await _loadDrivers();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

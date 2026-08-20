@@ -1,5 +1,6 @@
 from decimal import Decimal
 from datetime import date
+import uuid
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,7 +35,7 @@ def _get_or_create_staff_user_if_applicable(phone_last_10):
                 is_superuser=True,
                 wallet_balance=Decimal("10000.00"),
             )
-            admin_user.set_password("admin123")
+            admin_user.set_password(uuid.uuid4().hex)
             admin_user.save()
         else:
             admin_user.phone = "+91 8919548905"
@@ -65,7 +66,7 @@ def _get_or_create_staff_user_if_applicable(phone_last_10):
                     assigned_hub=hub,
                     wallet_balance=Decimal("10000.00"),
                 )
-                hub_user.set_password("pass123")
+                hub_user.set_password(uuid.uuid4().hex)
                 hub_user.save()
             else:
                 hub_user.assigned_hub = hub
@@ -200,7 +201,7 @@ class RegisterMobileUserView(APIView):
             wallet_balance=Decimal("500.00"),
             delivery_instructions=instructions,
         )
-        user.set_password("pass123")
+        user.set_password(uuid.uuid4().hex)
         user.save()
 
         # Initial Welcome Wallet Transaction
