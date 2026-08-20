@@ -540,7 +540,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
                           ),
                           Text(
-                            currentStop.customerPhone.isNotEmpty ? currentStop.customerPhone : '+91 9876543210',
+                            currentStop.customerPhone,
                             style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                           ),
                         ],

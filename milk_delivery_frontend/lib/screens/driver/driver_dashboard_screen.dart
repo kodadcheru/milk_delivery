@@ -633,7 +633,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final isSkipped = task.status == 'SKIPPED';
     final custName = task.customerName;
     final instructions = task.deliveryInstructions;
-    final custPhone = task.customerPhone.isNotEmpty ? task.customerPhone : '+91 9876543210';
+    final custPhone = task.customerPhone;
     final lat = task.customerLatitude;
     final lon = task.customerLongitude;
 
@@ -986,7 +986,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _callCustomer(context, order.customerPhone.isNotEmpty ? order.customerPhone : '+91 9876543210'),
+                      onPressed: () => _callCustomer(context, order.customerPhone),
                       icon: const Icon(Icons.phone, size: 14),
                       label: const Text('Call Customer', style: TextStyle(fontSize: 11)),
                       style: OutlinedButton.styleFrom(
