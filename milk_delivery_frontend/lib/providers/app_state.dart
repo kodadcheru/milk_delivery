@@ -801,7 +801,22 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> topUpWallet(double amount, String method) async {
-    bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method');
+    if (currentUser != null) {
+      double newBal = currentUser!.walletBalance + amount;
+      currentUser = currentUser!.copyWith(walletBalance: newBal);
+      transactions.insert(
+        0,
+        WalletTransactionModel(
+          id: DateTime.now().millisecondsSinceEpoch % 10000,
+          amount: amount,
+          transactionType: 'CREDIT',
+          description: 'Recharge via $method',
+          createdAt: 'Just now',
+        ),
+      );
+      notifyListeners();
+    }
+
     notifications.insert(
       0,
       NotificationModel(
@@ -813,22 +828,10 @@ class AppState extends ChangeNotifier {
         createdAt: 'Just now',
       ),
     );
+
+    bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method');
     if (ok) {
       await reloadAllData();
-    } else if (currentUser != null) {
-      double newBal = currentUser!.walletBalance + amount;
-      currentUser = currentUser!.copyWith(walletBalance: newBal);
-      transactions.insert(
-        0,
-        WalletTransactionModel(
-          id: transactions.length + 1,
-          amount: amount,
-          transactionType: 'CREDIT',
-          description: 'Recharge via $method',
-          createdAt: 'Just now',
-        ),
-      );
-      notifyListeners();
     }
   }
 
