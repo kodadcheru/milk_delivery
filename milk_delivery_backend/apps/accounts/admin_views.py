@@ -1369,3 +1369,67 @@ class AdminDeliveryReassignView(APIView):
             "new_driver_id": driver.id,
             "new_driver_name": new_driver,
         })
+
+
+class AdminResetCustomerDataView(APIView):
+    """
+    Completely purges all customer-related test data:
+    - Subscriptions & Vacation Pauses
+    - Delivery Tasks & Live Orders / Items
+    - Wallet Transactions & Notifications
+    - Customer Addresses & Customer Users
+    Preserves: Admin accounts, Driver accounts, Hubs, and Product Catalog.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from apps.subscriptions.models import Subscription, VacationPause
+        from apps.deliveries.models import DeliveryTask, LiveOrder, OrderItem
+        from apps.accounts.models import CustomerAddress, Notification, WalletTransaction, User
+        from django.db import transaction
+
+        with transaction.atomic():
+            pauses_count = VacationPause.objects.all().count()
+            VacationPause.objects.all().delete()
+
+            tasks_count = DeliveryTask.objects.all().count()
+            DeliveryTask.objects.all().delete()
+
+            items_count = OrderItem.objects.all().count()
+            OrderItem.objects.all().delete()
+
+            orders_count = LiveOrder.objects.all().count()
+            LiveOrder.objects.all().delete()
+
+            subs_count = Subscription.objects.all().count()
+            Subscription.objects.all().delete()
+
+            tx_count = WalletTransaction.objects.all().count()
+            WalletTransaction.objects.all().delete()
+
+            notifs_count = Notification.objects.all().count()
+            Notification.objects.all().delete()
+
+            addrs_count = CustomerAddress.objects.all().count()
+            CustomerAddress.objects.all().delete()
+
+            # Delete only Customer users, preserving Admins and Drivers
+            customers = User.objects.filter(role=User.Roles.CUSTOMER)
+            customers_count = customers.count()
+            customers.delete()
+
+        return Response({
+            "status": "SUCCESS",
+            "message": "All customer and subscription data has been completely wiped from Railway database.",
+            "deleted_records": {
+                "customers": customers_count,
+                "customer_addresses": addrs_count,
+                "subscriptions": subs_count,
+                "vacation_pauses": pauses_count,
+                "delivery_tasks": tasks_count,
+                "orders": orders_count,
+                "order_items": items_count,
+                "wallet_transactions": tx_count,
+                "notifications": notifs_count,
+            },
+        }, status=status.HTTP_200_OK)
