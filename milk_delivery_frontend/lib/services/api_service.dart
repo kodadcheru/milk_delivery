@@ -936,4 +936,45 @@ class ApiService {
       folder: folder,
     );
   }
+
+  // ── Hub Inventory / Capacity ──
+
+  static Future<List<Map<String, dynamic>>> fetchHubInventory() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/hub-inventory/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+      }
+    } catch (e) { lastError = e.toString(); }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>?> updateHubInventory({
+    required int productId,
+    required int dailyCapacitySlots,
+    bool? isAvailable,
+    int? hubId,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'product_id': productId,
+        'daily_capacity_slots': dailyCapacitySlots,
+      };
+      if (isAvailable != null) payload['is_available'] = isAvailable;
+      if (hubId != null) payload['hub_id'] = hubId;
+
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/hub-inventory/'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ));
+      if (res.statusCode == 200) {
+        return Map<String, dynamic>.from(jsonDecode(res.body));
+      }
+    } catch (e) { lastError = e.toString(); }
+    return null;
+  }
 }
