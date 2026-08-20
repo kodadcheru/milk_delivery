@@ -96,12 +96,31 @@ else:
 AUTH_USER_MODEL = "accounts.User"
 
 # Redis Cache & Live Channel Layer Configuration (Railway Redis Integration)
-REDIS_URL = os.environ.get("REDIS_URL") or os.environ.get("REDIS_TLS_URL")
+REDIS_URL = (
+    os.environ.get("REDIS_URL")
+    or os.environ.get("REDIS_PRIVATE_URL")
+    or os.environ.get("REDIS_PUBLIC_URL")
+    or os.environ.get("REDISURL")
+    or os.environ.get("REDIS_TLS_URL")
+)
+
+# If individual host/port/password env vars are provided by Railway Redis plugin
+if not REDIS_URL and os.environ.get("REDISHOST"):
+    r_user = os.environ.get("REDISUSER", "default")
+    r_pass = os.environ.get("REDISPASSWORD", "")
+    r_host = os.environ.get("REDISHOST", "localhost")
+    r_port = os.environ.get("REDISPORT", "6379")
+    if r_pass:
+        REDIS_URL = f"redis://{r_user}:{r_pass}@{r_host}:{r_port}"
+    else:
+        REDIS_URL = f"redis://{r_host}:{r_port}"
+
 if REDIS_URL:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.PyRedisCache",
             "LOCATION": REDIS_URL,
+            "TIMEOUT": 300,
         }
     }
     CHANNEL_LAYERS = {

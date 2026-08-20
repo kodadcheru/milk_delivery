@@ -35,7 +35,23 @@ class HealthCheckView(APIView):
         seconds = uptime_seconds % 60
         uptime_human = f"{days}d {hours}h {minutes}m {seconds}s"
 
-        is_healthy = "UNHEALTHY" not in db_status
+        # Check Cache / Redis status
+        cache_status = "HEALTHY"
+        cache_latency_ms = None
+        cache_backend = "LocMemCache"
+        try:
+            from django.core.cache import cache
+            cache_backend = cache.__class__.__name__
+            t_c0 = time.time()
+            cache.set("__health_check_test__", "ok", timeout=10)
+            val = cache.get("__health_check_test__")
+            cache_latency_ms = round((time.time() - t_c0) * 1000, 2)
+            if val != "ok":
+                cache_status = "DEGRADED: Key verification mismatch"
+        except Exception as e:
+            cache_status = f"UNHEALTHY: {str(e)}"
+
+        is_healthy = "UNHEALTHY" not in db_status and "UNHEALTHY" not in cache_status
 
         payload = {
             "status": "UP" if is_healthy else "DEGRADED",
@@ -51,7 +67,9 @@ class HealthCheckView(APIView):
                     "latency_ms": db_latency_ms,
                 },
                 "cache": {
-                    "status": "OPERATIONAL",
+                    "status": cache_status,
+                    "backend": cache_backend,
+                    "latency_ms": cache_latency_ms,
                 },
             },
         }
