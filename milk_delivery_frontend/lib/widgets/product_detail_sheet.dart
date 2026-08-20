@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
+import '../screens/customer/subscription_address_selection_screen.dart';
 import 'home/home_location_sheet.dart';
 
 enum SubscriptionPlanType { weekly, monthly }
@@ -762,7 +763,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                       flex: 2,
                       child: SizedBox(
                         height: 48,
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: () {
                             final customProduct = ProductModel(
                               id: item.id,
@@ -781,34 +782,32 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                               icon: item.icon,
                             );
                             Navigator.pop(context);
-                            widget.state.createNewSubscription(
-                              customProduct,
-                              _qty,
-                              _schedule,
-                              deliveryAddress: widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress,
-                              deliverySlot: _selectedSlot,
-                              deliveryLatitude: widget.state.activeAddress?.latitude ?? widget.state.currentLat,
-                              deliveryLongitude: widget.state.activeAddress?.longitude ?? widget.state.currentLon,
-                              deliveryInstructions: _instructionsController.text.trim(),
-                              packSize: _selectedPackSize,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: const Color(0xFF0D7C66),
-                                content: Text('🎉 Subscribed for $_durationLabel ($_totalDeliveryDays Deliveries of $_selectedPackSize)! First delivery tomorrow ($_selectedSlot).'),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (c) => SubscriptionAddressSelectionScreen(
+                                  product: customProduct,
+                                  quantity: _qty,
+                                  schedule: _schedule,
+                                  packSize: _selectedPackSize,
+                                  timeSlot: _selectedSlot,
+                                  durationLabel: _durationLabel,
+                                  totalDeliveryDays: _totalDeliveryDays,
+                                  singleDeliveryCost: _singleDeliveryCost,
+                                  totalCost: _totalSubscriptionCost,
+                                  deliveryInstructions: _instructionsController.text.trim(),
+                                  state: widget.state,
+                                ),
                               ),
                             );
-                            widget.state.setTab(1);
                           },
+                          icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                          label: Text('Next: Select Address 📍 (₹${_totalSubscriptionCost.toStringAsFixed(0)})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0D7C66),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
-                          ),
-                          child: Text(
-                            'Subscribe ($_durationLabel) • ₹${_totalSubscriptionCost.toStringAsFixed(0)}',
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900),
                           ),
                         ),
                       ),
