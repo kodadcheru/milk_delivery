@@ -2475,7 +2475,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/send-otp/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: phoneInput })
         });
         const data = await res.json();
@@ -2516,7 +2516,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/verify-otp/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: phoneInput, otp: otpInput })
         });
 
@@ -2566,7 +2566,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/token/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
 
