@@ -75,6 +75,25 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 user.assigned_hub = hub
                 user.save(update_fields=["assigned_hub"])
 
+        # Capacity slot enforcement check for hub & product
+        if hub:
+            from apps.products.models import HubProductInventory
+            prod_obj = serializer.validated_data.get("product")
+            req_qty = serializer.validated_data.get("quantity", 1)
+            inv, _ = HubProductInventory.objects.get_or_create(
+                hub=hub,
+                product=prod_obj,
+                defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
+            )
+            if not inv.is_available or inv.available_slots < req_qty:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError(
+                    f"Hub daily capacity limit reached for {prod_obj.name}. "
+                    f"Only {inv.available_slots} slot(s) available at {hub.name}."
+                )
+            inv.booked_slots += req_qty
+            inv.save(update_fields=["booked_slots"])
+
         sub = serializer.save(
             customer=user,
             hub=hub,

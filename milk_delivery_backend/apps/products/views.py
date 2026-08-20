@@ -87,3 +87,71 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
             serializer.save(category=cat_obj.name, category_ref=cat_obj)
         else:
             serializer.save()
+
+
+class HubInventoryListUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.accounts.models import User
+        from apps.products.models import HubProductInventory
+        from apps.products.serializers import HubProductInventorySerializer
+
+        user = request.user
+        hub = getattr(user, "assigned_hub", None)
+        if user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
+            inventories = HubProductInventory.objects.all().select_related("hub", "product")
+        elif hub:
+            products = Product.objects.all()
+            for p in products:
+                HubProductInventory.objects.get_or_create(
+                    hub=hub,
+                    product=p,
+                    defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
+                )
+            inventories = HubProductInventory.objects.filter(hub=hub).select_related("hub", "product")
+        else:
+            inventories = HubProductInventory.objects.none()
+
+        serializer = HubProductInventorySerializer(inventories, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub
+        from apps.products.models import HubProductInventory
+        from apps.products.serializers import HubProductInventorySerializer
+
+        user = request.user
+        product_id = request.data.get("product_id")
+        hub_id = request.data.get("hub_id")
+        daily_slots = request.data.get("daily_capacity_slots")
+        is_avail = request.data.get("is_available")
+
+        hub = None
+        if hub_id:
+            hub = LocationHub.objects.filter(id=hub_id).first()
+        elif getattr(user, "assigned_hub", None):
+            hub = user.assigned_hub
+
+        if not hub:
+            return Response({"detail": "Assigned hub required to manage capacity slots."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not product_id or daily_slots is None:
+            return Response({"detail": "product_id and daily_capacity_slots are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        product = Product.objects.filter(id=product_id).first()
+        if not product:
+            return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        inv, _ = HubProductInventory.objects.get_or_create(
+            hub=hub,
+            product=product,
+            defaults={"daily_capacity_slots": int(daily_slots), "booked_slots": 0},
+        )
+        inv.daily_capacity_slots = int(daily_slots)
+        if is_avail is not None:
+            inv.is_available = bool(is_avail)
+        inv.save()
+
+        return Response(HubProductInventorySerializer(inv).data, status=status.HTTP_200_OK)

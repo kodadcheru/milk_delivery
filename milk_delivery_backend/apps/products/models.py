@@ -52,3 +52,23 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.category}) - ₹{self.price_per_unit} / {self.unit_quantity}"
+
+
+class HubProductInventory(models.Model):
+    hub = models.ForeignKey("deliveries.LocationHub", on_delete=models.CASCADE, related_name="inventories")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="hub_inventories")
+    daily_capacity_slots = models.PositiveIntegerField(default=100, help_text="Total daily available capacity slots (e.g. 100 Litres/Units)")
+    booked_slots = models.PositiveIntegerField(default=0, help_text="Currently booked slots for today")
+    is_available = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("hub", "product")
+        verbose_name_plural = "Hub Product Inventories"
+
+    def __str__(self):
+        return f"{self.hub.name} - {self.product.name}: {self.available_slots}/{self.daily_capacity_slots} slots left"
+
+    @property
+    def available_slots(self):
+        return max(0, self.daily_capacity_slots - self.booked_slots)

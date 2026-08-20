@@ -72,6 +72,7 @@ from apps.products.views import (
     CategoryListCreateView,
     ProductDetailView,
     ProductListView,
+    HubInventoryListUpdateView,
 )
 from apps.subscriptions.views import (
     SubscriptionDetailView,
@@ -136,6 +137,7 @@ urlpatterns = [
     path("api/categories/<int:pk>/", CategoryDetailView.as_view(), name="category_detail"),
     path("api/products/", ProductListView.as_view(), name="product_list"),
     path("api/products/<int:pk>/", ProductDetailView.as_view(), name="product_detail"),
+    path("api/hub-inventory/", HubInventoryListUpdateView.as_view(), name="hub_inventory_list_update"),
     # Subscription endpoints
     path("api/subscriptions/", SubscriptionListCreateView.as_view(), name="subscription_list"),
     path("api/subscriptions/<int:pk>/", SubscriptionDetailView.as_view(), name="subscription_detail"),

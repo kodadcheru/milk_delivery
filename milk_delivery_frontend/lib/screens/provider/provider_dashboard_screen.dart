@@ -243,6 +243,102 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
+  void _openManageCapacitySlotsDialog(BuildContext context) {
+    int milkSlots = 100;
+    int eggSlots = 20;
+    int curdSlots = 50;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Text('📦 ', style: TextStyle(fontSize: 22)),
+              Expanded(
+                child: Text('Hub Capacity & Daily Slots', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Set daily booking capacity slots for your depot. (e.g. 100 slots = 100L milk, 1 dozen eggs = 1 slot). Customers can book only up to available slots.',
+                style: TextStyle(fontSize: 11.5, color: Colors.black87),
+              ),
+              const SizedBox(height: 14),
+              _buildSlotInputRow('🥛 Fresh Cow Milk', milkSlots, (val) => setDlgState(() => milkSlots = val)),
+              const SizedBox(height: 10),
+              _buildSlotInputRow('🥚 Organic Farm Eggs', eggSlots, (val) => setDlgState(() => eggSlots = val)),
+              const SizedBox(height: 10),
+              _buildSlotInputRow('🧈 Fresh Buffalo Curd', curdSlots, (val) => setDlgState(() => curdSlots = val)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    content: Text('✅ Hub Capacity Slots updated! Milk: $milkSlots slots, Eggs: $eggSlots slots, Curd: $curdSlots slots.'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.check_circle_rounded, size: 16),
+              label: const Text('Save Capacity Slots', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D7C66),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSlotInputRow(String title, int currentVal, Function(int) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          Row(
+            children: [
+              IconButton(
+                onPressed: currentVal > 10 ? () => onChanged(currentVal - 10) : null,
+                icon: const Icon(Icons.remove_circle_outline, size: 20),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text('$currentVal slots', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: Color(0xFF0D7C66))),
+              ),
+              IconButton(
+                onPressed: () => onChanged(currentVal + 10),
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasks = widget.state.deliveries;
@@ -500,28 +596,50 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Partitioned Fleet Preview
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: const Color(0xFF0D7C66),
-                          content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount salaried delivery boys with zero route overlap.'),
+                // Manage Capacity & Partitioned Fleet Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _openManageCapacitySlotsDialog(context),
+                          icon: const Icon(Icons.inventory_2_rounded, size: 16),
+                          label: const Text('Manage Daily Slots 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D7C66),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.hub_rounded, size: 16),
-                    label: Text('Auto-Balance & Dispatch $_activeDriverCount Equal Batches 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: const Color(0xFF0D7C66),
+                                content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount salaried delivery boys with zero route overlap.'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.hub_rounded, size: 16),
+                          label: Text('Auto-Balance Fleet ($_activeDriverCount) 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 // Live Partitions Summary
                 Builder(

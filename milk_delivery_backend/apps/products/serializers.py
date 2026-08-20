@@ -1,5 +1,26 @@
 from rest_framework import serializers
-from apps.products.models import Category, Product
+from apps.products.models import Category, Product, HubProductInventory
+
+
+class HubProductInventorySerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    hub_name = serializers.CharField(source="hub.name", read_only=True)
+    available_slots = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = HubProductInventory
+        fields = [
+            "id",
+            "hub",
+            "hub_name",
+            "product",
+            "product_name",
+            "daily_capacity_slots",
+            "booked_slots",
+            "available_slots",
+            "is_available",
+            "updated_at",
+        ]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -28,6 +49,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category_detail = CategorySerializer(source="category_ref", read_only=True)
+    available_slots = serializers.SerializerMethodField()
+    daily_capacity_slots = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -47,5 +70,27 @@ class ProductSerializer(serializers.ModelSerializer):
             "farm_origin",
             "rating",
             "is_available",
+            "available_slots",
+            "daily_capacity_slots",
             "created_at",
         ]
+
+    def get_available_slots(self, obj):
+        request = self.context.get("request")
+        user = request.user if request and hasattr(request, "user") and request.user.is_authenticated else None
+        hub = getattr(user, "assigned_hub", None) if user else None
+        if hub:
+            inv = HubProductInventory.objects.filter(hub=hub, product=obj).first()
+            if inv:
+                return inv.available_slots
+        return 100
+
+    def get_daily_capacity_slots(self, obj):
+        request = self.context.get("request")
+        user = request.user if request and hasattr(request, "user") and request.user.is_authenticated else None
+        hub = getattr(user, "assigned_hub", None) if user else None
+        if hub:
+            inv = HubProductInventory.objects.filter(hub=hub, product=obj).first()
+            if inv:
+                return inv.daily_capacity_slots
+        return 100
