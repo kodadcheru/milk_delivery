@@ -630,6 +630,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
 
   void _showChangeAddressAndSlotModal(BuildContext context, SubscriptionModel sub) {
     String selectedSlot = sub.deliverySlot.isNotEmpty ? sub.deliverySlot : '05:30 AM - 07:00 AM';
+    final slotCtrl = TextEditingController(text: selectedSlot);
     final instructionsCtrl = TextEditingController(text: sub.deliveryInstructions);
 
     showModalBottomSheet(
@@ -671,8 +672,14 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 ),
                 const Divider(height: 16),
 
-                // Delivery Time Slot Preference
-                const Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                // Delivery Time Slot Preference (Typable + Presets)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Delivery Time Slot ⏰', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                    Text('Typable & Customizable', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.teal[700])),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -685,7 +692,12 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                       child: Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: InkWell(
-                          onTap: () => setModalState(() => selectedSlot = slot),
+                          onTap: () {
+                            setModalState(() {
+                              selectedSlot = slot;
+                              slotCtrl.text = slot;
+                            });
+                          },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -708,6 +720,27 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                       ),
                     );
                   }).toList(),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: slotCtrl,
+                  onChanged: (val) {
+                    setModalState(() {
+                      selectedSlot = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                    });
+                  },
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                  decoration: InputDecoration(
+                    labelText: 'Or type custom slot (e.g. 06:00 AM - 07:30 AM)',
+                    labelStyle: TextStyle(color: Colors.grey[600], fontSize: 11),
+                    prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: Color(0xFF0D7C66)),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                  ),
                 ),
                 const SizedBox(height: 14),
 

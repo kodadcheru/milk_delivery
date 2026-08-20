@@ -1397,12 +1397,8 @@
                 <input type="text" id="custDetailCity" class="form-control" value="Kodad">
               </div>
               <div class="form-group">
-                <label>Preferred Delivery Slot</label>
-                <select id="custDetailSlot" class="form-control">
-                  <option value="05:30 AM - 07:00 AM">05:30 AM - 07:00 AM (Morning Peak)</option>
-                  <option value="06:30 AM - 08:00 AM">06:30 AM - 08:00 AM</option>
-                  <option value="05:00 PM - 07:00 PM">05:00 PM - 07:00 PM (Evening)</option>
-                </select>
+                <label>Preferred Delivery Slot (Typable ⏰)</label>
+                <input type="text" id="custDetailSlot" class="form-control" list="slotPresetsList" placeholder="e.g. 05:30 AM - 07:00 AM">
               </div>
             </div>
 
@@ -2205,12 +2201,8 @@
           <input type="number" id="addCustWallet" class="form-control" value="500.00">
         </div>
         <div class="form-group">
-          <label>Preferred Delivery Slot</label>
-          <select id="addCustSlot" class="form-control">
-            <option value="05:30 AM - 07:00 AM" selected>05:30 AM - 07:00 AM (Morning Peak)</option>
-            <option value="06:30 AM - 08:00 AM">06:30 AM - 08:00 AM</option>
-            <option value="05:00 PM - 07:00 PM">05:00 PM - 07:00 PM (Evening)</option>
-          </select>
+          <label>Preferred Delivery Slot (Typable ⏰)</label>
+          <input type="text" id="addCustSlot" class="form-control" list="slotPresetsList" placeholder="e.g. 05:30 AM - 07:00 AM" value="05:30 AM - 07:00 AM">
         </div>
       </div>
       <div class="form-group">
@@ -2529,7 +2521,13 @@
         </div>
       </form>
     </div>
-  </div>
+  <!-- ── Datalist for Typable Slot Suggestions ── -->
+  <datalist id="slotPresetsList">
+    <option value="05:30 AM - 07:00 AM">Peak Morning Shift</option>
+    <option value="06:00 AM - 07:30 AM">Early Morning Shift</option>
+    <option value="07:00 AM - 08:30 AM">Standard Morning Shift</option>
+    <option value="05:00 PM - 07:00 PM">Evening Shift</option>
+  </datalist>
 
   <!-- Hidden Section for Clean Printing -->
   <div id="printSection" style="display: none;"></div>

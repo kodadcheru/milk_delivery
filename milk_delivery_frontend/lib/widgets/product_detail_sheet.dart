@@ -34,6 +34,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   int _selectedMonths = 1; // 1, 2, 3 months
   String _selectedPackSize = '1 Litre';
   String _selectedSlot = '05:30 AM - 07:00 AM';
+  final _slotController = TextEditingController(text: '05:30 AM - 07:00 AM');
   final _instructionsController = TextEditingController();
 
   @override
@@ -44,6 +45,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
 
   @override
   void dispose() {
+    _slotController.dispose();
     _instructionsController.dispose();
     super.dispose();
   }
@@ -561,10 +563,19 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── Delivery Time Slot Preference ──
-                    const Text(
-                      'Delivery Time Slot Preference ⏰',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                    // ── Delivery Time Slot Preference (Typable + Presets) ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Delivery Time Slot ⏰',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                        ),
+                        Text(
+                          'Typable & Customizable',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.teal[700]),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -581,6 +592,28 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                           child: _buildSlotOptionTile('05:00 PM - 07:00 PM', '🌇 Evening'),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Typable Slot Input
+                    TextField(
+                      controller: _slotController,
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedSlot = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                        });
+                      },
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      decoration: InputDecoration(
+                        labelText: 'Or type custom slot (e.g. 06:00 AM - 07:30 AM)',
+                        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 11),
+                        prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: Color(0xFF0D7C66)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                      ),
                     ),
                     const SizedBox(height: 14),
 
@@ -866,7 +899,12 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   Widget _buildSlotOptionTile(String slotVal, String label) {
     final isSelected = _selectedSlot == slotVal;
     return InkWell(
-      onTap: () => setState(() => _selectedSlot = slotVal),
+      onTap: () {
+        setState(() {
+          _selectedSlot = slotVal;
+          _slotController.text = slotVal;
+        });
+      },
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),

@@ -119,6 +119,7 @@ class FloatingCartBar extends StatelessWidget {
   void _showCheckoutSheet(BuildContext context) {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1)); // Default Tomorrow
     String slot = '05:30 AM - 07:00 AM';
+    final slotController = TextEditingController(text: slot);
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -384,23 +385,51 @@ class FloatingCartBar extends StatelessWidget {
                           ),
                           const SizedBox(height: 14),
 
-                          // ── 2. Delivery Slot Preference ──
-                          const Text('2. Delivery Time Slot ⏰:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                          // ── 2. Delivery Slot Preference (Typable + Presets) ──
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('2. Delivery Time Slot ⏰:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                              Text('Typable & Customizable', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.teal[700])),
+                            ],
+                          ),
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               Expanded(
-                                child: _buildSlotTile('05:30 AM - 07:00 AM', '⚡ Morning Peak', slot, (val) => setSheetState(() => slot = val)),
+                                child: _buildSlotTile('05:30 AM - 07:00 AM', '⚡ Morning Peak', slot, (val) => setSheetState(() { slot = val; slotController.text = val; })),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: _buildSlotTile('07:00 AM - 08:30 AM', '🌅 Morning Std', slot, (val) => setSheetState(() => slot = val)),
+                                child: _buildSlotTile('07:00 AM - 08:30 AM', '🌅 Morning Std', slot, (val) => setSheetState(() { slot = val; slotController.text = val; })),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: _buildSlotTile('05:00 PM - 07:00 PM', '🌇 Evening', slot, (val) => setSheetState(() => slot = val)),
+                                child: _buildSlotTile('05:00 PM - 07:00 PM', '🌇 Evening', slot, (val) => setSheetState(() { slot = val; slotController.text = val; })),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Typable Slot Input
+                          TextField(
+                            controller: slotController,
+                            onChanged: (val) {
+                              setSheetState(() {
+                                slot = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                              });
+                            },
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                            decoration: InputDecoration(
+                              labelText: 'Or type custom slot (e.g. 06:00 AM - 07:30 AM)',
+                              labelStyle: TextStyle(color: Colors.grey[600], fontSize: 11),
+                              prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: Color(0xFF0D7C66)),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                            ),
                           ),
                           const SizedBox(height: 14),
 

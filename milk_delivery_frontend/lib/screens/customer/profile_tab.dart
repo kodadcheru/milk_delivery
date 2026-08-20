@@ -827,29 +827,66 @@ class ProfileTab extends StatelessWidget {
   }
 
   void _showSlotPreferenceDialog(BuildContext context, String currentSlot) {
-    String selected = currentSlot;
+    String selected = currentSlot.isNotEmpty ? currentSlot : '05:30 AM - 07:00 AM';
+    final customCtrl = TextEditingController(text: selected);
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-          title: const Text('Morning Delivery Time Slot', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          title: const Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              RadioListTile<String>(
-                title: const Text('05:30 AM - 07:00 AM (Peak Early Morning)', style: TextStyle(fontSize: 12.5)),
-                value: '05:30 AM - 07:00 AM',
-                groupValue: selected,
-                activeColor: UiTone.primary,
-                onChanged: (v) => setDialogState(() => selected = v!),
+              const Text('Select Quick Preset or Type Custom Slot:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  '05:30 AM - 07:00 AM',
+                  '07:00 AM - 08:30 AM',
+                  '05:00 PM - 07:00 PM',
+                ].map((s) {
+                  final isSel = selected == s;
+                  return ChoiceChip(
+                    label: Text(s, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: isSel ? Colors.white : const Color(0xFF0F172A))),
+                    selected: isSel,
+                    selectedColor: UiTone.primary,
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    onSelected: (sel) {
+                      if (sel) {
+                        setDialogState(() {
+                          selected = s;
+                          customCtrl.text = s;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
               ),
-              RadioListTile<String>(
-                title: const Text('07:00 AM - 08:30 AM (Standard Morning)', style: TextStyle(fontSize: 12.5)),
-                value: '07:00 AM - 08:30 AM',
-                groupValue: selected,
-                activeColor: UiTone.primary,
-                onChanged: (v) => setDialogState(() => selected = v!),
+              const SizedBox(height: 12),
+              TextField(
+                controller: customCtrl,
+                onChanged: (val) {
+                  setDialogState(() {
+                    selected = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                  });
+                },
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                decoration: InputDecoration(
+                  labelText: 'Type Custom Slot (e.g. 06:00 AM - 07:30 AM)',
+                  labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+                  prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: UiTone.primary),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
+                ),
               ),
             ],
           ),
@@ -858,10 +895,11 @@ class ProfileTab extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
               onPressed: () {
-                state.updateUserProfile(slotPreference: selected);
+                final finalSlot = customCtrl.text.trim().isNotEmpty ? customCtrl.text.trim() : selected;
+                state.updateUserProfile(slotPreference: finalSlot);
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(backgroundColor: UiTone.primary, content: Text('⏱️ Preferred slot saved: $selected')),
+                  SnackBar(backgroundColor: UiTone.primary, content: Text('⏱️ Preferred slot saved: $finalSlot')),
                 );
               },
               child: const Text('Save Slot'),
