@@ -356,8 +356,8 @@ class ApiService {
   static Future<List<SubscriptionModel>> fetchSubscriptions({String? phone, int? customerId}) async {
     try {
       final uri = Uri.parse('$baseUrl/subscriptions/').replace(queryParameters: {
-        if (phone != null) 'phone': phone,
-        if (customerId != null) 'customer_id': customerId.toString(),
+        'phone': ?phone,
+        'customer_id': ?(customerId?.toString()),
       });
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
       if (res.statusCode == 200) {
@@ -388,14 +388,14 @@ class ApiService {
         'quantity': quantity,
         'schedule_type': scheduleType,
         'start_date': todayStr,
-        if (customerId != null) 'customer_id': customerId,
-        if (customerPhone != null) 'customer_phone': customerPhone,
-        if (deliveryAddress != null) 'delivery_address': deliveryAddress,
-        if (deliverySlot != null) 'delivery_slot': deliverySlot,
-        if (deliveryLatitude != null) 'delivery_latitude': deliveryLatitude,
-        if (deliveryLongitude != null) 'delivery_longitude': deliveryLongitude,
-        if (deliveryInstructions != null) 'delivery_instructions': deliveryInstructions,
-        if (packSize != null) 'pack_size': packSize,
+        'customer_id': ?customerId,
+        'customer_phone': ?customerPhone,
+        'delivery_address': ?deliveryAddress,
+        'delivery_slot': ?deliverySlot,
+        'delivery_latitude': ?deliveryLatitude,
+        'delivery_longitude': ?deliveryLongitude,
+        'delivery_instructions': ?deliveryInstructions,
+        'pack_size': ?packSize,
       };
 
       final res = await _executeWithRetry(() => http.post(
