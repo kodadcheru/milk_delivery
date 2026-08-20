@@ -344,7 +344,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final tasks = widget.state.deliveries;
     final liveOrders = widget.state.liveOrders;
     final totalRevenue = widget.state.totalDailyRevenue;
-    final netEarnings = totalRevenue * 0.75; // 75% provider margin
+    final netEarnings = totalRevenue; // 100% money goes to Hub Owner
     final totalLitres = widget.state.totalDailyMilkVolume;
 
     // Filter tasks & orders
