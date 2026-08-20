@@ -33,6 +33,14 @@ class User(AbstractUser):
         hub_info = f" • {self.assigned_hub.name}" if self.assigned_hub else ""
         return f"{self.first_name or self.username} ({self.role}{hub_info}) - ₹{self.wallet_balance}"
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(wallet_balance__gte=Decimal("0.00")),
+                name="user_wallet_balance_non_negative",
+            )
+        ]
+
 
 class WalletTransaction(models.Model):
     class Types(models.TextChoices):
