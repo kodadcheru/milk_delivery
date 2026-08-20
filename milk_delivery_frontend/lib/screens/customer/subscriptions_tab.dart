@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import '../../models/subscription_model.dart';
@@ -63,7 +64,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF0D7C66),
+      color: UiTone.primary,
       onRefresh: () => widget.state.reloadAllData(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -75,19 +76,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0D7C66)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0D7C66).withValues(alpha: 0.2),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                gradient: UiGradient.primary,
+                borderRadius: BorderRadius.circular(UiRadius.xl),
+                boxShadow: UiShadow.elevated,
               ),
               child: Column(
                 children: [
@@ -120,14 +111,14 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF10B981)),
+                          color: UiTone.secondary.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(UiRadius.sm),
+                          border: Border.all(color: UiTone.secondary),
                         ),
                         child: Text(
                           '${activeSubs.length} Active',
                           style: const TextStyle(
-                            color: Color(0xFF10B981),
+                            color: UiTone.secondary,
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),
@@ -142,7 +133,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
                       border: Border.all(color: Colors.white12),
                     ),
                     child: Row(
@@ -161,12 +152,12 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
+                            color: UiTone.secondary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           child: const Text(
                             '06:00 AM Slot',
-                            style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: UiTone.secondary, fontSize: 9.5, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -208,17 +199,17 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               children: [
                 Text(
                   'My Active Subscriptions (${subs.length})',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: UiTone.ink),
                 ),
                 TextButton.icon(
                   onPressed: () {
                     HapticFeedback.lightImpact();
                     widget.state.setTab(0);
                   },
-                  icon: const Icon(Icons.add_circle_outline, size: 16, color: Color(0xFF0D7C66)),
+                  icon: const Icon(Icons.add_circle_outline, size: 16, color: UiTone.primary),
                   label: const Text(
                     'Add Items +',
-                    style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
               ],
@@ -278,8 +269,8 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 width: 52,
                                 height: 52,
                                 decoration: BoxDecoration(
-                                  color: isPaused ? Colors.amber.withValues(alpha: 0.12) : const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(14),
+                                  color: isPaused ? Colors.amber.withValues(alpha: 0.12) : UiTone.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(UiRadius.md),
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(sub.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 28)),
@@ -302,7 +293,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                     Text(
                                       'Schedule: ${sub.scheduleType == 'DAILY' ? 'Every Day ☀️' : (sub.scheduleType == 'ALTERNATE' ? 'Alternate Days 🔄' : 'Weekdays 📅')}',
                                       style: TextStyle(
-                                        color: isPaused ? Colors.amber[900] : const Color(0xFF0D7C66),
+                                        color: isPaused ? Colors.amber[900] : UiTone.primary,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
                                       ),
@@ -313,14 +304,14 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: isPaused ? Colors.amber.withValues(alpha: 0.2) : const Color(0xFF10B981).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: isPaused ? Colors.amber : const Color(0xFF10B981)),
+                                  color: isPaused ? Colors.amber.withValues(alpha: 0.2) : UiTone.secondary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                                  border: Border.all(color: isPaused ? Colors.amber : UiTone.secondary),
                                 ),
                                 child: Text(
                                   isPaused ? '⏸ PAUSED' : '✓ ACTIVE',
                                   style: TextStyle(
-                                    color: isPaused ? Colors.amber[900] : const Color(0xFF0D7C66),
+                                    color: isPaused ? Colors.amber[900] : UiTone.primary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 10,
                                   ),
@@ -334,13 +325,13 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0FDF4),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFF86EFAC)),
+                              color: UiTone.successSoft,
+                              borderRadius: BorderRadius.circular(UiRadius.sm),
+                              border: Border.all(color: UiTone.successSoft),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF0D7C66)),
+                                const Icon(Icons.location_on_rounded, size: 16, color: UiTone.primary),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Column(
@@ -350,13 +341,13 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                         'Deliver to: ${sub.deliveryAddress.isNotEmpty ? sub.deliveryAddress : (widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress)}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0F172A)),
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.ink),
                                       ),
                                       Text(
                                         'Slot: ${sub.deliverySlot} ${sub.deliveryInstructions.isNotEmpty ? "• ${sub.deliveryInstructions}" : ""}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 10, color: Color(0xFF047857), fontWeight: FontWeight.w600),
+                                        style: const TextStyle(fontSize: 10, color: UiTone.success, fontWeight: FontWeight.w600),
                                       ),
                                     ],
                                   ),
@@ -370,13 +361,13 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              color: UiTone.shellBackground,
+                              borderRadius: BorderRadius.circular(UiRadius.sm),
+                              border: Border.all(color: UiTone.surfaceBorder),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.schedule_rounded, size: 13, color: isPaused ? Colors.grey : const Color(0xFF0D7C66)),
+                                Icon(Icons.schedule_rounded, size: 13, color: isPaused ? Colors.grey : UiTone.primary),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
@@ -385,7 +376,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                         : 'Next Delivery: Tomorrow (${sub.deliverySlot})',
                                     style: TextStyle(
                                       fontSize: 10.5,
-                                      color: isPaused ? Colors.grey[700] : const Color(0xFF0F172A),
+                                      color: isPaused ? Colors.grey[700] : UiTone.ink,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -413,7 +404,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 16),
                                 label: Text(isPaused ? 'Resume' : 'Pause'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: isPaused ? const Color(0xFF0D7C66) : Colors.amber[900],
+                                  foregroundColor: isPaused ? UiTone.primary : Colors.amber[900],
                                   padding: EdgeInsets.zero,
                                 ),
                               ),
@@ -427,7 +418,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 icon: const Icon(Icons.edit_location_alt_rounded, size: 15),
                                 label: const Text('Address / Slot'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF0D7C66),
+                                  foregroundColor: UiTone.primary,
                                   padding: EdgeInsets.zero,
                                 ),
                               ),
@@ -441,7 +432,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 icon: const Icon(Icons.tune_rounded, size: 15),
                                 label: const Text('Modify'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF0F172A),
+                                  foregroundColor: UiTone.ink,
                                   padding: EdgeInsets.zero,
                                 ),
                               ),
@@ -455,7 +446,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 icon: const Icon(Icons.calendar_month_rounded, size: 15),
                                 label: const Text('Vacation'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF0D7C66),
+                                  foregroundColor: UiTone.primary,
                                   padding: EdgeInsets.zero,
                                 ),
                               ),
@@ -500,8 +491,8 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: UiTone.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Padding(
           padding: const EdgeInsets.all(20),
@@ -584,7 +575,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFF0D7C66)),
+            colorScheme: const ColorScheme.light(primary: UiTone.primary),
           ),
           child: child!,
         );
@@ -598,7 +589,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('🌴 Paused deliveries from $start to $end'),
           ),
         );
@@ -610,7 +601,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.lg)),
         title: const Text('Cancel Subscription?'),
         content: const Text('Are you sure you want to stop daily morning deliveries for this item?'),
         actions: [
@@ -636,8 +627,8 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: UiTone.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final savedAddrs = widget.state.savedAddresses;
@@ -659,11 +650,11 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.edit_location_alt_rounded, color: Color(0xFF0D7C66)),
+                        const Icon(Icons.edit_location_alt_rounded, color: UiTone.primary),
                         const SizedBox(width: 8),
                         Text(
                           'Update Subscription Address & Slot',
-                          style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: UiTone.ink),
                         ),
                       ],
                     ),
@@ -676,7 +667,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Delivery Time Slot ⏰', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                    const Text('Delivery Time Slot ⏰', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
                     Text('Typable & Customizable', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.teal[700])),
                   ],
                 ),
@@ -698,13 +689,13 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                               slotCtrl.text = slot;
                             });
                           },
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(UiRadius.sm),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                             decoration: BoxDecoration(
-                              color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0)),
+                              color: isSel ? UiTone.primary : UiTone.shellBackground,
+                              borderRadius: BorderRadius.circular(UiRadius.sm),
+                              border: Border.all(color: isSel ? UiTone.primary : UiTone.surfaceBorder),
                             ),
                             alignment: Alignment.center,
                             child: Text(
@@ -712,7 +703,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.bold,
-                                color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                color: isSel ? Colors.white : UiTone.ink,
                               ),
                             ),
                           ),
@@ -729,23 +720,23 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                       selectedSlot = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
                     });
                   },
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: UiTone.ink),
                   decoration: InputDecoration(
                     labelText: 'Or type custom slot (e.g. 06:00 AM - 07:30 AM)',
                     labelStyle: TextStyle(color: Colors.grey[600], fontSize: 11),
-                    prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: Color(0xFF0D7C66)),
+                    prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: UiTone.primary),
                     filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
+                    fillColor: UiTone.shellBackground,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
                   ),
                 ),
                 const SizedBox(height: 14),
 
                 // Saved Address Selector
-                const Text('Select Doorstep Delivery Address 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                const Text('Select Doorstep Delivery Address 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
                 const SizedBox(height: 8),
                 if (savedAddrs.isNotEmpty)
                   SingleChildScrollView(
@@ -760,13 +751,13 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                               widget.state.selectActiveAddress(a);
                               setModalState(() {});
                             },
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1)),
+                                color: isSel ? UiTone.primary : UiTone.surfaceMuted,
+                                borderRadius: BorderRadius.circular(UiRadius.sm),
+                                border: Border.all(color: isSel ? UiTone.primary : UiTone.surfaceBorder),
                               ),
                               child: Row(
                                 children: [
@@ -777,7 +768,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
-                                      color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                      color: isSel ? Colors.white : UiTone.ink,
                                     ),
                                   ),
                                 ],
@@ -793,18 +784,18 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF86EFAC)),
+                    color: UiTone.successSoft,
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    border: Border.all(color: UiTone.successSoft),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF059669)),
+                      const Icon(Icons.check_circle_rounded, size: 16, color: UiTone.success),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           activeAddrStr,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.ink),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -820,7 +811,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   decoration: InputDecoration(
                     labelText: 'Doorstep Instructions (Optional)',
                     hintText: 'e.g. Ring bell twice, leave in box',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
@@ -849,7 +840,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            backgroundColor: const Color(0xFF0D7C66),
+                            backgroundColor: UiTone.primary,
                             content: Text('✅ Subscription updated to deliver at $chosenAddr ($selectedSlot)!'),
                           ),
                         );
@@ -858,9 +849,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                     icon: const Icon(Icons.check_circle_rounded, size: 18),
                     label: const Text('Save Address & Slot Preference 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                     ),
                   ),
                 ),

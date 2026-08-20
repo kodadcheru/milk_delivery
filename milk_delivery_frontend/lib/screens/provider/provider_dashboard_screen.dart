@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
@@ -136,7 +137,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
         title: const Row(
           children: [
             Text('📢', style: TextStyle(fontSize: 22)),
@@ -149,17 +150,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Send instant push & SMS notification to all active subscribers in Hub zone:', style: TextStyle(fontSize: 11.5, color: Colors.black87)),
+              const Text('Send instant push & SMS notification to all active subscribers in Hub zone:', style: TextStyle(fontSize: 11.5, color: UiTone.ink)),
               const SizedBox(height: 10),
-              const Text('Quick Presets:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66))),
+              const Text('Quick Presets:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary)),
               const SizedBox(height: 4),
               ...presets.map((p) => InkWell(
                     onTap: () => controller.text = p,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 6),
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
-                      child: Text(p, style: const TextStyle(fontSize: 11, color: Color(0xFF334155))),
+                      decoration: BoxDecoration(color: UiTone.surfaceMuted, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text(p, style: const TextStyle(fontSize: 11, color: UiTone.softText)),
                     ),
                   )),
               const SizedBox(height: 8),
@@ -170,8 +171,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 decoration: InputDecoration(
                   hintText: 'Or type custom message to broadcast...',
                   filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                  fillColor: UiTone.surfaceMuted,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: BorderSide.none),
                 ),
               ),
             ],
@@ -194,7 +195,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: const Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   content: Text('📢 Broadcast Sent to ${widget.state.deliveries.length} Subscribers in Hub Zone!'),
                 ),
               );
@@ -202,9 +203,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             icon: const Icon(Icons.send_rounded, size: 15),
             label: const Text('Send Broadcast', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D7C66),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              backgroundColor: UiTone.primary,
+              foregroundColor: UiTone.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
             ),
           ),
         ],
@@ -217,10 +218,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
         title: const Row(
           children: [
-            Icon(Icons.account_balance_rounded, color: Color(0xFF0D7C66)),
+            Icon(Icons.account_balance_rounded, color: UiTone.primary),
             SizedBox(width: 8),
             Text('Instant Bank Payout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
@@ -229,16 +230,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Net Provider Balance: ₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0D7C66))),
+            Text('Net Provider Balance: ₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: UiTone.primary)),
             const SizedBox(height: 8),
             const Text('Destination Settlement Account:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: UiTone.surfaceMuted, borderRadius: BorderRadius.circular(UiRadius.xs)),
               child: Row(
                 children: [
-                  const Icon(Icons.account_balance, size: 20, color: Color(0xFF0F172A)),
+                  const Icon(Icons.account_balance, size: 20, color: UiTone.ink),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -270,7 +271,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: const Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   content: Text('💸 Instant Payout of ₹${amount.toStringAsFixed(0)} transferred to Bank! Ref: $txnId'),
                 ),
               );
@@ -278,9 +279,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             icon: const Icon(Icons.flash_on_rounded, size: 15),
             label: const Text('Confirm Transfer', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D7C66),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              backgroundColor: UiTone.primary,
+              foregroundColor: UiTone.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
             ),
           ),
         ],
@@ -308,7 +309,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.lg)),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -319,7 +320,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                icon: const Icon(Icons.close, size: 20, color: UiTone.softText),
                 onPressed: () => Navigator.pop(ctx),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -336,9 +337,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+                      color: UiTone.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
+                      border: Border.all(color: UiTone.primary.withValues(alpha: 0.2)),
                     ),
                     child: const Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +348,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         Expanded(
                           child: Text(
                             'All category capacity limits and delivery time slots are 100% typable. Type your exact depot limits and shift hours below.',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
+                            style: TextStyle(fontSize: 11, color: UiTone.ink, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -365,9 +366,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        color: UiTone.shellBackground,
+                        borderRadius: BorderRadius.circular(UiRadius.sm),
+                        border: Border.all(color: UiTone.surfaceBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,7 +379,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               Expanded(
                                 child: Text(
                                   cat['name'] as String,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: UiTone.ink),
                                 ),
                               ),
                             ],
@@ -392,18 +393,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                 child: TextField(
                                   controller: capCtrl,
                                   keyboardType: TextInputType.number,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary),
                                   decoration: InputDecoration(
                                     labelText: 'Daily Capacity',
-                                    labelStyle: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                                    labelStyle: const TextStyle(fontSize: 10.5, color: UiTone.softText),
                                     suffixText: 'slots',
-                                    suffixStyle: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                                    suffixStyle: const TextStyle(fontSize: 10.5, color: UiTone.softText),
                                     filled: true,
-                                    fillColor: Colors.white,
+                                    fillColor: UiTone.surface,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
                                   ),
                                 ),
                               ),
@@ -413,17 +414,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                 flex: 3,
                                 child: TextField(
                                   controller: timeCtrl,
-                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: UiTone.ink),
                                   decoration: InputDecoration(
                                     labelText: 'Delivery Slot (Typable ⏰)',
-                                    labelStyle: const TextStyle(fontSize: 10.5, color: Colors.grey),
-                                    prefixIcon: const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF0D7C66)),
+                                    labelStyle: const TextStyle(fontSize: 10.5, color: UiTone.softText),
+                                    prefixIcon: const Icon(Icons.schedule_rounded, size: 14, color: UiTone.primary),
                                     filled: true,
-                                    fillColor: Colors.white,
+                                    fillColor: UiTone.surface,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
                                   ),
                                 ),
                               ),
@@ -455,9 +456,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
                       label: const Text('+ Add Custom Category Slot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0D7C66),
-                        side: const BorderSide(color: Color(0xFF0D7C66)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        foregroundColor: UiTone.primary,
+                        side: const BorderSide(color: UiTone.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                       ),
                     ),
                   ),
@@ -482,7 +483,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: const Color(0xFF0D7C66),
+                    backgroundColor: UiTone.primary,
                     content: Text('✅ Hub Category Slots updated successfully! (${_categorySlots.length} categories configured)'),
                   ),
                 );
@@ -490,9 +491,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               icon: const Icon(Icons.check_circle_rounded, size: 16),
               label: const Text('Save Category Slots', style: TextStyle(fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                backgroundColor: UiTone.primary,
+                foregroundColor: UiTone.surface,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
               ),
             ),
           ],
@@ -536,14 +537,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                colors: [UiTone.ink, UiTone.ink],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
+              borderRadius: BorderRadius.circular(UiRadius.lg),
+              boxShadow: UiShadow.elevated,
             ),
             child: Column(
               children: [
@@ -556,8 +555,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
+                              color: UiTone.secondary.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(UiRadius.sm),
                             ),
                             child: const Text('🏬', style: TextStyle(fontSize: 22)),
                           ),
@@ -570,13 +569,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   hubName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                                  style: const TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 14.5),
                                 ),
                                 Text(
                                   'Operating Zone • ID #$hubCode',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600),
+                                  style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -588,14 +587,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
-                        borderRadius: BorderRadius.circular(8),
+                        color: UiTone.secondary,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.circle, color: Colors.white, size: 6),
+                          Icon(Icons.circle, color: UiTone.surface, size: 6),
                           SizedBox(width: 4),
-                          Text('LIVE HUB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9.5)),
+                          Text('LIVE HUB', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.w900, fontSize: 9.5)),
                         ],
                       ),
                     ),
@@ -629,13 +628,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.radar_rounded, size: 16, color: Colors.white),
+                    icon: const Icon(Icons.radar_rounded, size: 16, color: UiTone.surface),
                     label: const Text('Live Fleet Radar & Depot Coverage Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
+                      backgroundColor: UiTone.accentBlue,
+                      foregroundColor: UiTone.surface,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                     ),
                   ),
                 ),
@@ -657,32 +656,32 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   await widget.state.reloadAllData();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      backgroundColor: const Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       content: Text('✅ ${result['tasks_created']} tasks created, ${result['subscriptions_skipped']} skipped for ${result['date']}'),
                     ),
                   );
                 } else if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      backgroundColor: const Color(0xFFDC2626),
+                      backgroundColor: UiTone.error,
                       content: Text('❌ Failed to generate tasks: ${ApiService.lastError ?? "Unknown error"}'),
                     ),
                   );
                 }
               },
               icon: _isGeneratingTasks
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.auto_fix_high_rounded, size: 18, color: Colors.white),
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.surface))
+                  : const Icon(Icons.auto_fix_high_rounded, size: 18, color: UiTone.surface),
               label: Text(
                 _isGeneratingTasks ? 'Generating Tasks...' : "Generate Today's Delivery Tasks ⚡",
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.5),
+                backgroundColor: UiTone.primary,
+                foregroundColor: UiTone.surface,
+                disabledBackgroundColor: UiTone.primary.withValues(alpha: 0.5),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               ),
             ),
           ),
@@ -691,12 +690,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35), width: 1.5),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
+              color: UiTone.ink,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: UiTone.secondary.withValues(alpha: 0.35), width: 1.5),
+              boxShadow: UiShadow.elevated,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -716,13 +713,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   'Equal Load Balancer & Fleet Dispatch',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
                                 const Text(
                                   'Auto-partitions hub orders equally across active boys',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                                  style: TextStyle(color: UiTone.secondary, fontSize: 10, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -733,8 +730,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                      child: const Text('EQUAL LOAD', style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.w900)),
+                      decoration: BoxDecoration(color: UiTone.secondary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: const Text('EQUAL LOAD', style: TextStyle(color: UiTone.secondary, fontSize: 9, fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
@@ -744,8 +741,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
+                    color: UiTone.surface.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                     border: Border.all(color: Colors.white24),
                   ),
                   child: Row(
@@ -754,7 +751,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Active Delivery Boys Today:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                            Text('Active Delivery Boys Today:', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 12.5)),
                             Text('Hub operator input for shift partitioning', style: TextStyle(color: Colors.white60, fontSize: 10)),
                           ],
                         ),
@@ -771,11 +768,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               '$_activeDriverCount Boys',
-                              style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w900, fontSize: 14),
+                              style: const TextStyle(color: UiTone.secondary, fontWeight: FontWeight.w900, fontSize: 14),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: Color(0xFF10B981), size: 22),
+                            icon: const Icon(Icons.add_circle_outline, color: UiTone.secondary, size: 22),
                             onPressed: _activeDriverCount < 10 ? () => setState(() => _activeDriverCount++) : null,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -812,10 +809,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           icon: const Icon(Icons.inventory_2_rounded, size: 16),
                           label: const Text('Manage Daily Slots 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0D7C66),
-                            foregroundColor: Colors.white,
+                            backgroundColor: UiTone.primary,
+                            foregroundColor: UiTone.surface,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                           ),
                         ),
                       ),
@@ -828,7 +825,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                backgroundColor: const Color(0xFF0D7C66),
+                                backgroundColor: UiTone.primary,
                                 content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount salaried delivery boys with zero route overlap.'),
                               ),
                             );
@@ -836,10 +833,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           icon: const Icon(Icons.hub_rounded, size: 16),
                           label: Text('Auto-Balance Fleet ($_activeDriverCount) 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
+                            backgroundColor: UiTone.secondary,
+                            foregroundColor: UiTone.surface,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                           ),
                         ),
                       ),
@@ -866,14 +863,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                             margin: const EdgeInsets.only(bottom: 6),
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(8),
+                              color: UiTone.surface.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(UiRadius.xs),
                             ),
                             child: Row(
                               children: [
-                                Flexible(child: Text('🛵 $dName', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+                                Flexible(child: Text('🛵 $dName', overflow: TextOverflow.ellipsis, style: const TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold))),
                                 const SizedBox(width: 6),
-                                Flexible(child: Text('${res.orderedStops.length} Stops • ${res.totalDistanceKm.toStringAsFixed(1)} km • Salaried Staff', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600))),
+                                Flexible(child: Text('${res.orderedStops.length} Stops • ${res.totalDistanceKm.toStringAsFixed(1)} km • Salaried Staff', overflow: TextOverflow.ellipsis, style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600))),
                               ],
                             ),
                           );
@@ -892,14 +889,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
+                colors: [UiTone.primary, UiTone.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              boxShadow: UiShadow.elevated,
             ),
             child: Column(
               children: [
@@ -913,7 +908,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         const SizedBox(height: 2),
                         Text(
                           '₹${netEarnings.toStringAsFixed(0)}',
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                          style: const TextStyle(color: UiTone.surface, fontSize: 24, fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
@@ -922,10 +917,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       icon: const Icon(Icons.account_balance_wallet_rounded, size: 15),
                       label: const Text('Withdraw Bank', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF0D7C66),
+                        backgroundColor: UiTone.surface,
+                        foregroundColor: UiTone.primary,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                       ),
                     ),
                   ],
@@ -933,11 +928,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: UiTone.ink.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(UiRadius.sm)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Gross Daily GMV: ₹${totalRevenue.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      Text('Gross Daily GMV: ₹${totalRevenue.toStringAsFixed(0)}', style: const TextStyle(color: UiTone.surface, fontSize: 10.5, fontWeight: FontWeight.w700)),
                       const Text('75% Provider Share • 25% Logistics', style: TextStyle(color: Colors.white70, fontSize: 10)),
                     ],
                   ),
@@ -954,20 +949,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    color: UiTone.surface,
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    border: Border.all(color: UiTone.surfaceBorder),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search_rounded, color: Colors.grey, size: 20),
+                      const Icon(Icons.search_rounded, color: UiTone.softText, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           onChanged: (val) => setState(() => _searchQuery = val),
                           decoration: const InputDecoration(
                             hintText: 'Search customer, apartment, or phone...',
-                            hintStyle: TextStyle(color: Colors.grey, fontSize: 12.5),
+                            hintStyle: TextStyle(color: UiTone.softText, fontSize: 12.5),
                             border: InputBorder.none,
                           ),
                         ),
@@ -984,21 +979,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(width: 8),
               InkWell(
                 onTap: () => _showBroadcastDialog(context),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(UiRadius.sm),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0D7C66),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
-                    ],
+                    color: UiTone.primary,
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    boxShadow: UiShadow.elevated,
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.campaign_rounded, color: Colors.white, size: 18),
+                      Icon(Icons.campaign_rounded, color: UiTone.surface, size: 18),
                       SizedBox(width: 4),
-                      Text('Alert', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                      Text('Alert', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -1063,11 +1056,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 '📋 Customer Orders in Hub Zone:',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
               ),
             ),
             const SizedBox(width: 6),
-            Text('${subscriptions.length + express.length} Active Orders', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66))),
+            Text('${subscriptions.length + express.length} Active Orders', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary)),
           ],
         ),
         const SizedBox(height: 10),
@@ -1092,7 +1085,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -1106,7 +1099,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   children: [
                     CircleAvatar(
                       radius: 14,
-                      backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                      backgroundColor: UiTone.primary.withValues(alpha: 0.12),
                       child: const Text('🥛', style: TextStyle(fontSize: 14)),
                     ),
                     const SizedBox(width: 8),
@@ -1115,11 +1108,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       children: [
                         Text(
                           task.customerName,
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: UiTone.ink),
                         ),
                         Text(
                           'Phone: $custPhone',
-                          style: TextStyle(fontSize: 10.5, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 10.5, color: UiTone.softText),
                         ),
                       ],
                     ),
@@ -1130,24 +1123,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     final subStatus = sub?.status ?? '';
                     final isSkipped = task.status == 'SKIPPED' || subStatus == 'PAUSED';
                     String label = 'SCHEDULED ⏰';
-                    Color bg = Colors.orange.withValues(alpha: 0.15);
-                    Color fg = Colors.orange[900]!;
+                    Color bg = UiTone.warning.withValues(alpha: 0.15);
+                    Color fg = UiTone.warning;
 
                     if (isDone) {
                       label = 'DELIVERED ✅';
-                      bg = const Color(0xFF10B981).withValues(alpha: 0.15);
-                      fg = const Color(0xFF0D7C66);
+                      bg = UiTone.secondary.withValues(alpha: 0.15);
+                      fg = UiTone.primary;
                     } else if (isSkipped) {
                       label = 'VACATION PAUSED 🏖️';
-                      bg = Colors.purple.withValues(alpha: 0.15);
-                      fg = Colors.purple[800]!;
+                      bg = UiTone.accentBlue.withValues(alpha: 0.15);
+                      fg = UiTone.accentBlue;
                     }
 
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: bg,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
                       child: Text(
                         label,
@@ -1167,7 +1160,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             // Product & Subscription Quantity
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: UiTone.shellBackground, borderRadius: BorderRadius.circular(UiRadius.xs)),
               child: Row(
                 children: [
                   Text(product?.icon ?? '🥛', style: const TextStyle(fontSize: 20)),
@@ -1182,14 +1175,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         ),
                         Text(
                           '${sub?.scheduleType ?? "DAILY"} • Slot: ${task.slotTime}',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
+                          style: TextStyle(color: UiTone.softText, fontSize: 10.5),
                         ),
                       ],
                     ),
                   ),
                   Text(
                     '₹${((product?.pricePerUnit ?? 40) * (sub?.quantity ?? 1)).toStringAsFixed(0)}',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0D7C66)),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: UiTone.primary),
                   ),
                 ],
               ),
@@ -1199,14 +1192,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             // Address & Assigned Driver
             Row(
               children: [
-                const Icon(Icons.place_rounded, size: 14, color: Colors.grey),
+                const Icon(Icons.place_rounded, size: 14, color: UiTone.softText),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     task.deliveryAddress,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                    style: TextStyle(fontSize: 11, color: UiTone.softText),
                   ),
                 ),
               ],
@@ -1214,13 +1207,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.two_wheeler_rounded, size: 14, color: Color(0xFF0D7C66)),
+                const Icon(Icons.two_wheeler_rounded, size: 14, color: UiTone.primary),
                 const SizedBox(width: 4),
                 Text(
                   _liveFleet.isNotEmpty
                       ? 'Driver: ${_liveFleet[task.id % _liveFleet.length]['name']} (Route #${task.id % 5 + 1})'
                       : 'Driver Partner (Route #${task.id % 5 + 1})',
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.primary),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -1229,7 +1222,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     textAlign: TextAlign.end,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 10, color: UiTone.softText),
                   ),
                 ),
               ],
@@ -1245,9 +1238,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     icon: const Icon(Icons.phone_rounded, size: 13),
                     label: const Text('Call Customer', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0D7C66),
-                      side: const BorderSide(color: Color(0xFF0D7C66)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      foregroundColor: UiTone.primary,
+                      side: const BorderSide(color: UiTone.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                     ),
                   ),
                 ),
@@ -1263,10 +1256,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     icon: const Icon(Icons.chat_rounded, size: 13),
                     label: const Text('WhatsApp Ping', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
+                      backgroundColor: UiTone.secondary,
+                      foregroundColor: UiTone.surface,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                     ),
                   ),
                 ),
@@ -1284,7 +1277,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -1297,27 +1290,27 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(color: const Color(0xFF0284C7).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-                      child: Text(ord.id, style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w900, fontSize: 11)),
+                      decoration: BoxDecoration(color: UiTone.accentBlue.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text(ord.id, style: const TextStyle(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11)),
                     ),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: const Color(0xFFE11D48).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: const Text('30-MIN EXPRESS', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9, fontWeight: FontWeight.bold)),
+                      decoration: BoxDecoration(color: UiTone.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: const Text('30-MIN EXPRESS', style: TextStyle(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isDelivered ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    color: isDelivered ? UiTone.secondary.withValues(alpha: 0.15) : UiTone.warning.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
                   ),
                   child: Text(
                     isDelivered ? 'DELIVERED ✅' : 'OUT FOR DELIVERY 🛵',
                     style: TextStyle(
-                      color: isDelivered ? const Color(0xFF0D7C66) : Colors.amber[900],
+                      color: isDelivered ? UiTone.primary : UiTone.warning,
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1332,13 +1325,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
             const SizedBox(height: 4),
-            Text('Delivery to: ${ord.deliveryAddress}', style: TextStyle(color: Colors.grey[700], fontSize: 11)),
+            Text('Delivery to: ${ord.deliveryAddress}', style: TextStyle(color: UiTone.softText, fontSize: 11)),
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Order Total: ₹${ord.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0D7C66), fontSize: 12.5)),
-                Text('OTP: ${ord.deliveryOtp}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0369A1))),
+                Text('Order Total: ₹${ord.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, color: UiTone.primary, fontSize: 12.5)),
+                Text('OTP: ${ord.deliveryOtp}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.accentBlue)),
               ],
             ),
           ],
@@ -1359,10 +1352,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.lg)),
         title: const Row(
           children: [
-            Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF0D7C66)),
+            Icon(Icons.person_add_alt_1_rounded, color: UiTone.primary),
             SizedBox(width: 8),
             Text('Onboard Delivery Boy to Hub', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
@@ -1399,8 +1392,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D7C66),
-              foregroundColor: Colors.white,
+              backgroundColor: UiTone.primary,
+              foregroundColor: UiTone.surface,
             ),
             onPressed: () async {
               if (phoneCtrl.text.trim().isEmpty) return;
@@ -1417,7 +1410,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      backgroundColor: Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       content: Text('🎉 Delivery Partner successfully onboarded & assigned to this Hub!'),
                     ),
                   );
@@ -1440,16 +1433,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('🛵 Assigned Hub Fleet (${drivers.length}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            Text('🛵 Assigned Hub Fleet (${drivers.length}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
             ElevatedButton.icon(
               onPressed: () => _showAddDriverDialog(context),
               icon: const Icon(Icons.person_add_rounded, size: 14),
               label: const Text('Add Delivery Boy', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
+                backgroundColor: UiTone.primary,
+                foregroundColor: UiTone.surface,
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
               ),
             ),
           ],
@@ -1460,18 +1453,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: UiTone.surface,
+              borderRadius: BorderRadius.circular(UiRadius.sm),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: const Center(
               child: Column(
                 children: [
-                  Icon(Icons.delivery_dining_rounded, size: 36, color: Color(0xFF94A3B8)),
+                  Icon(Icons.delivery_dining_rounded, size: 36, color: UiTone.softText),
                   SizedBox(height: 8),
-                  Text('No delivery boys onboarded yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
+                  Text('No delivery boys onboarded yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.softText)),
                   SizedBox(height: 4),
-                  Text('Tap "Add Delivery Boy" to onboard drivers to this hub.', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  Text('Tap "Add Delivery Boy" to onboard drivers to this hub.', style: TextStyle(fontSize: 11, color: UiTone.softText)),
                 ],
               ),
             ),
@@ -1488,15 +1481,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                color: UiTone.surface,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+                border: Border.all(color: UiTone.surfaceBorder),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                    backgroundColor: UiTone.primary.withValues(alpha: 0.12),
                     child: const Text('🛵', style: TextStyle(fontSize: 18)),
                   ),
                   const SizedBox(width: 10),
@@ -1505,21 +1498,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(drv['name'] ?? 'Driver', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('📍 $hubNameText', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
-                        Text(drv['route'] ?? 'Sector Route', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                        Text('📍 $hubNameText', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.primary)),
+                        Text(drv['route'] ?? 'Sector Route', style: TextStyle(fontSize: 10, color: UiTone.softText)),
                         const SizedBox(height: 2),
-                        Text(drv['status'] ?? '🟢 Active', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF0D7C66))),
+                        Text(drv['status'] ?? '🟢 Active', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: UiTone.primary)),
                       ],
                     ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(drv['salary'] ?? '₹15,000/mo', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0D7C66))),
-                      Text(drv['stops'] ?? '12 Stops', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                      Text(drv['salary'] ?? '₹15,000/mo', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: UiTone.primary)),
+                      Text(drv['stops'] ?? '12 Stops', style: TextStyle(fontSize: 10, color: UiTone.softText)),
                       const SizedBox(height: 4),
                       IconButton(
-                        icon: const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF0D7C66)),
+                        icon: const Icon(Icons.phone_rounded, size: 16, color: UiTone.primary),
                         onPressed: () => _callPhone(context, drv['phone'] ?? '+91 9123456789'),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -1542,7 +1535,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('📦 Hub Crate Inventory & Farm Replenishment:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+        const Text('📦 Hub Crate Inventory & Farm Replenishment:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
         const SizedBox(height: 10),
 
         _buildCrateInventoryRow('🥛 Fresh A2 Vedic Cow Milk', '$_crateStockA2 Crates (540 Pouches)', () => setState(() => _crateStockA2 += 10)),
@@ -1559,7 +1552,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  backgroundColor: Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   content: Text('🚜 Farm Milk Tanker Dispatched! 1,200 Litres replenishment arriving at 02:00 AM.'),
                 ),
               );
@@ -1567,9 +1560,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             icon: const Icon(Icons.local_shipping_rounded, size: 16),
             label: const Text('Request Farm Tanker Supply Replenishment 🚜', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D7C66),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              backgroundColor: UiTone.primary,
+              foregroundColor: UiTone.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
             ),
           ),
         ),
@@ -1581,9 +1574,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.sm),
+        border: Border.all(color: UiTone.surfaceBorder),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1592,7 +1585,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-              Text(stock, style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w700, fontSize: 11)),
+              Text(stock, style: const TextStyle(color: UiTone.primary, fontWeight: FontWeight.w700, fontSize: 11)),
             ],
           ),
           OutlinedButton.icon(
@@ -1602,8 +1595,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: Size.zero,
-              foregroundColor: const Color(0xFF0D7C66),
-              side: const BorderSide(color: Color(0xFF0D7C66)),
+              foregroundColor: UiTone.primary,
+              side: const BorderSide(color: UiTone.primary),
             ),
           ),
         ],
@@ -1614,7 +1607,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget _buildPartitionStat(String val, String label) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(color: Color(0xFF10B981), fontSize: 12.5, fontWeight: FontWeight.w900)),
+        Text(val, style: const TextStyle(color: UiTone.secondary, fontSize: 12.5, fontWeight: FontWeight.w900)),
         const SizedBox(height: 1),
         Text(
           label,
@@ -1630,7 +1623,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget _buildHubStatColumn(String val, String label) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w900)),
+        Text(val, style: const TextStyle(color: UiTone.surface, fontSize: 12.5, fontWeight: FontWeight.w900)),
         const SizedBox(height: 2),
         Text(
           label,
@@ -1650,15 +1643,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('📢 Sent Hub Customer Broadcasts:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+            const Text('📢 Sent Hub Customer Broadcasts:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
             ElevatedButton.icon(
               onPressed: () => _showBroadcastDialog(context),
               icon: const Icon(Icons.send_rounded, size: 14),
               label: const Text('New Alert', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                backgroundColor: UiTone.primary,
+                foregroundColor: UiTone.surface,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
               ),
             ),
           ],
@@ -1666,7 +1659,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         const SizedBox(height: 10),
         ..._broadcastAlerts.map((b) => Card(
               margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -1676,12 +1669,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(b['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+                          child: Text(b['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: UiTone.ink)),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                          child: Text(b['status'] ?? 'SENT', style: const TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          decoration: BoxDecoration(color: UiTone.secondary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                          child: Text(b['status'] ?? 'SENT', style: const TextStyle(color: UiTone.secondary, fontSize: 9.5, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -1689,8 +1682,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('🕒 ${b['time']}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                        Text('👥 Audience: ${b['recipients']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                        Text('🕒 ${b['time']}', style: TextStyle(fontSize: 11, color: UiTone.softText)),
+                        Text('👥 Audience: ${b['recipients']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
                       ],
                     ),
                   ],
@@ -1708,14 +1701,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('💰 Settlement & Payout Receipts Ledger:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
-            Text('${_payoutHistory.length} Receipts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66))),
+            const Text('💰 Settlement & Payout Receipts Ledger:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
+            Text('${_payoutHistory.length} Receipts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary)),
           ],
         ),
         const SizedBox(height: 10),
         ..._payoutHistory.map((p) => Card(
               margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -1725,15 +1718,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF0D7C66), size: 20),
+                          decoration: BoxDecoration(color: UiTone.secondary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                          child: const Icon(Icons.receipt_long_rounded, color: UiTone.primary, size: 20),
                         ),
                         const SizedBox(width: 10),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p['id'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
-                            Text('${p['date']} • ${p['bank']}', style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+                            Text(p['id'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: UiTone.ink)),
+                            Text('${p['date']} • ${p['bank']}', style: TextStyle(fontSize: 10.5, color: UiTone.softText)),
                           ],
                         ),
                       ],
@@ -1741,8 +1734,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('₹${(p['amount'] as num).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0D7C66))),
-                        Text(p['status'] ?? 'SETTLED', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                        Text('₹${(p['amount'] as num).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.primary)),
+                        Text(p['status'] ?? 'SETTLED', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.secondary)),
                       ],
                     ),
                   ],
@@ -1757,20 +1750,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final isSelected = _selectedFilter == idx;
     return InkWell(
       onTap: () => setState(() => _selectedFilter = idx),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(UiRadius.lg),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1)),
+          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
+          borderRadius: BorderRadius.circular(UiRadius.lg),
+          border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : const Color(0xFF334155),
+            color: isSelected ? UiTone.surface : UiTone.softText,
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import '../../providers/app_state.dart';
 
 class ProviderProfileTab extends StatelessWidget {
@@ -29,21 +30,19 @@ class ProviderProfileTab extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                colors: [UiTone.ink, Color(0xFF1E293B)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
+              borderRadius: BorderRadius.circular(UiRadius.xl),
+              boxShadow: UiShadow.card,
             ),
             child: Column(
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    color: UiTone.secondary.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Text('🏬', style: TextStyle(fontSize: 40)),
@@ -52,7 +51,7 @@ class ProviderProfileTab extends StatelessWidget {
                 Text(
                   hubName,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: UiTone.surface, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -64,13 +63,13 @@ class ProviderProfileTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF10B981)),
+                    color: UiTone.secondary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    border: Border.all(color: UiTone.secondary),
                   ),
                   child: Text(
                     '🛡️ Verified FSSAI License #$fssai',
-                    style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
+                    style: const TextStyle(color: UiTone.secondary, fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                 ),
               ],
@@ -82,7 +81,7 @@ class ProviderProfileTab extends StatelessWidget {
           _buildSectionHeader('Hub Operational Parameters'),
           Card(
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -119,7 +118,7 @@ class ProviderProfileTab extends StatelessWidget {
               label: const Text('Log Out of Provider Portal', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.redAccent),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               ),
             ),
           ),
@@ -136,7 +135,7 @@ class ProviderProfileTab extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8, left: 4),
         child: Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: UiTone.ink),
         ),
       ),
     );
@@ -146,7 +145,7 @@ class ProviderProfileTab extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: const Color(0xFF0D7C66), size: 20),
+        Icon(icon, color: UiTone.primary, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -154,7 +153,7 @@ class ProviderProfileTab extends StatelessWidget {
             children: [
               Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
               const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
             ],
           ),
         ),

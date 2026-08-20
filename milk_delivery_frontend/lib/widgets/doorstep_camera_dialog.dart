@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/image_upload_service.dart';
+import '../theme/ui_tokens.dart';
+
 
 class DoorstepProofPreset {
   final String id;
@@ -47,7 +49,7 @@ class DoorstepCameraDialog extends StatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: UiTone.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => DoorstepCameraDialog(
         customerName: customerName,
@@ -134,8 +136,8 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Doorstep Camera Proof 📸', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  Text('Deliver to: ${widget.customerName}', style: const TextStyle(fontSize: 12, color: Color(0xFF0D7C66), fontWeight: FontWeight.w700)),
+                  const Text('Doorstep Camera Proof 📸', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: UiTone.ink)),
+                  Text('Deliver to: ${widget.customerName}', style: const TextStyle(fontSize: 12, color: UiTone.primary, fontWeight: FontWeight.w700)),
                 ],
               ),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
@@ -158,7 +160,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       activePreset.imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (c, e, s) => Container(
-                        color: const Color(0xFF0F172A),
+                        color: UiTone.ink,
                         child: const Center(child: Icon(Icons.camera_alt_rounded, color: Colors.white54, size: 48)),
                       ),
                     ),
@@ -170,8 +172,8 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       width: 140,
                       height: 140,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
-                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: UiTone.surface.withValues(alpha: 0.6), width: 1.5),
+                        borderRadius: BorderRadius.circular(UiRadius.sm),
                       ),
                     ),
                   ),
@@ -188,11 +190,11 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.gps_fixed_rounded, size: 12, color: Color(0xFF10B981)),
+                              const Icon(Icons.gps_fixed_rounded, size: 12, color: UiTone.secondary),
                               const SizedBox(width: 4),
                               Text(
                                 '${widget.latitude.toStringAsFixed(4)}° N, ${widget.longitude.toStringAsFixed(4)}° E',
@@ -204,8 +206,8 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE11D48),
-                            borderRadius: BorderRadius.circular(8),
+                            color: UiTone.error,
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           child: const Row(
                             children: [
@@ -247,7 +249,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           const SizedBox(width: 8),
                           Text(
                             '$dateStr • $timeStr',
-                            style: const TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -260,7 +262,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
           const SizedBox(height: 16),
 
           // ── Select Proof Scenario Preset ──
-          const Text('Select Doorstep Drop Placement:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+          const Text('Select Doorstep Drop Placement:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
           const SizedBox(height: 8),
 
           Expanded(
@@ -273,14 +275,14 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
 
                 return InkWell(
                   onTap: () => setState(() => _selectedPresetIndex = idx),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF0D7C66).withValues(alpha: 0.1) : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
+                      color: isSelected ? UiTone.primary.withValues(alpha: 0.1) : UiTone.shellBackground,
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
                       border: Border.all(
-                        color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+                        color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
                         width: isSelected ? 1.8 : 1,
                       ),
                     ),
@@ -294,14 +296,14 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                             children: [
                               Text(
                                 preset.title,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFF0F172A)),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: isSelected ? UiTone.primary : UiTone.ink),
                               ),
                               Text(preset.description, style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
                             ],
                           ),
                         ),
                         if (isSelected)
-                          const Icon(Icons.check_circle_rounded, color: Color(0xFF0D7C66), size: 18),
+                          const Icon(Icons.check_circle_rounded, color: UiTone.primary, size: 18),
                       ],
                     ),
                   ),
@@ -367,9 +369,9 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
+                backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                 elevation: 0,
               ),
             ),

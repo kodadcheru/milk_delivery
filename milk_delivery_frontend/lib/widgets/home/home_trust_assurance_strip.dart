@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeTrustAssuranceStrip extends StatelessWidget {
   const HomeTrustAssuranceStrip({super.key});
@@ -10,9 +11,9 @@ class HomeTrustAssuranceStrip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: UiTone.shellBackground,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: UiTone.surfaceBorder),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -36,7 +37,7 @@ class HomeTrustAssuranceStrip extends StatelessWidget {
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 10.5,
-            color: Color(0xFF0F172A),
+            color: UiTone.ink,
           ),
         ),
         const SizedBox(height: 1),

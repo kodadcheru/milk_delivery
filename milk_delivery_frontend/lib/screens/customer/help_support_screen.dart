@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/support_chat_model.dart';
 import '../../providers/app_state.dart';
@@ -33,7 +35,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       id: 'faq_1',
       title: 'What time is morning milk delivered?',
       icon: '⏰',
-      accentColor: Color(0xFF0D7C66),
+      accentColor: UiTone.primary,
       answer: 'All daily milk and dawn grocery subscriptions are guaranteed to reach your doorstep between 05:00 AM and 06:00 AM every morning without ringing the bell unless specified.',
       quickPromptSuggestions: ['Check tomorrow morning delivery', 'Add delivery instructions'],
     ),
@@ -41,7 +43,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       id: 'faq_2',
       title: 'How do I pause deliveries for vacation?',
       icon: '🏖️',
-      accentColor: Color(0xFF0284C7),
+      accentColor: UiTone.accentBlue,
       answer: 'Go to the Subscriptions tab, tap your active subscription, and select "Pause Subscription". Choose your start and resume dates. No wallet balance is deducted during paused days.',
       quickPromptSuggestions: ['Pause my subscription', 'Resume my subscription'],
     ),
@@ -49,7 +51,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       id: 'faq_3',
       title: 'How do refunds & wallet balance work?',
       icon: '💳',
-      accentColor: Color(0xFF10B981),
+      accentColor: UiTone.secondary,
       answer: 'Any un-delivered or skipped items are automatically refunded to your in-app prepaid wallet in real time. Your wallet balance is used for future subscription days or instant orders.',
       quickPromptSuggestions: ['Show my wallet transactions', 'How to top up wallet?'],
     ),
@@ -57,7 +59,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       id: 'faq_4',
       title: 'Can I change my milk quantity for tomorrow?',
       icon: '🥛',
-      accentColor: Color(0xFFD97706),
+      accentColor: UiTone.warning,
       answer: 'Yes! You can increase or decrease your daily milk quantity (+ / -) from the Subscriptions tab until 10:00 PM the night before.',
       quickPromptSuggestions: ['Increase milk quantity', 'Change to Buffalo Milk'],
     ),
@@ -65,7 +67,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       id: 'faq_5',
       title: 'What is the quality assurance of Vedic A2 Milk?',
       icon: '🌿',
-      accentColor: Color(0xFF059669),
+      accentColor: UiTone.success,
       answer: 'Our milk is 100% single-origin Vedic A2 Desi cow milk, pasteurized & chilled below 4°C within 60 minutes of milking, free of antibiotics and synthetic hormones.',
       quickPromptSuggestions: ['View lab test reports', 'Sample farm video'],
     ),
@@ -182,12 +184,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: UiTone.shellBackground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: UiTone.surface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -197,7 +199,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                    color: UiTone.primary.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: const Text('🎧', style: TextStyle(fontSize: 18)),
@@ -209,9 +211,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: _isOnline ? const Color(0xFF10B981) : Colors.amber,
+                      color: _isOnline ? UiTone.secondary : Colors.amber,
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF0F172A), width: 2),
+                      border: Border.all(color: UiTone.ink, width: 2),
                     ),
                   ),
                 ),
@@ -223,7 +225,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
               children: [
                 const Text(
                   'Help & Live Support',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   _isOnline ? '🟢 Live WebSocket Active • 2 min response' : '🟡 Offline Bot Assistant Ready',
@@ -236,7 +238,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
         actions: [
           IconButton(
             tooltip: 'Call Support 24/7',
-            icon: const Icon(Icons.call_rounded, color: Color(0xFF10B981), size: 22),
+            icon: const Icon(Icons.call_rounded, color: UiTone.secondary, size: 22),
             onPressed: _callSupportHotline,
           ),
           IconButton(
@@ -247,9 +249,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFF10B981),
+          indicatorColor: UiTone.secondary,
           indicatorWeight: 3,
-          labelColor: const Color(0xFF10B981),
+          labelColor: UiTone.secondary,
           unselectedLabelColor: Colors.white60,
           tabs: const [
             Tab(icon: Icon(Icons.forum_rounded, size: 18), text: 'Live Chat (WebSocket)'),
@@ -277,20 +279,20 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
         // Live Call-Out Strip
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+          color: UiTone.primary.withValues(alpha: 0.1),
           child: Row(
             children: [
-              const Icon(Icons.verified_user_rounded, color: Color(0xFF0D7C66), size: 16),
+              const Icon(Icons.verified_user_rounded, color: UiTone.primary, size: 16),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'Connected to MilkDrop Priority Care Desk',
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0D7C66)),
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: UiTone.primary),
                 ),
               ),
               InkWell(
                 onTap: _callSupportHotline,
-                child: const Text('📞 1800-6455-3767', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66))),
+                child: const Text('📞 1800-6455-3767', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.primary)),
               ),
             ],
           ),
@@ -334,10 +336,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF0D7C66),
+                    color: UiTone.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.support_agent_rounded, size: 16, color: Colors.white),
+                  child: const Icon(Icons.support_agent_rounded, size: 16, color: UiTone.surface),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -345,21 +347,15 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isUser ? const Color(0xFF0D7C66) : Colors.white,
+                    color: isUser ? UiTone.primary : UiTone.surface,
                     borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
-                      bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(4),
-                      bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(18),
+                      topLeft: const Radius.circular(UiRadius.md),
+                      topRight: const Radius.circular(UiRadius.md),
+                      bottomLeft: isUser ? const Radius.circular(UiRadius.md) : const Radius.circular(UiRadius.xs),
+                      bottomRight: isUser ? const Radius.circular(UiRadius.xs) : const Radius.circular(UiRadius.md),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: isUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: UiShadow.card,
+                    border: isUser ? null : Border.all(color: UiTone.surfaceBorder),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,13 +365,13 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
                             msg.senderName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary),
                           ),
                         ),
                       Text(
                         msg.text,
                         style: TextStyle(
-                          color: isUser ? Colors.white : const Color(0xFF0F172A),
+                          color: isUser ? Colors.white : UiTone.ink,
                           fontSize: 13.5,
                           height: 1.35,
                         ),
@@ -405,17 +401,17 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                 children: msg.quickReplies!.map((reply) {
                   return InkWell(
                     onTap: () => _sendMessage(reply),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(UiRadius.lg),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D7C66).withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                        color: UiTone.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(UiRadius.lg),
+                        border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         reply,
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66)),
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: UiTone.primary),
                       ),
                     ),
                   );
@@ -434,21 +430,21 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
         children: [
           Container(
             padding: const EdgeInsets.all(7),
-            decoration: const BoxDecoration(color: Color(0xFF0D7C66), shape: BoxShape.circle),
-            child: const Icon(Icons.support_agent_rounded, size: 16, color: Colors.white),
+            decoration: const BoxDecoration(color: UiTone.primary, shape: BoxShape.circle),
+            child: const Icon(Icons.support_agent_rounded, size: 16, color: UiTone.surface),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: UiTone.surface,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7C66))),
+                SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary)),
                 SizedBox(width: 8),
                 Text('Support Agent is typing...', style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic)),
               ],
@@ -463,10 +459,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, -2)),
-        ],
+        color: UiTone.surface,
+        boxShadow: UiShadow.card,
       ),
       child: SafeArea(
         top: false,
@@ -476,8 +470,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(24),
+                  color: UiTone.surfaceMuted,
+                  borderRadius: BorderRadius.circular(UiRadius.lg),
                 ),
                 child: TextField(
                   controller: _messageController,
@@ -494,14 +488,14 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
             const SizedBox(width: 8),
             InkWell(
               onTap: () => _sendMessage(_messageController.text),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(UiRadius.lg),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF0D7C66),
+                  color: UiTone.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                child: const Icon(Icons.send_rounded, color: UiTone.surface, size: 18),
               ),
             ),
           ],
@@ -520,25 +514,25 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF0D7C66), Color(0xFF042F2E)],
+              colors: [UiTone.primary, Color(0xFF042F2E)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(UiRadius.md),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                child: const Icon(Icons.headset_mic_rounded, color: Colors.white, size: 26),
+                decoration: BoxDecoration(color: UiTone.surface.withValues(alpha: 0.2), shape: BoxShape.circle),
+                child: const Icon(Icons.headset_mic_rounded, color: UiTone.surface, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Need Instant Phone Help?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    const Text('Need Instant Phone Help?', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 2),
                     const Text('Toll-Free 24/7 Priority Hotline', style: TextStyle(color: Colors.white70, fontSize: 11)),
                     const SizedBox(height: 8),
@@ -546,8 +540,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                       onTap: _callSupportHotline,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                        child: const Text('📞 Dial 1800-6455-3767', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 11.5)),
+                        decoration: BoxDecoration(color: UiTone.surface, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        child: const Text('📞 Dial 1800-6455-3767', style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.bold, fontSize: 11.5)),
                       ),
                     ),
                   ],
@@ -560,18 +554,18 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
 
         const Text(
           'Frequently Asked Questions',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: UiTone.ink),
         ),
         const SizedBox(height: 12),
 
         ..._faqs.map((faq) {
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE2E8F0))),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md), side: const BorderSide(color: UiTone.surfaceBorder)),
             child: ExpansionTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: faq.accentColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: faq.accentColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(UiRadius.sm)),
                 child: Text(faq.icon, style: const TextStyle(fontSize: 20)),
               ),
               title: Text(faq.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
@@ -587,8 +581,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                         spacing: 8,
                         children: faq.quickPromptSuggestions.map((prompt) {
                           return ActionChip(
-                            label: Text(prompt, style: const TextStyle(fontSize: 11, color: Color(0xFF0D7C66), fontWeight: FontWeight.w600)),
-                            backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.08),
+                            label: Text(prompt, style: const TextStyle(fontSize: 11, color: UiTone.primary, fontWeight: FontWeight.w600)),
+                            backgroundColor: UiTone.primary.withValues(alpha: 0.08),
                             side: BorderSide.none,
                             onPressed: () {
                               _tabController.animateTo(0);

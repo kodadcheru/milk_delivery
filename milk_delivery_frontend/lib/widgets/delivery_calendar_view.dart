@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../providers/app_state.dart';
 import '../services/api_service.dart';
+import '../theme/ui_tokens.dart';
+
 
 class DeliveryCalendarView extends StatefulWidget {
   final AppState state;
@@ -25,16 +27,10 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+                      color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,15 +44,15 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                      color: UiTone.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.calendar_month_rounded, color: Color(0xFF0D7C66), size: 18),
+                    child: const Icon(Icons.calendar_month_rounded, color: UiTone.primary, size: 18),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '$monthName ${now.year} Schedule',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink),
                   ),
                 ],
               ),
@@ -82,7 +78,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
             ],
           ),
           const SizedBox(height: 8),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: UiTone.surfaceMuted),
           const SizedBox(height: 8),
 
           // Monthly Calendar Grid
@@ -107,21 +103,21 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
               final isPaused = widget.state.isVacationMode || _customPausedDays.contains(day);
 
               Color bgColor = Colors.transparent;
-              Color textColor = const Color(0xFF0F172A);
-              Color dotColor = hasActiveSub ? const Color(0xFF10B981) : Colors.grey[300]!;
+              Color textColor = UiTone.ink;
+              Color dotColor = hasActiveSub ? UiTone.secondary : Colors.grey[300]!;
 
               if (isToday) {
-                bgColor = const Color(0xFF0D7C66).withValues(alpha: 0.12);
-                textColor = const Color(0xFF0D7C66);
+                bgColor = UiTone.primary.withValues(alpha: 0.12);
+                textColor = UiTone.primary;
               }
 
               if (isPast) {
                 textColor = Colors.grey[400]!;
                 dotColor = const Color(0xFF94A3B8);
               } else if (isPaused) {
-                dotColor = const Color(0xFFE11D48);
+                dotColor = UiTone.error;
                 bgColor = const Color(0xFFFFF1F2);
-                textColor = const Color(0xFFE11D48);
+                textColor = UiTone.error;
               }
 
               return InkWell(
@@ -146,7 +142,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 1),
-                                backgroundColor: const Color(0xFF0D7C66),
+                                backgroundColor: UiTone.primary,
                                 content: Text('🟢 Delivery resumed for $day $monthName!'),
                               ),
                             );
@@ -163,7 +159,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 1),
-                                backgroundColor: const Color(0xFFE11D48),
+                                backgroundColor: UiTone.error,
                                 content: Text('⏸️ Delivery paused for $day $monthName.'),
                               ),
                             );
@@ -175,7 +171,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                   decoration: BoxDecoration(
                     color: bgColor,
                     borderRadius: BorderRadius.circular(10),
-                    border: isToday ? Border.all(color: const Color(0xFF0D7C66), width: 1.5) : null,
+                    border: isToday ? Border.all(color: UiTone.primary, width: 1.5) : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -204,15 +200,15 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
             },
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: UiTone.surfaceMuted),
           const SizedBox(height: 10),
 
           // Legend
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildLegend(const Color(0xFF10B981), 'Scheduled 06:00 AM'),
-              _buildLegend(const Color(0xFFE11D48), 'Paused / Hold'),
+              _buildLegend(UiTone.secondary, 'Scheduled 06:00 AM'),
+              _buildLegend(UiTone.error, 'Paused / Hold'),
               _buildLegend(const Color(0xFF94A3B8), 'Delivered'),
             ],
           ),
@@ -255,7 +251,7 @@ class _WeekdayLabel extends StatelessWidget {
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.bold,
-        color: isWeekend ? const Color(0xFFE11D48) : const Color(0xFF64748B),
+        color: isWeekend ? UiTone.error : const Color(0xFF64748B),
       ),
     );
   }

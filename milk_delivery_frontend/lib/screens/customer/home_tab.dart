@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
+
 import '../../providers/app_state.dart';
 import '../../models/product_model.dart';
 import '../../widgets/floating_cart_bar.dart';
@@ -216,7 +218,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: UiTone.ink),
           ),
           const SizedBox(height: 2),
           Text(

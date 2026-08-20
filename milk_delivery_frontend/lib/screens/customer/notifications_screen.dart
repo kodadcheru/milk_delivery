@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
+
 import '../../providers/app_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -26,27 +28,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: UiTone.shellBackground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_rounded, color: UiTone.surface),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: Row(
           children: [
-            const Text('Notifications 🔔', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Notifications 🔔', style: TextStyle(color: UiTone.surface, fontSize: 18, fontWeight: FontWeight.bold)),
             if (unreadCount > 0) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE11D48),
-                  borderRadius: BorderRadius.circular(10),
+                  color: UiTone.error,
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                 ),
                 child: Text(
                   '$unreadCount New',
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: UiTone.surface, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -61,7 +63,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   const SnackBar(content: Text('All notifications marked as read.')),
                 );
               },
-              child: const Text('Mark All Read', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 12)),
+              child: const Text('Mark All Read', style: TextStyle(color: UiTone.secondary, fontWeight: FontWeight.bold, fontSize: 12)),
             ),
         ],
       ),
@@ -69,7 +71,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         children: [
           // Filter Category Chips
           Container(
-            color: const Color(0xFF0F172A),
+            color: UiTone.ink,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -115,15 +117,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
                       return Card(
                         elevation: item.isRead ? 0.5 : 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                        color: item.isRead ? Colors.white : const Color(0xFFF0FDF4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                        color: item.isRead ? UiTone.surface : const Color(0xFFF0FDF4),
                         child: InkWell(
                           onTap: () {
                             if (!item.isRead) {
                               widget.state.markNotificationRead(item.id);
                             }
                           },
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(UiRadius.md),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
@@ -136,13 +138,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
                                         color: isDelivery
-                                            ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                            ? UiTone.secondary.withValues(alpha: 0.15)
                                             : (isWallet ? Colors.amber.withValues(alpha: 0.2) : Colors.purple.withValues(alpha: 0.2)),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         isDelivery ? Icons.local_shipping_rounded : (isWallet ? Icons.account_balance_wallet_rounded : Icons.campaign_rounded),
-                                        color: isDelivery ? const Color(0xFF0D7C66) : (isWallet ? Colors.amber[900] : Colors.purple[700]),
+                                        color: isDelivery ? UiTone.primary : (isWallet ? Colors.amber[900] : Colors.purple[700]),
                                         size: 20,
                                       ),
                                     ),
@@ -160,7 +162,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                   style: TextStyle(
                                                     fontWeight: item.isRead ? FontWeight.bold : FontWeight.w900,
                                                     fontSize: 14,
-                                                    color: const Color(0xFF0F172A),
+                                                    color: UiTone.ink,
                                                   ),
                                                 ),
                                               ),
@@ -168,10 +170,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xFFE11D48).withValues(alpha: 0.15),
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    color: UiTone.error.withValues(alpha: 0.15),
+                                                    borderRadius: BorderRadius.circular(UiRadius.xs),
                                                   ),
-                                                  child: const Text('NEW', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9, fontWeight: FontWeight.bold)),
+                                                  child: const Text('NEW', style: TextStyle(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
                                                 ),
                                             ],
                                           ),
@@ -214,11 +216,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     icon: Icon(
                                       isDelivery ? Icons.directions_bike_rounded : (isWallet ? Icons.account_balance_wallet_rounded : Icons.storefront_rounded),
                                       size: 14,
-                                      color: const Color(0xFF0D7C66),
+                                      color: UiTone.primary,
                                     ),
                                     label: Text(
                                       isDelivery ? 'Track Delivery 🚚' : (isWallet ? 'View Wallet 💳' : 'Explore Catalog 🥛'),
-                                      style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold, fontSize: 11),
+                                      style: const TextStyle(color: UiTone.primary, fontWeight: FontWeight.bold, fontSize: 11),
                                     ),
                                   ),
                                 ),
@@ -240,14 +242,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      selectedColor: const Color(0xFF0D7C66),
-      backgroundColor: Colors.white.withValues(alpha: 0.1),
+      selectedColor: UiTone.primary,
+      backgroundColor: UiTone.surface.withValues(alpha: 0.1),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : Colors.white70,
         fontWeight: FontWeight.bold,
         fontSize: 12,
       ),
-      side: BorderSide(color: isSelected ? const Color(0xFF0D7C66) : Colors.transparent),
+      side: BorderSide(color: isSelected ? UiTone.primary : Colors.transparent),
       onSelected: (selected) {
         if (selected) setState(() => _selectedFilter = filterKey);
       },

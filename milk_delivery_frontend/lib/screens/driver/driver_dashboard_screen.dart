@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
@@ -68,7 +69,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0284C7),
+            backgroundColor: UiTone.accentBlue,
             content: Text('🗺️ Launching Google Maps Navigation to $customerName (${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)})'),
           ),
         );
@@ -93,7 +94,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         widget.state.markDeliveryCompleted(task.id, proofUrl);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('✅ Stop #${task.id} Completed! Photo proof uploaded & customer wallet debited.'),
           ),
         );
@@ -107,10 +108,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
         title: Row(
           children: [
-            const Icon(Icons.flash_on_rounded, color: Color(0xFFE11D48)),
+            const Icon(Icons.flash_on_rounded, color: UiTone.error),
             const SizedBox(width: 8),
             Text('Complete ${order.id}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
@@ -131,7 +132,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               maxLength: 4,
               decoration: InputDecoration(
                 hintText: 'e.g. ${order.deliveryOtp}',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
@@ -146,20 +147,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 widget.state.updateOrderStatus(order.id, 'DELIVERED');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: const Color(0xFF0D7C66),
+                    backgroundColor: UiTone.primary,
                     content: Text('🎉 Express Order ${order.id} Delivered Successfully!'),
                   ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    backgroundColor: Color(0xFFE11D48),
+                    backgroundColor: UiTone.error,
                     content: Text('❌ Invalid OTP. Please ask the customer for the correct 4-digit OTP.'),
                   ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             child: const Text('Verify & Complete'),
           ),
         ],
@@ -199,7 +200,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         : '₹15,000';
 
     return RefreshIndicator(
-      color: const Color(0xFF0D7C66),
+      color: UiTone.primary,
       onRefresh: () => widget.state.reloadAllData(),
       child: SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -211,11 +212,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
+              color: UiTone.ink,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              boxShadow: UiShadow.card,
             ),
             child: Column(
               children: [
@@ -228,12 +227,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: _isGpsBroadcastActive ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+                              color: _isGpsBroadcastActive ? UiTone.secondary.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               _isGpsBroadcastActive ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
-                              color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.grey,
+                              color: _isGpsBroadcastActive ? UiTone.secondary : Colors.grey,
                               size: 18,
                             ),
                           ),
@@ -249,7 +248,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                         _isGpsBroadcastActive ? 'GPS Broadcast ACTIVE' : 'GPS Broadcast PAUSED',
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: _isGpsBroadcastActive ? const Color(0xFF10B981) : Colors.white70,
+                                          color: _isGpsBroadcastActive ? UiTone.secondary : Colors.white70,
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w900,
                                         ),
@@ -260,7 +259,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                       Container(
                                         width: 8,
                                         height: 8,
-                                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                                        decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
                                       ),
                                   ],
                                 ),
@@ -277,12 +276,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     ),
                     Switch(
                       value: _isGpsBroadcastActive,
-                      activeThumbColor: const Color(0xFF10B981),
+                      activeThumbColor: UiTone.secondary,
                       onChanged: (val) {
                         setState(() => _isGpsBroadcastActive = val);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            backgroundColor: val ? const Color(0xFF0D7C66) : Colors.grey[800],
+                            backgroundColor: val ? UiTone.primary : Colors.grey[800],
                             content: Text(val ? '🟢 Live GPS Broadcasting to customers enabled.' : '🔴 GPS Broadcast paused.'),
                           ),
                         );
@@ -296,23 +295,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.speed_rounded, color: Color(0xFF10B981), size: 14),
+                        Icon(Icons.speed_rounded, color: UiTone.secondary, size: 14),
                         SizedBox(width: 4),
-                        Text('32 km/h', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('32 km/h', style: TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Row(
                       children: [
                         Icon(Icons.battery_charging_full_rounded, color: Colors.amber, size: 14),
                         SizedBox(width: 4),
-                        Text('84% EV Battery', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('84% EV Battery', style: TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Row(
                       children: [
                         Icon(Icons.timer_rounded, color: Colors.cyan, size: 14),
                         SizedBox(width: 4),
-                        Text('Shift: 1h 42m', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('Shift: 1h 42m', style: TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
@@ -327,15 +326,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                colors: [Color(0xFF1E293B), UiTone.ink],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1.5),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: UiTone.secondary.withValues(alpha: 0.4), width: 1.5),
+              boxShadow: UiShadow.card,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,19 +343,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Expanded(
                       child: InkWell(
                         onTap: () => setState(() => _selectedShift = 'MORNING'),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 7),
                           decoration: BoxDecoration(
-                            color: _selectedShift == 'MORNING' ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
+                            color: _selectedShift == 'MORNING' ? UiTone.secondary : Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           alignment: Alignment.center,
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text('🌅 ', style: TextStyle(fontSize: 13)),
-                              Text('Morning Shift', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              Text('Morning Shift', style: TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -368,19 +365,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Expanded(
                       child: InkWell(
                         onTap: () => setState(() => _selectedShift = 'EVENING'),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 7),
                           decoration: BoxDecoration(
-                            color: _selectedShift == 'EVENING' ? const Color(0xFF0284C7) : Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
+                            color: _selectedShift == 'EVENING' ? UiTone.accentBlue : Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           alignment: Alignment.center,
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text('🌇 ', style: TextStyle(fontSize: 13)),
-                              Text('Evening Shift', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              Text('Evening Shift', style: TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -404,12 +401,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                 Text(
                                   _selectedShift == 'MORNING' ? 'Morning Batch Delivery Mode' : 'Evening Batch Delivery Mode',
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                  style: const TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 13.5),
                                 ),
                                 Text(
                                   _selectedShift == 'MORNING' ? '05:00 AM – 08:30 AM Shift • Hub-Origin TSP' : '05:00 PM – 07:00 PM Shift • Hub-Origin TSP',
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: _selectedShift == 'MORNING' ? const Color(0xFF10B981) : const Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w600),
+                                  style: TextStyle(color: _selectedShift == 'MORNING' ? UiTone.secondary : const Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -421,14 +418,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
+                        color: UiTone.secondary.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.eco_rounded, color: Color(0xFF10B981), size: 12),
+                          Icon(Icons.eco_rounded, color: UiTone.secondary, size: 12),
                           SizedBox(width: 3),
-                          Text('SAVE 56% FUEL', style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.w900)),
+                          Text('SAVE 56% FUEL', style: TextStyle(color: UiTone.secondary, fontSize: 9, fontWeight: FontWeight.w900)),
                         ],
                       ),
                     ),
@@ -464,10 +461,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           icon: const Icon(Icons.rocket_launch_rounded, size: 16),
                           label: Text(_selectedShift == 'MORNING' ? 'Start Morning 🚀' : 'Start Evening 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedShift == 'MORNING' ? const Color(0xFF10B981) : const Color(0xFF0284C7),
+                            backgroundColor: _selectedShift == 'MORNING' ? UiTone.secondary : UiTone.accentBlue,
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                           ),
                         ),
                       ),
@@ -492,11 +489,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                             );
                           },
                           icon: const Icon(Icons.map_rounded, size: 16, color: Color(0xFF38BDF8)),
-                          label: const Text('Route Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                          label: const Text('Route Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: UiTone.surface)),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF0284C7)),
-                            backgroundColor: const Color(0xFF0284C7).withValues(alpha: 0.15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: const BorderSide(color: UiTone.accentBlue),
+                            backgroundColor: UiTone.accentBlue.withValues(alpha: 0.15),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                           ),
                         ),
                       ),
@@ -513,14 +510,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
+                colors: [UiTone.primary, UiTone.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              boxShadow: UiShadow.card,
             ),
             child: Column(
               children: [
@@ -541,11 +536,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(UiRadius.lg),
                   ),
                   child: const Text(
                     '🛡️ Monthly Salaried Partner • Paid by Hub Owner • Free Customer Delivery',
-                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: UiTone.surface, fontSize: 10, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -557,9 +552,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: UiTone.surface,
+              borderRadius: BorderRadius.circular(UiRadius.sm),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: Row(
               children: [
@@ -611,13 +606,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     '⚡ Priority Express Orders (30-Min SLA)',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFE11D48).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: const Text('HIGH PRIORITY', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                  decoration: BoxDecoration(color: UiTone.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                  child: const Text('HIGH PRIORITY', style: TextStyle(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -635,18 +630,18 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     '🥛 Morning Route Stops (05:30 AM Shift)',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: UiTone.ink),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    color: UiTone.secondary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
                   ),
                   child: Text(
                     '${filteredTasks.length} STOPS',
-                    style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: UiTone.primary, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -658,13 +653,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  color: UiTone.shellBackground,
+                  borderRadius: BorderRadius.circular(UiRadius.md),
+                  border: Border.all(color: UiTone.surfaceBorder),
                 ),
                 child: const Column(
                   children: [
-                    Icon(Icons.check_circle_outline_rounded, size: 40, color: Color(0xFF10B981)),
+                    Icon(Icons.check_circle_outline_rounded, size: 40, color: UiTone.secondary),
                     SizedBox(height: 8),
                     Text('No Stops Match Your Filter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                     SizedBox(height: 4),
@@ -702,7 +697,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -717,15 +712,15 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(7),
+                        color: UiTone.ink,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
-                      child: Text('STOP #${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10)),
+                      child: Text('STOP #${idx + 1}', style: const TextStyle(color: UiTone.surface, fontWeight: FontWeight.w900, fontSize: 10)),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Task #${task.id}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
                     ),
                   ],
                 ),
@@ -733,14 +728,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: isDone
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                        ? UiTone.secondary.withValues(alpha: 0.15)
                         : (isSkipped ? Colors.grey.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2)),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
                   ),
                   child: Text(
                     isDone ? 'DELIVERED ✅' : (isSkipped ? 'SKIPPED ❌' : 'PENDING ⏰'),
                     style: TextStyle(
-                      color: isDone ? const Color(0xFF0D7C66) : (isSkipped ? Colors.grey[800] : Colors.amber[900]),
+                      color: isDone ? UiTone.primary : (isSkipped ? Colors.grey[800] : Colors.amber[900]),
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
                     ),
@@ -755,8 +750,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: const Color(0xFF0D7C66).withValues(alpha: 0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.person_rounded, color: Color(0xFF0D7C66), size: 16),
+                  decoration: BoxDecoration(color: UiTone.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.person_rounded, color: UiTone.primary, size: 16),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -767,7 +762,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         custName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0F172A)),
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: UiTone.ink),
                       ),
                       Text(
                         custPhone,
@@ -783,26 +778,26 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     minimumSize: Size.zero,
-                    foregroundColor: const Color(0xFF0D7C66),
-                    side: const BorderSide(color: Color(0xFF0D7C66)),
+                    foregroundColor: UiTone.primary,
+                    side: const BorderSide(color: UiTone.primary),
                   ),
                 ),
                 const SizedBox(width: 6),
                 InkWell(
                   onTap: () => _sendWhatsAppArrivalPing(context, custName, custPhone, task.deliveryAddress),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                      color: UiTone.secondary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
+                      border: Border.all(color: UiTone.secondary.withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF0D7C66), size: 13),
+                        Icon(Icons.chat_bubble_outline_rounded, color: UiTone.primary, size: 13),
                         SizedBox(width: 3),
-                        Text('Ping', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        Text('Ping', style: TextStyle(color: UiTone.primary, fontSize: 10.5, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -815,9 +810,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                color: UiTone.shellBackground,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+                border: Border.all(color: UiTone.surfaceBorder),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,7 +820,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.place_rounded, color: Color(0xFF0D7C66), size: 16),
+                      const Icon(Icons.place_rounded, color: UiTone.primary, size: 16),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -843,16 +838,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
+                          color: UiTone.accentBlue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.gps_fixed_rounded, size: 10, color: Color(0xFF0284C7)),
+                            const Icon(Icons.gps_fixed_rounded, size: 10, color: UiTone.accentBlue),
                             const SizedBox(width: 4),
                             Text(
                               '${lat.toStringAsFixed(4)}° N, ${lon.toStringAsFixed(4)}° E',
-                              style: const TextStyle(color: Color(0xFF0284C7), fontSize: 9.5, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: UiTone.accentBlue, fontSize: 9.5, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -872,16 +867,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               height: 38,
               child: ElevatedButton.icon(
                 onPressed: () => _launchGoogleMapsNavigation(context, lat, lon, custName),
-                icon: const Icon(Icons.navigation_rounded, size: 15, color: Colors.white),
+                icon: const Icon(Icons.navigation_rounded, size: 15, color: UiTone.surface),
                 label: const Text(
                   '1-Click Google Maps Navigation 🗺️',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0284C7),
+                  backgroundColor: UiTone.accentBlue,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                 ),
               ),
             ),
@@ -891,8 +886,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
+                color: UiTone.surfaceMuted,
+                borderRadius: BorderRadius.circular(UiRadius.xs),
               ),
               child: Row(
                 children: [
@@ -945,9 +940,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         );
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFE11D48),
-                        side: const BorderSide(color: Color(0xFFE11D48)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        foregroundColor: UiTone.error,
+                        side: const BorderSide(color: UiTone.error),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                       ),
                       child: const Text('Skip / Absent', style: TextStyle(fontSize: 11)),
                     ),
@@ -960,10 +955,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       icon: const Icon(Icons.camera_alt_rounded, size: 15),
                       label: const Text('Mark Delivered + Proof', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D7C66),
+                        backgroundColor: UiTone.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                       ),
                     ),
                   ),
@@ -972,12 +967,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             else
               Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 16),
+                  const Icon(Icons.check_circle_rounded, color: UiTone.secondary, size: 16),
                   const SizedBox(width: 6),
                   Text(
                     isDone ? 'Delivered & Photo Proof Verified 📸' : 'Skipped by Partner',
                     style: TextStyle(
-                      color: isDone ? const Color(0xFF0D7C66) : Colors.grey,
+                      color: isDone ? UiTone.primary : Colors.grey,
                       fontWeight: FontWeight.bold,
                       fontSize: 11.5,
                     ),
@@ -996,7 +991,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -1009,27 +1004,27 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(color: const Color(0xFF0284C7).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-                      child: Text(order.id, style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w900, fontSize: 11.5)),
+                      decoration: BoxDecoration(color: UiTone.accentBlue.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text(order.id, style: const TextStyle(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
                     ),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: const Color(0xFFE11D48).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: const Text('30-MIN EXPRESS', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9, fontWeight: FontWeight.bold)),
+                      decoration: BoxDecoration(color: UiTone.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: const Text('30-MIN EXPRESS', style: TextStyle(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isDelivered ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    color: isDelivered ? UiTone.secondary.withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
                   ),
                   child: Text(
                     isDelivered ? 'DELIVERED ✅' : 'PICKUP READY 🛵',
                     style: TextStyle(
-                      color: isDelivered ? const Color(0xFF0D7C66) : Colors.amber[900],
+                      color: isDelivered ? UiTone.primary : Colors.amber[900],
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1053,8 +1048,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       icon: const Icon(Icons.phone, size: 14),
                       label: const Text('Call Customer', style: TextStyle(fontSize: 11)),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0D7C66),
-                        side: const BorderSide(color: Color(0xFF0D7C66)),
+                        foregroundColor: UiTone.primary,
+                        side: const BorderSide(color: UiTone.primary),
                       ),
                     ),
                   ),
@@ -1064,7 +1059,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       onPressed: () => _handleCompleteExpressOrder(context, order),
                       icon: const Icon(Icons.pin_rounded, size: 14),
                       label: const Text('Verify OTP & Deliver', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                      style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
                     ),
                   ),
                 ],
@@ -1078,7 +1073,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   Widget _buildMetric(String label, String val) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+        Text(val, style: const TextStyle(color: UiTone.surface, fontSize: 17, fontWeight: FontWeight.w900)),
         const SizedBox(height: 1),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
       ],
@@ -1089,14 +1084,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final isSelected = _selectedFilterIndex == index;
     return InkWell(
       onTap: () => setState(() => _selectedFilterIndex = index),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(UiRadius.lg),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
+          borderRadius: BorderRadius.circular(UiRadius.lg),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+            color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
           ),
         ),
         child: Text(

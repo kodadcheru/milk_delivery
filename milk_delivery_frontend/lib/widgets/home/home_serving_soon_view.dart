@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeServingSoonView extends StatelessWidget {
   final AppState state;
@@ -19,16 +20,10 @@ class HomeServingSoonView extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: UiTone.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
       ),
       child: Column(
         children: [
@@ -47,7 +42,7 @@ class HomeServingSoonView extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
+              color: UiTone.ink,
             ),
           ),
           const SizedBox(height: 6),
@@ -63,9 +58,9 @@ class HomeServingSoonView extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: UiTone.shellBackground,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,12 +76,12 @@ class HomeServingSoonView extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                          const Icon(Icons.check_circle_rounded, size: 14, color: UiTone.secondary),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               '${h['name']} (${(h['coverage_radius_km'] as num?)?.toDouble() ?? 5.0} km Radius)',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
                             ),
                           ),
                         ],
@@ -96,11 +91,11 @@ class HomeServingSoonView extends StatelessWidget {
                 else
                   const Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                      Icon(Icons.check_circle_rounded, size: 14, color: UiTone.secondary),
                       SizedBox(width: 6),
                       Text(
                         'Central Operations Hub (5.0 km Radius)',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
                       ),
                     ],
                   ),
@@ -118,18 +113,18 @@ class HomeServingSoonView extends StatelessWidget {
               width: double.infinity,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFF0D7C66),
+                color: UiTone.primary,
                 borderRadius: BorderRadius.circular(14),
               ),
               alignment: Alignment.center,
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.location_on_rounded, size: 18, color: Colors.white),
+                  Icon(Icons.location_on_rounded, size: 18, color: UiTone.surface),
                   SizedBox(width: 8),
                   Text(
                     '📍 Select Active Service Zone',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.surface),
                   ),
                 ],
               ),
@@ -141,7 +136,7 @@ class HomeServingSoonView extends StatelessWidget {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  backgroundColor: Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
                 ),
               );
@@ -152,17 +147,17 @@ class HomeServingSoonView extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF0D7C66)),
+                border: Border.all(color: UiTone.primary),
               ),
               alignment: Alignment.center,
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_active_rounded, size: 16, color: Color(0xFF0D7C66)),
+                  Icon(Icons.notifications_active_rounded, size: 16, color: UiTone.primary),
                   SizedBox(width: 8),
                   Text(
                     'Notify Me When MilkDrop Launches',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary),
                   ),
                 ],
               ),

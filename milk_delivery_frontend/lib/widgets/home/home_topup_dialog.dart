@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeTopUpDialog {
   static void show(BuildContext context, AppState state) {
@@ -8,7 +9,7 @@ class HomeTopUpDialog {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.lg)),
         title: const Row(
           children: [
             Text('⚡', style: TextStyle(fontSize: 22)),
@@ -63,7 +64,7 @@ class HomeTopUpDialog {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: const Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   content: Text('⚡ Successfully recharged ₹${amt.toStringAsFixed(0)} to your Milk Wallet!'),
                 ),
               );

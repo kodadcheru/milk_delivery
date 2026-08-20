@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/category_products_screen.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeCategoryShowcase extends StatelessWidget {
   final AppState state;
@@ -22,7 +23,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'badge': '4 Varieties',
       'icon': '🥛',
       'gradient': [Color(0xFFF0F9FF), Color(0xFFE0F2FE)],
-      'accent': Color(0xFF0284C7),
+      'accent': UiTone.accentBlue,
       'tag': 'PURE VEDIC',
     },
     {
@@ -32,7 +33,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'badge': '100% Fresh',
       'icon': '🥩',
       'gradient': [Color(0xFFFFF1F2), Color(0xFFFFE4E6)],
-      'accent': Color(0xFFDC2626),
+      'accent': UiTone.error,
       'tag': 'ANTIBIOTIC-FREE',
     },
     {
@@ -42,7 +43,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'badge': 'Daily Harvest',
       'icon': '🥚',
       'gradient': [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
-      'accent': Color(0xFFD97706),
+      'accent': UiTone.warning,
       'tag': 'HIGH PROTEIN',
     },
     {
@@ -76,7 +77,7 @@ class HomeCategoryShowcase extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
+                        color: UiTone.ink,
                         letterSpacing: -0.2,
                       ),
                     ),
@@ -95,13 +96,13 @@ class HomeCategoryShowcase extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: UiTone.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: const Text(
                       'View All ✨',
                       style: TextStyle(
-                        color: Color(0xFF0D7C66),
+                        color: UiTone.primary,
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -156,7 +157,7 @@ class HomeCategoryShowcase extends StatelessWidget {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(UiRadius.lg),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(12),
@@ -168,18 +169,12 @@ class HomeCategoryShowcase extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(UiRadius.lg),
             border: Border.all(
               color: isSelected ? accentColor : accentColor.withValues(alpha: 0.3),
               width: isSelected ? 2.5 : 1.2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected ? accentColor.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.03),
-                blurRadius: isSelected ? 10 : 4,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: UiShadow.card,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +203,7 @@ class HomeCategoryShowcase extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle),
-                      child: const Icon(Icons.check, color: Colors.white, size: 10),
+                      child: const Icon(Icons.check, color: UiTone.surface, size: 10),
                     )
                   else
                     Text('$count items', style: TextStyle(fontSize: 9.5, color: Colors.grey[700], fontWeight: FontWeight.w600)),
@@ -221,11 +216,9 @@ class HomeCategoryShowcase extends StatelessWidget {
                 height: 52,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: UiTone.surface,
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(color: accentColor.withValues(alpha: 0.12), blurRadius: 6, offset: const Offset(0, 2)),
-                  ],
+                  boxShadow: UiShadow.card,
                 ),
                 alignment: Alignment.center,
                 child: Text(cat['icon'] as String, style: const TextStyle(fontSize: 28)),
@@ -240,7 +233,7 @@ class HomeCategoryShowcase extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 13,
-                  color: isSelected ? accentColor : const Color(0xFF0F172A),
+                  color: isSelected ? accentColor : UiTone.ink,
                 ),
               ),
               const SizedBox(height: 1),

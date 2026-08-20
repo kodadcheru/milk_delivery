@@ -4,6 +4,7 @@ import '../../services/location_service.dart';
 import '../../widgets/service_area_sheet.dart';
 import '../../screens/customer/address_book_screen.dart';
 import '../../screens/customer/map_location_picker_screen.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeLocationSheet {
   static void show(BuildContext context, AppState state) {
@@ -17,7 +18,7 @@ class HomeLocationSheet {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: UiTone.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -71,13 +72,13 @@ class HomeLocationSheet {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.add_location_alt_rounded, size: 14, color: Color(0xFF10B981)),
+                    icon: const Icon(Icons.add_location_alt_rounded, size: 14, color: UiTone.secondary),
                     label: Text(
                       state.savedAddresses.isNotEmpty ? 'Manage Book' : '+ Add Address',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF10B981),
+                        color: UiTone.secondary,
                       ),
                     ),
                   ),
@@ -102,18 +103,18 @@ class HomeLocationSheet {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text("🚀 Delivering to '${addr.title}'"),
-                              backgroundColor: const Color(0xFF10B981),
+                              backgroundColor: UiTone.secondary,
                             ),
                           );
                         },
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(UiRadius.sm),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(12),
+                            color: isSelected ? const Color(0xFFECFDF5) : UiTone.shellBackground,
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                              color: isSelected ? UiTone.secondary : UiTone.surfaceBorder,
                               width: isSelected ? 1.5 : 1,
                             ),
                           ),
@@ -132,7 +133,7 @@ class HomeLocationSheet {
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w800,
                                             fontSize: 13,
-                                            color: Color(0xFF0F172A),
+                                            color: UiTone.ink,
                                           ),
                                         ),
                                         if (addr.isDefault) ...[
@@ -148,7 +149,7 @@ class HomeLocationSheet {
                                               style: TextStyle(
                                                 fontSize: 8.5,
                                                 fontWeight: FontWeight.w800,
-                                                color: Color(0xFFD97706),
+                                                color: UiTone.warning,
                                               ),
                                             ),
                                           ),
@@ -165,7 +166,7 @@ class HomeLocationSheet {
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18)
+                                const Icon(Icons.check_circle_rounded, color: UiTone.secondary, size: 18)
                               else
                                 const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF94A3B8)),
                             ],
@@ -187,14 +188,14 @@ class HomeLocationSheet {
                 decoration: InputDecoration(
                   hintText: 'Search society, building, or street on Google Maps...',
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF10B981)),
+                  prefixIcon: const Icon(Icons.search_rounded, color: UiTone.secondary),
                   suffixIcon: isSearching
                       ? const Padding(
                           padding: EdgeInsets.all(12),
                           child: SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.secondary),
                           ),
                         )
                       : (searchCtrl.text.isNotEmpty
@@ -211,7 +212,7 @@ class HomeLocationSheet {
                     borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
+                  fillColor: UiTone.shellBackground,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
                 onChanged: (query) async {
@@ -245,7 +246,7 @@ class HomeLocationSheet {
               if (searchResults.isNotEmpty) ...[
                 const Text(
                   'Google Maps Results:',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.ink),
                 ),
                 const SizedBox(height: 6),
                 ConstrainedBox(
@@ -265,7 +266,7 @@ class HomeLocationSheet {
                             color: Color(0xFFECFDF5),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.place_rounded, color: Color(0xFF10B981), size: 16),
+                          child: const Icon(Icons.place_rounded, color: UiTone.secondary, size: 16),
                         ),
                         title: Text(
                           item['short_title'] ?? item['display_name'] ?? '',
@@ -285,7 +286,7 @@ class HomeLocationSheet {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              backgroundColor: const Color(0xFF10B981),
+                              backgroundColor: UiTone.secondary,
                               content: Text('📍 Delivery address updated to: $chosenAddr'),
                             ),
                           );
@@ -303,10 +304,10 @@ class HomeLocationSheet {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                    color: UiTone.secondary.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.my_location_rounded, color: Color(0xFF10B981), size: 20),
+                  child: const Icon(Icons.my_location_rounded, color: UiTone.secondary, size: 20),
                 ),
                 title: const Text('Use Current Device GPS Location 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 subtitle: const Text('Auto-detect and reverse-geocode doorstep address', style: TextStyle(fontSize: 11, color: Colors.grey)),
@@ -319,7 +320,7 @@ class HomeLocationSheet {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: UiTone.secondary,
                         content: Text(ok ? '📍 Location auto-filled to: ${state.currentDeliveryAddress}' : 'Location permission needed.'),
                       ),
                     );
@@ -333,14 +334,14 @@ class HomeLocationSheet {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                    color: UiTone.accentBlue.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.map_rounded, color: Color(0xFF0284C7), size: 20),
+                  child: const Icon(Icons.map_rounded, color: UiTone.accentBlue, size: 20),
                 ),
                 title: const Text('Pick on Google Map / Pin Doorstep 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                 subtitle: const Text('Interactive map with live draggable pin & search', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF0284C7)),
+                trailing: const Icon(Icons.chevron_right_rounded, color: UiTone.accentBlue),
                 onTap: () {
                   Navigator.pop(ctx);
                   Navigator.push(

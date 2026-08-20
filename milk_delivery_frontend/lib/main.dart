@@ -4,6 +4,7 @@ import 'config/app_config.dart';
 import 'providers/app_state.dart';
 import 'services/api_service.dart';
 import 'theme/app_theme.dart';
+import 'theme/ui_tokens.dart';
 import 'widgets/next_gen_nav_bar.dart';
 import 'screens/auth/phone_login_screen.dart';
 import 'screens/customer/home_tab.dart';
@@ -77,7 +78,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     if (_isInitializing) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(scaffoldBackgroundColor: const Color(0xFF0F172A)),
+        theme: ThemeData(scaffoldBackgroundColor: UiTone.ink),
         home: const Scaffold(
           body: Center(
             child: Column(
@@ -85,7 +86,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
               children: [
                 Text('🥛', style: TextStyle(fontSize: 48)),
                 SizedBox(height: 16),
-                CircularProgressIndicator(color: Color(0xFF10B981)),
+                CircularProgressIndicator(color: UiTone.secondary),
               ],
             ),
           ),
@@ -148,17 +149,17 @@ class _MainAppShellState extends State<MainAppShell> {
 
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: UiTone.ink,
           title: InkWell(
             onTap: () => _showDriverLocationZoneSheet(context, widget.state),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(UiRadius.sm),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    color: UiTone.secondary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                   ),
                   child: const Text('🛵', style: TextStyle(fontSize: 18)),
                 ),
@@ -176,13 +177,13 @@ class _MainAppShellState extends State<MainAppShell> {
                               style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w800),
                             ),
                           ),
-                          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF10B981), size: 18),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: UiTone.secondary, size: 18),
                         ],
                       ),
                       Text(
                         'Operating Zone • ${widget.state.deliveries.where((d) => d.status == "PENDING").length} Pending Drops',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: UiTone.secondary, fontSize: 10, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -202,7 +203,7 @@ class _MainAppShellState extends State<MainAppShell> {
                       top: 0,
                       child: Container(
                         padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                        decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
                         constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
                         child: Text(
                           '${widget.state.unreadNotificationCount}',
@@ -265,14 +266,14 @@ class _MainAppShellState extends State<MainAppShell> {
 
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: UiTone.ink,
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0284C7).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  color: UiTone.accentBlue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                 ),
                 child: const Text('🏬', style: TextStyle(fontSize: 20)),
               ),
@@ -301,7 +302,7 @@ class _MainAppShellState extends State<MainAppShell> {
                       top: 0,
                       child: Container(
                         padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                        decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
                         constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
                         child: Text(
                           '${widget.state.unreadNotificationCount}',
@@ -361,14 +362,14 @@ class _MainAppShellState extends State<MainAppShell> {
     if (widget.state.currentRole == 'ADMIN') {
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: UiTone.ink,
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  color: UiTone.secondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                 ),
                 child: const Text('🛡️', style: TextStyle(fontSize: 20)),
               ),
@@ -379,7 +380,7 @@ class _MainAppShellState extends State<MainAppShell> {
                   const Text('Admin Operations Hub', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                   Text(
                     '${widget.state.totalDailyMilkVolume.toStringAsFixed(1)}L Total • ₹${widget.state.totalDailyRevenue.toStringAsFixed(0)} Daily Rev',
-                    style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: UiTone.secondary, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -397,7 +398,7 @@ class _MainAppShellState extends State<MainAppShell> {
                       top: 0,
                       child: Container(
                         padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                        decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
                         constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
                         child: Text(
                           '${widget.state.unreadNotificationCount}',
@@ -464,14 +465,14 @@ class _MainAppShellState extends State<MainAppShell> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                color: UiTone.secondary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(UiRadius.sm),
               ),
               child: const Text('🥛', style: TextStyle(fontSize: 18)),
             ),
@@ -483,7 +484,7 @@ class _MainAppShellState extends State<MainAppShell> {
                   const Text('MilkDrop Express', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: Color(0xFF10B981), size: 11),
+                      const Icon(Icons.location_on_rounded, color: UiTone.secondary, size: 11),
                       const SizedBox(width: 2),
                       Expanded(
                         child: Text(
@@ -513,7 +514,7 @@ class _MainAppShellState extends State<MainAppShell> {
                     top: 0,
                     child: Container(
                       padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(color: Color(0xFFE11D48), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
                       constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
                       child: Text(
                         '${widget.state.unreadNotificationCount}',
@@ -585,7 +586,7 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
 
   showModalBottomSheet(
     context: context,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.lg))),
     builder: (ctx) => Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -594,7 +595,7 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, color: Color(0xFF10B981), size: 22),
+              const Icon(Icons.location_on_rounded, color: UiTone.secondary, size: 22),
               const SizedBox(width: 8),
               const Text('Driver Operating Zone & Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Spacer(),
@@ -605,15 +606,15 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(14),
+              color: UiTone.ink,
+              borderRadius: BorderRadius.circular(UiRadius.sm),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    color: UiTone.secondary.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Text('🏬', style: TextStyle(fontSize: 20)),
@@ -624,11 +625,11 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(hubName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                      Text('Assigned Hub • $hubCode', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11)),
+                      Text('Assigned Hub • $hubCode', style: const TextStyle(color: UiTone.secondary, fontSize: 11)),
                     ],
                   ),
                 ),
-                const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                const Icon(Icons.check_circle_rounded, color: UiTone.secondary, size: 20),
               ],
             ),
           ),
@@ -641,7 +642,7 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: const Color(0xFF0D7C66),
+                    backgroundColor: UiTone.primary,
                     content: Text('🟢 GPS Location Synced to $hubName!'),
                   ),
                 );
@@ -649,9 +650,9 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
               icon: const Icon(Icons.gps_fixed_rounded, size: 18),
               label: const Text('Detect & Sync Device GPS Location 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
+                backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               ),
             ),
           ),

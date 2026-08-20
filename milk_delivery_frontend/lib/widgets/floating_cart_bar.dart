@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../providers/app_state.dart';
 import 'home/home_location_sheet.dart';
+import '../theme/ui_tokens.dart';
+
 
 class FloatingCartBar extends StatelessWidget {
   final AppState state;
@@ -17,21 +19,21 @@ class FloatingCartBar extends StatelessWidget {
 
     return Material(
       elevation: 8,
-      borderRadius: BorderRadius.circular(20),
-      shadowColor: const Color(0xFF0D7C66).withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(UiRadius.lg),
+      shadowColor: UiTone.primary.withValues(alpha: 0.4),
       child: InkWell(
         onTap: () => _showCheckoutSheet(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(UiRadius.lg),
         child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                colors: [UiTone.ink, Color(0xFF1E293B)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5), width: 1.5),
+              borderRadius: BorderRadius.circular(UiRadius.lg),
+              border: Border.all(color: UiTone.secondary.withValues(alpha: 0.5), width: 1.5),
             ),
             child: Row(
               children: [
@@ -42,9 +44,9 @@ class FloatingCartBar extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D7C66).withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF0D7C66)),
+                        color: UiTone.primary.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(UiRadius.sm),
+                        border: Border.all(color: UiTone.primary),
                       ),
                       child: Row(
                         children: items.take(3).map((entry) {
@@ -61,7 +63,7 @@ class FloatingCartBar extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
+                          color: UiTone.secondary,
                           shape: BoxShape.circle,
                         ),
                         constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
@@ -88,7 +90,7 @@ class FloatingCartBar extends StatelessWidget {
                       ),
                       const Text(
                         'Free 06:00 AM Delivery',
-                        style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -98,8 +100,8 @@ class FloatingCartBar extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0D7C66),
-                    borderRadius: BorderRadius.circular(12),
+                    color: UiTone.primary,
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                   ),
                   child: const Row(
                     children: [
@@ -140,7 +142,7 @@ class FloatingCartBar extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: UiTone.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
@@ -173,7 +175,7 @@ class FloatingCartBar extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'Schedule Delivery (${state.totalCartItemCount} items)',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: UiTone.ink),
                           ),
                         ],
                       ),
@@ -200,9 +202,9 @@ class FloatingCartBar extends StatelessWidget {
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                color: UiTone.shellBackground,
+                                borderRadius: BorderRadius.circular(UiRadius.md),
+                                border: Border.all(color: UiTone.surfaceBorder),
                               ),
                               child: Row(
                                 children: [
@@ -210,8 +212,8 @@ class FloatingCartBar extends StatelessWidget {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: UiTone.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(UiRadius.sm),
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(product.icon, style: const TextStyle(fontSize: 24)),
@@ -226,7 +228,7 @@ class FloatingCartBar extends StatelessWidget {
                                         const SizedBox(height: 2),
                                         Text(
                                           '₹${itemTotal.toStringAsFixed(0)}',
-                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: Color(0xFF0D7C66)),
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: UiTone.primary),
                                         ),
                                       ],
                                     ),
@@ -235,7 +237,7 @@ class FloatingCartBar extends StatelessWidget {
                                   // Stepper
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                      color: UiTone.surface,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: const Color(0xFFCBD5E1)),
                                     ),
@@ -251,7 +253,7 @@ class FloatingCartBar extends StatelessWidget {
                                           },
                                           child: const Padding(
                                             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            child: Icon(Icons.remove, size: 15, color: Color(0xFF0D7C66)),
+                                            child: Icon(Icons.remove, size: 15, color: UiTone.primary),
                                           ),
                                         ),
                                         Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -262,7 +264,7 @@ class FloatingCartBar extends StatelessWidget {
                                           },
                                           child: const Padding(
                                             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            child: Icon(Icons.add, size: 15, color: Color(0xFF0D7C66)),
+                                            child: Icon(Icons.add, size: 15, color: UiTone.primary),
                                           ),
                                         ),
                                       ],
@@ -281,7 +283,7 @@ class FloatingCartBar extends StatelessWidget {
                             children: [
                               const Text(
                                 '1. Select Delivery Date 📅:',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
                               ),
                               InkWell(
                                 onTap: () async {
@@ -296,9 +298,9 @@ class FloatingCartBar extends StatelessWidget {
                                       return Theme(
                                         data: Theme.of(context).copyWith(
                                           colorScheme: const ColorScheme.light(
-                                            primary: Color(0xFF0D7C66),
+                                            primary: UiTone.primary,
                                             onPrimary: Colors.white,
-                                            onSurface: Color(0xFF0F172A),
+                                            onSurface: UiTone.ink,
                                           ),
                                         ),
                                         child: child!,
@@ -312,14 +314,14 @@ class FloatingCartBar extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: UiTone.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(UiRadius.xs),
                                   ),
                                   child: const Row(
                                     children: [
-                                      Icon(Icons.calendar_month_rounded, size: 14, color: Color(0xFF0D7C66)),
+                                      Icon(Icons.calendar_month_rounded, size: 14, color: UiTone.primary),
                                       SizedBox(width: 4),
-                                      Text('Custom Date', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                                      Text('Custom Date', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
                                     ],
                                   ),
                                 ),
@@ -341,19 +343,19 @@ class FloatingCartBar extends StatelessWidget {
 
                                 return InkWell(
                                   onTap: () => setSheetState(() => selectedDate = date),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(UiRadius.sm),
                                   child: Container(
                                     width: 82,
                                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
+                                      borderRadius: BorderRadius.circular(UiRadius.sm),
                                       border: Border.all(
-                                        color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+                                        color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
                                         width: isSelected ? 2 : 1,
                                       ),
                                       boxShadow: isSelected
-                                          ? [BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                                          ? [BoxShadow(color: UiTone.primary.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))]
                                           : [],
                                     ),
                                     child: Column(
@@ -373,7 +375,7 @@ class FloatingCartBar extends StatelessWidget {
                                           style: TextStyle(
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.w900,
-                                            color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                            color: isSelected ? Colors.white : UiTone.ink,
                                           ),
                                         ),
                                       ],
@@ -389,7 +391,7 @@ class FloatingCartBar extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('2. Delivery Time Slot ⏰:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                              const Text('2. Delivery Time Slot ⏰:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
                               Text('Typable & Customizable', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.teal[700])),
                             ],
                           ),
@@ -418,17 +420,17 @@ class FloatingCartBar extends StatelessWidget {
                                 slot = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
                               });
                             },
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: UiTone.ink),
                             decoration: InputDecoration(
                               labelText: 'Or type custom slot (e.g. 06:00 AM - 07:30 AM)',
                               labelStyle: TextStyle(color: Colors.grey[600], fontSize: 11),
-                              prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: Color(0xFF0D7C66)),
+                              prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: UiTone.primary),
                               filled: true,
-                              fillColor: const Color(0xFFF8FAFC),
+                              fillColor: UiTone.shellBackground,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -446,7 +448,7 @@ class FloatingCartBar extends StatelessWidget {
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF0FDF4),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(UiRadius.md),
                                   border: Border.all(color: const Color(0xFF86EFAC)),
                                 ),
                                 child: Column(
@@ -479,7 +481,7 @@ class FloatingCartBar extends StatelessWidget {
                                                 currentAddr,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: UiTone.ink),
                                               ),
                                             ],
                                           ),
@@ -490,11 +492,11 @@ class FloatingCartBar extends StatelessWidget {
                                           },
                                           style: TextButton.styleFrom(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            backgroundColor: const Color(0xFF0D7C66),
+                                            backgroundColor: UiTone.primary,
                                             foregroundColor: Colors.white,
                                             minimumSize: Size.zero,
                                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                                           ),
                                           icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
                                           label: const Text('Change', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -513,13 +515,13 @@ class FloatingCartBar extends StatelessWidget {
                                               padding: const EdgeInsets.only(right: 6),
                                               child: InkWell(
                                                 onTap: () => state.selectActiveAddress(a),
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(UiRadius.xs),
                                                 child: Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                   decoration: BoxDecoration(
-                                                    color: isSel ? const Color(0xFF0D7C66) : Colors.white,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFF86EFAC)),
+                                                    color: isSel ? UiTone.primary : Colors.white,
+                                                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                                                    border: Border.all(color: isSel ? UiTone.primary : const Color(0xFF86EFAC)),
                                                   ),
                                                   child: Row(
                                                     children: [
@@ -530,7 +532,7 @@ class FloatingCartBar extends StatelessWidget {
                                                         style: TextStyle(
                                                           fontSize: 10.5,
                                                           fontWeight: FontWeight.bold,
-                                                          color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                                          color: isSel ? Colors.white : UiTone.ink,
                                                         ),
                                                       ),
                                                     ],
@@ -553,9 +555,9 @@ class FloatingCartBar extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              color: UiTone.shellBackground,
+                              borderRadius: BorderRadius.circular(UiRadius.md),
+                              border: Border.all(color: UiTone.surfaceBorder),
                             ),
                             child: Column(
                               children: [
@@ -589,7 +591,7 @@ class FloatingCartBar extends StatelessWidget {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              backgroundColor: const Color(0xFF0D7C66),
+                              backgroundColor: UiTone.primary,
                               content: Text('🎉 Order ${order.id} Scheduled for ${formatDate(selectedDate)} ($slot)!'),
                             ),
                           );
@@ -597,7 +599,7 @@ class FloatingCartBar extends StatelessWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D7C66),
+                        backgroundColor: UiTone.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
@@ -628,20 +630,20 @@ class FloatingCartBar extends StatelessWidget {
     final isSelected = currentVal == slotTime;
     return InkWell(
       onTap: () => onSelect(slotTime),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(UiRadius.sm),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66).withValues(alpha: 0.1) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0), width: isSelected ? 1.5 : 1),
+          color: isSelected ? UiTone.primary.withValues(alpha: 0.1) : UiTone.shellBackground,
+          borderRadius: BorderRadius.circular(UiRadius.sm),
+          border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder, width: isSelected ? 1.5 : 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(slotTime, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5, color: isSelected ? const Color(0xFF0D7C66) : Colors.black87)),
+            Text(slotTime, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5, color: isSelected ? UiTone.primary : Colors.black87)),
             const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(fontSize: 9.5, color: isSelected ? const Color(0xFF0D7C66) : Colors.grey[600], fontWeight: FontWeight.w600)),
+            Text(subtitle, style: TextStyle(fontSize: 9.5, color: isSelected ? UiTone.primary : Colors.grey[600], fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -654,13 +656,13 @@ class FloatingCartBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 11.5, color: isBold ? const Color(0xFF0F172A) : Colors.grey[700], fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+          Text(label, style: TextStyle(fontSize: 11.5, color: isBold ? UiTone.ink : Colors.grey[700], fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
           Text(
             value,
             style: TextStyle(
               fontSize: 12,
               fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
-              color: isHighlight ? const Color(0xFF10B981) : (isBold ? const Color(0xFF0D7C66) : const Color(0xFF0F172A)),
+              color: isHighlight ? UiTone.secondary : (isBold ? UiTone.primary : UiTone.ink),
             ),
           ),
         ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/category_products_screen.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomePromoCarousel extends StatelessWidget {
   final AppState state;
@@ -21,7 +22,7 @@ class HomePromoCarousel extends StatelessWidget {
       'title': 'Pure A2 Vedic Desi Cow Milk',
       'subtitle': 'Zero preservatives, direct farm dispatch by 6 AM',
       'tag': '100% ORGANIC',
-      'colors': [Color(0xFF0D7C66), Color(0xFF042F2E)],
+      'colors': [UiTone.primary, Color(0xFF042F2E)],
       'btn': 'Subscribe Milk 🥛',
       'cat': 'MILK',
     },
@@ -79,7 +80,7 @@ class HomePromoCarousel extends StatelessWidget {
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(UiRadius.lg),
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -88,14 +89,8 @@ class HomePromoCarousel extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.first.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(UiRadius.lg),
+                      boxShadow: UiShadow.card,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +108,7 @@ class HomePromoCarousel extends StatelessWidget {
                               child: Text(
                                 p['tag'] as String,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: UiTone.surface,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -121,7 +116,7 @@ class HomePromoCarousel extends StatelessWidget {
                             ),
                             const Row(
                               children: [
-                                Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 15),
+                                Icon(Icons.verified_rounded, color: UiTone.secondary, size: 15),
                                 SizedBox(width: 3),
                                 Text(
                                   'Quality Assured',
@@ -141,7 +136,7 @@ class HomePromoCarousel extends StatelessWidget {
                             Text(
                               p['title'] as String,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: UiTone.surface,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 14.5,
                               ),
@@ -165,7 +160,7 @@ class HomePromoCarousel extends StatelessWidget {
                                 Text(
                                   'Guaranteed 06:00 AM Delivery',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: UiTone.surface,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -175,14 +170,9 @@ class HomePromoCarousel extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.15),
-                                    blurRadius: 4,
-                                  ),
-                                ],
+                                color: UiTone.surface,
+                                borderRadius: BorderRadius.circular(UiRadius.xs),
+                                boxShadow: UiShadow.card,
                               ),
                               child: Text(
                                 p['btn'] as String,
@@ -216,7 +206,7 @@ class HomePromoCarousel extends StatelessWidget {
               width: isActive ? 18 : 6,
               height: 5,
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+                color: isActive ? UiTone.primary : const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(10),
               ),
             );

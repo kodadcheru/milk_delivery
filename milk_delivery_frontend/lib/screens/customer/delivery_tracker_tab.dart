@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../theme/ui_tokens.dart';
 import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
@@ -61,7 +62,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final subsCount = subscriptions.length;
 
     return RefreshIndicator(
-      color: const Color(0xFF0D7C66),
+      color: UiTone.primary,
       onRefresh: () => widget.state.reloadAllData(),
       child: SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -79,7 +80,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   children: [
                     Text(
                       'My Bookings & Orders 📦',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: UiTone.ink),
                     ),
                     SizedBox(height: 2),
                     Text(
@@ -104,20 +105,20 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                        color: UiTone.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(UiRadius.sm),
+                        border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.headset_mic_rounded, color: Color(0xFF0D7C66), size: 13),
+                          Icon(Icons.headset_mic_rounded, color: UiTone.primary, size: 13),
                           SizedBox(width: 3),
-                          Text('Support', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          Text('Support', style: TextStyle(color: UiTone.primary, fontSize: 9.5, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -126,16 +127,16 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF10B981)),
+                      color: UiTone.secondary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
+                      border: Border.all(color: UiTone.secondary),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, color: Color(0xFF10B981), size: 6),
+                        Icon(Icons.circle, color: UiTone.secondary, size: 6),
                         SizedBox(width: 3),
-                        Text('LIVE', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9, fontWeight: FontWeight.w900)),
+                        Text('LIVE', style: TextStyle(color: UiTone.primary, fontSize: 9, fontWeight: FontWeight.w900)),
                       ],
                     ),
                   ),
@@ -213,14 +214,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final isSelected = _selectedFilterIndex == index;
     return InkWell(
       onTap: () => setState(() => _selectedFilterIndex = index),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(UiRadius.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
+          borderRadius: BorderRadius.circular(UiRadius.sm),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+            color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
           ),
         ),
         child: Text(
@@ -243,14 +244,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
           ),
         ),
         const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-          decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(8)),
-          child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+          decoration: BoxDecoration(color: UiTone.surfaceBorder, borderRadius: BorderRadius.circular(UiRadius.xs)),
+          child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: UiTone.softText)),
         ),
       ],
     );
@@ -264,10 +265,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
       child: InkWell(
         onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(UiRadius.md),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -284,26 +285,26 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(7),
+                          color: UiTone.accentBlue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
                         ),
                         child: Text(
                           order.id,
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, color: Color(0xFF0284C7)),
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, color: UiTone.accentBlue),
                         ),
                       ),
                       const SizedBox(width: 5),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE11D48).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          color: UiTone.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.flash_on_rounded, color: Color(0xFFE11D48), size: 11),
-                            Text('EXPRESS', style: TextStyle(color: Color(0xFFE11D48), fontSize: 9, fontWeight: FontWeight.bold)),
+                            Icon(Icons.flash_on_rounded, color: UiTone.error, size: 11),
+                            Text('EXPRESS', style: TextStyle(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -314,8 +315,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: (isDelivered ? const Color(0xFF10B981) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(7),
+                    color: (isDelivered ? UiTone.secondary : UiTone.warning).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
                   ),
                   child: Text(
                     isDelivered ? 'DELIVERED ✅' : (isOut ? 'OUT FOR DELIVERY 🛵' : 'PREPARING 👨‍🍳'),
@@ -324,7 +325,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.bold,
-                      color: isDelivered ? const Color(0xFF0D7C66) : const Color(0xFFB45309),
+                      color: isDelivered ? UiTone.primary : const Color(0xFFB45309),
                     ),
                   ),
                 ),
@@ -336,18 +337,18 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF0D7C66).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+                color: UiTone.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(UiRadius.xs),
+                border: Border.all(color: UiTone.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.event_available_rounded, size: 14, color: Color(0xFF0D7C66)),
+                  const Icon(Icons.event_available_rounded, size: 14, color: UiTone.primary),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       '📅 Scheduled: ${order.deliveryDate} • ⏰ ${order.deliverySlot}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary),
                     ),
                   ),
                 ],
@@ -363,9 +364,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                color: UiTone.shellBackground,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+                border: Border.all(color: UiTone.surfaceBorder),
               ),
               child: Column(
                 children: [
@@ -376,7 +377,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         children: [
                           Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
+                            decoration: BoxDecoration(color: UiTone.surface, borderRadius: BorderRadius.circular(UiRadius.xs)),
                             child: Text(
                               _getCategoryEmoji(item.product.category),
                               style: const TextStyle(fontSize: 14),
@@ -391,7 +392,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           ),
                           Text(
                             '₹${item.totalPrice.toStringAsFixed(0)}',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF0F172A)),
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: UiTone.ink),
                           ),
                         ],
                       ),
@@ -407,7 +408,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       ),
                       Text(
                         '₹${order.totalAmount.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0D7C66)),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: UiTone.primary),
                       ),
                     ],
                   ),
@@ -422,17 +423,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                    color: UiTone.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                    border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.pin_rounded, color: Color(0xFF0D7C66), size: 14),
+                      const Icon(Icons.pin_rounded, color: UiTone.primary, size: 14),
                       const SizedBox(width: 4),
                       Text(
                         'OTP: ${order.deliveryOtp}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF0D7C66)),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary),
                       ),
                     ],
                   ),
@@ -454,15 +455,15 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
+                color: UiTone.surfaceMuted,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
               ),
               child: Row(
                 children: [
                   const CircleAvatar(
                     radius: 14,
-                    backgroundColor: Color(0xFF0D7C66),
-                    child: Icon(Icons.person, color: Colors.white, size: 16),
+                    backgroundColor: UiTone.primary,
+                    child: Icon(Icons.person, color: UiTone.surface, size: 16),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -475,7 +476,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.phone, color: Color(0xFF0D7C66), size: 20),
+                    icon: const Icon(Icons.phone, color: UiTone.primary, size: 20),
                     onPressed: () => _callDriver(order.driverPhone),
                     tooltip: 'Call Driver',
                   ),
@@ -508,9 +509,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 icon: const Icon(Icons.satellite_alt_rounded, size: 16),
                 label: const Text('Track Live Driver on Map 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                   elevation: 0,
                 ),
               ),
@@ -530,10 +531,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
       child: InkWell(
         onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(UiRadius.md),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -541,7 +542,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                     child: Image.network(
                       product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
                       width: 50,
@@ -550,7 +551,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       errorBuilder: (c, e, s) => Container(
                         width: 50,
                         height: 50,
-                        color: const Color(0xFFF1F5F9),
+                        color: UiTone.surfaceMuted,
                         child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
                       ),
                     ),
@@ -578,7 +579,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           'Date: ${task.deliveryDate}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w600),
+                          style: const TextStyle(color: UiTone.primary, fontSize: 10.5, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -587,8 +588,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: (isDelivered ? const Color(0xFF10B981) : Colors.orange).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(7),
+                      color: (isDelivered ? UiTone.secondary : Colors.orange).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: Text(
                       isDelivered ? 'DELIVERED ✅' : 'SCHEDULED ⏰',
@@ -597,7 +598,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        color: isDelivered ? const Color(0xFF0D7C66) : Colors.orange[900],
+                        color: isDelivered ? UiTone.primary : Colors.orange[900],
                       ),
                     ),
                   ),
@@ -608,9 +609,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 const Divider(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.camera_alt_rounded, size: 14, color: Color(0xFF10B981)),
+                    const Icon(Icons.camera_alt_rounded, size: 14, color: UiTone.secondary),
                     const SizedBox(width: 4),
-                    const Text('Doorstep Photo Proof Uploaded', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                    const Text('Doorstep Photo Proof Uploaded', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
                     const Spacer(),
                     Text(task.deliveredAt ?? '06:14 AM', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                   ],
@@ -640,11 +641,11 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       );
                     },
-                    icon: const Icon(Icons.location_searching_rounded, size: 16, color: Color(0xFF0D7C66)),
-                    label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66))),
+                    icon: const Icon(Icons.location_searching_rounded, size: 16, color: UiTone.primary),
+                    label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: const BorderSide(color: UiTone.primary, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
@@ -685,10 +686,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         children: [
           CircleAvatar(
             radius: 9,
-            backgroundColor: isDone ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+            backgroundColor: isDone ? UiTone.primary : const Color(0xFFCBD5E1),
             child: isDone
                 ? const Icon(Icons.check, size: 10, color: Colors.white)
-                : Text('$stepNumber', style: const TextStyle(fontSize: 8.5, color: Colors.white, fontWeight: FontWeight.bold)),
+                : Text('$stepNumber', style: const TextStyle(fontSize: 8.5, color: UiTone.surface, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 2),
           Text(
@@ -699,7 +700,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             style: TextStyle(
               fontSize: 9,
               fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
-              color: isDone ? const Color(0xFF0F172A) : Colors.grey,
+              color: isDone ? UiTone.ink : Colors.grey,
             ),
           ),
         ],
@@ -713,7 +714,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       child: Container(
         height: 3,
         margin: const EdgeInsets.only(bottom: 12),
-        color: isDone ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+        color: isDone ? UiTone.primary : UiTone.surfaceBorder,
       ),
     );
   }
@@ -724,9 +725,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       padding: const EdgeInsets.all(24),
       margin: const EdgeInsets.only(top: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: UiTone.shellBackground,
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        border: Border.all(color: UiTone.surfaceBorder),
       ),
       child: Column(
         children: [
@@ -740,9 +741,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             ElevatedButton(
               onPressed: onAction,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
+                backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               ),
               child: Text(actionLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             ),

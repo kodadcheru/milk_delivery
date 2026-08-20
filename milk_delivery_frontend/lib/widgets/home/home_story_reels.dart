@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeStoryReels extends StatelessWidget {
   const HomeStoryReels({super.key});
@@ -48,7 +49,7 @@ class HomeStoryReels extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.darkSlate,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          border: Border.all(color: UiTone.surface.withValues(alpha: 0.15)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -57,7 +58,7 @@ class HomeStoryReels extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: UiTone.surface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -68,12 +69,7 @@ class HomeStoryReels extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: AppTheme.emeraldGradient,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryMint.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                  ),
-                ],
+                boxShadow: UiShadow.card,
               ),
               alignment: Alignment.center,
               child: Text(story['emoji']!, style: const TextStyle(fontSize: 36)),
@@ -82,7 +78,7 @@ class HomeStoryReels extends StatelessWidget {
             Text(
               story['title']!,
               style: const TextStyle(
-                color: Colors.white,
+                color: UiTone.surface,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.5,
@@ -93,7 +89,7 @@ class HomeStoryReels extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: AppTheme.primaryMint.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(UiRadius.sm),
                 border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.4)),
               ),
               child: Text(
@@ -127,7 +123,7 @@ class HomeStoryReels extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryMint,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                   elevation: 0,
                 ),
                 child: const Text(
@@ -174,13 +170,7 @@ class HomeStoryReels extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryMint.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: UiShadow.card,
                   ),
                   padding: const EdgeInsets.all(2.5),
                   child: Container(

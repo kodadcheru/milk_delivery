@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:url_launcher/url_launcher.dart';
@@ -134,25 +135,25 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: UiTone.ink,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: UiTone.surface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Live GPS Delivery Radar', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-            Text('🟢 Real-Time Driver Tracking Active', style: TextStyle(color: Color(0xFF10B981), fontSize: 10.5, fontWeight: FontWeight.w600)),
+            Text('Live GPS Delivery Radar', style: TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('🟢 Real-Time Driver Tracking Active', style: TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600)),
           ],
         ),
         actions: [
           IconButton(
             tooltip: 'Live Support',
-            icon: const Icon(Icons.support_agent_rounded, color: Colors.white),
+            icon: const Icon(Icons.support_agent_rounded, color: UiTone.surface),
             onPressed: () {
               Navigator.push(
                 context,
@@ -200,7 +201,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                 polylineId: const PolylineId('route'),
                 points: _routePoints,
                 width: 5,
-                color: const Color(0xFF0D7C66),
+                color: UiTone.primary,
               ),
             },
           ),
@@ -213,11 +214,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.95),
+                color: UiTone.ink.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
-                ],
+                boxShadow: UiShadow.elevated,
                 border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
               ),
               child: Row(
@@ -228,10 +227,10 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
+                          color: UiTone.secondary.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(UiRadius.sm),
                         ),
-                        child: const Icon(Icons.electric_bolt_rounded, color: Color(0xFF10B981), size: 24),
+                        child: const Icon(Icons.electric_bolt_rounded, color: UiTone.secondary, size: 24),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -239,7 +238,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                         children: [
                           Text(
                             _distanceKm <= 0.1 ? 'Arrived at Doorstep!' : 'Arriving in $_etaMinutes mins',
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                            style: const TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -253,13 +252,13 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66),
+                      color: UiTone.primary,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
                       children: [
                         const Text('OTP', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w800)),
-                        Text(widget.deliveryOtp, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                        Text(widget.deliveryOtp, style: const TextStyle(color: UiTone.surface, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                       ],
                     ),
                   ),
@@ -276,11 +275,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             child: Container(
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: UiTone.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black26, blurRadius: 18, offset: Offset(0, -4)),
-                ],
+                boxShadow: UiShadow.floating,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -302,15 +299,15 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      color: UiTone.shellBackground,
+                      borderRadius: BorderRadius.circular(UiRadius.md),
+                      border: Border.all(color: UiTone.surfaceBorder),
                     ),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 22,
-                          backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.15),
+                          backgroundColor: UiTone.primary.withValues(alpha: 0.15),
                           child: const Text('👨‍🌾', style: TextStyle(fontSize: 22)),
                         ),
                         const SizedBox(width: 12),
@@ -329,7 +326,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
+                                  const Icon(Icons.verified_rounded, color: UiTone.secondary, size: 14),
                                 ],
                               ),
                               const SizedBox(height: 2),
@@ -345,17 +342,15 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                         ),
                         InkWell(
                           onTap: _callDriver,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(UiRadius.sm),
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(color: const Color(0xFF10B981).withValues(alpha: 0.35), blurRadius: 6),
-                              ],
+                              color: UiTone.secondary,
+                              borderRadius: BorderRadius.circular(UiRadius.sm),
+                              boxShadow: UiShadow.glowPrimary,
                             ),
-                            child: const Icon(Icons.call_rounded, color: Colors.white, size: 18),
+                            child: const Icon(Icons.call_rounded, color: UiTone.surface, size: 18),
                           ),
                         ),
                       ],
@@ -366,7 +361,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                   // Delivery Location Strip
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: Color(0xFF0D7C66), size: 18),
+                      const Icon(Icons.location_on_rounded, color: UiTone.primary, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -393,7 +388,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: isCompleted ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+            color: isCompleted ? UiTone.primary : UiTone.surfaceBorder,
             shape: BoxShape.circle,
           ),
           child: Icon(Icons.check, size: 10, color: isCompleted ? Colors.white : Colors.grey),
@@ -404,7 +399,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
           style: TextStyle(
             fontSize: 9.5,
             fontWeight: FontWeight.bold,
-            color: isCompleted ? const Color(0xFF0D7C66) : Colors.grey,
+            color: isCompleted ? UiTone.primary : Colors.grey,
           ),
         ),
       ],
@@ -415,7 +410,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     return Expanded(
       child: Container(
         height: 3,
-        color: isCompleted ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+        color: isCompleted ? UiTone.primary : UiTone.surfaceBorder,
         margin: const EdgeInsets.only(bottom: 14),
       ),
     );

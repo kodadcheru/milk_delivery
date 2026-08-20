@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import '../../providers/app_state.dart';
 
 class DriverProfileTab extends StatelessWidget {
@@ -50,18 +51,12 @@ class DriverProfileTab extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                colors: [UiTone.ink, Color(0xFF1E293B)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(UiRadius.xl),
+              boxShadow: UiShadow.card,
             ),
             child: Column(
               children: [
@@ -71,29 +66,29 @@ class DriverProfileTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
+                        color: UiTone.secondary,
                         shape: BoxShape.circle,
                       ),
                       child: const CircleAvatar(
                         radius: 40,
-                        backgroundColor: Color(0xFF0D7C66),
+                        backgroundColor: UiTone.primary,
                         child: Text('🛵', style: TextStyle(fontSize: 38)),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
+                        color: UiTone.secondary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.check, size: 14, color: Colors.white),
+                      child: const Icon(Icons.check, size: 14, color: UiTone.surface),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
                 Text(
                   driverName,
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: UiTone.surface, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -104,13 +99,13 @@ class DriverProfileTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF10B981)),
+                    color: UiTone.secondary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    border: Border.all(color: UiTone.secondary),
                   ),
                   child: Text(
                     '🛵 Verified Delivery Partner • ID #$driverId',
-                    style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11),
+                    style: const TextStyle(color: UiTone.secondary, fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                 ),
               ],
@@ -123,9 +118,9 @@ class DriverProfileTab extends StatelessWidget {
             children: [
               _buildMetricCard('4.9 ★', 'Customer Rating', Icons.star_rounded, Colors.amber),
               const SizedBox(width: 10),
-              _buildMetricCard('99.2%', 'On-Time Rate', Icons.timer_rounded, const Color(0xFF10B981)),
+              _buildMetricCard('99.2%', 'On-Time Rate', Icons.timer_rounded, UiTone.secondary),
               const SizedBox(width: 10),
-              _buildMetricCard(salaryText, 'Monthly Salary', Icons.payments_rounded, const Color(0xFF0D7C66)),
+              _buildMetricCard(salaryText, 'Monthly Salary', Icons.payments_rounded, UiTone.primary),
             ],
           ),
           const SizedBox(height: 20),
@@ -134,7 +129,7 @@ class DriverProfileTab extends StatelessWidget {
           _buildSectionHeader('Route, Shift & Employment Details'),
           Card(
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -158,7 +153,7 @@ class DriverProfileTab extends StatelessWidget {
           _buildSectionHeader('Dispatch Hub & Emergency Support'),
           Card(
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -185,7 +180,7 @@ class DriverProfileTab extends StatelessWidget {
               label: const Text('Log Out of Partner Account', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.redAccent),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               ),
             ),
           ),
@@ -200,21 +195,15 @@ class DriverProfileTab extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: UiTone.surface,
+          borderRadius: BorderRadius.circular(UiRadius.md),
+          boxShadow: UiShadow.card,
         ),
         child: Column(
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A))),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: UiTone.ink)),
             const SizedBox(height: 2),
             Text(label, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 10)),
           ],
@@ -230,7 +219,7 @@ class DriverProfileTab extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8, left: 4),
         child: Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: UiTone.ink),
         ),
       ),
     );
@@ -240,7 +229,7 @@ class DriverProfileTab extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: const Color(0xFF0D7C66), size: 20),
+        Icon(icon, color: UiTone.primary, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -248,7 +237,7 @@ class DriverProfileTab extends StatelessWidget {
             children: [
               Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
               const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
             ],
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ui_tokens.dart';
 import '../../widgets/scratch_card_modal.dart';
 
 class WalletTab extends StatefulWidget {
@@ -31,7 +32,7 @@ class _WalletTabState extends State<WalletTab> {
           padding: const EdgeInsets.all(24),
           decoration: const BoxDecoration(
             color: AppTheme.darkSlate,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -60,7 +61,7 @@ class _WalletTabState extends State<WalletTab> {
               const SizedBox(height: 4),
               const Text(
                 'Prepaid wallet balance is auto-debited only after daily doorstep drop',
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                style: TextStyle(color: UiTone.softText, fontSize: 12),
               ),
               const SizedBox(height: 16),
 
@@ -83,7 +84,7 @@ class _WalletTabState extends State<WalletTab> {
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(UiRadius.md),
                   border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.4)),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -124,7 +125,7 @@ class _WalletTabState extends State<WalletTab> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryMint,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                     elevation: 0,
                   ),
                   child: const Row(
@@ -152,12 +153,12 @@ class _WalletTabState extends State<WalletTab> {
         ctrl.text = amount.toStringAsFixed(0);
         setState(() {});
       },
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(UiRadius.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(UiRadius.sm),
           border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
         ),
         child: Column(
@@ -198,15 +199,9 @@ class _WalletTabState extends State<WalletTab> {
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 gradient: AppTheme.holographicCardGradient,
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(UiRadius.xl),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1E1B4B).withValues(alpha: 0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+                boxShadow: UiShadow.elevated,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +215,7 @@ class _WalletTabState extends State<WalletTab> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: AppTheme.accentAmber.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(UiRadius.xs),
                               border: Border.all(color: AppTheme.accentAmber),
                             ),
                             child: const Row(
@@ -240,7 +235,7 @@ class _WalletTabState extends State<WalletTab> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryMint.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(UiRadius.sm),
                           border: Border.all(color: AppTheme.primaryMint),
                         ),
                         child: const Row(
@@ -259,7 +254,7 @@ class _WalletTabState extends State<WalletTab> {
                   const SizedBox(height: 18),
                   const Text(
                     'AVAILABLE PREPAID MILK BALANCE',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                    style: TextStyle(color: UiTone.softText, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -279,7 +274,7 @@ class _WalletTabState extends State<WalletTab> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(UiRadius.sm),
                         ),
                         child: Text(
                           estDays > 0 ? '🗓️ ~$estDays Days Milk Covered' : '⚠️ Top Up Needed',
@@ -299,7 +294,7 @@ class _WalletTabState extends State<WalletTab> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryMint,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             elevation: 0,
                           ),
@@ -329,16 +324,10 @@ class _WalletTabState extends State<WalletTab> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                color: UiTone.surface,
+                borderRadius: BorderRadius.circular(UiRadius.lg),
                 border: Border.all(color: AppTheme.borderSubtle),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                boxShadow: UiShadow.card,
               ),
               child: Row(
                 children: [
@@ -347,7 +336,7 @@ class _WalletTabState extends State<WalletTab> {
                     height: 44,
                     decoration: BoxDecoration(
                       color: AppTheme.primaryMint.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
                     ),
                     alignment: Alignment.center,
                     child: const Text('💰', style: TextStyle(fontSize: 22)),
@@ -407,8 +396,8 @@ class _WalletTabState extends State<WalletTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  color: UiTone.surface,
+                  borderRadius: BorderRadius.circular(UiRadius.lg),
                   border: Border.all(color: AppTheme.borderSubtle),
                 ),
                 child: const Column(
@@ -435,8 +424,8 @@ class _WalletTabState extends State<WalletTab> {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
+                      color: UiTone.surface,
+                      borderRadius: BorderRadius.circular(UiRadius.lg),
                       border: Border.all(color: AppTheme.borderSubtle),
                     ),
                     child: Row(
@@ -447,13 +436,13 @@ class _WalletTabState extends State<WalletTab> {
                           decoration: BoxDecoration(
                             color: isCredit
                                 ? AppTheme.primaryMint.withValues(alpha: 0.12)
-                                : const Color(0xFFEF4444).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
+                                : UiTone.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
                           ),
                           alignment: Alignment.center,
                           child: Icon(
                             isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                            color: isCredit ? AppTheme.primaryMint : const Color(0xFFEF4444),
+                            color: isCredit ? AppTheme.primaryMint : UiTone.error,
                             size: 18,
                           ),
                         ),
@@ -477,7 +466,7 @@ class _WalletTabState extends State<WalletTab> {
                         Text(
                           '${isCredit ? '+' : '-'}₹${t.amount.toStringAsFixed(2)}',
                           style: TextStyle(
-                            color: isCredit ? AppTheme.primaryMint : const Color(0xFFEF4444),
+                            color: isCredit ? AppTheme.primaryMint : UiTone.error,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                           ),
@@ -500,12 +489,12 @@ class _WalletTabState extends State<WalletTab> {
         AppTheme.hapticLight();
         setState(() => _selectedFilter = filterKey);
       },
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(UiRadius.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primaryTeal : AppTheme.bgSurfaceMuted,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(UiRadius.sm),
         ),
         child: Text(
           label,

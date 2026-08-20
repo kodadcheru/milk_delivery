@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/subscription_model.dart';
 import '../../providers/app_state.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeActiveSubscriptionCard extends StatelessWidget {
   final AppState state;
@@ -31,7 +32,7 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
                   const Expanded(
                     child: Row(
                       children: [
-                        Icon(Icons.autorenew_rounded, color: Color(0xFF0D7C66), size: 16),
+                        Icon(Icons.autorenew_rounded, color: UiTone.primary, size: 16),
                         SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -48,13 +49,13 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+                      color: UiTone.secondary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: const Text(
                       'Next: Tomorrow 6:00 AM',
                       style: TextStyle(
-                        color: Color(0xFF0D7C66),
+                        color: UiTone.primary,
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -69,8 +70,8 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
+                      color: UiTone.surfaceMuted,
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
                     ),
                     alignment: Alignment.center,
                     child: Text(sub.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 24)),

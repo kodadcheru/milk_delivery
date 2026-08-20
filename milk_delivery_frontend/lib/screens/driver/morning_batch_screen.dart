@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
@@ -166,7 +167,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('✅ Stop #$_currentStopIndex Delivered! Photo proof saved & wallet debited.'),
           ),
         );
@@ -177,7 +178,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: UiTone.shellBackground,
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +187,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             Text('05:00 AM – 07:00 AM • Fuel-Optimized Route', style: TextStyle(fontSize: 10.5, color: Colors.white70)),
           ],
         ),
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -223,19 +224,17 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
-              ],
+              color: UiTone.surface,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: UiTone.surfaceBorder),
+              boxShadow: UiShadow.card,
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.warehouse_rounded, color: Colors.white, size: 24),
+                  decoration: BoxDecoration(color: UiTone.ink, borderRadius: BorderRadius.circular(UiRadius.sm)),
+                  child: const Icon(Icons.warehouse_rounded, color: UiTone.surface, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -247,11 +246,11 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                           Flexible(
                             child: Text(
                               _activeHub.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.verified, color: Color(0xFF10B981), size: 14),
+                          const Icon(Icons.verified, color: UiTone.secondary, size: 14),
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -259,7 +258,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                       const SizedBox(height: 4),
                       Text(
                         _activeHub.managerName,
-                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF0D7C66), fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -273,15 +272,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: UiGradient.primary,
               borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
+              boxShadow: UiShadow.glowPrimary,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,13 +285,13 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                     const Expanded(
                       child: Row(
                         children: [
-                          Icon(Icons.eco_rounded, color: Colors.white, size: 18),
+                          Icon(Icons.eco_rounded, color: UiTone.surface, size: 18),
                           SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               'Hub Shortest Path Optimized',
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
+                              style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 12.5),
                             ),
                           ),
                         ],
@@ -307,8 +300,8 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                      child: const Text('ZERO BACKTRACKING', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: const Text('ZERO BACKTRACKING', style: TextStyle(color: UiTone.surface, fontSize: 9, fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
@@ -337,11 +330,11 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 child: Text(
                   '📦 Crate Pre-Load Checklist:',
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
                 ),
               ),
               const SizedBox(width: 8),
-              Text('$totalUnits Total Units', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0D7C66))),
+              Text('$totalUnits Total Units', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: UiTone.primary)),
             ],
           ),
           const SizedBox(height: 8),
@@ -365,14 +358,14 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                     }
                   });
                 },
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(UiRadius.sm),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: isChecked ? Colors.white : const Color(0xFFFFF1F2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                     border: Border.all(
-                      color: isChecked ? const Color(0xFF10B981) : const Color(0xFFFDA4AF),
+                      color: isChecked ? UiTone.secondary : const Color(0xFFFDA4AF),
                       width: isChecked ? 1.5 : 1,
                     ),
                   ),
@@ -384,7 +377,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(crate.productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                            Text(crate.productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
                             Text('${crate.crateLabel} • ${crate.unitVolume}', style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
                           ],
                         ),
@@ -392,18 +385,18 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
+                          color: UiTone.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
                         ),
                         child: Text(
                           '${crate.totalUnits} Units',
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF0D7C66)),
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: UiTone.primary),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         isChecked ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                        color: isChecked ? const Color(0xFF10B981) : Colors.grey,
+                        color: isChecked ? UiTone.secondary : Colors.grey,
                         size: 20,
                       ),
                     ],
@@ -423,7 +416,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 setState(() => _batchStage = 1);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    backgroundColor: Color(0xFF0D7C66),
+                    backgroundColor: UiTone.primary,
                     content: Text('🚀 Morning Shift Started! Navigating to Stop #1 in shortest sequence.'),
                   ),
                 );
@@ -434,7 +427,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
+                backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 elevation: 0,
@@ -467,17 +460,17 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             children: [
               Text(
                 'Stop ${_currentStopIndex + 1} of ${stops.length}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: UiTone.ink),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  color: UiTone.secondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
                 ),
                 child: Text(
                   '${(progress * 100).toInt()}% Done',
-                  style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -487,8 +480,8 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+              backgroundColor: UiTone.surfaceBorder,
+              valueColor: const AlwaysStoppedAnimation<Color>(UiTone.secondary),
               minHeight: 6,
             ),
           ),
@@ -498,16 +491,10 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF0D7C66), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: UiTone.surface,
+              borderRadius: BorderRadius.circular(UiRadius.lg),
+              border: Border.all(color: UiTone.primary, width: 2),
+              boxShadow: UiShadow.elevated,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,12 +506,12 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D7C66),
-                        borderRadius: BorderRadius.circular(8),
+                        color: UiTone.primary,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
                       child: Text(
                         'CURRENT STOP #${_currentStopIndex + 1}',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11),
+                        style: const TextStyle(color: UiTone.surface, fontWeight: FontWeight.w900, fontSize: 11),
                       ),
                     ),
                     Text(
@@ -540,7 +527,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                      backgroundColor: UiTone.primary.withValues(alpha: 0.12),
                       child: const Text('🏡', style: TextStyle(fontSize: 18)),
                     ),
                     const SizedBox(width: 10),
@@ -550,7 +537,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                         children: [
                           Text(
                             currentStop.customerName,
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: UiTone.ink),
                           ),
                           Text(
                             currentStop.customerPhone,
@@ -564,10 +551,10 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                       icon: const Icon(Icons.phone_rounded, size: 14),
                       label: const Text('Call'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: UiTone.secondary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                       ),
                     ),
                   ],
@@ -578,9 +565,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    color: UiTone.shellBackground,
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    border: Border.all(color: UiTone.surfaceBorder),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,7 +575,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.place_rounded, color: Color(0xFF0D7C66), size: 16),
+                          const Icon(Icons.place_rounded, color: UiTone.primary, size: 16),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -621,7 +608,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                     icon: const Icon(Icons.navigation_rounded, size: 15),
                     label: const Text('Turn-by-Turn GPS Navigation 🗺️', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
+                      backgroundColor: UiTone.accentBlue,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -633,7 +620,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 // Items to Drop
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: UiTone.surfaceMuted, borderRadius: BorderRadius.circular(10)),
                   child: Row(
                     children: [
                       Text(currentStop.subscriptionDetail?.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 22)),
@@ -653,7 +640,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.08),
+                    color: UiTone.accentBlue.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -706,9 +693,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                       style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                       elevation: 0,
                     ),
                   ),
@@ -719,7 +706,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           const SizedBox(height: 20),
 
           // ── Full Route Stops Timeline ──
-          const Text('Optimized Morning Route Sequence:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A))),
+          const Text('Optimized Morning Route Sequence:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
           const SizedBox(height: 8),
 
           ListView.separated(
@@ -736,11 +723,11 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isCurrent
-                      ? const Color(0xFF0D7C66).withValues(alpha: 0.08)
-                      : (isCompleted ? const Color(0xFFF1F5F9) : Colors.white),
-                  borderRadius: BorderRadius.circular(12),
+                      ? UiTone.primary.withValues(alpha: 0.08)
+                      : (isCompleted ? UiTone.surfaceMuted : Colors.white),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                   border: Border.all(
-                    color: isCurrent ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+                    color: isCurrent ? UiTone.primary : UiTone.surfaceBorder,
                     width: isCurrent ? 1.5 : 1,
                   ),
                 ),
@@ -749,11 +736,11 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                     CircleAvatar(
                       radius: 12,
                       backgroundColor: isCompleted
-                          ? const Color(0xFF10B981)
-                          : (isCurrent ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1)),
+                          ? UiTone.secondary
+                          : (isCurrent ? UiTone.primary : const Color(0xFFCBD5E1)),
                       child: isCompleted
-                          ? const Icon(Icons.check, color: Colors.white, size: 14)
-                          : Text('${idx + 1}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ? const Icon(Icons.check, color: UiTone.surface, size: 14)
+                          : Text('${idx + 1}', style: const TextStyle(color: UiTone.surface, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -770,7 +757,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
-                        color: isCompleted ? const Color(0xFF0D7C66) : (isCurrent ? const Color(0xFF0284C7) : Colors.grey),
+                        color: isCompleted ? UiTone.primary : (isCurrent ? UiTone.accentBlue : Colors.grey),
                       ),
                     ),
                   ],
@@ -797,12 +784,12 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           // Celebration Icon
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-            child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
+            decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
+            child: const Icon(Icons.check_rounded, color: UiTone.surface, size: 48),
           ),
           const SizedBox(height: 16),
 
-          const Text('Morning Batch Completed! 🎉', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const Text('Morning Batch Completed! 🎉', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: UiTone.ink)),
           const SizedBox(height: 4),
           const Text('All morning subscriptions delivered 100% on time.', style: TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 20),
@@ -811,18 +798,18 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
+              color: UiTone.ink,
+              borderRadius: BorderRadius.circular(UiRadius.md),
             ),
             child: Row(
               children: [
-                const Icon(Icons.warehouse_rounded, color: Colors.white, size: 24),
+                const Icon(Icons.warehouse_rounded, color: UiTone.surface, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Return to ${_activeHub.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('Return to ${_activeHub.name}', style: const TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 13)),
                       Text('Deposit empty crates & $_totalBottlesCollected collected glass bottles', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                     ],
                   ),
@@ -836,9 +823,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: UiTone.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: Column(
               children: [
@@ -856,7 +843,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Shift Attendance Status', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5)),
-                    Text('VERIFIED BY HUB ✅', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0D7C66))),
+                    Text('VERIFIED BY HUB ✅', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.primary)),
                   ],
                 ),
               ],
@@ -871,9 +858,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
+                backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
               ),
               child: const Text('Finish Batch & Return to Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             ),
@@ -886,7 +873,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   Widget _buildTelemetryColumn(String val, String label) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
+        Text(val, style: const TextStyle(color: UiTone.surface, fontSize: 15, fontWeight: FontWeight.w900)),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
       ],
     );

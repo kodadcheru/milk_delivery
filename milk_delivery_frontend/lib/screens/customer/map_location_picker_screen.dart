@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../providers/app_state.dart';
@@ -105,7 +106,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              backgroundColor: Color(0xFF0D7C66),
+              backgroundColor: UiTone.primary,
               duration: Duration(seconds: 2),
               content: Text('📍 Centered on your high-precision device GPS!'),
             ),
@@ -186,7 +187,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: const Color(0xFF0D7C66),
+          backgroundColor: UiTone.primary,
           content: Text('✅ Delivery address updated to: $formatted'),
         ),
       );
@@ -196,7 +197,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: UiTone.ink,
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -245,16 +246,10 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                           constraints: const BoxConstraints(maxWidth: 240),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppTheme.darkSlate,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.6), width: 1.2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            color: UiTone.ink,
+                            borderRadius: BorderRadius.circular(UiRadius.lg),
+                            border: Border.all(color: UiTone.primary.withValues(alpha: 0.6), width: 1.2),
+                            boxShadow: UiShadow.elevated,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -263,21 +258,16 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                                 const SizedBox(
                                   width: 12,
                                   height: 12,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryMint),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary),
                                 )
                               else
                                 Container(
                                   width: 8,
                                   height: 8,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryMint,
+                                    color: UiTone.primary,
                                     shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.primaryMint.withValues(alpha: 0.8),
-                                        blurRadius: 6,
-                                      ),
-                                    ],
+                                    boxShadow: UiShadow.glowPrimary,
                                   ),
                                 ),
                               const SizedBox(width: 8),
@@ -287,7 +277,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: UiTone.surface,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.2,
@@ -301,7 +291,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                         const Icon(
                           Icons.location_pin,
                           size: 46,
-                          color: Color(0xFFE11D48),
+                          color: UiTone.error,
                         ),
                       ],
                     ),
@@ -315,22 +305,17 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                         height: _isDragging ? 32 : 24,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppTheme.primaryMint.withValues(alpha: _isDragging ? 0.25 : 0.15),
-                          border: Border.all(color: AppTheme.primaryMint, width: 1),
+                          color: UiTone.primary.withValues(alpha: _isDragging ? 0.25 : 0.15),
+                          border: Border.all(color: UiTone.primary, width: 1),
                         ),
                       ),
                       Container(
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryMint,
+                          color: UiTone.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryMint.withValues(alpha: 0.9),
-                              blurRadius: 4,
-                            ),
-                          ],
+                          boxShadow: UiShadow.glowPrimary,
                         ),
                       ),
                     ],
@@ -348,20 +333,14 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      color: UiTone.surface,
+                      borderRadius: BorderRadius.circular(UiRadius.md),
+                      boxShadow: UiShadow.elevated,
                     ),
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF0F172A)),
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: UiTone.ink),
                           onPressed: () => Navigator.pop(context),
                         ),
                         Expanded(
@@ -382,7 +361,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                             child: SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7C66)),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary),
                             ),
                           )
                         else if (_searchController.text.isNotEmpty)
@@ -396,7 +375,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                         else
                           const Padding(
                             padding: EdgeInsets.only(right: 12),
-                            child: Icon(Icons.search_rounded, color: Color(0xFF0D7C66), size: 22),
+                            child: Icon(Icons.search_rounded, color: UiTone.primary, size: 22),
                           ),
                       ],
                     ),
@@ -407,11 +386,9 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                     Container(
                       margin: const EdgeInsets.only(top: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 6)),
-                        ],
+                        color: UiTone.surface,
+                        borderRadius: BorderRadius.circular(UiRadius.md),
+                        boxShadow: UiShadow.elevated,
                       ),
                       child: ListView.separated(
                         shrinkWrap: true,
@@ -421,7 +398,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                         itemBuilder: (ctx, idx) {
                           final place = _searchResults[idx];
                           return ListTile(
-                            leading: const Icon(Icons.place_outlined, color: Color(0xFF0D7C66)),
+                            leading: const Icon(Icons.place_outlined, color: UiTone.primary),
                             title: Text(
                               place['short_title'] ?? '',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -449,15 +426,15 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
             child: FloatingActionButton.extended(
               heroTag: 'use_current_gps',
               onPressed: _isLocating ? null : _useCurrentDeviceLocation,
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF0D7C66),
+              backgroundColor: UiTone.surface,
+              foregroundColor: UiTone.primary,
               elevation: 4,
               icon: _isLocating
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7C66)))
-                  : const Icon(Icons.my_location_rounded, size: 18, color: Color(0xFF0D7C66)),
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary))
+                  : const Icon(Icons.my_location_rounded, size: 18, color: UiTone.primary),
               label: Text(
                 _isLocating ? 'Locating...' : 'Use Current Location 📍',
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: UiTone.ink),
               ),
             ),
           ),
@@ -469,15 +446,9 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: UiTone.surface,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 18,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
+                boxShadow: UiShadow.floating,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -503,10 +474,10 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                          color: UiTone.primary.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.location_on_rounded, color: Color(0xFF0D7C66), size: 22),
+                        child: const Icon(Icons.location_on_rounded, color: UiTone.primary, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -515,7 +486,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                           children: [
                             Text(
                               _shortAddress,
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: UiTone.ink),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -527,7 +498,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                             const SizedBox(height: 4),
                             Text(
                               '📍 GPS: ${_currentCenter.latitude.toStringAsFixed(4)}° N, ${_currentCenter.longitude.toStringAsFixed(4)}° E',
-                              style: const TextStyle(color: Color(0xFF0284C7), fontSize: 10, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: UiTone.accentBlue, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -546,7 +517,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                             hintText: 'House / Flat / Floor No.',
                             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 11.5),
                             filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
+                            fillColor: UiTone.surfaceMuted,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                           ),
@@ -560,7 +531,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                             hintText: 'Nearby Landmark',
                             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 11.5),
                             filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
+                            fillColor: UiTone.surfaceMuted,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                           ),
@@ -589,17 +560,17 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                     child: ElevatedButton.icon(
                       onPressed: _isSavingLocation ? null : _confirmAndSaveLocation,
                       icon: _isSavingLocation
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.surface))
                           : const Icon(Icons.check_circle_rounded, size: 18),
                       label: Text(
                         _isSavingLocation ? 'Saving Doorstep Pin...' : 'Confirm Location & Pin Doorstep 📍',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D7C66),
+                        backgroundColor: UiTone.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                       ),
                     ),
                   ),
@@ -616,18 +587,18 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     final isSelected = _selectedTag == key;
     return InkWell(
       onTap: () => setState(() => _selectedTag = key),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(UiRadius.xs),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66).withValues(alpha: 0.15) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0)),
+          color: isSelected ? UiTone.primary.withValues(alpha: 0.15) : UiTone.surfaceMuted,
+          borderRadius: BorderRadius.circular(UiRadius.xs),
+          border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFF0F172A),
+            color: isSelected ? UiTone.primary : UiTone.ink,
             fontSize: 11,
             fontWeight: FontWeight.bold,
           ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeMorningDispatchCapsule extends StatefulWidget {
   final AppState state;
@@ -58,14 +59,8 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
       decoration: BoxDecoration(
         gradient: AppTheme.morningSkyGradient,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.darkSlate.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: UiTone.surface.withValues(alpha: 0.12), width: 1.2),
+        boxShadow: UiShadow.card,
       ),
       child: Column(
         children: [
@@ -80,13 +75,7 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
                     decoration: BoxDecoration(
                       color: AppTheme.primaryMint,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryMint.withValues(alpha: 0.8),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                      boxShadow: UiShadow.card,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -104,8 +93,8 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
+                  color: UiTone.surface.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(UiRadius.lg),
                 ),
                 child: const Row(
                   children: [
@@ -113,7 +102,7 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
                     SizedBox(width: 4),
                     Text(
                       '4°C Cold Chain',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: UiTone.surface, fontSize: 10, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -131,7 +120,7 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
                     const Text(
                       'Order for Morning 05:30 AM Drop',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: UiTone.surface,
                         fontSize: 14.5,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
@@ -141,7 +130,7 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
                     Text(
                       'Subscribe by 11:00 PM tonight for farm doorstep drop tomorrow',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: UiTone.surface.withValues(alpha: 0.7),
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -153,7 +142,7 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: UiTone.surface.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppTheme.accentAmber.withValues(alpha: 0.3)),
                 ),
@@ -167,7 +156,7 @@ class _HomeMorningDispatchCapsuleState extends State<HomeMorningDispatchCapsule>
                     Text(
                       '$_hoursStr:$_minsStr:$_secsStr',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: UiTone.surface,
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'Courier',

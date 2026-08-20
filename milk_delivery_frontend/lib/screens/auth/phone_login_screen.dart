@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
+import '../../theme/ui_tokens.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
   final AppState state;
@@ -83,7 +84,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('⚡ OTP sent to your phone! Test OTP is 1234.'),
           ),
         );
@@ -166,7 +167,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('🎉 Registration Complete! ₹500 welcome bonus credited to your wallet.'),
           ),
         );
@@ -183,7 +184,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: UiTone.ink,
       body: SafeArea(
         child: Column(
           children: [
@@ -198,15 +199,11 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          gradient: UiGradient.primary,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0D7C66).withValues(alpha: 0.4),
+                              color: UiTone.primary.withValues(alpha: 0.4),
                               blurRadius: 25,
                               offset: const Offset(0, 10),
                             ),
@@ -223,7 +220,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       const Text(
                         '⚡ Farm Fresh Dairy • Guaranteed 6:00 AM Delivery',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: UiTone.secondary, fontSize: 11.5, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 22),
 
@@ -232,7 +229,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(UiRadius.xl),
                           border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                           boxShadow: [
                             BoxShadow(
@@ -276,10 +273,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  color: UiTone.secondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
                 ),
-                child: const Icon(Icons.phone_android_rounded, color: Color(0xFF10B981), size: 18),
+                child: const Icon(Icons.phone_android_rounded, color: UiTone.secondary, size: 18),
               ),
               const SizedBox(width: 8),
               const Text('Enter Mobile Number', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
@@ -294,9 +291,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                  color: UiTone.ink,
+                  borderRadius: BorderRadius.circular(UiRadius.md),
+                  border: Border.all(color: UiTone.secondary.withValues(alpha: 0.3)),
                 ),
                 child: const Row(
                   children: [
@@ -319,15 +316,15 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                     hintText: 'Enter 10-digit number',
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13, letterSpacing: 0),
                     filled: true,
-                    fillColor: const Color(0xFF0F172A),
+                    fillColor: UiTone.ink,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(UiRadius.md),
                       borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+                      borderRadius: BorderRadius.circular(UiRadius.md),
+                      borderSide: const BorderSide(color: UiTone.secondary, width: 1.5),
                     ),
                   ),
                 ),
@@ -340,21 +337,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           InkWell(
             key: const ValueKey('send_otp_btn'),
             onTap: _isLoading ? null : _handleSendOTP,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(UiRadius.md),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: double.infinity,
               height: 52,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
+                gradient: UiGradient.primary,
+                borderRadius: BorderRadius.circular(UiRadius.md),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                    color: UiTone.secondary.withValues(alpha: 0.35),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -390,7 +383,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 children: [
                   const Text('Enter 4-Digit OTP', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 2),
-                  Text('Sent to ${_phoneController.text}', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                  Text('Sent to ${_phoneController.text}', style: const TextStyle(color: UiTone.secondary, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 ],
               ),
               TextButton.icon(
@@ -414,15 +407,15 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               hintText: '••••',
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 26, letterSpacing: 14),
               filled: true,
-              fillColor: const Color(0xFF0F172A),
+              fillColor: UiTone.ink,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(UiRadius.md),
                 borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                borderRadius: BorderRadius.circular(UiRadius.md),
+                borderSide: const BorderSide(color: UiTone.secondary, width: 2),
               ),
             ),
           ),
@@ -434,15 +427,15 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                  color: UiTone.secondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                  border: Border.all(color: UiTone.secondary.withValues(alpha: 0.3)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.key_rounded, size: 13, color: Color(0xFF10B981)),
+                    Icon(Icons.key_rounded, size: 13, color: UiTone.secondary),
                     SizedBox(width: 4),
-                    Text('Test OTP: 1234', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('Test OTP: 1234', style: TextStyle(color: UiTone.secondary, fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -464,21 +457,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           InkWell(
             key: const ValueKey('verify_otp_btn'),
             onTap: _isLoading ? null : _handleVerifyOTP,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(UiRadius.md),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: double.infinity,
               height: 52,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
+                gradient: UiGradient.primary,
+                borderRadius: BorderRadius.circular(UiRadius.md),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                    color: UiTone.secondary.withValues(alpha: 0.35),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -510,8 +499,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
+                color: UiTone.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(UiRadius.xs),
               ),
               child: const Text('🎁', style: TextStyle(fontSize: 18)),
             ),
@@ -520,7 +509,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        const Text('Complete profile to claim ₹500 welcome milk credit', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600)),
+        const Text('Complete profile to claim ₹500 welcome milk credit', style: TextStyle(color: UiTone.secondary, fontSize: 11, fontWeight: FontWeight.w600)),
         const SizedBox(height: 18),
 
         _buildTextField(_nameController, 'Full Name', Icons.person_outline),
@@ -548,9 +537,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _handleRegisterCustomer,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D7C66),
+              backgroundColor: UiTone.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
               elevation: 4,
             ),
             child: _isLoading
@@ -574,10 +563,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     return ChoiceChip(
       label: Text(labelText),
       selected: isSelected,
-      selectedColor: const Color(0xFF0D7C66),
-      backgroundColor: const Color(0xFF0F172A),
+      selectedColor: UiTone.primary,
+      backgroundColor: UiTone.ink,
       side: BorderSide(
-        color: isSelected ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.2),
+        color: isSelected ? UiTone.secondary : Colors.white.withValues(alpha: 0.2),
       ),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : Colors.white70,
@@ -597,17 +586,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       decoration: InputDecoration(
         hintText: label,
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
-        prefixIcon: Icon(icon, color: const Color(0xFF10B981), size: 18),
+        prefixIcon: Icon(icon, color: UiTone.secondary, size: 18),
         filled: true,
-        fillColor: const Color(0xFF0F172A),
+        fillColor: UiTone.ink,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(UiRadius.md),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+          borderRadius: BorderRadius.circular(UiRadius.md),
+          borderSide: const BorderSide(color: UiTone.secondary, width: 1.5),
         ),
       ),
     );

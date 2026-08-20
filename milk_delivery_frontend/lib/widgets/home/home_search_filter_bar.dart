@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeSearchFilterBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -32,7 +33,7 @@ class HomeSearchFilterBar extends StatelessWidget {
             decoration: InputDecoration(
               hintText: 'Search milk, chicken, mutton, eggs, water can...',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0D7C66), size: 20),
+              prefixIcon: const Icon(Icons.search_rounded, color: UiTone.primary, size: 20),
               suffixIcon: searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear, size: 16),
@@ -40,7 +41,7 @@ class HomeSearchFilterBar extends StatelessWidget {
                     )
                   : null,
               filled: true,
-              fillColor: const Color(0xFFF1F5F9),
+              fillColor: UiTone.surfaceMuted,
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -76,20 +77,20 @@ class HomeSearchFilterBar extends StatelessWidget {
     final isSelected = selectedCategory == catKey;
     return InkWell(
       onTap: () => onCategorySelected(catKey),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(UiRadius.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
+          borderRadius: BorderRadius.circular(UiRadius.sm),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+            color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF0F172A),
+            color: isSelected ? Colors.white : UiTone.ink,
             fontSize: 11,
             fontWeight: FontWeight.bold,
           ),

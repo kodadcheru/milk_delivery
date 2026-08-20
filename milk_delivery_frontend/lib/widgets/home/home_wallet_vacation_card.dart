@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomeWalletVacationCard extends StatelessWidget {
   final AppState state;
@@ -19,7 +20,7 @@ class HomeWalletVacationCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: UiTone.ink,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -32,18 +33,12 @@ class HomeWalletVacationCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0D7C66), Color(0xFF10B981)],
+                colors: [UiTone.primary, UiTone.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              boxShadow: UiShadow.card,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -73,7 +68,7 @@ class HomeWalletVacationCard extends StatelessWidget {
                             child: const Text(
                               'AUTO-DEBIT 🟢',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: UiTone.surface,
                                 fontSize: 8,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -85,7 +80,7 @@ class HomeWalletVacationCard extends StatelessWidget {
                       Text(
                         '₹${bal.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: UiTone.surface,
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
                         ),
@@ -96,7 +91,7 @@ class HomeWalletVacationCard extends StatelessWidget {
                             ? '✨ Covers approx. $estDays days of morning deliveries'
                             : '⚠️ Low balance! Recharge for uninterrupted milk',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: UiTone.surface.withValues(alpha: 0.9),
                           fontSize: 11,
                         ),
                       ),
@@ -105,22 +100,22 @@ class HomeWalletVacationCard extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: onRechargeTap,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      color: UiTone.surface,
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add_rounded, size: 16, color: Color(0xFF0D7C66)),
+                        Icon(Icons.add_rounded, size: 16, color: UiTone.primary),
                         SizedBox(width: 4),
                         Text(
                           'Recharge',
                           style: TextStyle(
-                            color: Color(0xFF0D7C66),
+                            color: UiTone.primary,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -139,15 +134,15 @@ class HomeWalletVacationCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: UiTone.surface.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                border: Border.all(color: UiTone.surface.withValues(alpha: 0.1)),
               ),
               child: Row(
                 children: [
                   Icon(
                     state.isVacationMode ? Icons.beach_access_rounded : Icons.schedule_rounded,
-                    color: state.isVacationMode ? Colors.amber : const Color(0xFF10B981),
+                    color: state.isVacationMode ? Colors.amber : UiTone.secondary,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -157,7 +152,7 @@ class HomeWalletVacationCard extends StatelessWidget {
                           ? '⏸ Vacation Pause Active (Deliveries on hold)'
                           : '🟢 Morning Deliveries Active: Tomorrow 06:00 AM',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: UiTone.surface,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -168,7 +163,7 @@ class HomeWalletVacationCard extends StatelessWidget {
                       state.toggleVacationMode(!state.isVacationMode);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          backgroundColor: !state.isVacationMode ? Colors.amber[900] : const Color(0xFF0D7C66),
+                          backgroundColor: !state.isVacationMode ? Colors.amber[900] : UiTone.primary,
                           content: Text(!state.isVacationMode ? '⏸ Vacation Mode turned ON.' : '▶️ Vacation Mode turned OFF.'),
                         ),
                       );
@@ -180,7 +175,7 @@ class HomeWalletVacationCard extends StatelessWidget {
                     child: Text(
                       state.isVacationMode ? 'Resume' : 'Pause',
                       style: TextStyle(
-                        color: state.isVacationMode ? Colors.amber : const Color(0xFF10B981),
+                        color: state.isVacationMode ? Colors.amber : UiTone.secondary,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -194,13 +189,13 @@ class HomeWalletVacationCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: UiTone.surface.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                border: Border.all(color: UiTone.surface.withValues(alpha: 0.1)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.explore_outlined, color: Color(0xFF10B981), size: 16),
+                  Icon(Icons.explore_outlined, color: UiTone.secondary, size: 16),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
