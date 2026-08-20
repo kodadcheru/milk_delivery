@@ -49,6 +49,23 @@ class DeliveryTaskModel {
       drvDetail = UserModel.fromJson(json['driver_detail']);
     }
 
+    double parsedLat = 16.9950;
+    double parsedLon = 79.9670;
+
+    if (json['customer_latitude'] != null) {
+      final v = double.tryParse(json['customer_latitude'].toString());
+      if (v != null && v != 0.0) parsedLat = v;
+    } else if (subDetail != null && subDetail.deliveryLatitude != 0.0) {
+      parsedLat = subDetail.deliveryLatitude;
+    }
+
+    if (json['customer_longitude'] != null) {
+      final v = double.tryParse(json['customer_longitude'].toString());
+      if (v != null && v != 0.0) parsedLon = v;
+    } else if (subDetail != null && subDetail.deliveryLongitude != 0.0) {
+      parsedLon = subDetail.deliveryLongitude;
+    }
+
     return DeliveryTaskModel(
       id: json['id'] ?? 0,
       subscriptionId: json['subscription'] ?? 0,
@@ -64,8 +81,8 @@ class DeliveryTaskModel {
       status: json['status'] ?? 'PENDING',
       proofImageUrl: json['proof_image_url'] ?? '',
       deliveredAt: json['delivered_at'],
-      customerLatitude: double.tryParse(json['customer_latitude']?.toString() ?? '17.4319') ?? 17.4319,
-      customerLongitude: double.tryParse(json['customer_longitude']?.toString() ?? '78.4073') ?? 78.4073,
+      customerLatitude: parsedLat,
+      customerLongitude: parsedLon,
     );
   }
 

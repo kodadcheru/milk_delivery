@@ -87,20 +87,54 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         return cust.delivery_instructions if cust else ""
 
     def get_customer_latitude(self, obj):
-        if obj.subscription and obj.subscription.delivery_latitude:
-            return float(obj.subscription.delivery_latitude)
-        if obj.order and obj.order.delivery_latitude:
-            return float(obj.order.delivery_latitude)
+        if obj.subscription and obj.subscription.delivery_latitude is not None:
+            try:
+                val = float(obj.subscription.delivery_latitude)
+                if val != 0.0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+        if obj.order and obj.order.delivery_latitude is not None:
+            try:
+                val = float(obj.order.delivery_latitude)
+                if val != 0.0:
+                    return val
+            except (ValueError, TypeError):
+                pass
         cust = self._get_cust(obj)
-        return float(cust.latitude) if (cust and cust.latitude) else 17.4319
+        if cust and cust.latitude:
+            try:
+                val = float(cust.latitude)
+                if val != 0.0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+        return 16.9950
 
     def get_customer_longitude(self, obj):
-        if obj.subscription and obj.subscription.delivery_longitude:
-            return float(obj.subscription.delivery_longitude)
-        if obj.order and obj.order.delivery_longitude:
-            return float(obj.order.delivery_longitude)
+        if obj.subscription and obj.subscription.delivery_longitude is not None:
+            try:
+                val = float(obj.subscription.delivery_longitude)
+                if val != 0.0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+        if obj.order and obj.order.delivery_longitude is not None:
+            try:
+                val = float(obj.order.delivery_longitude)
+                if val != 0.0:
+                    return val
+            except (ValueError, TypeError):
+                pass
         cust = self._get_cust(obj)
-        return float(cust.longitude) if (cust and cust.longitude) else 78.4073
+        if cust and cust.longitude:
+            try:
+                val = float(cust.longitude)
+                if val != 0.0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+        return 79.9670
 
 
 class LiveOrderItemSerializer(serializers.ModelSerializer):
