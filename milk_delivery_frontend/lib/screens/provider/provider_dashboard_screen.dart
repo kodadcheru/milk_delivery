@@ -11,6 +11,7 @@ import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../services/route_optimizer.dart';
 import 'provider_fleet_map_screen.dart';
+import '../driver/morning_batch_screen.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -558,15 +559,68 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 14),
 
-          // ── Quick Command Shortcuts Grid ──
+          // ── Quick Command Shortcuts Grid (4 Hub Actions) ──
           Row(
             children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => MorningBatchScreen(state: widget.state)),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.inventory_rounded, color: Color(0xFF2563EB), size: 22),
+                        SizedBox(height: 6),
+                        Text('Batch Packing', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF1E40AF))),
+                        Text('Crate manifest', style: TextStyle(fontSize: 9.5, color: Color(0xFF3B82F6))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _openManageCapacitySlotsDialog(context),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.tune_rounded, color: Color(0xFF0D7C66), size: 22),
+                        SizedBox(height: 6),
+                        Text('Daily Slots', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0F172A))),
+                        Text('Limits & stock', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: InkWell(
                   onTap: () => _showBroadcastDialog(context),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -577,20 +631,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       children: [
                         Icon(Icons.campaign_rounded, color: Color(0xFFE67E22), size: 22),
                         SizedBox(height: 6),
-                        Text('Broadcast Alert', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A))),
-                        Text('Push to zone', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                        Text('Broadcast', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0F172A))),
+                        Text('Push alerts', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: InkWell(
                   onTap: () => _withdrawEarnings(context, netEarnings),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -601,32 +655,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       children: [
                         const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF0D7C66), size: 22),
                         const SizedBox(height: 6),
-                        Text('₹${netEarnings.toStringAsFixed(0)} Payout', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, color: Color(0xFF0D7C66))),
-                        const Text('Instant Transfer', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: InkWell(
-                  onTap: () => _openManageCapacitySlotsDialog(context),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
-                    ),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.inventory_2_rounded, color: Color(0xFF2563EB), size: 22),
-                        SizedBox(height: 6),
-                        Text('Daily Slots', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A))),
-                        Text('Crate stock', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                        Text('₹${netEarnings.toStringAsFixed(0)} Pay', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF0D7C66))),
+                        const Text('Settlement', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),

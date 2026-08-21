@@ -3,6 +3,7 @@ import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
+import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/route_optimizer.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
@@ -55,24 +56,75 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
     final Map<String, String> productIcons = {};
     final Map<String, String> productUnits = {};
 
-    for (var delivery in widget.state.deliveries) {
-      if (delivery.status != 'SKIPPED') {
-        final pName = delivery.subscriptionDetail?.productDetail?.name ?? 'Fresh A2 Cow Milk';
-        final qty = delivery.subscriptionDetail?.quantity ?? 1;
+    // 1. First check today's generated delivery tasks
+    final activeDeliveries = widget.state.deliveries.where((d) => d.status != 'SKIPPED').toList();
+    if (activeDeliveries.isNotEmpty) {
+      for (var delivery in activeDeliveries) {
+        final sub = delivery.subscriptionDetail;
+        final pId = sub?.productId ?? sub?.productDetail?.id;
+        final product = widget.state.products.firstWhere(
+          (p) => p.id == pId || (sub?.productDetail != null && p.id == sub!.productDetail!.id),
+          orElse: () => sub?.productDetail ?? ProductModel(
+            id: 0,
+            name: 'Fresh Farm Milk',
+            description: '',
+            pricePerUnit: 0,
+            unit: 'LITER',
+            unitQuantity: '1 Litre Pouch',
+            imageUrl: '',
+          ),
+        );
+
+        final pName = product.name;
+        final qty = sub?.quantity ?? 1;
         productCounts[pName] = (productCounts[pName] ?? 0) + qty;
-        productIcons[pName] = delivery.subscriptionDetail?.productDetail?.icon ?? '🥛';
-        productUnits[pName] = delivery.subscriptionDetail?.productDetail?.unitQuantity ?? '1 Litre Pouch';
+        productIcons[pName] = product.icon.isNotEmpty ? product.icon : '🥛';
+        productUnits[pName] = product.unitQuantity.isNotEmpty ? product.unitQuantity : (product.unit.isNotEmpty ? product.unit : '1 Unit');
+      }
+    } else {
+      // 2. Aggregate active subscriptions
+      final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
+      for (var sub in activeSubs) {
+        final product = widget.state.products.firstWhere(
+          (p) => p.id == sub.productId || (sub.productDetail != null && p.id == sub.productDetail!.id),
+          orElse: () => sub.productDetail ?? ProductModel(
+            id: sub.productId,
+            name: 'Fresh A2 Cow Milk',
+            description: '',
+            pricePerUnit: 0,
+            unit: 'LITER',
+            unitQuantity: '1 Litre Pouch',
+            imageUrl: '',
+          ),
+        );
+
+        final pName = product.name;
+        final qty = sub.quantity;
+        productCounts[pName] = (productCounts[pName] ?? 0) + qty;
+        productIcons[pName] = product.icon.isNotEmpty ? product.icon : '🥛';
+        productUnits[pName] = product.unitQuantity.isNotEmpty ? product.unitQuantity : '1 Litre Pouch';
+      }
+
+      // 3. Aggregate live express orders
+      final activeOrders = widget.state.liveOrders.where((o) => o.status != 'CANCELLED' && o.status != 'DELIVERED').toList();
+      for (var order in activeOrders) {
+        for (var item in order.items) {
+          final pName = item.product.name;
+          final qty = item.quantity;
+          productCounts[pName] = (productCounts[pName] ?? 0) + qty;
+          productIcons[pName] = item.product.icon.isNotEmpty ? item.product.icon : '🥛';
+          productUnits[pName] = item.product.unitQuantity.isNotEmpty ? item.product.unitQuantity : '1 Unit';
+        }
       }
     }
 
     if (productCounts.isEmpty) {
-      final actualStopsCount = widget.state.deliveries.isNotEmpty ? widget.state.deliveries.length : 1;
       return [
         CrateItemManifest(
-          productName: 'Fresh A2 Cow Milk',
+          productName: 'Fresh A2 Desi Cow Milk',
           icon: '🥛',
-          totalUnits: actualStopsCount,
-          unitVolume: '1 Litre Pouch',
+          totalUnits: 1,
+          unitVolume: '1 Litre Glass Bottle',
           crateLabel: 'Crate #A1 (Insulated Blue)',
         ),
       ];
@@ -81,12 +133,17 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
     final List<CrateItemManifest> manifest = [];
     int idx = 1;
     productCounts.forEach((pName, totalUnits) {
+      final crateCount = (totalUnits / 12).ceil();
+      final crateLabel = crateCount > 1
+          ? 'Crates #${String.fromCharCode(64 + idx)}1-${String.fromCharCode(64 + idx)}$crateCount ($crateCount Crates)'
+          : 'Crate #${String.fromCharCode(64 + idx)}1 (Insulated Box)';
+
       manifest.add(CrateItemManifest(
         productName: pName,
         icon: productIcons[pName] ?? '🥛',
         totalUnits: totalUnits,
         unitVolume: productUnits[pName] ?? '1 Unit',
-        crateLabel: 'Crate #${String.fromCharCode(64 + idx)}1 (Insulated Box)',
+        crateLabel: crateLabel,
       ));
       idx++;
     });
@@ -104,7 +161,29 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   }
 
   void _optimizeRoute() {
-    var tasks = widget.state.deliveries;
+    var tasks = widget.state.deliveries.where((d) => d.status != 'SKIPPED').toList();
+
+    // If deliveries list is empty, convert active subscriptions into preview tasks
+    if (tasks.isEmpty) {
+      final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
+      tasks = activeSubs.map<DeliveryTaskModel>((sub) {
+        return DeliveryTaskModel(
+          id: sub.id,
+          subscriptionId: sub.id,
+          customerName: sub.customerId > 0 ? 'Customer #${sub.customerId}' : 'Subscribed Family',
+          customerPhone: '+91 8919548905',
+          deliveryAddress: sub.deliveryAddress.isNotEmpty ? sub.deliveryAddress : 'Doorstep Delivery Location',
+          deliveryDate: sub.startDate.isNotEmpty ? sub.startDate : '2026-08-22',
+          slotTime: sub.deliverySlot,
+          status: 'PENDING',
+          proofImageUrl: '',
+          customerLatitude: sub.deliveryLatitude != 0.0 ? sub.deliveryLatitude : _activeHub.latitude + 0.005,
+          customerLongitude: sub.deliveryLongitude != 0.0 ? sub.deliveryLongitude : _activeHub.longitude + 0.005,
+          subscriptionDetail: sub,
+        );
+      }).toList();
+    }
+
     if (widget.slotFilter != null && widget.slotFilter!.isNotEmpty) {
       final filtered = tasks.where((t) => t.slotTime.toLowerCase().contains(widget.slotFilter!.toLowerCase())).toList();
       if (filtered.isNotEmpty) {
