@@ -180,8 +180,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
     final totalStops = tasks.length;
 
-    // Filter tasks
+    // Filter tasks (only upcoming active orders appear on driver home dashboard by default)
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
+      if (_selectedFilterIndex == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED')) return false;
       if (_selectedFilterIndex == 1 && t.status != 'PENDING') return false;
       if (_selectedFilterIndex == 2 && t.status != 'DELIVERED') return false;
 
@@ -580,12 +581,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ── 4. Filter Chips (All / Pending / Delivered / Express) ──
+          // ── 4. Filter Chips (Upcoming / Pending / Delivered / Express) ──
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip(0, 'All Stops ($totalStops)'),
+                _buildFilterChip(0, '⚡ Upcoming ($pendingCount)'),
                 const SizedBox(width: 8),
                 _buildFilterChip(1, '⏳ Pending ($pendingCount)'),
                 const SizedBox(width: 8),

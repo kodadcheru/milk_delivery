@@ -341,8 +341,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final netEarnings = totalRevenue; // 100% money goes to Hub Owner
     final totalLitres = widget.state.totalDailyMilkVolume;
 
-    // Filter tasks & orders
+    // Filter tasks & orders (only upcoming active orders appear on provider home dashboard by default)
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
+      if (_selectedFilter == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED')) return false;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         return t.customerName.toLowerCase().contains(q) || t.deliveryAddress.toLowerCase().contains(q);
@@ -836,7 +837,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip(0, '👥 All Orders (${filteredTasks.length + liveOrders.length})'),
+                _buildFilterChip(0, '⚡ Upcoming Orders (${filteredTasks.length + liveOrders.length})'),
                 const SizedBox(width: 8),
                 _buildFilterChip(1, '✅ Active (${activeSubs.length})'),
                 const SizedBox(width: 8),
