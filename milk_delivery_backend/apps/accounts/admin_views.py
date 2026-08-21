@@ -801,6 +801,8 @@ class AdminSubscriptionsListView(APIView):
                 "customer_address": s.customer.address or "Jubilee Hills, Hyderabad",
                 "product_name": s.product.name,
                 "quantity": s.quantity,
+                "pack_size": s.pack_size or (s.product.unit_quantity if s.product else "1 Litre"),
+                "delivery_slot": s.delivery_slot or "05:30 AM - 07:00 AM",
                 "schedule_type": s.schedule_type,
                 "frequency": s.schedule_type,
                 "status": s.status,
