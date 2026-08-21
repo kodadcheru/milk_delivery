@@ -34,18 +34,23 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   final Set<String> _verifiedCrates = {};
 
   HubLocationModel get _activeHub {
-    if (widget.state.locationHubs.isNotEmpty) {
-      final h = widget.state.locationHubs.first;
+    final h = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
+    if (h != null) {
+      final name = h['name']?.toString() ?? 'Kodad Depot';
+      final address = h['address']?.toString() ?? '$name, Telangana';
+      final mgrName = h['manager_name']?.toString() ?? 'Hub Dispatch Lead';
+      final mgrPhone = h['manager_phone']?.toString() ?? '8885199878';
+      final lat = (h['latitude'] as num?)?.toDouble() ?? 17.001734;
+      final lng = (h['longitude'] as num?)?.toDouble() ?? 79.9625;
+
       return HubLocationModel(
-        id: '${h['id'] ?? 'HUB-KDD-01'}',
-        name: h['name'] as String? ?? 'Kodad Depot',
-        address: '${h['name'] ?? 'Kodad Depot'}, Telangana 508206',
-        managerName: h['manager_phone'] != null && (h['manager_phone'] as String).isNotEmpty
-            ? 'Dispatch Lead'
-            : 'Depot Dispatch Operations',
-        managerPhone: h['manager_phone'] as String? ?? '+91 8919548905',
-        latitude: (h['latitude'] as num?)?.toDouble() ?? 16.9947,
-        longitude: (h['longitude'] as num?)?.toDouble() ?? 79.9750,
+        id: '${h['hub_code'] ?? h['id'] ?? 'HUB-KDD-01'}',
+        name: name,
+        address: address,
+        managerName: mgrName,
+        managerPhone: mgrPhone,
+        latitude: lat,
+        longitude: lng,
       );
     }
     return HubLocationModel.defaultHub;

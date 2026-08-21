@@ -32,8 +32,11 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : 'Unregistered Phone';
     final driverId = driverUser != null && driverUser.id > 0 ? 'DRV-${driverUser.id}' : 'DRV-101';
 
-    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
-    final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+    final activeHub = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
+    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? 'Kodad Depot') : 'Kodad Depot';
+    final managerName = activeHub != null && activeHub['manager_name'] != null && activeHub['manager_name'].toString().isNotEmpty
+        ? activeHub['manager_name'].toString()
+        : 'Srinuvasa Reddy';
     final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
         ? activeHub['manager_phone'].toString()
         : '8885199878';
@@ -323,8 +326,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     iconBg: const Color(0xFFFEF2F2),
                     iconFg: const Color(0xFFEF4444),
                     label: 'Hub Manager Contact',
-                    subtitle: managerPhone,
-                    onTap: () => _showManagerContactSheet(context, hubName, managerPhone),
+                    subtitle: '$managerName • $managerPhone',
+                    onTap: () => _showManagerContactSheet(context, hubName, managerName, managerPhone),
                   ),
                 ]),
 
@@ -850,8 +853,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   }
 
   void _showDepotDetailsDialog(BuildContext context, String hubName, Map<String, dynamic>? hub) {
-    final address = hub != null && hub['address'] != null ? hub['address'].toString() : 'Central Depot Operations, Main Road, Kodad';
-    final managerPhone = hub != null && hub['manager_phone'] != null ? hub['manager_phone'].toString() : '+91 8919548905';
+    final address = hub != null && hub['address'] != null ? hub['address'].toString() : 'Kodad Depot Operations, Telangana';
+    final managerName = hub != null && hub['manager_name'] != null ? hub['manager_name'].toString() : 'Srinuvasa Reddy';
+    final managerPhone = hub != null && hub['manager_phone'] != null ? hub['manager_phone'].toString() : '8885199878';
 
     showDialog(
       context: context,
@@ -873,10 +877,10 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             Text(address, style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
             const SizedBox(height: 10),
             const Text('Morning Crate Loading Bay:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-            const Text('Bay #2 (Cold Storage Chiller Entrance)', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
+            const Text('Bay #1 (Cold Storage Dispatch Bay)', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
             const SizedBox(height: 10),
-            const Text('Depot Manager Contact:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-            Text(managerPhone, style: const TextStyle(fontSize: 12, color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
+            const Text('Depot Manager:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+            Text('$managerName ($managerPhone)', style: const TextStyle(fontSize: 12, color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
@@ -898,7 +902,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     );
   }
 
-  void _showManagerContactSheet(BuildContext context, String hubName, String managerPhone) {
+  void _showManagerContactSheet(BuildContext context, String hubName, String managerName, String managerPhone) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -915,46 +919,70 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('$hubName Manager', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text('$managerName ($hubName Lead)', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       Text(managerPhone, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: Color(0xFFE6F5F0), shape: BoxShape.circle),
-                child: const Icon(Icons.phone, color: Color(0xFF0D7C66)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFCA5A5)),
               ),
-              title: const Text('Call Hub Manager Directly', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text(managerPhone),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final uri = Uri.parse('tel:$managerPhone');
-                try {
-                  await launchUrl(uri);
-                } catch (_) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Calling: $managerPhone')));
-                }
-              },
-            ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: Color(0xFFE8F2FE), shape: BoxShape.circle),
-                child: const Icon(Icons.copy_rounded, color: Color(0xFF2563EB)),
+              child: Text(
+                '📞 Direct line to $hubName Operations Lead ($managerName) for route assistance, morning stock shortages, crate issues, or customer query escalation.',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF7F1D1D), height: 1.4),
               ),
-              title: const Text('Copy Phone Number', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: managerPhone));
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📋 Manager Phone copied!')));
-              },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () async {
+                      final clean = managerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+                      final uri = Uri.parse('https://wa.me/91$clean?text=${Uri.encodeComponent("Hello $managerName, I need assistance with my morning delivery route at $hubName.")}');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Text('💬', style: TextStyle(fontSize: 16)),
+                    label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D7C66),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () async {
+                      final clean = managerPhone.replaceAll(' ', '');
+                      final uri = Uri.parse('tel:$clean');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                    icon: const Icon(Icons.call_rounded, size: 18),
+                    label: const Text('Call Lead', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
