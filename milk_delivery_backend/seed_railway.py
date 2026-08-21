@@ -24,6 +24,11 @@ def seed():
             "manager_name": "srinuvasa reddy",
             "manager_phone": "8885199878",
             "coverage_radius_km": 8.5,
+            "bank_name": "State Bank of India",
+            "bank_account_number": "389201948210",
+            "bank_ifsc": "SBIN0004892",
+            "bank_account_holder": "Srinuvasa Reddy",
+            "upi_id": "8885199878@upi",
         }
     )
 

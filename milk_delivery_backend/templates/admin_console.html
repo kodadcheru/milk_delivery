@@ -2110,10 +2110,48 @@
           </div>
         </div>
       </div>
-      <div class="form-group">
-        <label>FSSAI License <span style="color: var(--text-muted); font-size: 11px; font-weight: normal;">(Optional)</span></label>
-        <input type="text" id="editHubFssai" class="form-control" placeholder="Leave blank if not applicable">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Coverage Radius (km) <span style="color: #10B981;">*</span></label>
+          <input type="number" id="editHubCoverageRadius" class="form-control" step="0.5" min="1" max="50" required>
+        </div>
+        <div class="form-group">
+          <label>FSSAI License <span style="color: var(--text-muted); font-size: 11px; font-weight: normal;">(Optional)</span></label>
+          <input type="text" id="editHubFssai" class="form-control" placeholder="Leave blank if not applicable">
+        </div>
       </div>
+
+      <!-- Settlement Bank Account Details -->
+      <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 14px; margin-top: 10px;">
+        <div style="font-weight: 800; font-size: 13px; color: #10B981; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-building-columns"></i> Hub Settlement Bank Account Details
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Bank Name</label>
+            <input type="text" id="editHubBankName" class="form-control" placeholder="e.g. State Bank of India">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Account Number</label>
+            <input type="text" id="editHubBankAccountNumber" class="form-control" placeholder="e.g. 389201948210">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">IFSC Code</label>
+            <input type="text" id="editHubBankIfsc" class="form-control" placeholder="e.g. SBIN0004892" style="text-transform: uppercase;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Account Holder Name</label>
+            <input type="text" id="editHubBankAccountHolder" class="form-control" placeholder="e.g. Srinuvasa Reddy">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Linked UPI ID</label>
+            <input type="text" id="editHubUpiId" class="form-control" placeholder="e.g. 8885199878@upi">
+          </div>
+        </div>
+      </div>
+
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('editHubModal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitUpdateHub()"><i class="fa-solid fa-check"></i> Save Hub Changes</button>
@@ -3674,7 +3712,15 @@
       const rawPhone = hub.manager_phone || (mgrParts[1] || '').replace(')', '').trim();
       const cleanDigits = rawPhone.replace(/\D/g, '').slice(-10);
       document.getElementById('editHubManagerPhone').value = cleanDigits;
+      document.getElementById('editHubCoverageRadius').value = hub.coverage_radius_km || 8.5;
       document.getElementById('editHubFssai').value = hub.fssai_license || '';
+      
+      // Settlement Bank Account
+      document.getElementById('editHubBankName').value = hub.bank_name || 'State Bank of India';
+      document.getElementById('editHubBankAccountNumber').value = hub.bank_account_number || '389201948210';
+      document.getElementById('editHubBankIfsc').value = hub.bank_ifsc || 'SBIN0004892';
+      document.getElementById('editHubBankAccountHolder').value = hub.bank_account_holder || (hub.manager_name || 'Srinuvasa Reddy');
+      document.getElementById('editHubUpiId').value = hub.upi_id || `${cleanDigits || '8885199878'}@upi`;
 
       document.getElementById('editHubModal').style.display = 'flex';
     }
@@ -3685,7 +3731,14 @@
       const addr = document.getElementById('editHubAddress').value.trim();
       const mgr = document.getElementById('editHubManagerName').value.trim();
       const phoneDigits = document.getElementById('editHubManagerPhone').value.replace(/\D/g, '');
+      const radius = parseFloat(document.getElementById('editHubCoverageRadius').value) || 8.5;
       const fssai = document.getElementById('editHubFssai').value.trim();
+
+      const bankName = document.getElementById('editHubBankName').value.trim();
+      const bankAcc = document.getElementById('editHubBankAccountNumber').value.trim();
+      const bankIfsc = document.getElementById('editHubBankIfsc').value.trim().toUpperCase();
+      const bankHolder = document.getElementById('editHubBankAccountHolder').value.trim();
+      const upiId = document.getElementById('editHubUpiId').value.trim();
 
       if (!name || !addr || !mgr || phoneDigits.length < 10) {
         alert('⚠️ Depot Name, Address, Manager Name, and 10-digit Mobile Number are mandatory.');
@@ -3704,8 +3757,14 @@
             name: name,
             address: addr,
             manager_name: mgr,
-            manager_phone: phoneDigits,
-            fssai_license: fssai
+            manager_phone: `+91 ${phoneDigits}`,
+            coverage_radius_km: radius,
+            fssai_license: fssai,
+            bank_name: bankName,
+            bank_account_number: bankAcc,
+            bank_ifsc: bankIfsc,
+            bank_account_holder: bankHolder,
+            upi_id: upiId
           })
         });
 
@@ -3718,7 +3777,7 @@
               refreshMapLayers();
             }
           } catch (_) {}
-          alert('✅ Hub details updated successfully!');
+          alert('✅ Hub details, coverage area, and settlement bank info updated successfully!');
         } else {
           const errData = await res.json().catch(() => ({}));
           alert(errData.detail || errData.message || 'Could not update hub.');

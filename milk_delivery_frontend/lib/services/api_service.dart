@@ -739,6 +739,44 @@ class ApiService {
     return false;
   }
 
+  static Future<bool> updateHubDetails({
+    required String hubCode,
+    String? name,
+    String? address,
+    String? managerName,
+    String? managerPhone,
+    double? coverageRadiusKm,
+    String? bankName,
+    String? bankAccountNumber,
+    String? bankIfsc,
+    String? bankAccountHolder,
+    String? upiId,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (address != null) body['address'] = address;
+      if (managerName != null) body['manager_name'] = managerName;
+      if (managerPhone != null) body['manager_phone'] = managerPhone;
+      if (coverageRadiusKm != null) body['coverage_radius_km'] = coverageRadiusKm;
+      if (bankName != null) body['bank_name'] = bankName;
+      if (bankAccountNumber != null) body['bank_account_number'] = bankAccountNumber;
+      if (bankIfsc != null) body['bank_ifsc'] = bankIfsc;
+      if (bankAccountHolder != null) body['bank_account_holder'] = bankAccountHolder;
+      if (upiId != null) body['upi_id'] = upiId;
+
+      final res = await _executeWithRetry(() => http.patch(
+            Uri.parse('$baseUrl/admin/hubs/$hubCode/'),
+            headers: _headers,
+            body: jsonEncode(body),
+          ));
+      return res.statusCode == 200;
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return false;
+  }
+
   // ── 12. Customer Address Book APIs ──
   static Future<List<CustomerAddressModel>> fetchCustomerAddresses({int? customerId, String? phone}) async {
     try {

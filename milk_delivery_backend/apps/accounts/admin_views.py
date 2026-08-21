@@ -460,7 +460,13 @@ class AdminHubsView(APIView):
                 "salary_per_boy": 15000,
                 "status": "OPERATIONAL",
                 "fssai_license": h.fssai_license,
-                "coverage_radius_km": getattr(h, "coverage_radius_km", 5.0),
+                "coverage_radius_km": getattr(h, "coverage_radius_km", 8.5),
+                "bank_name": getattr(h, "bank_name", "State Bank of India"),
+                "bank_account_number": getattr(h, "bank_account_number", "389201948210"),
+                "bank_ifsc": getattr(h, "bank_ifsc", "SBIN0004892"),
+                "bank_account_holder": getattr(h, "bank_account_holder", "Srinuvasa Reddy"),
+                "upi_id": getattr(h, "upi_id", "8885199878@upi"),
+                "bank_account": f"{getattr(h, 'bank_name', 'State Bank of India')} • A/C ending in {str(getattr(h, 'bank_account_number', '389201948210'))[-4:]}",
                 "service_areas_count": service_areas_count,
                 "latitude": h.latitude,
                 "longitude": h.longitude,
@@ -645,7 +651,13 @@ class AdminHubDetailView(APIView):
                 "manager_name": hub.manager_name,
                 "manager_phone": hub.manager_phone,
                 "fssai_license": hub.fssai_license,
-                "coverage_radius_km": getattr(hub, "coverage_radius_km", 5.0),
+                "coverage_radius_km": getattr(hub, "coverage_radius_km", 8.5),
+                "bank_name": getattr(hub, "bank_name", "State Bank of India"),
+                "bank_account_number": getattr(hub, "bank_account_number", "389201948210"),
+                "bank_ifsc": getattr(hub, "bank_ifsc", "SBIN0004892"),
+                "bank_account_holder": getattr(hub, "bank_account_holder", "Srinuvasa Reddy"),
+                "upi_id": getattr(hub, "upi_id", "8885199878@upi"),
+                "bank_account": f"{getattr(hub, 'bank_name', 'State Bank of India')} • A/C ending in {str(getattr(hub, 'bank_account_number', '389201948210'))[-4:]}",
                 "latitude": hub.latitude,
                 "longitude": hub.longitude,
                 "created_at": hub.created_at,
@@ -667,12 +679,30 @@ class AdminHubDetailView(APIView):
         if "manager_name" in request.data: hub.manager_name = request.data["manager_name"]
         if "manager_phone" in request.data: hub.manager_phone = request.data["manager_phone"]
         if "fssai_license" in request.data: hub.fssai_license = request.data["fssai_license"]
-        if "coverage_radius_km" in request.data: hub.coverage_radius_km = float(request.data["coverage_radius_km"])
-        if "latitude" in request.data: hub.latitude = float(request.data["latitude"])
-        if "longitude" in request.data: hub.longitude = float(request.data["longitude"])
+        if "coverage_radius_km" in request.data and request.data["coverage_radius_km"] is not None:
+            hub.coverage_radius_km = float(request.data["coverage_radius_km"])
+        if "bank_name" in request.data: hub.bank_name = str(request.data["bank_name"]).strip()
+        if "bank_account_number" in request.data: hub.bank_account_number = str(request.data["bank_account_number"]).strip()
+        if "bank_ifsc" in request.data: hub.bank_ifsc = str(request.data["bank_ifsc"]).strip().upper()
+        if "bank_account_holder" in request.data: hub.bank_account_holder = str(request.data["bank_account_holder"]).strip()
+        if "upi_id" in request.data: hub.upi_id = str(request.data["upi_id"]).strip()
+        if "latitude" in request.data and request.data["latitude"] is not None:
+            hub.latitude = float(request.data["latitude"])
+        if "longitude" in request.data and request.data["longitude"] is not None:
+            hub.longitude = float(request.data["longitude"])
         hub.save()
 
-        return Response({"message": f"Hub '{hub.name}' updated successfully!", "hub_code": hub.hub_code, "coverage_radius_km": hub.coverage_radius_km})
+        return Response({
+            "message": f"Hub '{hub.name}' updated successfully!",
+            "hub_code": hub.hub_code,
+            "coverage_radius_km": hub.coverage_radius_km,
+            "bank_name": hub.bank_name,
+            "bank_account_number": hub.bank_account_number,
+            "bank_ifsc": hub.bank_ifsc,
+            "bank_account_holder": hub.bank_account_holder,
+            "upi_id": hub.upi_id,
+            "bank_account": f"{hub.bank_name} • A/C ending in {str(hub.bank_account_number)[-4:]}",
+        })
 
     def delete(self, request, pk):
         hub = _resolve_hub_by_pk_or_code(pk)

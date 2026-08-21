@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 import '../driver/morning_batch_screen.dart';
 
 class ProviderProfileTab extends StatefulWidget {
@@ -24,17 +25,26 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
-    final hubName = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
-    final hubAddress = activeHub != null ? (activeHub['address'] ?? 'Central Depot Operations, Main Road, Kodad') : 'Central Depot Operations, Main Road, Kodad';
-    final fssai = activeHub != null ? (activeHub['fssai_license'] ?? '13621014000342') : '13621014000342';
+    final activeHub = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
+    final hubCode = activeHub != null ? (activeHub['hub_code'] ?? activeHub['id'] ?? 'HUB-KDD-01').toString() : 'HUB-KDD-01';
+    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? 'Kodad Depot') : 'Kodad Depot';
+    final hubAddress = activeHub != null ? (activeHub['address']?.toString() ?? '2X27+M36, Kodad, Telangana 508206') : '2X27+M36, Kodad, Telangana 508206';
+    final fssai = activeHub != null ? (activeHub['fssai_license']?.toString() ?? '13621014000342') : '13621014000342';
+    final managerName = activeHub != null ? (activeHub['manager_name']?.toString() ?? 'Srinuvasa Reddy') : 'Srinuvasa Reddy';
     final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
         ? activeHub['manager_phone'].toString()
-        : '+91 8919548905';
+        : '8885199878';
 
-    final bankAcc = activeHub != null && activeHub['bank_account'] != null && activeHub['bank_account'].toString().isNotEmpty
-        ? activeHub['bank_account'].toString()
-        : 'HDFC Bank • A/C ending in 8421';
+    final coverageRadius = (activeHub != null && activeHub['coverage_radius_km'] != null)
+        ? (activeHub['coverage_radius_km'] as num).toDouble()
+        : 8.5;
+
+    final bankName = activeHub != null ? (activeHub['bank_name']?.toString() ?? 'State Bank of India') : 'State Bank of India';
+    final bankAccountNumber = activeHub != null ? (activeHub['bank_account_number']?.toString() ?? '389201948210') : '389201948210';
+    final bankIfsc = activeHub != null ? (activeHub['bank_ifsc']?.toString() ?? 'SBIN0004892') : 'SBIN0004892';
+    final bankAccountHolder = activeHub != null ? (activeHub['bank_account_holder']?.toString() ?? managerName) : managerName;
+    final upiId = activeHub != null ? (activeHub['upi_id']?.toString() ?? '8885199878@upi') : '8885199878@upi';
+    final bankAcc = '$bankName • A/C ending in ${bankAccountNumber.length >= 4 ? bankAccountNumber.substring(bankAccountNumber.length - 4) : bankAccountNumber}';
 
     final topInset = MediaQuery.of(context).padding.top;
 
@@ -101,7 +111,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                     const SizedBox(width: 8),
                     // Edit Hub Info Action
                     GestureDetector(
-                      onTap: () => _showEditHubDialog(context, hubName, hubAddress, managerPhone),
+                      onTap: () => _showEditHubDialog(context, hubCode, hubName, hubAddress, managerPhone),
                       child: Container(
                         padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
@@ -119,7 +129,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 // Avatar stack
                 Center(
                   child: GestureDetector(
-                    onTap: () => _showEditHubDialog(context, hubName, hubAddress, managerPhone),
+                    onTap: () => _showEditHubDialog(context, hubCode, hubName, hubAddress, managerPhone),
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
@@ -216,12 +226,12 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                     ),
                     const SizedBox(width: 10),
                     _buildQuickStatCard(
-                      '5.0 km',
+                      '${coverageRadius.toStringAsFixed(1)} km',
                       'Coverage Area',
                       Icons.radar_rounded,
                       const Color(0xFF2563EB),
                       const Color(0xFFDBEAFE),
-                      () => _showCoverageAreaSheet(context, hubName),
+                      () => _showCoverageAreaSheet(context, hubCode, hubName, coverageRadius),
                     ),
                     const SizedBox(width: 10),
                     _buildQuickStatCard(
@@ -250,6 +260,15 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   ),
                   _buildDivider(),
                   _buildMenuTile(
+                    icon: Icons.radar_rounded,
+                    iconBg: const Color(0xFFEFF6FF),
+                    iconFg: const Color(0xFF2563EB),
+                    label: 'Delivery Coverage Area',
+                    subtitle: '${coverageRadius.toStringAsFixed(1)} km Municipal Geofenced Radius',
+                    onTap: () => _showCoverageAreaSheet(context, hubCode, hubName, coverageRadius),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
                     icon: Icons.schedule_rounded,
                     iconBg: const Color(0xFFE0F7F3),
                     iconFg: const Color(0xFF0D9488),
@@ -264,7 +283,16 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                     iconFg: const Color(0xFFE67E22),
                     label: 'Settlement Bank Account',
                     subtitle: bankAcc,
-                    onTap: () => _showBankDetailsDialog(context, bankAcc),
+                    onTap: () => _showBankDetailsDialog(
+                      context,
+                      hubCode,
+                      hubName,
+                      bankName,
+                      bankAccountNumber,
+                      bankIfsc,
+                      bankAccountHolder,
+                      upiId,
+                    ),
                   ),
                 ]),
 
@@ -496,7 +524,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     );
   }
 
-  void _showEditHubDialog(BuildContext context, String currentName, String currentAddress, String currentPhone) {
+  void _showEditHubDialog(BuildContext context, String hubCode, String currentName, String currentAddress, String currentPhone) {
     final nameCtrl = TextEditingController(text: currentName);
     final addrCtrl = TextEditingController(text: currentAddress);
     final phoneCtrl = TextEditingController(text: currentPhone);
@@ -538,20 +566,36 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
-            onPressed: () {
+            onPressed: () async {
+              final newName = nameCtrl.text.trim();
+              final newAddr = addrCtrl.text.trim();
+              final newPhone = phoneCtrl.text.trim();
+
               if (widget.state.locationHubs.isNotEmpty) {
-                widget.state.locationHubs.first['name'] = nameCtrl.text.trim();
-                widget.state.locationHubs.first['address'] = addrCtrl.text.trim();
-                widget.state.locationHubs.first['manager_phone'] = phoneCtrl.text.trim();
+                widget.state.locationHubs.first['name'] = newName;
+                widget.state.locationHubs.first['address'] = newAddr;
+                widget.state.locationHubs.first['manager_phone'] = newPhone;
               }
               Navigator.pop(ctx);
               setState(() {});
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Color(0xFF0D7C66),
-                  content: Text('✅ Hub Depot operational details updated successfully!'),
-                ),
+
+              final ok = await ApiService.updateHubDetails(
+                hubCode: hubCode,
+                name: newName,
+                address: newAddr,
+                managerPhone: newPhone,
               );
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.orange,
+                    content: Text(ok
+                        ? '✅ Hub Depot operational details updated & synced!'
+                        : '⚠️ Saved locally. Network sync pending.'),
+                  ),
+                );
+              }
             },
             child: const Text('Save Hub Info'),
           ),
@@ -601,50 +645,114 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     );
   }
 
-  void _showCoverageAreaSheet(BuildContext context, String hubName) {
+  void _showCoverageAreaSheet(BuildContext context, String hubCode, String hubName, double currentRadius) {
+    double radius = currentRadius;
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.radar_rounded, color: Color(0xFF2563EB), size: 28),
-                SizedBox(width: 8),
-                Text('5.0 km Micro-Cluster Coverage', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.radar_rounded, color: Color(0xFF2563EB), size: 28),
+                  const SizedBox(width: 8),
+                  Text('${radius.toStringAsFixed(1)} km Geofence Coverage', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                ],
               ),
-              child: Text(
-                '📍 $hubName serves all households within a 5.0 km geofenced radius in the municipal cluster.',
-                style: const TextStyle(fontSize: 12.5, color: Color(0xFF1E3A8A), height: 1.4),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '📍 $hubName accepts orders and dispatches morning delivery routes within a ${radius.toStringAsFixed(1)} km operating radius.',
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF1E3A8A), height: 1.4),
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            _buildScoreRow('🗺️ Operating Sector', 'Kodad Central, Bank Colony, Main Road'),
-            _buildScoreRow('📮 Pincode Cluster', '508206 & surrounding zones'),
-            _buildScoreRow('⚡ Morning Drop Cutoff', '07:00 AM Guaranteed'),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Done'),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Adjust Operating Radius:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text('${radius.toStringAsFixed(1)} km', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF2563EB), fontSize: 15)),
+                ],
               ),
-            ),
-          ],
+              Slider(
+                value: radius.clamp(1.0, 30.0),
+                min: 1.0,
+                max: 30.0,
+                divisions: 58,
+                activeColor: const Color(0xFF2563EB),
+                onChanged: (val) {
+                  setModalState(() => radius = val);
+                },
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [3.0, 5.0, 8.5, 12.0, 15.0, 20.0].map((r) {
+                  final isSelected = (radius - r).abs() < 0.2;
+                  return ChoiceChip(
+                    label: Text('${r.toStringAsFixed(r % 1 == 0 ? 0 : 1)} km'),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF2563EB),
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                    ),
+                    onSelected: (_) => setModalState(() => radius = r),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    if (widget.state.locationHubs.isNotEmpty) {
+                      widget.state.locationHubs.first['coverage_radius_km'] = radius;
+                    }
+                    setState(() {});
+
+                    final ok = await ApiService.updateHubDetails(
+                      hubCode: hubCode,
+                      coverageRadiusKm: radius,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.orange,
+                          content: Text(ok
+                              ? '✅ Coverage radius updated to ${radius.toStringAsFixed(1)} km! Synced with Admin Console.'
+                              : '⚠️ Saved locally. Network sync pending.'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Save Coverage Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -809,11 +917,26 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     );
   }
 
-  void _showBankDetailsDialog(BuildContext context, String bankAcc) {
+  void _showBankDetailsDialog(
+    BuildContext context,
+    String hubCode,
+    String hubName,
+    String currentBankName,
+    String currentAccountNum,
+    String currentIfsc,
+    String currentHolder,
+    String currentUpi,
+  ) {
+    final bankNameCtrl = TextEditingController(text: currentBankName);
+    final accountNumCtrl = TextEditingController(text: currentAccountNum);
+    final ifscCtrl = TextEditingController(text: currentIfsc);
+    final holderCtrl = TextEditingController(text: currentHolder);
+    final upiCtrl = TextEditingController(text: currentUpi);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Row(
           children: [
             Icon(Icons.account_balance_rounded, color: Color(0xFFE67E22)),
@@ -821,28 +944,90 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             Text('Settlement Bank Account', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildScoreRow('🏦 Bank Name', 'HDFC Bank Ltd.'),
-            _buildScoreRow('💳 Account Number', '50100482918421'),
-            _buildScoreRow('🏛️ IFSC Code', 'HDFC0001842'),
-            _buildScoreRow('📲 Linked UPI ID', 'milkdrop.kodad@hdfcbank'),
-            _buildScoreRow('✅ Payout Verification', 'Verified & Active'),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: bankNameCtrl,
+                decoration: const InputDecoration(labelText: 'Bank Name', prefixIcon: Icon(Icons.account_balance_outlined)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: accountNumCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Bank Account Number', prefixIcon: Icon(Icons.credit_card_outlined)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: ifscCtrl,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(labelText: 'IFSC Code', prefixIcon: Icon(Icons.pin_outlined)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: holderCtrl,
+                decoration: const InputDecoration(labelText: 'Account Holder Name', prefixIcon: Icon(Icons.person_outline)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: upiCtrl,
+                decoration: const InputDecoration(labelText: 'Linked UPI ID', prefixIcon: Icon(Icons.qr_code_outlined)),
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
-            onPressed: () {
+            onPressed: () async {
+              final newBank = bankNameCtrl.text.trim();
+              final newAcc = accountNumCtrl.text.trim();
+              final newIfsc = ifscCtrl.text.trim().toUpperCase();
+              final newHolder = holderCtrl.text.trim();
+              final newUpi = upiCtrl.text.trim();
+
+              if (newBank.isEmpty || newAcc.isEmpty || newIfsc.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(backgroundColor: Colors.red, content: Text('Please enter Bank Name, Account Number, and IFSC Code.')),
+                );
+                return;
+              }
+
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('To update bank details, please contact Central Operations verification desk.')),
+
+              if (widget.state.locationHubs.isNotEmpty) {
+                widget.state.locationHubs.first['bank_name'] = newBank;
+                widget.state.locationHubs.first['bank_account_number'] = newAcc;
+                widget.state.locationHubs.first['bank_ifsc'] = newIfsc;
+                widget.state.locationHubs.first['bank_account_holder'] = newHolder;
+                widget.state.locationHubs.first['upi_id'] = newUpi;
+                widget.state.locationHubs.first['bank_account'] = '$newBank • A/C ending in ${newAcc.length >= 4 ? newAcc.substring(newAcc.length - 4) : newAcc}';
+              }
+              setState(() {});
+
+              final ok = await ApiService.updateHubDetails(
+                hubCode: hubCode,
+                bankName: newBank,
+                bankAccountNumber: newAcc,
+                bankIfsc: newIfsc,
+                bankAccountHolder: newHolder,
+                upiId: newUpi,
               );
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.orange,
+                    content: Text(ok
+                        ? '✅ Settlement bank account saved! Synced with Admin Console.'
+                        : '⚠️ Saved locally. Network sync pending.'),
+                  ),
+                );
+              }
             },
-            child: const Text('Request Change'),
+            child: const Text('Save Bank Details'),
           ),
         ],
       ),
