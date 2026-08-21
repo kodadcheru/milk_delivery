@@ -666,6 +666,9 @@ class AppState extends ChangeNotifier {
     String? slotPreference,
     double? latitude,
     double? longitude,
+    String? vehicleNumber,
+    String? drivingLicense,
+    double? monthlySalary,
   }) async {
     final updates = <String, dynamic>{};
     if (firstName != null) updates['first_name'] = firstName;
@@ -677,6 +680,9 @@ class AppState extends ChangeNotifier {
     if (slotPreference != null) updates['delivery_slot_preference'] = slotPreference;
     if (latitude != null) updates['latitude'] = latitude;
     if (longitude != null) updates['longitude'] = longitude;
+    if (vehicleNumber != null) updates['vehicle_number'] = vehicleNumber;
+    if (drivingLicense != null) updates['driving_license'] = drivingLicense;
+    if (monthlySalary != null) updates['monthly_salary'] = monthlySalary;
 
     final updatedUser = await ApiService.updateUserProfile(updates);
     if (updatedUser != null) {
@@ -692,6 +698,9 @@ class AppState extends ChangeNotifier {
         deliverySlotPreference: slotPreference,
         latitude: latitude,
         longitude: longitude,
+        vehicleNumber: vehicleNumber,
+        drivingLicense: drivingLicense,
+        monthlySalary: monthlySalary,
       );
     }
     notifyListeners();
