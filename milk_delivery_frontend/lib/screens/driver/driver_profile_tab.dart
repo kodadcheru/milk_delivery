@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../theme/ui_tokens.dart';
 import '../../providers/app_state.dart';
+import 'driver_route_map_screen.dart';
+import 'morning_batch_screen.dart';
 
 class DriverProfileTab extends StatelessWidget {
   final AppState state;
@@ -18,21 +19,18 @@ class DriverProfileTab extends StatelessWidget {
     final driverName = (driverUser != null && (driverUser.firstName.isNotEmpty || driverUser.username.isNotEmpty))
         ? '${driverUser.firstName} ${driverUser.lastName}'.trim()
         : (driverUser?.username.isNotEmpty == true ? driverUser!.username : 'Partner Delivery Boy');
-    final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : 'Verified Mobile Partner';
+    final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : '+91 8919548905';
     final driverId = driverUser != null ? 'DRV-${driverUser.id}' : 'DRV-101';
 
     final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
     final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
-        ? 'Central Operations (${activeHub['manager_phone']})'
-        : 'Central Operations (+91 8919548905)';
+        ? activeHub['manager_phone'].toString()
+        : '+91 8919548905';
 
     final salaryText = (driverUser != null && driverUser.monthlySalary > 0)
         ? '₹${driverUser.monthlySalary.toStringAsFixed(0)}'
         : '₹15,000';
-    final salaryDetailText = (driverUser != null && driverUser.monthlySalary > 0)
-        ? '₹${driverUser.monthlySalary.toStringAsFixed(0)} / month (Paid directly by Hub Owner)'
-        : '₹15,000 / month (Paid directly by Hub Owner)';
 
     final vehicleText = (driverUser != null && driverUser.vehicleNumber.isNotEmpty)
         ? driverUser.vehicleNumber
@@ -41,171 +39,307 @@ class DriverProfileTab extends StatelessWidget {
         ? '${driverUser.drivingLicense} (Active)'
         : 'Commercial License (Active)';
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    final topInset = MediaQuery.of(context).padding.top;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Column(
         children: [
-          // ── Partner Profile Hero Card ──
+          // ── Part 1: Hero Header ──
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [UiTone.ink, Color(0xFF1E293B)],
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
+                colors: [Color(0xFF0F172A), Color(0xFF0D7C66), Color(0xFF044E3A)],
               ),
-              borderRadius: BorderRadius.circular(UiRadius.xl),
-              boxShadow: UiShadow.card,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+              boxShadow: [
+                BoxShadow(color: Color(0x250D7C66), blurRadius: 20, offset: Offset(0, 10)),
+              ],
             ),
+            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 24),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  alignment: Alignment.bottomRight,
+                // Top row
+                Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: UiTone.secondary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const CircleAvatar(
-                        radius: 40,
-                        backgroundColor: UiTone.primary,
-                        child: Text('🛵', style: TextStyle(fontSize: 38)),
-                      ),
+                    const Text(
+                      'Driver Profile',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
+                    const Spacer(),
                     Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: UiTone.secondary,
-                        shape: BoxShape.circle,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                        borderRadius: BorderRadius.circular(30),
                       ),
-                      child: const Icon(Icons.check, size: 14, color: UiTone.surface),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF34D399)),
+                          SizedBox(width: 5),
+                          Text('On Duty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  driverName,
-                  style: const TextStyle(color: UiTone.surface, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  driverPhone,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: UiTone.secondary.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    border: Border.all(color: UiTone.secondary),
+                const SizedBox(height: 20),
+
+                // Avatar stack
+                Center(
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.40)],
+                          ),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x30000000), blurRadius: 16, offset: Offset(0, 6)),
+                          ],
+                        ),
+                        child: const Center(
+                          child: CircleAvatar(
+                            radius: 38,
+                            backgroundColor: Color(0xFF0D7C66),
+                            child: Text('🛵', style: TextStyle(fontSize: 36)),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF38BDF8),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.verified, size: 12, color: Colors.white),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    '🛵 Verified Delivery Partner • ID #$driverId',
-                    style: const TextStyle(color: UiTone.secondary, fontWeight: FontWeight.bold, fontSize: 11),
+                ),
+                const SizedBox(height: 12),
+
+                // Name row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      driverName,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.verified, size: 20, color: Color(0xFF38BDF8)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+
+                // Phone & ID pill
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.20),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF38BDF8)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Verified Delivery Partner • ID #$driverId',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
 
-          // ── Key Metrics Strip ──
-          Row(
-            children: [
-              _buildMetricCard('4.9 ★', 'Customer Rating', Icons.star_rounded, Colors.amber),
-              const SizedBox(width: 10),
-              _buildMetricCard('99.2%', 'On-Time Rate', Icons.timer_rounded, UiTone.secondary),
-              const SizedBox(width: 10),
-              _buildMetricCard(salaryText, 'Monthly Salary', Icons.payments_rounded, UiTone.primary),
-            ],
-          ),
-          const SizedBox(height: 20),
+          // ── Part 2: Scrollable Content ──
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+              children: [
+                // Quick Metrics Strip
+                Row(
+                  children: [
+                    _buildQuickStatCard('4.9 ★', 'Driver Rating', Icons.star_rounded, const Color(0xFFF59E0B), const Color(0xFFFEF3C7)),
+                    const SizedBox(width: 10),
+                    _buildQuickStatCard('99.2%', 'On-Time Drops', Icons.timer_rounded, const Color(0xFF10B981), const Color(0xFFD1FAE5)),
+                    const SizedBox(width: 10),
+                    _buildQuickStatCard(salaryText, 'Monthly Salary', Icons.payments_rounded, const Color(0xFF0D7C66), const Color(0xFFE6F5F0)),
+                  ],
+                ),
+                const SizedBox(height: 20),
 
-          // ── Shift & Route Information ──
-          _buildSectionHeader('Route, Shift & Employment Details'),
-          Card(
-            elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildDetailRow(Icons.payments_rounded, 'Monthly Salary', salaryDetailText),
-                  const Divider(height: 20),
-                  _buildDetailRow(Icons.map_rounded, 'Assigned Route', 'Morning Route #1 • $hubName Zone'),
-                  const Divider(height: 20),
-                  _buildDetailRow(Icons.schedule_rounded, 'Morning Shift Hours', '05:00 AM – 08:30 AM Daily'),
-                  const Divider(height: 20),
-                  _buildDetailRow(Icons.two_wheeler_rounded, 'Registered Vehicle', vehicleText),
-                  const Divider(height: 20),
-                  _buildDetailRow(Icons.badge_rounded, 'Driving License', licenseText),
-                ],
-              ),
+                // Section 1: Route & Shift Details
+                _buildSectionHeader('Route & Shift Assignment'),
+                const SizedBox(height: 8),
+                _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.map_rounded,
+                    iconBg: const Color(0xFFE8F2FE),
+                    iconFg: const Color(0xFF2563EB),
+                    label: 'Morning Route #1 • $hubName',
+                    subtitle: 'Assigned Urban Zone & Street Path',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DriverRouteMapScreen(state: state, tasks: state.deliveries))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.schedule_rounded,
+                    iconBg: const Color(0xFFE0F7F3),
+                    iconFg: const Color(0xFF0D9488),
+                    label: 'Shift: 05:00 AM – 08:30 AM Daily',
+                    subtitle: 'Morning delivery window',
+                    onTap: () {},
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.two_wheeler_rounded,
+                    iconBg: const Color(0xFFFFF3E6),
+                    iconFg: const Color(0xFFE67E22),
+                    label: 'Vehicle: $vehicleText',
+                    subtitle: 'License: $licenseText',
+                    onTap: () {},
+                  ),
+                ]),
+
+                const SizedBox(height: 20),
+
+                // Section 2: Operations & Hub Dispatch
+                _buildSectionHeader('Operations & Hub Dispatch'),
+                const SizedBox(height: 8),
+                _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.warehouse_rounded,
+                    iconBg: const Color(0xFFE6F5F0),
+                    iconFg: const Color(0xFF0D7C66),
+                    label: 'Dispatch Depot: $hubName',
+                    subtitle: 'Central Hub Operations',
+                    onTap: () {},
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.inventory_2_rounded,
+                    iconBg: const Color(0xFFEEF2FF),
+                    iconFg: const Color(0xFF4F46E5),
+                    label: 'Morning Batch Packing Crates',
+                    subtitle: 'View crate breakdown & pack counts',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MorningBatchScreen(state: state))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.support_agent_rounded,
+                    iconBg: const Color(0xFFFEF2F2),
+                    iconFg: const Color(0xFFEF4444),
+                    label: 'Hub Manager Contact',
+                    subtitle: managerPhone,
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Calling Hub Manager: $managerPhone'))),
+                  ),
+                ]),
+
+                const SizedBox(height: 20),
+
+                // Section 3: Safety & Partner Support
+                _buildSectionHeader('Support & Partner Safety'),
+                const SizedBox(height: 8),
+                _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.headset_mic_rounded,
+                    iconBg: const Color(0xFFFFF3E6),
+                    iconFg: const Color(0xFFE67E22),
+                    label: 'Emergency Delivery Support',
+                    subtitle: '24x7 Driver helpline & assistance',
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connecting to Emergency Partner Support...'))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.shield_outlined,
+                    iconBg: const Color(0xFFF1F5F9),
+                    iconFg: const Color(0xFF475569),
+                    label: 'Driver Safety Guidelines & Terms',
+                    subtitle: 'Zero spillage & cold chain standards',
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Safety Guidelines displayed'))),
+                  ),
+                ]),
+
+                const SizedBox(height: 24),
+
+                // Logout Action
+                GestureDetector(
+                  onTap: () => _confirmDriverLogout(context, state, onLogout),
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFF43F5E), Color(0xFFE11D48)]),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [BoxShadow(color: Color(0x28E11D48), blurRadius: 16, offset: Offset(0, 6))],
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text('Log out of Partner Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // Version Footer
+                const Center(
+                  child: Text(
+                    'MilkDrop Express Partner v1.0.0 • Dedicated Delivery Heroes 🛵',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          // ── Hub & Support Contact ──
-          _buildSectionHeader('Dispatch Hub & Emergency Support'),
-          Card(
-            elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildDetailRow(Icons.warehouse_rounded, 'Operating Hub', hubName),
-                  const Divider(height: 20),
-                  _buildDetailRow(Icons.support_agent_rounded, 'Dispatch Operations', managerPhone),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Logout Action ──
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                state.setRole('CUSTOMER');
-                onLogout();
-              },
-              icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
-              label: const Text('Log Out of Partner Account', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.redAccent),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildMetricCard(String value, String label, IconData icon, Color color) {
+  Widget _buildQuickStatCard(String value, String label, IconData icon, Color fg, Color bg) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: UiTone.surface,
-          borderRadius: BorderRadius.circular(UiRadius.md),
-          boxShadow: UiShadow.card,
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3)),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 6),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: UiTone.ink)),
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+              child: Icon(icon, color: fg, size: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF0F172A))),
             const SizedBox(height: 2),
-            Text(label, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+            Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10.5, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -213,35 +347,104 @@ class DriverProfileTab extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8, left: 4),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: UiTone.ink),
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF334155), letterSpacing: -0.2),
+    );
+  }
+
+  Widget _buildCardGroup(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5ECE8), width: 1),
+        boxShadow: const [
+          BoxShadow(color: Color(0x081A2B23), blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(color: Color(0x051A2B23), blurRadius: 24, offset: Offset(0, 8)),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildDivider() {
+    return const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9), indent: 68);
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconFg,
+    required String label,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: iconFg),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Color(0xFF1A2B23))),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ],
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 20, color: Color(0xFFC0C8C4)),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String title, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: UiTone.primary, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-              const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
-            ],
-          ),
+  void _confirmDriverLogout(BuildContext context, AppState state, VoidCallback onLogout) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Log Out Partner', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
         ),
-      ],
+        content: const Text('Are you sure you want to log out of your driver partner account?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () {
+              state.setRole('CUSTOMER');
+              Navigator.pop(ctx);
+              onLogout();
+            },
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
     );
   }
 }

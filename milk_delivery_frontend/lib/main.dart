@@ -159,7 +159,9 @@ class _MainAppShellState extends State<MainAppShell> {
 
       return Scaffold(
         extendBody: false,
-        appBar: AppBar(
+        appBar: _driverTab == 3
+            ? null
+            : AppBar(
           backgroundColor: UiTone.ink,
           elevation: 0,
           title: InkWell(
@@ -295,7 +297,9 @@ class _MainAppShellState extends State<MainAppShell> {
 
       return Scaffold(
         extendBody: false,
-        appBar: AppBar(
+        appBar: _providerTab == 3
+            ? null
+            : AppBar(
           backgroundColor: UiTone.ink,
           elevation: 0,
           title: Row(
@@ -412,7 +416,9 @@ class _MainAppShellState extends State<MainAppShell> {
 
       return Scaffold(
         extendBody: false,
-        appBar: AppBar(
+        appBar: _adminTab == 3
+            ? null
+            : AppBar(
           backgroundColor: UiTone.ink,
           elevation: 0,
           title: Row(
