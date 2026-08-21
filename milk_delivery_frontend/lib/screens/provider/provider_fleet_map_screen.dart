@@ -25,11 +25,21 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
   List<Map<String, dynamic>> get _hubs {
     if (widget.state.locationHubs.isNotEmpty) {
       return widget.state.locationHubs.map((h) {
+        final double rawLat = (h['latitude'] as num?)?.toDouble() ?? 17.001734;
+        final double rawLng = (h['longitude'] as num?)?.toDouble() ?? 79.9625;
+        // Ensure coordinates point to actual hub location instead of default Hyderabad
+        final double lat = (rawLat >= 17.40 && rawLat <= 17.46 && rawLng >= 78.35 && rawLng <= 78.48)
+            ? 17.001734
+            : rawLat;
+        final double lng = (rawLat >= 17.40 && rawLat <= 17.46 && rawLng >= 78.35 && rawLng <= 78.48)
+            ? 79.9625
+            : rawLng;
+
         return {
-          'name': h['name'] ?? 'Location Hub',
-          'code': h['hub_code'] ?? 'HUB',
-          'lat': (h['latitude'] as num?)?.toDouble() ?? 17.4320,
-          'lng': (h['longitude'] as num?)?.toDouble() ?? 78.4070,
+          'name': h['name'] ?? 'Kodad Central Depot',
+          'code': h['hub_code'] ?? 'HUB-KDD-01',
+          'lat': lat,
+          'lng': lng,
           'color': const Color(0xFF10B981),
           'radiusKm': (h['coverage_radius_km'] as num?)?.toDouble() ?? 5.0,
         };
@@ -39,8 +49,8 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
       {
         'name': 'Kodad Central Dairy Depot',
         'code': 'HUB-KDD-01',
-        'lat': 17.4320,
-        'lng': 78.4070,
+        'lat': 17.001734,
+        'lng': 79.9625,
         'color': const Color(0xFF10B981),
         'radiusKm': 5.0,
       },
@@ -63,7 +73,10 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Generate driver coordinates spread across Hyderabad sectors
+    final double hubLat = _hubs.isNotEmpty ? (_hubs.first['lat'] as double) : 17.001734;
+    final double hubLng = _hubs.isNotEmpty ? (_hubs.first['lng'] as double) : 79.9625;
+
+    // Generate driver coordinates spread around active hub operating sector
     final List<Map<String, dynamic>> driversWithCoords = [];
     final drivers = widget.fleetDrivers.isNotEmpty
         ? widget.fleetDrivers
@@ -73,16 +86,20 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
           ];
 
     final offsets = [
-      const LatLng(17.4360, 78.4110),
-      const LatLng(17.4280, 78.4020),
-      const LatLng(17.4190, 78.4380),
-      const LatLng(17.4520, 78.3880),
-      const LatLng(17.4410, 78.3970),
+      LatLng(hubLat + 0.0042, hubLng + 0.0035),
+      LatLng(hubLat - 0.0035, hubLng - 0.0048),
+      LatLng(hubLat + 0.0058, hubLng - 0.0028),
+      LatLng(hubLat - 0.0025, hubLng + 0.0052),
+      LatLng(hubLat + 0.0018, hubLng - 0.0061),
     ];
 
     for (int i = 0; i < drivers.length; i++) {
       final d = Map<String, dynamic>.from(drivers[i]);
-      d['coord'] = offsets[i % offsets.length];
+      if (d['latitude'] != null && d['longitude'] != null) {
+        d['coord'] = LatLng((d['latitude'] as num).toDouble(), (d['longitude'] as num).toDouble());
+      } else {
+        d['coord'] = offsets[i % offsets.length];
+      }
       driversWithCoords.add(d);
     }
 
@@ -103,7 +120,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             Text(
-              '${driversWithCoords.length} Salaried Partners • 3 Operating Hubs',
+              '${driversWithCoords.length} Salaried Partners • ${_hubs.first['name']}',
               style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
             ),
           ],
@@ -113,9 +130,9 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
         children: [
           // ── Google Maps View ──
           GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(17.4320, 78.4070),
-              zoom: 12.8,
+            initialCameraPosition: CameraPosition(
+              target: LatLng(hubLat, hubLng),
+              zoom: 13.5,
             ),
             onMapCreated: (controller) => _mapController = controller,
             myLocationEnabled: false,
