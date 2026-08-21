@@ -8,7 +8,6 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
-import '../../widgets/home/home_wallet_vacation_card.dart';
 import '../../widgets/home/home_promo_carousel.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
 import '../../widgets/home/home_category_showcase.dart';
@@ -16,7 +15,6 @@ import '../../widgets/home/home_product_card.dart';
 import '../../widgets/home/home_trust_assurance_strip.dart';
 import '../../widgets/home/home_serving_soon_view.dart';
 import '../../widgets/home/home_location_sheet.dart';
-import '../../widgets/home/home_topup_dialog.dart';
 
 class CustomerHomeTab extends StatefulWidget {
   final AppState state;
@@ -136,17 +134,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                         setState(() => _searchQuery = '');
                       },
                     ),
-                  ),
-                ),
-              ),
-
-              // ── 3. Wallet & Vacation Card ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: HomeWalletVacationCard(
-                    state: widget.state,
-                    onRechargeTap: () => HomeTopUpDialog.show(context, widget.state),
                   ),
                 ),
               ),
