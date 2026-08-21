@@ -149,8 +149,8 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
     // Filter tasks
     final filteredTasks = _dayDeliveries.where((t) {
       // Status filter
-      if (_statusFilter == 'PENDING' && t.status != 'PENDING') return false;
-      if (_statusFilter == 'DELIVERED' && t.status != 'DELIVERED') return false;
+      if ((_statusFilter == 'PENDING' || _statusFilter == 'ACTIVE') && t.status != 'PENDING') return false;
+      if ((_statusFilter == 'DELIVERED' || _statusFilter == 'COMPLETED') && t.status != 'DELIVERED') return false;
       if (_statusFilter == 'SKIPPED' && t.status != 'SKIPPED') return false;
 
       // Type filter
@@ -174,8 +174,8 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
 
     final filteredExpress = _dayLiveOrders.where((o) {
       if (_typeFilter == 'SUBSCRIPTION') return false;
-      if (_statusFilter == 'PENDING' && o.status == 'DELIVERED') return false;
-      if (_statusFilter == 'DELIVERED' && o.status != 'DELIVERED') return false;
+      if ((_statusFilter == 'PENDING' || _statusFilter == 'ACTIVE') && o.status == 'DELIVERED') return false;
+      if ((_statusFilter == 'DELIVERED' || _statusFilter == 'COMPLETED') && o.status != 'DELIVERED') return false;
 
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
@@ -281,9 +281,9 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                 children: [
                   _buildSummaryBadge('📦 Total Orders', '$totalCount', UiTone.primary),
                   const SizedBox(width: 8),
-                  _buildSummaryBadge('⏳ Pending', '$pendingCount', UiTone.warning),
+                  _buildSummaryBadge('⚡ Active', '$pendingCount', UiTone.warning),
                   const SizedBox(width: 8),
-                  _buildSummaryBadge('✅ Delivered', '$deliveredCount', UiTone.success),
+                  _buildSummaryBadge('✅ Completed', '$deliveredCount', UiTone.success),
                 ],
               ),
               const SizedBox(height: 14),
@@ -320,16 +320,20 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
               ),
               const SizedBox(height: 12),
 
-              // ── 4. Filter Chips (Status / Type / Slot) ──
+              // ── 4. Filter Chips (Active / Completed / Pending / Delivered / Type) ──
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('ALL', '👥 All Status', _statusFilter == 'ALL', (v) => setState(() => _statusFilter = 'ALL')),
+                    _buildFilterChip('ALL', '👥 All', _statusFilter == 'ALL', (v) => setState(() => _statusFilter = 'ALL')),
                     const SizedBox(width: 6),
-                    _buildFilterChip('PENDING', '⏳ Pending ($pendingCount)', _statusFilter == 'PENDING', (v) => setState(() => _statusFilter = 'PENDING')),
+                    _buildFilterChip('ACTIVE', '⚡ Active ($pendingCount)', _statusFilter == 'ACTIVE', (v) => setState(() => _statusFilter = 'ACTIVE')),
                     const SizedBox(width: 6),
-                    _buildFilterChip('DELIVERED', '✅ Delivered ($deliveredCount)', _statusFilter == 'DELIVERED', (v) => setState(() => _statusFilter = 'DELIVERED')),
+                    _buildFilterChip('COMPLETED', '✅ Completed ($deliveredCount)', _statusFilter == 'COMPLETED', (v) => setState(() => _statusFilter = 'COMPLETED')),
+                    const SizedBox(width: 6),
+                    _buildFilterChip('PENDING', '⏳ Pending', _statusFilter == 'PENDING', (v) => setState(() => _statusFilter = 'PENDING')),
+                    const SizedBox(width: 6),
+                    _buildFilterChip('DELIVERED', '📦 Delivered', _statusFilter == 'DELIVERED', (v) => setState(() => _statusFilter = 'DELIVERED')),
                     const SizedBox(width: 6),
                     _buildFilterChip('SKIPPED', '⏭️ Skipped', _statusFilter == 'SKIPPED', (v) => setState(() => _statusFilter = 'SKIPPED')),
                     const SizedBox(width: 12),
