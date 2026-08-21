@@ -932,38 +932,44 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             ),
             const Divider(height: 18),
 
-            // Mark Delivered + Photo Proof Action
+            // Mark Delivered + Photo Proof Action (High contrast, outdoor touch-friendly 44dp)
             if (!isDone && !isSkipped)
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        widget.state.markDeliverySkipped(task.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Stop marked as skipped.')),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: UiTone.error,
-                        side: const BorderSide(color: UiTone.error),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          widget.state.markDeliverySkipped(task.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Stop marked as skipped.')),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: UiTone.error,
+                          side: const BorderSide(color: UiTone.error, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        ),
+                        child: const Text('Skip Stop ⏭️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                       ),
-                      child: const Text('Skip / Absent', style: TextStyle(fontSize: 11)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _handleCompleteDeliveryWithCamera(context, task),
-                      icon: const Icon(Icons.camera_alt_rounded, size: 15),
-                      label: const Text('Mark Delivered + Proof', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleCompleteDeliveryWithCamera(context, task),
+                        icon: const Icon(Icons.camera_alt_rounded, size: 16),
+                        label: const Text('Mark Delivered + Proof 📸', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: UiTone.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        ),
                       ),
                     ),
                   ),

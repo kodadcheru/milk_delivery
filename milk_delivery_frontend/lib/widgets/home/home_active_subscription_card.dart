@@ -100,6 +100,51 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              const Divider(height: 1, color: UiTone.surfaceBorder),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        await state.toggleSubscriptionStatus(sub.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: UiTone.primary,
+                              content: Text(sub.status == 'ACTIVE' ? '⏸️ Tomorrow\'s delivery paused!' : '▶️ Subscription resumed!'),
+                            ),
+                          );
+                        }
+                      },
+                      icon: Icon(sub.status == 'ACTIVE' ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded, size: 14),
+                      label: Text(sub.status == 'ACTIVE' ? 'Pause Tomorrow' : 'Resume Delivery', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        foregroundColor: sub.status == 'ACTIVE' ? UiTone.warning : UiTone.primary,
+                        side: BorderSide(color: sub.status == 'ACTIVE' ? UiTone.warning.withValues(alpha: 0.5) : UiTone.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => state.setTab(1),
+                      icon: const Icon(Icons.calendar_month_rounded, size: 14),
+                      label: const Text('Visual Calendar 📅', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: UiTone.surface,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
