@@ -169,24 +169,36 @@ class HomeProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
 
-                // Price
+                // Price & Discount Badge
                 Row(
                   children: [
                     Text(
                       '₹${item.pricePerUnit.toStringAsFixed(0)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        color: Color(0xFF0D7C66),
+                        fontSize: 15,
+                        color: UiTone.primary,
                       ),
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 4),
                     Text(
                       '₹${discountPrice.toStringAsFixed(0)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey,
+                        color: Colors.grey[500],
                         decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: UiTone.successSoft,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '10% OFF',
+                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: UiTone.success),
                       ),
                     ),
                   ],
