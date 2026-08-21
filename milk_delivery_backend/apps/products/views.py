@@ -75,6 +75,7 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrReadOnly]
 
     def perform_update(self, serializer):
+        from apps.products.pricing import update_sibling_product_prices
         cat_id = self.request.data.get("category_id") or self.request.data.get("category_ref")
         cat_name = self.request.data.get("category")
         cat_obj = None
@@ -83,10 +84,11 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         elif cat_name:
             cat_obj = Category.objects.filter(Q(name__iexact=cat_name) | Q(slug__iexact=cat_name)).first()
 
-        if cat_obj:
-            serializer.save(category=cat_obj.name, category_ref=cat_obj)
-        else:
-            serializer.save()
+        updated_instance = serializer.save(
+            category=cat_obj.name if cat_obj else (cat_name or serializer.instance.category),
+            category_ref=cat_obj if cat_obj else serializer.instance.category_ref
+        )
+        update_sibling_product_prices(updated_instance)
 
 
 class HubInventoryListUpdateView(APIView):

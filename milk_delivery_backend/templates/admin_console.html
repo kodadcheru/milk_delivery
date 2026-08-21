@@ -4903,10 +4903,13 @@
             </td>
             <td><span class="status-tag status-pending">${catIcon} ${catName}</span></td>
             <td>
-              <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-weight:bold; color:var(--primary-accent); font-size:13px;">₹</span>
-                <input type="number" step="0.5" id="price-input-${p.id}" value="${p.price_per_unit}" style="width: 72px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: #FFF; font-weight: bold; font-size: 13px;" onchange="quickUpdateProductPrice(${p.id})">
-                <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="quickUpdateProductPrice(${p.id})" title="Save Price 💾"><i class="fa-solid fa-floppy-disk"></i></button>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <span style="font-weight:bold; color:var(--primary-accent); font-size:13px;">₹</span>
+                  <input type="number" step="0.5" id="price-input-${p.id}" value="${p.price_per_unit}" style="width: 72px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: #FFF; font-weight: bold; font-size: 13px;" oninput="updatePriceHintInRow(${p.id}, '${(p.unit_quantity || p.unit || '').replace(/'/g, "\\'")}')" onchange="quickUpdateProductPrice(${p.id})">
+                  <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="quickUpdateProductPrice(${p.id})" title="Save Price 💾"><i class="fa-solid fa-floppy-disk"></i></button>
+                </div>
+                <div id="price-hint-${p.id}">${getProportionalPriceHint(p.unit_quantity || p.unit, p.price_per_unit)}</div>
               </div>
             </td>
             <td><strong>${p.unit_quantity || p.unit}</strong></td>
@@ -5117,6 +5120,42 @@
       }
     }
 
+    function getProportionalPriceHint(unitQtyStr, priceVal) {
+      if (!unitQtyStr || priceVal === '' || isNaN(priceVal)) return '';
+      const s = unitQtyStr.toLowerCase();
+      const p = parseFloat(priceVal);
+      if (isNaN(p) || p <= 0) return '';
+
+      if (s.includes('1 liter') || s.includes('1 litre') || s.includes('1 l') || s.includes('1000 ml') || s.includes('1 kg') || s.includes('1000 g') || s.includes('12 egg') || s.includes('1 dozen')) {
+        const half = (p / 2).toFixed(2);
+        let label = '500 mL';
+        if (s.includes('kg') || s.includes('g')) label = '500 g';
+        if (s.includes('egg') || s.includes('dozen')) label = '6 Eggs';
+        return `<div style="font-size: 10px; color: #34D399; margin-top: 2px; font-weight: 600;">💡 Half Price (${label}): ₹${half}</div>`;
+      }
+
+      if (s.includes('500 ml') || s.includes('500 g') || s.includes('6 egg')) {
+        const full = (p * 2).toFixed(2);
+        let label = '1 Litre';
+        if (s.includes('g')) label = '1 kg';
+        if (s.includes('egg')) label = '12 Eggs';
+        return `<div style="font-size: 10px; color: #38BDF8; margin-top: 2px; font-weight: 600;">💡 Full Unit (${label}): ₹${full}</div>`;
+      }
+      return '';
+    }
+
+    function updatePriceHintInRow(id, unitQty) {
+      const val = document.getElementById(`price-input-${id}`)?.value;
+      const hintEl = document.getElementById(`price-hint-${id}`);
+      if (hintEl) hintEl.innerHTML = getProportionalPriceHint(unitQty, val);
+    }
+
+    function updateBatchPriceHint(id, unitQty) {
+      const val = document.getElementById(`batch-price-${id}`)?.value;
+      const hintEl = document.getElementById(`batch-price-hint-${id}`);
+      if (hintEl) hintEl.innerHTML = getProportionalPriceHint(unitQty, val);
+    }
+
     function openQuickPriceEditorModal() {
       const tbody = document.getElementById('quick-price-editor-body');
       if (!tbody) return;
@@ -5125,13 +5164,15 @@
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">No products in catalog.</td></tr>';
       } else {
         rawProducts.forEach(p => {
+          const uQty = p.unit_quantity || p.unit || '';
           tbody.innerHTML += `
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
               <td style="padding: 8px; font-weight: bold; font-size: 12px;">${p.name}</td>
-              <td style="padding: 8px; font-size: 11px; color: var(--text-muted);">${p.unit_quantity || ''}</td>
+              <td style="padding: 8px; font-size: 11px; color: var(--text-muted);">${uQty}</td>
               <td style="padding: 8px; font-size: 12px; color: var(--text-muted);">₹${p.price_per_unit}</td>
               <td style="padding: 8px;">
-                <input type="number" step="0.5" id="batch-price-${p.id}" value="${p.price_per_unit}" style="width: 85px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: #FFF; font-weight: bold; font-size: 12px;">
+                <input type="number" step="0.5" id="batch-price-${p.id}" value="${p.price_per_unit}" style="width: 85px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: #FFF; font-weight: bold; font-size: 12px;" oninput="updateBatchPriceHint(${p.id}, '${uQty.replace(/'/g, "\\'")}')">
+                <div id="batch-price-hint-${p.id}">${getProportionalPriceHint(uQty, p.price_per_unit)}</div>
               </td>
               <td style="padding: 8px; text-align: center;">
                 <button class="btn btn-primary" style="padding: 3px 8px; font-size: 10.5px;" onclick="quickUpdateProductPriceFromModal(${p.id})"><i class="fa-solid fa-check"></i> Save</button>
