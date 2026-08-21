@@ -53,6 +53,7 @@ from apps.accounts.phone_auth_views import (
     VerifyOTPView,
 )
 from apps.accounts.views import (
+    DriverLocationUpdateView,
     NotificationListView,
     NotificationMarkReadView,
     RegisterView,
@@ -142,6 +143,7 @@ urlpatterns = [
     path("api/auth/token/", RobustTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/me/", UserProfileView.as_view(), name="auth_me"),
+    path("api/driver/location/", DriverLocationUpdateView.as_view(), name="driver_location_update"),
     # Customer Address Book endpoints
     path("api/accounts/addresses/", CustomerAddressListCreateView.as_view(), name="address_list"),
     path("api/accounts/addresses/<int:pk>/", CustomerAddressDetailView.as_view(), name="address_detail"),

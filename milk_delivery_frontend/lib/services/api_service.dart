@@ -719,6 +719,26 @@ class ApiService {
     return false;
   }
 
+  static Future<bool> updateDriverLocation({
+    required double latitude,
+    required double longitude,
+    String status = 'ON_DUTY',
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/driver/location/'),
+            headers: _headers,
+            body: jsonEncode({
+              'latitude': latitude,
+              'longitude': longitude,
+              'status': status,
+            }),
+          ));
+      return res.statusCode == 200;
+    } catch (e) { lastError = e.toString(); }
+    return false;
+  }
+
   // ── 12. Customer Address Book APIs ──
   static Future<List<CustomerAddressModel>> fetchCustomerAddresses({int? customerId, String? phone}) async {
     try {

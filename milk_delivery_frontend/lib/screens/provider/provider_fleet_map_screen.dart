@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 
 class ProviderFleetMapScreen extends StatefulWidget {
   final AppState state;
@@ -21,6 +22,8 @@ class ProviderFleetMapScreen extends StatefulWidget {
 class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
   GoogleMapController? _mapController;
   Map<String, dynamic>? _selectedDriver;
+  late List<Map<String, dynamic>> _liveDrivers;
+  Timer? _fleetTimer;
 
   List<Map<String, dynamic>> get _hubs {
     if (widget.state.locationHubs.isNotEmpty) {
@@ -36,23 +39,23 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
             : rawLng;
 
         return {
-          'name': h['name'] ?? 'Kodad Central Depot',
+          'name': h['name'] ?? 'Kodad Depot',
           'code': h['hub_code'] ?? 'HUB-KDD-01',
           'lat': lat,
           'lng': lng,
           'color': const Color(0xFF10B981),
-          'radiusKm': (h['coverage_radius_km'] as num?)?.toDouble() ?? 5.0,
+          'radiusKm': (h['coverage_radius_km'] as num?)?.toDouble() ?? 8.5,
         };
       }).toList();
     }
     return [
       {
-        'name': 'Kodad Central Dairy Depot',
+        'name': 'Kodad Depot',
         'code': 'HUB-KDD-01',
         'lat': 17.001734,
         'lng': 79.9625,
         'color': const Color(0xFF10B981),
-        'radiusKm': 5.0,
+        'radiusKm': 8.5,
       },
     ];
   }
@@ -60,7 +63,30 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
   @override
   void initState() {
     super.initState();
-    // GoogleMapController set via onMapCreated
+    _liveDrivers = List.from(widget.fleetDrivers);
+    _fetchLiveFleet();
+    _fleetTimer = Timer.periodic(const Duration(seconds: 4), (_) => _fetchLiveFleet());
+  }
+
+  @override
+  void dispose() {
+    _fleetTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchLiveFleet() async {
+    final drivers = await ApiService.fetchFleet();
+    if (drivers.isNotEmpty && mounted) {
+      setState(() {
+        _liveDrivers = drivers;
+        if (_selectedDriver != null) {
+          _selectedDriver = drivers.firstWhere(
+            (d) => d['id'] == _selectedDriver!['id'],
+            orElse: () => _selectedDriver!,
+          );
+        }
+      });
+    }
   }
 
   void _callDriver(String phone) async {
@@ -78,25 +104,28 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
 
     // Generate driver coordinates spread around active hub operating sector
     final List<Map<String, dynamic>> driversWithCoords = [];
-    final drivers = widget.fleetDrivers.isNotEmpty
-        ? widget.fleetDrivers
-        : [
-            {'id': 1, 'name': 'Route Partner #1', 'phone': '+91 9123456789', 'hub': _hubs.first['name'], 'completed_stops': 12, 'assigned_stops': 14, 'salary': '₹15,000 / mo'},
-            {'id': 2, 'name': 'Route Partner #2', 'phone': '+91 9876501234', 'hub': _hubs.first['name'], 'completed_stops': 10, 'assigned_stops': 12, 'salary': '₹15,000 / mo'},
-          ];
+    final drivers = _liveDrivers.isNotEmpty
+        ? _liveDrivers
+        : (widget.fleetDrivers.isNotEmpty
+            ? widget.fleetDrivers
+            : [
+                {'id': 1, 'name': 'Route Partner #1', 'phone': '+91 8885199878', 'hub': _hubs.first['name'], 'completed_stops': 12, 'assigned_stops': 14, 'salary': '₹15,000 / mo'},
+              ]);
 
     final offsets = [
-      LatLng(hubLat + 0.0042, hubLng + 0.0035),
-      LatLng(hubLat - 0.0035, hubLng - 0.0048),
-      LatLng(hubLat + 0.0058, hubLng - 0.0028),
-      LatLng(hubLat - 0.0025, hubLng + 0.0052),
-      LatLng(hubLat + 0.0018, hubLng - 0.0061),
+      LatLng(hubLat + 0.0032, hubLng + 0.0025),
+      LatLng(hubLat - 0.0028, hubLng - 0.0038),
+      LatLng(hubLat + 0.0045, hubLng - 0.0021),
+      LatLng(hubLat - 0.0020, hubLng + 0.0042),
+      LatLng(hubLat + 0.0015, hubLng - 0.0050),
     ];
 
     for (int i = 0; i < drivers.length; i++) {
       final d = Map<String, dynamic>.from(drivers[i]);
-      if (d['latitude'] != null && d['longitude'] != null) {
-        d['coord'] = LatLng((d['latitude'] as num).toDouble(), (d['longitude'] as num).toDouble());
+      final latVal = d['latitude'] ?? d['lat'];
+      final lngVal = d['longitude'] ?? d['lng'];
+      if (latVal != null && lngVal != null && (latVal as num) != 0.0) {
+        d['coord'] = LatLng((latVal as num).toDouble(), (lngVal as num).toDouble());
       } else {
         d['coord'] = offsets[i % offsets.length];
       }

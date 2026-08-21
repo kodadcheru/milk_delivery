@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
@@ -23,11 +25,43 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
   String _selectedShift = 'MORNING'; // MORNING or EVENING
+  Timer? _gpsSyncTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncDriverLocation();
+    _gpsSyncTimer = Timer.periodic(const Duration(seconds: 10), (_) => _syncDriverLocation());
+  }
 
   @override
   void dispose() {
+    _gpsSyncTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _syncDriverLocation() async {
+    if (!mounted) return;
+    
+    // Resolve current coordinates: active task coordinate, driver profile coordinate, or Kodad hub coordinate
+    final pendingDeliveries = widget.state.deliveries.where((d) => d.status == 'PENDING').toList();
+    double lat = 17.001734;
+    double lng = 79.9625;
+
+    if (pendingDeliveries.isNotEmpty) {
+      lat = pendingDeliveries.first.customerLatitude;
+      lng = pendingDeliveries.first.customerLongitude;
+    } else if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
+      lat = widget.state.currentUser!.latitude;
+      lng = widget.state.currentUser!.longitude;
+    }
+
+    await ApiService.updateDriverLocation(
+      latitude: lat,
+      longitude: lng,
+      status: _isGpsBroadcastActive ? 'ON_DUTY' : 'OFFLINE',
+    );
   }
 
   void _callCustomer(BuildContext context, String phone) async {
@@ -287,6 +321,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         activeTrackColor: const Color(0xFF0D7C66),
                         onChanged: (val) {
                           setState(() => _isGpsBroadcastActive = val);
+                          _syncDriverLocation();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: val ? const Color(0xFF0D7C66) : Colors.grey[800],

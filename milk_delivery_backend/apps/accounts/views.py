@@ -166,3 +166,29 @@ class RobustTokenObtainPairView(APIView):
             "access": str(refresh.access_token),
             "user": UserSerializer(user).data,
         })
+
+
+class DriverLocationUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        lat = request.data.get("latitude")
+        lng = request.data.get("longitude")
+        status_val = request.data.get("status", "ON_DUTY")
+
+        if lat is not None and lng is not None:
+            user.latitude = Decimal(str(lat))
+            user.longitude = Decimal(str(lng))
+            user.driver_status = status_val
+            user.save(update_fields=["latitude", "longitude", "driver_status"])
+
+        return Response({
+            "message": "Driver location updated successfully",
+            "driver_id": user.id,
+            "driver_name": f"{user.first_name} {user.last_name}".strip() or user.username,
+            "latitude": float(user.latitude) if user.latitude else 17.001734,
+            "longitude": float(user.longitude) if user.longitude else 79.9625,
+            "driver_status": user.driver_status,
+        })
+
