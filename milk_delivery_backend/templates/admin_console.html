@@ -5164,8 +5164,8 @@
 
     function renderBottleReturns(returns) {
       document.getElementById('br-total').innerText = returns.length;
-      document.getElementById('br-pending').innerText = returns.filter(r => r.status === 'PENDING').length;
-      document.getElementById('br-collected').innerText = returns.filter(r => r.status === 'COLLECTED').length;
+      document.getElementById('br-pending').innerText = returns.filter(r => r.status === 'PENDING' || r.status === 'DEPOSITED').length;
+      document.getElementById('br-collected').innerText = returns.filter(r => r.status === 'COLLECTED' || r.status === 'RETURNED').length;
 
       const tbody = document.getElementById('bottleReturnsTableBody');
       if (!returns.length) {
@@ -5173,15 +5173,16 @@
         return;
       }
       tbody.innerHTML = returns.map((r, idx) => {
-        const statusColor = r.status === 'COLLECTED' ? 'var(--primary-accent)' : 'var(--warning)';
+        const isCompleted = r.status === 'COLLECTED' || r.status === 'RETURNED';
+        const statusColor = isCompleted ? 'var(--primary-accent)' : (r.status === 'LOST' ? 'var(--danger)' : 'var(--warning)');
         const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         return `
           <tr>
             <td>${idx + 1}</td>
             <td>${r.customer_name || '—'}</td>
             <td>${r.driver_name || '—'}</td>
-            <td style="font-weight: 700;">${r.bottles_count || 0}</td>
-            <td><span style="color: ${statusColor}; font-weight: 700;">${r.status || 'PENDING'}</span></td>
+            <td style="font-weight: 700;">${r.bottles_count || r.quantity || 1}</td>
+            <td><span style="color: ${statusColor}; font-weight: 700;">${r.status || 'DEPOSITED'}</span></td>
             <td style="font-size: 12px; color: var(--text-muted);">${date}</td>
             <td style="font-size: 12px; color: var(--text-muted);">${r.notes || '—'}</td>
           </tr>
@@ -5209,7 +5210,7 @@
       const totalAmount = payouts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
       document.getElementById('po-total').innerText = `₹${totalAmount.toFixed(0)}`;
       document.getElementById('po-pending').innerText = payouts.filter(p => p.status === 'PENDING').length;
-      document.getElementById('po-settled').innerText = payouts.filter(p => p.status === 'SETTLED').length;
+      document.getElementById('po-settled').innerText = payouts.filter(p => p.status === 'SETTLED' || p.status === 'COMPLETED').length;
 
       const tbody = document.getElementById('payoutsTableBody');
       if (!payouts.length) {
@@ -5217,7 +5218,8 @@
         return;
       }
       tbody.innerHTML = payouts.map((p, idx) => {
-        const statusColor = p.status === 'SETTLED' ? 'var(--primary-accent)' : 'var(--warning)';
+        const isSettled = p.status === 'SETTLED' || p.status === 'COMPLETED';
+        const statusColor = isSettled ? 'var(--primary-accent)' : 'var(--warning)';
         const settledDate = p.settled_at ? new Date(p.settled_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         return `
           <tr>
@@ -5226,7 +5228,7 @@
             <td>${p.provider_name || '—'}</td>
             <td style="font-size: 12px;">${p.period_start || '—'} to ${p.period_end || '—'}</td>
             <td style="font-weight: 700;">₹${parseFloat(p.amount || 0).toFixed(2)}</td>
-            <td><span style="color: ${statusColor}; font-weight: 700;">${p.status}</span></td>
+            <td><span style="color: ${statusColor}; font-weight: 700;">${isSettled ? 'SETTLED ✅' : p.status}</span></td>
             <td style="font-size: 12px; color: var(--text-muted);">${settledDate}</td>
           </tr>
         `;
