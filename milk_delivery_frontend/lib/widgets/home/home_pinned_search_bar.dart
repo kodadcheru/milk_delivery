@@ -80,6 +80,7 @@ class _HomePinnedSearchBarState extends State<HomePinnedSearchBar> {
         minExtent: 66,
         maxExtent: 66,
         child: Container(
+          color: UiTone.shellBackground,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Container(
             decoration: BoxDecoration(

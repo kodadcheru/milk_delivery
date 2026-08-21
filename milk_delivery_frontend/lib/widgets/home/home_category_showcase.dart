@@ -14,11 +14,11 @@ class HomeCategoryShowcase extends StatelessWidget {
     required this.onSelectCategory,
   });
 
-  // 8-color cyclic tint palette (matching service-mobile reference)
+  // 6-color cyclic tint palette (matching service-mobile reference)
   static const List<Map<String, dynamic>> categoriesData = [
     {
       'key': 'MILK',
-      'title': 'Fresh Milk & Dairy',
+      'title': 'Fresh Milk',
       'icon': '🥛',
       'bg': Color(0xFFE6F5F0),
       'fg': Color(0xFF0D7C66),
@@ -32,14 +32,14 @@ class HomeCategoryShowcase extends StatelessWidget {
     },
     {
       'key': 'EGGS',
-      'title': 'Farm Fresh Eggs',
+      'title': 'Farm Eggs',
       'icon': '🥚',
       'bg': Color(0xFFFFF3E6),
       'fg': Color(0xFFE67E22),
     },
     {
       'key': 'WATER_CAN',
-      'title': 'Pure Water Cans',
+      'title': 'Water Cans',
       'icon': '💧',
       'bg': Color(0xFFE8F2FE),
       'fg': Color(0xFF2563EB),
@@ -70,34 +70,28 @@ class HomeCategoryShowcase extends StatelessWidget {
       return coreIndex < 4 || count > 0;
     }).toList();
 
-    // Calculate tile dimensions
-    const crossAxisCount = 3;
-    const crossAxisSpacing = 14.0;
-    const mainAxisSpacing = 18.0;
-    final screenWidth = MediaQuery.of(context).size.width - 32; // 16px padding each side
-    final iconSize = (screenWidth - (crossAxisCount - 1) * crossAxisSpacing) / crossAxisCount;
+    // Calculate tile width for 3-column grid
+    final screenWidth = MediaQuery.of(context).size.width;
+    const horizontalPadding = 16.0 * 2;
+    const spacing = 12.0;
+    final tileWidth = (screenWidth - horizontalPadding - spacing * 2) / 3;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: crossAxisSpacing,
-          mainAxisSpacing: mainAxisSpacing,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: displayCategories.length,
-        itemBuilder: (context, index) {
-          final cat = displayCategories[index];
-          return _buildCategoryTile(context, cat, iconSize);
-        },
+      child: Wrap(
+        spacing: spacing,
+        runSpacing: 16,
+        children: displayCategories.map((cat) {
+          return SizedBox(
+            width: tileWidth,
+            child: _buildCategoryTile(context, cat),
+          );
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildCategoryTile(BuildContext context, Map<String, dynamic> cat, double iconSize) {
+  Widget _buildCategoryTile(BuildContext context, Map<String, dynamic> cat) {
     final catKey = cat['key'] as String;
     final isSelected = selectedCategory == catKey;
     final bgColor = cat['bg'] as Color;
@@ -114,39 +108,41 @@ class HomeCategoryShowcase extends StatelessWidget {
         );
       },
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon Container
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: iconSize,
-            height: iconSize,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? fgColor
-                    : const Color(0xFF0D7C66).withValues(alpha: 0.22),
-                width: isSelected ? 2.5 : 1.1,
-              ),
-              boxShadow: [
-                BoxShadow(
+          // Icon Container — square aspect ratio
+          AspectRatio(
+            aspectRatio: 1,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
                   color: isSelected
-                      ? fgColor.withValues(alpha: 0.2)
-                      : const Color(0xFF0D7C66).withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 7),
+                      ? fgColor
+                      : const Color(0xFFE2E8F0),
+                  width: isSelected ? 2.5 : 1.1,
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(19),
-              child: Container(
-                color: bgColor,
-                alignment: Alignment.center,
-                child: Text(
-                  cat['icon'] as String,
-                  style: const TextStyle(fontSize: 36),
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? fgColor.withValues(alpha: 0.2)
+                        : const Color(0xFF0D7C66).withValues(alpha: 0.06),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(19),
+                child: Container(
+                  color: bgColor,
+                  alignment: Alignment.center,
+                  child: Text(
+                    cat['icon'] as String,
+                    style: const TextStyle(fontSize: 34),
+                  ),
                 ),
               ),
             ),
@@ -155,19 +151,16 @@ class HomeCategoryShowcase extends StatelessWidget {
           const SizedBox(height: 8),
 
           // Label
-          SizedBox(
-            height: 38,
-            child: Text(
-              cat['title'] as String,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                color: isSelected ? fgColor : const Color(0xFF2A313D),
-                height: 1.2,
-              ),
+          Text(
+            cat['title'] as String,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? fgColor : const Color(0xFF334155),
+              height: 1.2,
             ),
           ),
         ],

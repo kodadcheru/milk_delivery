@@ -165,7 +165,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
 
               // ── 3. Story Reels ──
               const SliverToBoxAdapter(
-                child: HomeStoryReels(),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: HomeStoryReels(),
+                ),
               ),
 
               // ── 4. Wallet & Vacation Card ──
@@ -188,11 +191,14 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
               ] else ...[
                 // ── 5. Promo Carousel ──
                 SliverToBoxAdapter(
-                  child: HomePromoCarousel(
-                    state: widget.state,
-                    controller: _bannerController,
-                    currentIndex: _currentBannerIndex,
-                    onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: HomePromoCarousel(
+                      state: widget.state,
+                      controller: _bannerController,
+                      currentIndex: _currentBannerIndex,
+                      onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
+                    ),
                   ),
                 ),
 

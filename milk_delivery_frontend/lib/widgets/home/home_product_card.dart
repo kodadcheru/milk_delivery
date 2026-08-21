@@ -20,54 +20,55 @@ class HomeProductCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0D7C66).withValues(alpha: 0.07),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 6,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () => ProductDetailSheet.show(context, item, state),
             child: Stack(
+              fit: StackFit.expand,
               children: [
                 // 1. Full-bleed image or emoji fallback
-                Positioned.fill(
-                  child: item.imageUrl.isNotEmpty
-                      ? Image.network(
-                          item.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _buildEmojiFallback(),
-                        )
-                      : _buildEmojiFallback(),
-                ),
+                item.imageUrl.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _buildEmojiFallback(),
+                      )
+                    : _buildEmojiFallback(),
 
-                // 2. Bottom gradient overlay
+                // 2. Bottom gradient overlay — covers lower 55%
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  height: 90,
                   child: Container(
+                    height: 120,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.8),
+                          Colors.black.withValues(alpha: 0.85),
+                          Colors.black.withValues(alpha: 0.3),
                           Colors.transparent,
                         ],
+                        stops: const [0.0, 0.5, 1.0],
                       ),
                     ),
                   ),
@@ -78,15 +79,15 @@ class HomeProductCard extends StatelessWidget {
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white.withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       item.badgeText.isNotEmpty ? item.badgeText : item.category,
                       style: const TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 9,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF0D7C66),
                       ),
@@ -99,13 +100,12 @@ class HomeProductCard extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.5),
-                        width: 1,
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
@@ -116,7 +116,7 @@ class HomeProductCard extends StatelessWidget {
                         Text(
                           '${item.rating}',
                           style: const TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 10,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
                           ),
@@ -144,116 +144,136 @@ class HomeProductCard extends StatelessWidget {
                           'SOLD OUT',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ),
                     ),
                   ),
 
-                // 6. Bottom content
+                // 6. Bottom content — aligned to bottom
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Left side (Text content)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
+                        // Product name
+                        Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        // Unit
+                        Row(
+                          children: [
+                            Icon(Icons.scale, size: 10, color: Colors.white.withValues(alpha: 0.7)),
+                            const SizedBox(width: 3),
+                            Text(
+                              item.unitQuantity,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.scale, size: 11, color: Colors.white70),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    item.unitQuantity,
-                                    style: const TextStyle(
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        // Price row + ADD button
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Price
+                            Flexible(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
                                     '₹${item.pricePerUnit.toStringAsFixed(0)}',
                                     style: const TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
                                     ),
                                   ),
                                   if (discountPrice > item.pricePerUnit) ...[
                                     const SizedBox(width: 4),
-                                    Text(
-                                      '₹${discountPrice.toStringAsFixed(0)}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white60,
-                                        decoration: TextDecoration.lineThrough,
+                                    Flexible(
+                                      child: Text(
+                                        '₹${discountPrice.toStringAsFixed(0)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white.withValues(alpha: 0.6),
+                                          decoration: TextDecoration.lineThrough,
+                                          decorationColor: Colors.white.withValues(alpha: 0.5),
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                        
-                        const SizedBox(width: 8),
-                        
-                        // Right side (Add button)
-                        if (!item.isOutOfStock)
-                          InkWell(
-                            onTap: () {
-                              if (inCartQty == 0) {
-                                state.addToCart(item);
-                              } else {
-                                ProductDetailSheet.show(context, item, state);
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(999),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: inCartQty == 0 ? Colors.white : const Color(0xFF0D7C66),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                inCartQty == 0 ? 'ADD' : 'IN CART ✓',
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w900,
-                                  color: inCartQty == 0 ? const Color(0xFF0D7C66) : Colors.white,
+                            ),
+
+                            // ADD button
+                            if (!item.isOutOfStock)
+                              GestureDetector(
+                                onTap: () {
+                                  if (inCartQty == 0) {
+                                    state.addToCart(item);
+                                  } else {
+                                    ProductDetailSheet.show(context, item, state);
+                                  }
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: inCartQty == 0 ? Colors.white : const Color(0xFF0D7C66),
+                                    borderRadius: BorderRadius.circular(999),
+                                    boxShadow: [
+                                      if (inCartQty > 0)
+                                        BoxShadow(
+                                          color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    inCartQty == 0 ? 'ADD' : '✓ ${inCartQty}',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: inCartQty == 0 ? const Color(0xFF0D7C66) : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -267,21 +287,43 @@ class HomeProductCard extends StatelessWidget {
   }
 
   Widget _buildEmojiFallback() {
+    // Category-based pastel background
+    Color bgStart;
+    Color bgEnd;
+    switch (item.category) {
+      case 'MILK':
+        bgStart = const Color(0xFFE6F5F0);
+        bgEnd = const Color(0xFFD1FAE5);
+        break;
+      case 'MEAT':
+        bgStart = const Color(0xFFFDE8E8);
+        bgEnd = const Color(0xFFFFE4E6);
+        break;
+      case 'EGGS':
+        bgStart = const Color(0xFFFFF3E6);
+        bgEnd = const Color(0xFFFEF3C7);
+        break;
+      case 'WATER_CAN':
+        bgStart = const Color(0xFFE8F2FE);
+        bgEnd = const Color(0xFFDBEAFE);
+        break;
+      default:
+        bgStart = const Color(0xFFF8FAFC);
+        bgEnd = const Color(0xFFE2E8F0);
+    }
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFFF8FAFC),
-            const Color(0xFFE2E8F0).withValues(alpha: 0.5),
-          ],
+          colors: [bgStart, bgEnd],
         ),
       ),
       child: Center(
         child: Text(
           item.icon,
-          style: const TextStyle(fontSize: 48),
+          style: const TextStyle(fontSize: 44),
         ),
       ),
     );

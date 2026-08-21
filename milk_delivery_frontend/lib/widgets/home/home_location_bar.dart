@@ -94,13 +94,17 @@ class _HomeLocationBarState extends State<HomeLocationBar>
           end: Alignment.bottomRight,
           colors: [Color(0xFF16A267), Color(0xFF0E784D)],
         ),
-        border: const Border(
-          bottom: BorderSide(color: Color(0xFF0B6D44), width: 1.2),
-        ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B6D44).withValues(alpha: 0.5),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
