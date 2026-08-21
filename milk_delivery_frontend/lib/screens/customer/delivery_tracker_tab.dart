@@ -5,7 +5,6 @@ import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../widgets/booking_detail_sheet.dart';
-import 'help_support_screen.dart';
 import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
@@ -21,14 +20,14 @@ typedef BookingsTab = DeliveryTrackerTab;
 
 class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
-  int _selectedFilterIndex = 0; // 0: All, 1: Live Express, 2: Daily Subscriptions
+  int _selectedFilterIndex = 0; // 0: All, 1: Active, 2: Delivered, 3: Cancelled
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
   }
 
@@ -52,718 +51,712 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     }
   }
 
+  bool _isActive(String status) {
+    return status == 'PLACED' || status == 'PENDING' || status == 'PACKED' || status == 'OUT_FOR_DELIVERY' || status == 'PREPARING';
+  }
+
   @override
   Widget build(BuildContext context) {
     final liveOrders = widget.state.liveOrders;
     final subscriptions = widget.state.deliveries;
-
+    
     final totalCount = liveOrders.length + subscriptions.length;
-    final expressCount = liveOrders.length;
-    final subsCount = subscriptions.length;
+    
+    // Filter orders based on selected chip
+    List<LiveOrderModel> filteredOrders = liveOrders;
+    if (_selectedFilterIndex == 1) {
+      filteredOrders = liveOrders.where((o) => _isActive(o.status)).toList();
+    } else if (_selectedFilterIndex == 2) {
+      filteredOrders = liveOrders.where((o) => o.status == 'DELIVERED').toList();
+    } else if (_selectedFilterIndex == 3) {
+      filteredOrders = liveOrders.where((o) => o.status == 'CANCELLED').toList();
+    }
 
-    return RefreshIndicator(
-      color: UiTone.primary,
-      onRefresh: () => widget.state.reloadAllData(),
-      child: SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── 1. Live Header Bar ──
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'My Bookings & Orders 📦',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: UiTone.ink),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Live orders & subscriptions tracking',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+    final activeOrders = filteredOrders.where((o) => _isActive(o.status)).toList();
+    final firstActiveOrder = activeOrders.isNotEmpty ? activeOrders.first : null;
+    
+    // Remaining orders excluding the hero one
+    final remainingOrders = List<LiveOrderModel>.from(filteredOrders);
+    if (firstActiveOrder != null) {
+      remainingOrders.removeWhere((o) => o.id == firstActiveOrder.id);
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: RefreshIndicator(
+        color: const Color(0xFF0D7C66),
+        strokeWidth: 2.5,
+        onRefresh: () => widget.state.reloadAllData(),
+        child: (totalCount == 0 && _selectedFilterIndex == 0)
+            ? _buildEmptyState()
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => HelpSupportScreen(state: widget.state, initialTopic: 'I need help tracking my live order'),
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: UiTone.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(UiRadius.sm),
-                        border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
+                  _buildHeaderRow(totalCount),
+                  _buildFilterChips(totalCount),
+                  if (firstActiveOrder != null) ...[
+                    const SizedBox(height: 16),
+                    _buildActiveOrderHeroCard(firstActiveOrder),
+                  ],
+                  if (remainingOrders.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 20, bottom: 14),
+                      child: Text(
+                        'Recent Orders',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
+                    ),
+                    ...remainingOrders.map((o) => _buildOrderCard(o)),
+                  ],
+                  if (subscriptions.isNotEmpty && (_selectedFilterIndex == 0 || _selectedFilterIndex == 1)) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20, bottom: 14),
+                      child: Row(
                         children: [
-                          Icon(Icons.headset_mic_rounded, color: UiTone.primary, size: 13),
-                          SizedBox(width: 3),
-                          Text('Support', style: TextStyle(color: UiTone.primary, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Morning Subscriptions',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                            decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                            child: Text('${subscriptions.length}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 5),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: UiTone.secondary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(UiRadius.sm),
-                      border: Border.all(color: UiTone.secondary),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.circle, color: UiTone.secondary, size: 6),
-                        SizedBox(width: 3),
-                        Text('LIVE', style: TextStyle(color: UiTone.primary, fontSize: 9, fontWeight: FontWeight.w900)),
-                      ],
-                    ),
-                  ),
+                    ...subscriptions.map((task) => _buildSubscriptionCard(task)),
+                  ],
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // ── 2. Segmented Filter Bar (All / Live Express / Subscriptions) ──
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip(0, 'All Bookings ($totalCount)'),
-                const SizedBox(width: 8),
-                _buildFilterChip(1, '⚡ Live Express Orders ($expressCount)'),
-                const SizedBox(width: 8),
-                _buildFilterChip(2, '🥛 Daily Subscriptions ($subsCount)'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // ── 3. Content Display based on Filter ──
-          if (totalCount == 0 && _selectedFilterIndex == 0) ...[
-            _buildEmptyState(
-              'No Active Bookings Yet',
-              'You have not placed any live express orders or subscriptions yet. Explore our store for fresh farm milk, meats, eggs & water cans!',
-              Icons.receipt_long_rounded,
-              actionLabel: 'Explore Store 🥛',
-              onAction: () => widget.state.setTab(0),
-            ),
-          ] else ...[
-            if (_selectedFilterIndex == 0 || _selectedFilterIndex == 1) ...[
-              if (liveOrders.isNotEmpty) ...[
-                _buildSectionHeader('⚡ Live Express & Instant Orders', '${liveOrders.length} active'),
-                const SizedBox(height: 10),
-                ...liveOrders.map((order) => _buildLiveOrderCard(order)),
-                const SizedBox(height: 14),
-              ] else if (_selectedFilterIndex == 1) ...[
-                _buildEmptyState(
-                  'No Live Express Orders',
-                  'You have no active instant orders right now. Add items from store for 30-min express delivery!',
-                  Icons.electric_bolt_rounded,
-                  actionLabel: 'Order Express Items ⚡',
-                  onAction: () => widget.state.setTab(0),
-                ),
-              ],
-            ],
-
-            if (_selectedFilterIndex == 0 || _selectedFilterIndex == 2) ...[
-              if (subscriptions.isNotEmpty) ...[
-                _buildSectionHeader('🥛 Morning Subscriptions (6 AM)', '${subscriptions.length} deliveries'),
-                const SizedBox(height: 10),
-                ...subscriptions.map((task) => _buildSubscriptionDeliveryCard(task)),
-              ] else if (_selectedFilterIndex == 2) ...[
-                _buildEmptyState(
-                  'No Active Subscriptions',
-                  'Subscribe to fresh milk, eggs, or water cans for daily morning 06:00 AM doorstep delivery!',
-                  Icons.autorenew_rounded,
-                  actionLabel: 'Subscribe to Products 🥛',
-                  onAction: () => widget.state.setTab(0),
-                ),
-              ],
-            ],
-          ],
-        ],
-      ),
-    ),
-    );
-  }
-
-  Widget _buildFilterChip(int index, String label) {
-    final isSelected = _selectedFilterIndex == index;
-    return InkWell(
-      onTap: () => setState(() => _selectedFilterIndex = index),
-      borderRadius: BorderRadius.circular(UiRadius.sm),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
-          borderRadius: BorderRadius.circular(UiRadius.sm),
-          border: Border.all(
-            color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : const Color(0xFF334155),
-          ),
-        ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, String badge) {
+  Widget _buildHeaderRow(int totalCount) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
-          ),
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'My Orders',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), letterSpacing: -0.3),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Track & manage your orders',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
+        const Spacer(),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-          decoration: BoxDecoration(color: UiTone.surfaceBorder, borderRadius: BorderRadius.circular(UiRadius.xs)),
-          child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: UiTone.softText)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(color: const Color(0xFFE6F5F0), borderRadius: BorderRadius.circular(10)),
+          child: Text(
+            '$totalCount',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+          ),
         ),
       ],
     );
   }
 
-  // ── 4. Live Express Order Card (Direct Cart / Instant Orders) ──
-  Widget _buildLiveOrderCard(LiveOrderModel order) {
-    final isDelivered = order.status == 'DELIVERED';
-    final isOut = order.status == 'OUT_FOR_DELIVERY';
+  Widget _buildFilterChips(int totalCount) {
+    final chips = [
+      'All ($totalCount)',
+      '⚡ Active',
+      '✅ Delivered',
+      '❌ Cancelled'
+    ];
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-      child: InkWell(
-        onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
-        borderRadius: BorderRadius.circular(UiRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      height: 48,
+      margin: const EdgeInsets.only(top: 14),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(chips.length, (index) {
+            final isSelected = _selectedFilterIndex == index;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: InkWell(
+                onTap: () => setState(() => _selectedFilterIndex = index),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Text(
+                    chips[index],
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? Colors.white : const Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveOrderHeroCard(LiveOrderModel order) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B132B),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFF10B766).withValues(alpha: 0.5), width: 1.5),
+        boxShadow: const [
+          BoxShadow(color: Color(0x5510B766), blurRadius: 24, offset: Offset(0, 10)),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-            // Order Top Bar: Order ID, Type Badge, Status Badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B766),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text('LIVE ORDER', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                order.id,
+                style: const TextStyle(color: Colors.white60, fontSize: 12, fontFamily: 'monospace'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Arriving soon',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: const LinearProgressIndicator(
+              minHeight: 6,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B766)),
+              backgroundColor: Colors.white12,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildHeroStepper(order.status),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
               children: [
-                Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                const Icon(Icons.key, color: Color(0xFFF59E0B), size: 16),
+                const SizedBox(width: 6),
+                const Text('Start OTP', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                const Spacer(),
+                Text(
+                  order.deliveryOtp,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 3,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 18,
+                backgroundColor: Color(0xFF10B766),
+                child: Icon(Icons.person, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.driverName,
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+                    ),
+                    const Text(
+                      'Delivery Partner',
+                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _callDriver(order.driverPhone),
+                icon: const Icon(Icons.phone, color: Color(0xFF10B766)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => LiveDriverTrackingScreen(
+                      state: widget.state,
+                      liveOrder: order,
+                      orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                      deliveryAddress: order.deliveryAddress,
+                      driverName: order.driverName,
+                      driverPhone: order.driverPhone,
+                      deliveryOtp: order.deliveryOtp,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D7C66),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              child: const Text('Track Live Driver 🛰️', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroStepper(String status) {
+    int currentStep = 1;
+    if (status == 'PREPARING' || status == 'PACKED') currentStep = 2;
+    if (status == 'OUT_FOR_DELIVERY') currentStep = 3;
+    if (status == 'DELIVERED') currentStep = 4;
+
+    return Row(
+      children: [
+        _buildHeroStepNode('Placed', 1, currentStep),
+        _buildHeroConnector(1, currentStep),
+        _buildHeroStepNode('Packed', 2, currentStep),
+        _buildHeroConnector(2, currentStep),
+        _buildHeroStepNode('On Way', 3, currentStep),
+        _buildHeroConnector(3, currentStep),
+        _buildHeroStepNode('Doorstep', 4, currentStep),
+      ],
+    );
+  }
+
+  Widget _buildHeroStepNode(String label, int stepNumber, int activeStep) {
+    final isDone = activeStep > stepNumber;
+    final isCurrent = activeStep == stepNumber;
+    final isFuture = activeStep < stepNumber;
+
+    Color bgColor = isDone ? const Color(0xFF059669) : (isCurrent ? const Color(0xFF10B766) : Colors.white12);
+    
+    return Column(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: bgColor,
+            shape: BoxShape.circle,
+          ),
+          child: isDone
+              ? const Icon(Icons.check, color: Colors.white, size: 12)
+              : (isCurrent
+                  ? AnimatedBuilder(
+                      animation: _animController,
+                      builder: (context, child) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.5 + 0.5 * _animController.value),
+                              width: 2,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : const SizedBox()),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: isFuture ? Colors.white38 : Colors.white,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroConnector(int stepNumber, int activeStep) {
+    final isDone = activeStep > stepNumber;
+    return Expanded(
+      child: Container(
+        height: 3,
+        margin: const EdgeInsets.only(bottom: 14),
+        color: isDone ? const Color(0xFF059669) : Colors.white12,
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    if (status == 'PLACED' || status == 'PENDING') return const Color(0xFFD97706);
+    if (status == 'PACKED' || status == 'OUT_FOR_DELIVERY') return const Color(0xFF059669);
+    if (status == 'DELIVERED') return const Color(0xFF2563EB);
+    if (status == 'CANCELLED') return const Color(0xFFDC2626);
+    return const Color(0xFFD97706); // fallback
+  }
+
+  Widget _buildOrderCard(LiveOrderModel order) {
+    final statusColor = _getStatusColor(order.status);
+    final isActive = _isActive(order.status);
+    final isDelivered = order.status == 'DELIVERED';
+    
+    String itemsSummary = '';
+    if (order.items.isNotEmpty) {
+      if (order.items.length <= 2) {
+        itemsSummary = order.items.map((i) => '${i.quantity}x ${i.product.name}').join(', ');
+      } else {
+        itemsSummary = '${order.items[0].quantity}x ${order.items[0].product.name}, ${order.items[1].quantity}x ${order.items[1].product.name} + ${order.items.length - 2} more';
+      }
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left timeline
+        Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 24),
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Container(
+              width: 2,
+              height: 130, // Approx height, will fill nicely
+              color: const Color(0xFFE2E8F0),
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        // Expanded Card
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              boxShadow: const [
+                BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 3)),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(width: 4, color: statusColor)),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: UiTone.accentBlue.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(UiRadius.xs),
-                        ),
-                        child: Text(
-                          order.id,
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, color: UiTone.accentBlue),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              order.id,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B), fontFamily: 'monospace'),
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              order.status,
+                              style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        itemsSummary,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF94A3B8)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${order.deliveryDate} • ${order.deliverySlot}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Text(
+                            '₹${order.totalAmount.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                          ),
+                          const Spacer(),
+                          if (isActive)
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (ctx) => LiveDriverTrackingScreen(
+                                      state: widget.state,
+                                      liveOrder: order,
+                                      orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                                      deliveryAddress: order.deliveryAddress,
+                                      driverName: order.driverName,
+                                      driverPhone: order.driverPhone,
+                                      deliveryOtp: order.deliveryOtp,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE6F4F1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text('Track', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 11, fontWeight: FontWeight.w700)),
+                              ),
+                            )
+                          else if (isDelivered)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F3FF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text('Reorder', style: TextStyle(color: Color(0xFF7C3AED), fontSize: 11, fontWeight: FontWeight.w700)),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubscriptionCard(DeliveryTaskModel task) {
+    final sub = task.subscriptionDetail;
+    final product = sub?.productDetail;
+    final isDelivered = task.status == 'DELIVERED';
+    final statusColor = isDelivered ? const Color(0xFF2563EB) : const Color(0xFF059669);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 24),
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Container(
+              width: 2,
+              height: 120, // Approx height
+              color: const Color(0xFFE2E8F0),
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              boxShadow: const [
+                BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 3)),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(width: 4, color: statusColor)),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Container(
+                            width: 50,
+                            height: 50,
+                            color: const Color(0xFFF1F5F9),
+                            child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: UiTone.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(UiRadius.xs),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.flash_on_rounded, color: UiTone.error, size: 11),
-                            Text('EXPRESS', style: TextStyle(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
+                            Text(
+                              product?.name ?? 'Fresh A2 Cow Milk',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${sub?.quantity ?? 1}x Unit • ${task.deliveryDate}',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                task.status,
+                                style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: (isDelivered ? UiTone.secondary : UiTone.warning).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(UiRadius.xs),
-                  ),
-                  child: Text(
-                    isDelivered ? 'DELIVERED ✅' : (isOut ? 'OUT FOR DELIVERY 🛵' : 'PREPARING 👨‍🍳'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.bold,
-                      color: isDelivered ? UiTone.primary : const Color(0xFFB45309),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Scheduled Date & Time Slot Banner
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: UiTone.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(UiRadius.xs),
-                border: Border.all(color: UiTone.primary.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.event_available_rounded, size: 14, color: UiTone.primary),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '📅 Scheduled: ${order.deliveryDate} • ⏰ ${order.deliverySlot}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary),
-                    ),
-                  ),
-                ],
               ),
             ),
-            const SizedBox(height: 10),
-
-            // Live Stepper Bar
-            _buildLiveProgressStepper(order.status),
-            const SizedBox(height: 12),
-
-            // Items Breakdown List
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: UiTone.shellBackground,
-                borderRadius: BorderRadius.circular(UiRadius.sm),
-                border: Border.all(color: UiTone.surfaceBorder),
-              ),
-              child: Column(
-                children: [
-                  ...order.items.map((item) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(color: UiTone.surface, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                            child: Text(
-                              _getCategoryEmoji(item.product.category),
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${item.quantity}x ${item.product.name}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                          ),
-                          Text(
-                            '₹${item.totalPrice.toStringAsFixed(0)}',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: UiTone.ink),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  const Divider(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Paid • ${order.paymentStatus}',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        '₹${order.totalAmount.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: UiTone.primary),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // OTP & Delivery Address Row
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: UiTone.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(UiRadius.xs),
-                    border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.pin_rounded, color: UiTone.primary, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        'OTP: ${order.deliveryOtp}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '📍 ${order.deliveryAddress}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 10.5, color: Colors.grey[600]),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Driver Card with Call Button
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: UiTone.surfaceMuted,
-                borderRadius: BorderRadius.circular(UiRadius.sm),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: UiTone.primary,
-                    child: Icon(Icons.person, color: UiTone.surface, size: 16),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(order.driverName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
-                        Text('Assigned Delivery Partner', style: TextStyle(fontSize: 9.5, color: Colors.grey[600])),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.phone, color: UiTone.primary, size: 20),
-                    onPressed: () => _callDriver(order.driverPhone),
-                    tooltip: 'Call Driver',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // Live GPS Moving Driver Map CTA Button
-            SizedBox(
-              width: double.infinity,
-              height: 38,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (ctx) => LiveDriverTrackingScreen(
-                        state: widget.state,
-                        liveOrder: order,
-                        orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                        deliveryAddress: order.deliveryAddress,
-                        driverName: order.driverName,
-                        driverPhone: order.driverPhone,
-                        deliveryOtp: order.deliveryOtp,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.satellite_alt_rounded, size: 16),
-                label: const Text('Track Live Driver on Map 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: UiTone.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                  elevation: 0,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-  // ── 5. Subscription Daily Delivery Card ──
-  Widget _buildSubscriptionDeliveryCard(DeliveryTaskModel task) {
-    final sub = task.subscriptionDetail;
-    final product = sub?.productDetail;
-    final isDelivered = task.status == 'DELIVERED';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-      child: InkWell(
-        onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
-        borderRadius: BorderRadius.circular(UiRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    child: Image.network(
-                      product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(
-                        width: 50,
-                        height: 50,
-                        color: UiTone.surfaceMuted,
-                        child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product?.name ?? 'Fresh A2 Cow Milk',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${sub?.quantity ?? 1}x Unit • ${sub?.scheduleType ?? 'DAILY'} • ${task.slotTime}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 10.5),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Date: ${task.deliveryDate}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: UiTone.primary, fontSize: 10.5, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-                    decoration: BoxDecoration(
-                      color: (isDelivered ? UiTone.secondary : Colors.orange).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(UiRadius.xs),
-                    ),
-                    child: Text(
-                      isDelivered ? 'DELIVERED ✅' : 'SCHEDULED ⏰',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: isDelivered ? UiTone.primary : Colors.orange[900],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              if (isDelivered && task.proofImageUrl.isNotEmpty) ...[
-                const Divider(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.camera_alt_rounded, size: 14, color: UiTone.secondary),
-                    const SizedBox(width: 4),
-                    const Text('Doorstep Photo Proof Uploaded', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
-                    const Spacer(),
-                    Text(task.deliveredAt ?? '06:14 AM', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                  ],
-                ),
-              ] else ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 42,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => LiveDriverTrackingScreen(
-                            state: widget.state,
-                            orderTitle: product?.name ?? 'Morning Milk Subscription',
-                            deliveryAddress: task.deliveryAddress,
-                            driverName: task.driverDetail?.fullName.isNotEmpty == true
-                                ? task.driverDetail!.fullName
-                                : 'Assigned Hub Driver',
-                            driverPhone: task.driverDetail?.phone.isNotEmpty == true
-                                ? task.driverDetail!.phone
-                                : '+91 8919548905',
-                            deliveryOtp: '06AM',
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.location_searching_rounded, size: 16, color: UiTone.primary),
-                    label: const Text('Track Morning Delivery Van 🛰️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: UiTone.primary, width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-            ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLiveProgressStepper(String status) {
-    int currentStep = 1;
-    if (status == 'PREPARING') currentStep = 2;
-    if (status == 'OUT_FOR_DELIVERY') currentStep = 3;
-    if (status == 'DELIVERED') currentStep = 4;
-
-    return Row(
-      children: [
-        _buildStepNode('Placed', 1, currentStep),
-        _buildStepConnector(1, currentStep),
-        _buildStepNode('Packed', 2, currentStep),
-        _buildStepConnector(2, currentStep),
-        _buildStepNode('On Way', 3, currentStep),
-        _buildStepConnector(3, currentStep),
-        _buildStepNode('Doorstep', 4, currentStep),
       ],
     );
   }
 
-  Widget _buildStepNode(String label, int stepNumber, int activeStep) {
-    final isDone = activeStep >= stepNumber;
-    return SizedBox(
-      width: 44,
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 9,
-            backgroundColor: isDone ? UiTone.primary : const Color(0xFFCBD5E1),
-            child: isDone
-                ? const Icon(Icons.check, size: 10, color: Colors.white)
-                : Text('$stepNumber', style: const TextStyle(fontSize: 8.5, color: UiTone.surface, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
-              color: isDone ? UiTone.ink : Colors.grey,
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)]),
+              shape: BoxShape.circle,
             ),
+            child: const Icon(Icons.receipt_long_rounded, size: 36, color: Color(0xFF94A3B8)),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No orders yet',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Your express orders and morning deliveries will appear here',
+              style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton(
+            onPressed: () => widget.state.setTab(0),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF0D7C66)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Start Shopping 🛒', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildStepConnector(int stepNumber, int activeStep) {
-    final isDone = activeStep > stepNumber;
-    return Expanded(
-      child: Container(
-        height: 3,
-        margin: const EdgeInsets.only(bottom: 12),
-        color: isDone ? UiTone.primary : UiTone.surfaceBorder,
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String title, String subtitle, IconData icon, {String? actionLabel, VoidCallback? onAction}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      margin: const EdgeInsets.only(top: 10),
-      decoration: BoxDecoration(
-        color: UiTone.shellBackground,
-        borderRadius: BorderRadius.circular(UiRadius.md),
-        border: Border.all(color: UiTone.surfaceBorder),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 40, color: Colors.grey[400]),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 4),
-          Text(subtitle, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 14),
-            ElevatedButton(
-              onPressed: onAction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: UiTone.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-              ),
-              child: Text(actionLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _getCategoryEmoji(String cat) {
-    switch (cat.toUpperCase()) {
-      case 'MEAT':
-        return '🍗';
-      case 'EGGS':
-        return '🥚';
-      case 'WATER_CAN':
-        return '💧';
-      case 'MILK':
-      default:
-        return '🥛';
-    }
   }
 }

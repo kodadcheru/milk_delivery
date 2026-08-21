@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
-import '../../theme/ui_tokens.dart';
 import 'address_book_screen.dart';
 import 'help_support_screen.dart';
 
@@ -22,919 +21,493 @@ class ProfileTab extends StatelessWidget {
         : (user?.username.isNotEmpty == true ? user!.username : 'Customer');
     final email = user?.email.isNotEmpty == true ? user!.email : 'No email linked';
     final phone = user?.phone.isNotEmpty == true ? user!.phone : '+91 8885199878';
-    final address = user?.address.isNotEmpty == true ? user!.address : 'Add delivery address';
-    final instructions = user?.deliveryInstructions.isNotEmpty == true
-        ? user!.deliveryInstructions
-        : 'Leave near doorstep box';
-    final slot = user?.deliverySlotPreference.isNotEmpty == true
-        ? user!.deliverySlotPreference
-        : '05:30 AM - 07:00 AM';
-    final walletBal = user?.walletBalance ?? 0.0;
-    final activeSubsCount = state.subscriptions.where((s) => s.status == 'ACTIVE').length;
-    final savedAddrCount = state.savedAddresses.length;
+    
+    final topInset = MediaQuery.of(context).padding.top;
 
-    return RefreshIndicator(
-      color: UiTone.primary,
-      onRefresh: () => state.reloadAllData(),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── 1. SERVICE-MOBILE HERO PROFILE HEADER ──
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[
-                    Color(0xFF0F172A),
-                    Color(0xFF0D7C66),
-                    Color(0xFF14A38B),
-                  ],
-                  stops: <double>[0.0, 0.55, 1.0],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Column(
+        children: [
+          // Part 1: Hero Header
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF044E3A), Color(0xFF0D7C66), Color(0xFF059669)],
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -20,
-                    top: -20,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+              boxShadow: [
+                BoxShadow(color: Color(0x250D7C66), blurRadius: 20, offset: Offset(0, 10)),
+              ],
+            ),
+            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // a. Top row
+                Row(
+                  children: [
+                    const Text('Profile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => _showEditProfileDialog(context, state, fullName, email, phone),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const Text('Edit profile', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                // c. Avatar stack
+                Center(
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.40)],
+                          ),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x30000000), blurRadius: 16, offset: Offset(0, 6)),
+                          ],
+                        ),
+                        child: Center(
+                          child: CircleAvatar(
+                            radius: 38,
+                            backgroundColor: const Color(0xFF0D7C66),
+                            child: Text(
+                              fullName.isNotEmpty ? fullName[0].toUpperCase() : 'C',
+                              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF38BDF8),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                    child: Column(
+                ),
+                const SizedBox(height: 12),
+                
+                // e. Name row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      fullName,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.verified, size: 20, color: Color(0xFF38BDF8)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                
+                // g. Phone pill
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Header bar title & Edit Profile button
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Profile',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => _showEditProfileDialog(context, fullName, email, phone),
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.35),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.edit_rounded,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Edit profile',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Avatar with Edit Badge & Glow
-                        GestureDetector(
-                          onTap: () => _showEditProfileDialog(context, fullName, email, phone),
-                          child: Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(3.5),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    colors: <Color>[
-                                      Colors.white.withValues(alpha: 0.95),
-                                      Colors.white.withValues(alpha: 0.40),
-                                    ],
-                                  ),
-                                  boxShadow: const <BoxShadow>[
-                                    BoxShadow(
-                                      color: Color(0x30000000),
-                                      blurRadius: 16,
-                                      offset: Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Colors.white,
-                                  child: Text(
-                                    fullName.isNotEmpty ? fullName[0].toUpperCase() : '👤',
-                                    style: const TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF0D7C66),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF38BDF8),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt_rounded,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Full Name + Verified Checkmark Badge
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                fullName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.verified_rounded,
-                              size: 20,
-                              color: Color(0xFF38BDF8),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-
-                        // Phone Pill Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.phone_iphone_rounded,
-                                size: 14,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                phone,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-
-                        // Stats Summary Row (Wallet, Active Subs, Saved Addresses)
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.20),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildStatItem('₹${walletBal.toStringAsFixed(0)}', 'Prepaid Wallet', Icons.account_balance_wallet_rounded, () => state.setTab(2)),
-                              Container(width: 1, height: 28, color: Colors.white12),
-                              _buildStatItem('$activeSubsCount', 'Active Subs', Icons.autorenew_rounded, () => state.setTab(1)),
-                              Container(width: 1, height: 28, color: Colors.white12),
-                              _buildStatItem('$savedAddrCount', 'Addresses', Icons.location_on_rounded, () {
-                                Navigator.push(context, MaterialPageRoute(builder: (ctx) => AddressBookScreen(state: state)));
-                              }),
-                            ],
-                          ),
+                        Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.white.withValues(alpha: 0.70)),
+                        const SizedBox(width: 6),
+                        Text(
+                          phone,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 18),
-
-            // ── 2. QUICK ACTION TILES BAR ──
-            Row(
+          ),
+          
+          // Part 2: Scrollable Menu List
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
               children: [
-                Expanded(
-                  child: _buildQuickActionTile(
-                    context,
-                    icon: Icons.add_card_rounded,
-                    label: 'Top Up Wallet',
-                    color: const Color(0xFF10B981),
-                    onTap: () => state.setTab(2),
+                // Group 1
+                _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.calendar_today_rounded,
+                    iconBg: const Color(0xFFE8F2FE),
+                    iconFg: const Color(0xFF2563EB),
+                    label: 'Your orders',
+                    onTap: () => state.setTab(3),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.location_on_rounded,
+                    iconBg: const Color(0xFFE6F5F0),
+                    iconFg: const Color(0xFF0D7C66),
+                    label: 'Address book',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddressBookScreen(state: state))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.schedule_rounded,
+                    iconBg: const Color(0xFFE0F7F3),
+                    iconFg: const Color(0xFF0D9488),
+                    label: 'Delivery preferences',
+                    onTap: () {
+                      final slot = user?.deliverySlotPreference.isNotEmpty == true
+                          ? user!.deliverySlotPreference
+                          : '05:30 AM - 07:00 AM';
+                      _showSlotPreferenceDialog(context, state, slot);
+                    },
+                  ),
+                ]),
+                
+                const SizedBox(height: 16),
+                
+                // Group 2
+                _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.headset_mic_rounded,
+                    iconBg: const Color(0xFFFFF3E6),
+                    iconFg: const Color(0xFFE67E22),
+                    label: 'Help & support',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HelpSupportScreen(state: state))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.share_rounded,
+                    iconBg: const Color(0xFFE8F2FE),
+                    iconFg: const Color(0xFF2563EB),
+                    label: 'Share App',
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share dialog opened'))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.info_outline_rounded,
+                    iconBg: const Color(0xFFF1F5F9),
+                    iconFg: const Color(0xFF475569),
+                    label: 'About us',
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('About us dialog'))),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.shield_outlined,
+                    iconBg: const Color(0xFFE0F7F3),
+                    iconFg: const Color(0xFF0D9488),
+                    label: 'Privacy & Terms',
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Privacy & Terms dialog'))),
+                  ),
+                ]),
+                
+                const SizedBox(height: 20),
+                
+                // Logout Button
+                GestureDetector(
+                  onTap: () => _confirmLogout(context, onLogout),
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFF43F5E), Color(0xFFE11D48)]),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [BoxShadow(color: Color(0x28E11D48), blurRadius: 16, offset: Offset(0, 6))],
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text('Log out', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildQuickActionTile(
-                    context,
-                    icon: Icons.menu_book_rounded,
-                    label: 'Address Book',
-                    color: const Color(0xFF0284C7),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => AddressBookScreen(state: state))),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildQuickActionTile(
-                    context,
-                    icon: Icons.support_agent_rounded,
-                    label: '24/7 Support',
-                    color: const Color(0xFFF59E0B),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => HelpSupportScreen(state: state))),
+                
+                const SizedBox(height: 16),
+                
+                // Version Footer
+                const Center(
+                  child: Text(
+                    'MilkDrop Express v1.0.0 • Farm Fresh Daily 🥛',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 20),
-
-            // ── 3. DELIVERY LOCATION & DOORSTEP NOTE ──
-            _buildSectionHeader('Delivery Location & Doorstep Note', Icons.location_on_rounded, const Color(0xFF0D7C66)),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: UiTone.surface,
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                border: Border.all(color: UiTone.surfaceBorder),
-                boxShadow: UiShadow.card,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: UiTone.primarySoft,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.home_work_rounded, color: UiTone.primary, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Default Delivery Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                            const SizedBox(height: 3),
-                            Text(address, style: const TextStyle(color: UiTone.softText, fontSize: 12, height: 1.3)),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: UiTone.primary, size: 18),
-                        onPressed: () => _showEditAddressDialog(context, address),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (c) => AddressBookScreen(state: state)),
-                            );
-                          },
-                          icon: const Icon(Icons.menu_book_rounded, size: 15, color: UiTone.primary),
-                          label: const Text('Manage Address Book', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: UiTone.primary)),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: UiTone.primary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final ok = await state.requestDeviceGPS();
-                            if (ok) {
-                              state.updateUserProfile(address: state.currentDeliveryAddress);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: UiTone.primary,
-                                    content: Text('📍 Live GPS Synced: ${state.currentDeliveryAddress}'),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.my_location_rounded, size: 15, color: UiTone.ink),
-                          label: const Text('Sync Live GPS', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: UiTone.ink)),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: UiTone.surfaceBorder),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1, color: UiTone.surfaceMuted),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: UiTone.warningSoft,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.doorbell_rounded, color: UiTone.warning, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Doorstep Delivery Note', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                            const SizedBox(height: 3),
-                            Text('"$instructions"', style: const TextStyle(color: UiTone.softText, fontSize: 12, fontStyle: FontStyle.italic)),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_note_rounded, color: UiTone.primary, size: 20),
-                        onPressed: () => _showEditInstructionsDialog(context, instructions),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _buildPresetChip(context, '🔔 Ring Bell'),
-                      _buildPresetChip(context, '📦 Leave at Doorstep'),
-                      _buildPresetChip(context, '🤫 Silent Drop (No Ring)'),
-                      _buildPresetChip(context, '📞 Call Before Drop'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ── 4. DELIVERY PREFERENCES ──
-            _buildSectionHeader('Morning Delivery Schedule & Auto-Debit', Icons.schedule_rounded, const Color(0xFF0284C7)),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: UiTone.surface,
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                border: Border.all(color: UiTone.surfaceBorder),
-                boxShadow: UiShadow.card,
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: UiTone.primarySoft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.access_time_filled_rounded, color: UiTone.primary, size: 20),
-                    ),
-                    title: const Text('Morning Delivery Time Slot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                    subtitle: Text(slot, style: const TextStyle(fontSize: 11.5, color: UiTone.primary, fontWeight: FontWeight.w700)),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: UiTone.primary),
-                    onTap: () => _showSlotPreferenceDialog(context, slot),
-                  ),
-                  const Divider(height: 1, color: UiTone.surfaceMuted),
-                  SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    secondary: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: UiTone.successSoft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.bolt_rounded, color: UiTone.success, size: 20),
-                    ),
-                    title: const Text('Auto-Debit Prepaid Balance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                    subtitle: const Text('Automatically deduct item cost upon photo proof upload', style: TextStyle(fontSize: 11, color: UiTone.softText)),
-                    value: true,
-                    activeThumbColor: UiTone.secondary,
-                    onChanged: (val) {},
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ── 5. SUPPORT & LEGAL ──
-            _buildSectionHeader('Help & App Info', Icons.help_outline_rounded, const Color(0xFFF59E0B)),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: UiTone.surface,
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                border: Border.all(color: UiTone.surfaceBorder),
-                boxShadow: UiShadow.card,
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: UiTone.primarySoft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.headset_mic_rounded, color: UiTone.primary, size: 20),
-                    ),
-                    title: const Text('24x7 Priority Support & Live Chat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                    subtitle: const Text('Live WebSocket Chat • FAQs • Order Queries', style: TextStyle(fontSize: 11, color: UiTone.primary, fontWeight: FontWeight.w600)),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: UiTone.primary),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (ctx) => HelpSupportScreen(state: state)),
-                      );
-                    },
-                  ),
-                  const Divider(height: 1, color: UiTone.surfaceMuted),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: UiTone.infoSoft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.privacy_tip_rounded, color: UiTone.accentBlue, size: 20),
-                    ),
-                    title: const Text('Privacy Policy & Terms of Service', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                    subtitle: const Text('MilkDrop Express Guarantee & Security', style: TextStyle(fontSize: 11, color: UiTone.softText)),
-                    trailing: const Icon(Icons.open_in_new_rounded, size: 16, color: UiTone.softText),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('🔒 MilkDrop Express Terms & Privacy Policy are active.')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── 6. LOG OUT BUTTON ──
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: () => _confirmLogout(context),
-                icon: const Icon(Icons.logout_rounded, color: UiTone.error, size: 18),
-                label: const Text('Log Out of Account', style: TextStyle(color: UiTone.error, fontWeight: FontWeight.w800, fontSize: 14)),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: UiTone.errorSoft,
-                  side: BorderSide(color: UiTone.error.withValues(alpha: 0.3)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                'MilkDrop Express v1.0.0 • Farm Fresh Daily 🥛',
-                style: TextStyle(color: UiTone.softText, fontSize: 11, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String val, String label, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Column(
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: const Color(0xFF38BDF8), size: 14),
-                const SizedBox(width: 4),
-                Text(
-                  val,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 10.5, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionTile(BuildContext context, {required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: UiTone.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: UiTone.surfaceBorder),
-          boxShadow: UiShadow.card,
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 18),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: UiTone.ink, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon, Color iconColor) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: iconColor),
-        const SizedBox(width: 6),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w800,
-            color: UiTone.ink,
-            letterSpacing: -0.2,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPresetChip(BuildContext context, String text) {
-    return InkWell(
-      onTap: () {
-        final cleanText = text.replaceAll(RegExp(r'[^a-zA-Z0-9 ()\-]'), '').trim();
-        state.updateUserProfile(deliveryInstructions: cleanText);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: UiTone.primary,
-            content: Text('👍 Note preset saved: "$cleanText"'),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: UiTone.shellBackground,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: UiTone.surfaceBorder),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 10.5, color: UiTone.ink, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  void _showEditProfileDialog(BuildContext context, String currentName, String currentEmail, String currentPhone) {
-    final nameCtrl = TextEditingController(text: currentName);
-    final emailCtrl = TextEditingController(text: currentEmail);
-    final phoneCtrl = TextEditingController(text: currentPhone);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-        title: const Row(
-          children: [
-            Icon(Icons.edit_rounded, color: UiTone.primary),
-            SizedBox(width: 8),
-            Text('Edit Profile Info', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: emailCtrl,
-              decoration: const InputDecoration(labelText: 'Email Address', prefixIcon: Icon(Icons.email_outlined)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: phoneCtrl,
-              decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone_outlined)),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
-            onPressed: () {
-              final parts = nameCtrl.text.trim().split(' ');
-              final first = parts.first;
-              final last = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-              state.updateUserProfile(
-                firstName: first,
-                lastName: last,
-                email: emailCtrl.text.trim(),
-                phone: phoneCtrl.text.trim(),
-              );
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(backgroundColor: UiTone.primary, content: Text('✅ Profile details updated successfully!')),
-              );
-            },
-            child: const Text('Save Details'),
           ),
         ],
       ),
     );
   }
 
-  void _showEditAddressDialog(BuildContext context, String currentAddress) {
-    final ctrl = TextEditingController(text: currentAddress);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-        title: const Text('Update Delivery Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 3,
-          decoration: const InputDecoration(hintText: 'Enter complete doorstep address...'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
-            onPressed: () {
-              if (ctrl.text.trim().isNotEmpty) {
-                state.updateUserProfile(address: ctrl.text.trim());
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(backgroundColor: UiTone.primary, content: Text('📍 Delivery address updated!')),
-                );
-              }
-            },
-            child: const Text('Save Address'),
-          ),
+  Widget _buildCardGroup(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5ECE8), width: 1),
+        boxShadow: const [
+          BoxShadow(color: Color(0x081A2B23), blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(color: Color(0x051A2B23), blurRadius: 24, offset: Offset(0, 8)),
         ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: children,
       ),
     );
   }
 
-  void _showEditInstructionsDialog(BuildContext context, String currentNote) {
-    final ctrl = TextEditingController(text: currentNote);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-        title: const Text('Doorstep Delivery Note', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 2,
-          decoration: const InputDecoration(hintText: 'e.g., Leave near doorstep box, ring bell once...'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
-            onPressed: () {
-              state.updateUserProfile(deliveryInstructions: ctrl.text.trim());
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(backgroundColor: UiTone.primary, content: Text('📝 Doorstep delivery note updated!')),
-              );
-            },
-            child: const Text('Save Note'),
-          ),
-        ],
-      ),
+  Widget _buildDivider() {
+    return const Divider(
+      height: 1,
+      thickness: 1,
+      color: Color(0xFFF1F5F9),
+      indent: 70,
     );
   }
 
-  void _showSlotPreferenceDialog(BuildContext context, String currentSlot) {
-    String selected = currentSlot.isNotEmpty ? currentSlot : '05:30 AM - 07:00 AM';
-    final customCtrl = TextEditingController(text: selected);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-          title: const Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMenuTile({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconFg,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          child: Row(
             children: [
-              const Text('Select Quick Preset or Type Custom Slot:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  '05:30 AM - 07:00 AM',
-                  '07:00 AM - 08:30 AM',
-                  '05:00 PM - 07:00 PM',
-                ].map((s) {
-                  final isSel = selected == s;
-                  return ChoiceChip(
-                    label: Text(s, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: isSel ? Colors.white : const Color(0xFF0F172A))),
-                    selected: isSel,
-                    selectedColor: UiTone.primary,
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    onSelected: (sel) {
-                      if (sel) {
-                        setDialogState(() {
-                          selected = s;
-                          customCtrl.text = s;
-                        });
-                      }
-                    },
-                  );
-                }).toList(),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: iconFg),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: customCtrl,
-                onChanged: (val) {
-                  setDialogState(() {
-                    selected = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
-                  });
-                },
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  labelText: 'Type Custom Slot (e.g. 06:00 AM - 07:30 AM)',
-                  labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
-                  prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: UiTone.primary),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1A2B23)),
                 ),
               ),
+              const Icon(Icons.chevron_right, size: 20, color: Color(0xFFC0C8C4)),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
-              onPressed: () {
-                final finalSlot = customCtrl.text.trim().isNotEmpty ? customCtrl.text.trim() : selected;
-                state.updateUserProfile(slotPreference: finalSlot);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(backgroundColor: UiTone.primary, content: Text('⏱️ Preferred slot saved: $finalSlot')),
-                );
-              },
-              child: const Text('Save Slot'),
-            ),
-          ],
         ),
       ),
     );
   }
+}
 
-  void _confirmLogout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-        title: const Row(
-          children: [
-            Icon(Icons.logout_rounded, color: UiTone.error),
-            SizedBox(width: 8),
-            Text('Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text('Are you sure you want to log out of your account? You can log back in anytime with your phone number.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: UiTone.error, foregroundColor: Colors.white),
-            onPressed: () {
-              Navigator.pop(ctx);
-              onLogout();
-            },
-            child: const Text('Yes, Log Out'),
+// ──────────────────────────────────────────────
+// Standalone Dialog Methods
+// ──────────────────────────────────────────────
+
+void _showEditProfileDialog(BuildContext context, AppState state, String currentName, String currentEmail, String currentPhone) {
+  final nameCtrl = TextEditingController(text: currentName);
+  final emailCtrl = TextEditingController(text: currentEmail);
+  final phoneCtrl = TextEditingController(text: currentPhone);
+
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Row(
+        children: [
+          Icon(Icons.edit_rounded, color: Color(0xFF0D7C66)),
+          SizedBox(width: 8),
+          Text('Edit Profile Info', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameCtrl,
+            decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline)),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: emailCtrl,
+            decoration: const InputDecoration(labelText: 'Email Address', prefixIcon: Icon(Icons.email_outlined)),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: phoneCtrl,
+            decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone_outlined)),
           ),
         ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+          onPressed: () {
+            final parts = nameCtrl.text.trim().split(' ');
+            final first = parts.first;
+            final last = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+            state.updateUserProfile(
+              firstName: first,
+              lastName: last,
+              email: emailCtrl.text.trim(),
+              phone: phoneCtrl.text.trim(),
+            );
+            Navigator.pop(ctx);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(backgroundColor: Color(0xFF0D7C66), content: Text('✅ Profile details updated successfully!')),
+            );
+          },
+          child: const Text('Save Details'),
+        ),
+      ],
+    ),
+  );
+}
+
+
+
+void _showSlotPreferenceDialog(BuildContext context, AppState state, String currentSlot) {
+  String selected = currentSlot.isNotEmpty ? currentSlot : '05:30 AM - 07:00 AM';
+  final customCtrl = TextEditingController(text: selected);
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setDialogState) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Select Quick Preset or Type Custom Slot:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                '05:30 AM - 07:00 AM',
+                '07:00 AM - 08:30 AM',
+                '05:00 PM - 07:00 PM',
+              ].map((s) {
+                final isSel = selected == s;
+                return ChoiceChip(
+                  label: Text(s, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: isSel ? Colors.white : const Color(0xFF0F172A))),
+                  selected: isSel,
+                  selectedColor: const Color(0xFF0D7C66),
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  showCheckmark: false,
+                  onSelected: (sel) {
+                    if (sel) {
+                      setDialogState(() {
+                        selected = s;
+                        customCtrl.text = s;
+                      });
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: customCtrl,
+              onChanged: (val) {
+                setDialogState(() {
+                  selected = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                });
+              },
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+              decoration: InputDecoration(
+                labelText: 'Type Custom Slot (e.g. 06:00 AM - 07:30 AM)',
+                labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+                prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: Color(0xFF0D7C66)),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            onPressed: () {
+              final finalSlot = customCtrl.text.trim().isNotEmpty ? customCtrl.text.trim() : selected;
+              state.updateUserProfile(slotPreference: finalSlot);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⏱️ Preferred slot saved: $finalSlot')),
+              );
+            },
+            child: const Text('Save Slot'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _confirmLogout(BuildContext context, VoidCallback onLogout) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Row(
+        children: [
+          Icon(Icons.logout_rounded, color: Colors.red),
+          SizedBox(width: 8),
+          Text('Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
+      content: const Text('Are you sure you want to log out of your account? You can log back in anytime with your phone number.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+          onPressed: () {
+            Navigator.pop(ctx);
+            onLogout();
+          },
+          child: const Text('Yes, Log Out'),
+        ),
+      ],
+    ),
+  );
 }
