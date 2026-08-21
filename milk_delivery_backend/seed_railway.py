@@ -112,7 +112,7 @@ def seed():
             "slug": "eggs",
             "name": "Country & Organic Eggs",
             "icon": "🥚",
-            "image_url": "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=600&q=80",
+            "image_url": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=600&q=80",
             "display_order": 5,
             "description": "Antibiotic-free Free-Range Country Brown & White Farm Eggs",
         },
@@ -257,7 +257,7 @@ def seed():
             "farm_origin": "Nalgonda Free-Range Farms",
             "nutrition_info": "6g Protein / Egg • Rich Omega-3 • Golden Yolk",
             "rating": Decimal("4.9"),
-            "image_url": "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=800&q=80",
+            "image_url": "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=800&q=80",
             "is_available": True,
         },
         {

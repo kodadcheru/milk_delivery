@@ -36,7 +36,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'key': 'EGGS',
       'title': 'Farm Eggs',
       'icon': '🥚',
-      'image': 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=300&q=80',
+      'image': 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFFFF3E6),
       'fg': Color(0xFFE67E22),
     },
