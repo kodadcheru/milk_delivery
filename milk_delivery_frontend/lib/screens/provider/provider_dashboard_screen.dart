@@ -275,57 +275,122 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
+  List<Map<String, dynamic>> _getMergedHubInventory() {
+    final products = widget.state.products;
+    final subscriptions = widget.state.subscriptions;
+    final deliveries = widget.state.deliveries;
+
+    return products.map((prod) {
+      final existing = _hubInventory.firstWhere(
+        (inv) => (inv['product'] == prod.id || inv['product_id'] == prod.id || inv['product_name'] == prod.name),
+        orElse: () => <String, dynamic>{},
+      );
+
+      final subBooked = subscriptions
+          .where((s) => (s.productId == prod.id || s.productDetail?.id == prod.id) && s.status == 'ACTIVE')
+          .fold<int>(0, (sum, s) => sum + s.quantity);
+
+      final deliveryBooked = deliveries
+          .where((d) => d.subscriptionDetail?.productId == prod.id || d.subscriptionDetail?.productDetail?.id == prod.id)
+          .fold<int>(0, (sum, d) => sum + (d.subscriptionDetail?.quantity ?? 1));
+
+      final booked = subBooked > 0 ? subBooked : (deliveryBooked > 0 ? deliveryBooked : (existing['booked_slots'] ?? 0));
+      final defaultCapacity = booked > 80 ? (booked + 50) : 150;
+      final capacity = (existing['daily_capacity_slots'] as int?) ?? defaultCapacity;
+      final isAvailable = (existing['is_available'] as bool?) ?? true;
+      final available = (capacity - booked).clamp(0, 9999);
+
+      return {
+        'product': prod.id,
+        'product_id': prod.id,
+        'product_name': prod.name,
+        'icon': prod.icon,
+        'category': prod.category,
+        'unit': prod.unit,
+        'price': prod.pricePerUnit,
+        'daily_capacity_slots': capacity,
+        'booked_slots': booked,
+        'available_slots': available,
+        'is_available': isAvailable,
+      };
+    }).toList();
+  }
+
   void _openManageCapacitySlotsDialog(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.lg)),
-        title: const Row(
-          children: [
-            Text('📦 ', style: TextStyle(fontSize: 22)),
-            Expanded(child: Text('Hub Product Capacity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.5))),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: _hubInventory.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('No inventory data loaded. Products will appear after subscriptions are created.', style: TextStyle(color: UiTone.softText)),
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: _hubInventory.map((inv) {
-                      final name = inv['product_name'] ?? 'Product';
-                      final capacity = inv['daily_capacity_slots'] ?? 100;
-                      final booked = inv['booked_slots'] ?? 0;
-                      final available = inv['available_slots'] ?? (capacity - booked);
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(12),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final inventoryList = _getMergedHubInventory();
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                // Top drag handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 16, 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: UiTone.shellBackground,
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                          border: Border.all(color: UiTone.surfaceBorder),
+                          color: const Color(0xFFE6F5F0),
+                          borderRadius: BorderRadius.circular(14),
                         ),
+                        child: const Text('📦', style: TextStyle(fontSize: 22)),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: UiTone.ink)),
-                            const SizedBox(height: 6),
-                            Text('Capacity: $capacity | Booked: $booked | Available: $available',
-                                style: const TextStyle(fontSize: 11, color: UiTone.softText)),
+                            Text(
+                              'Hub Daily Slots & Inventory',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                            ),
+                            Text(
+                              'Live product capacity limits, booked crates & availability',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
                           ],
                         ),
-                      );
-                    }).toList(),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
                   ),
                 ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
-        ],
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: inventoryList.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, idx) {
+                      final item = inventoryList[idx];
+                      return _buildHubInventoryCard(item, onUpdated: () => setModalState(() {}));
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -1491,136 +1556,249 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // HUB PRODUCT CAPACITY SECTION (Real API data)
+  // HUB PRODUCT CAPACITY SECTION (Full Product Catalog with Live Slots)
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildInventoryCratesSection() {
+    final inventoryList = _getMergedHubInventory();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             const Expanded(
-              child: Text('📦 Hub Product Capacity:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
+              child: Text(
+                '📦 Hub Daily Capacity & Crate Stock:',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF0F172A)),
+              ),
             ),
             TextButton.icon(
-              onPressed: _loadHubInventory,
+              onPressed: () async {
+                _loadHubInventory();
+                await widget.state.reloadAllData();
+                setState(() {});
+              },
               icon: const Icon(Icons.refresh_rounded, size: 14),
-              label: const Text('Refresh', style: TextStyle(fontSize: 11)),
-              style: TextButton.styleFrom(foregroundColor: UiTone.primary),
+              label: const Text('Refresh', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF0D7C66)),
             ),
           ],
         ),
         const SizedBox(height: 10),
 
-        if (_hubInventory.isEmpty)
+        if (inventoryList.isEmpty)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: UiTone.surfaceMuted,
-              borderRadius: BorderRadius.circular(UiRadius.md),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: const Column(
               children: [
-                Icon(Icons.inventory_2_outlined, size: 48, color: UiTone.softText),
+                Icon(Icons.inventory_2_outlined, size: 48, color: Color(0xFF94A3B8)),
                 SizedBox(height: 12),
-                Text('No inventory data yet', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: UiTone.softText)),
-                SizedBox(height: 4),
-                Text('Product capacity will appear once subscriptions are created', style: TextStyle(fontSize: 11, color: UiTone.softText)),
+                Text('No inventory data yet', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF64748B))),
               ],
             ),
           )
         else
-          ..._hubInventory.map((inv) => _buildHubInventoryCard(inv)),
+          ...inventoryList.map((inv) => _buildHubInventoryCard(inv, onUpdated: () => setState(() {}))),
       ],
     );
   }
 
-  Widget _buildHubInventoryCard(Map<String, dynamic> inv) {
+  Widget _buildHubInventoryCard(Map<String, dynamic> inv, {VoidCallback? onUpdated}) {
     final productName = inv['product_name'] ?? 'Unknown Product';
-    final dailyCapacity = inv['daily_capacity_slots'] ?? 100;
+    final dailyCapacity = inv['daily_capacity_slots'] ?? 150;
     final booked = inv['booked_slots'] ?? 0;
     final available = inv['available_slots'] ?? (dailyCapacity - booked);
     final isAvailable = inv['is_available'] ?? true;
     final productId = inv['product'] ?? 0;
+    final icon = inv['icon'] ?? '🥛';
+    final unit = inv['unit'] ?? '500 ml';
+    final price = inv['price'] ?? 35;
     final fillPercent = dailyCapacity > 0 ? (booked / dailyCapacity).clamp(0.0, 1.0) : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: UiTone.surface,
-        borderRadius: BorderRadius.circular(UiRadius.md),
-        border: Border.all(color: isAvailable ? UiTone.surfaceBorder : UiTone.error.withValues(alpha: 0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isAvailable ? const Color(0xFFE2E8F0) : const Color(0xFFFECDD3),
+          width: 1.2,
+        ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Text(icon, style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF0F172A)),
+                    ),
+                    Text(
+                      '$unit • ₹$price MRP',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
               ),
-              GestureDetector(
+              // Availability Switch
+              InkWell(
                 onTap: () async {
-                  final result = await ApiService.updateHubInventory(
+                  final newStatus = !isAvailable;
+                  inv['is_available'] = newStatus;
+                  onUpdated?.call();
+                  setState(() {});
+                  await ApiService.updateHubInventory(
                     productId: productId,
                     dailyCapacitySlots: dailyCapacity,
-                    isAvailable: !isAvailable,
+                    isAvailable: newStatus,
                   );
-                  if (result != null) _loadHubInventory();
                 },
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isAvailable ? UiTone.successSoft : UiTone.errorSoft,
-                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                    color: isAvailable ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(
-                    isAvailable ? 'AVAILABLE' : 'UNAVAILABLE',
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: isAvailable ? UiTone.success : UiTone.error),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isAvailable ? Icons.check_circle_rounded : Icons.pause_circle_filled_rounded,
+                        size: 12,
+                        color: isAvailable ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isAvailable ? 'IN STOCK' : 'PAUSED',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          color: isAvailable ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // Capacity Usage Progress Bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: fillPercent.toDouble(),
-              minHeight: 8,
-              backgroundColor: UiTone.surfaceMuted,
+              minHeight: 7,
+              backgroundColor: const Color(0xFFF1F5F9),
               valueColor: AlwaysStoppedAnimation<Color>(
-                fillPercent > 0.8 ? UiTone.error : fillPercent > 0.5 ? UiTone.warning : UiTone.primary,
+                fillPercent > 0.85
+                    ? const Color(0xFFDC2626)
+                    : (fillPercent > 0.6 ? const Color(0xFFD97706) : const Color(0xFF0D7C66)),
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('$booked / $dailyCapacity booked', style: const TextStyle(fontSize: 11, color: UiTone.softText)),
-              Text('$available available', style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.bold,
-                color: available > 0 ? UiTone.success : UiTone.error,
-              )),
+              Text(
+                '$booked Booked Today',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+              ),
+              Text(
+                '$available Slots Left (Max $dailyCapacity)',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: available > 0 ? const Color(0xFF0D7C66) : const Color(0xFFDC2626),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // Quick Stepper & Edit Actions
           Row(
             children: [
+              // Stepper: -10
+              IconButton.filledTonal(
+                icon: const Icon(Icons.remove, size: 14),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  foregroundColor: const Color(0xFF0F172A),
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(34, 32),
+                ),
+                onPressed: dailyCapacity > 10
+                    ? () async {
+                        final newCap = dailyCapacity - 10;
+                        inv['daily_capacity_slots'] = newCap;
+                        inv['available_slots'] = (newCap - booked).clamp(0, 9999);
+                        onUpdated?.call();
+                        setState(() {});
+                        await ApiService.updateHubInventory(productId: productId, dailyCapacitySlots: newCap);
+                      }
+                    : null,
+              ),
+              const SizedBox(width: 6),
+              // Stepper: +10
+              IconButton.filledTonal(
+                icon: const Icon(Icons.add, size: 14),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFE6F5F0),
+                  foregroundColor: const Color(0xFF0D7C66),
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(34, 32),
+                ),
+                onPressed: () async {
+                  final newCap = dailyCapacity + 10;
+                  inv['daily_capacity_slots'] = newCap;
+                  inv['available_slots'] = (newCap - booked).clamp(0, 9999);
+                  onUpdated?.call();
+                  setState(() {});
+                  await ApiService.updateHubInventory(productId: productId, dailyCapacitySlots: newCap);
+                },
+              ),
+              const SizedBox(width: 8),
+              // Custom Edit Dialog Button
               Expanded(
                 child: SizedBox(
                   height: 32,
                   child: OutlinedButton.icon(
-                    onPressed: () => _showEditCapacityDialog(productId, productName, dailyCapacity),
-                    icon: const Icon(Icons.edit, size: 12),
-                    label: const Text('Edit Capacity', style: TextStyle(fontSize: 10.5)),
+                    onPressed: () => _showEditCapacityDialog(productId, productName, dailyCapacity, onSaved: (newCap) {
+                      inv['daily_capacity_slots'] = newCap;
+                      inv['available_slots'] = (newCap - booked).clamp(0, 9999);
+                      onUpdated?.call();
+                      setState(() {});
+                    }),
+                    icon: const Icon(Icons.tune_rounded, size: 13),
+                    label: const Text('Set Custom Limit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      foregroundColor: UiTone.primary,
-                      side: const BorderSide(color: UiTone.primary),
+                      foregroundColor: const Color(0xFF0D7C66),
+                      side: const BorderSide(color: Color(0xFF0D7C66)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
@@ -1632,19 +1810,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
-  void _showEditCapacityDialog(int productId, String productName, int currentCapacity) {
+  void _showEditCapacityDialog(int productId, String productName, int currentCapacity, {Function(int)? onSaved}) {
     final controller = TextEditingController(text: currentCapacity.toString());
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Edit Capacity: $productName', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Edit Daily Capacity: $productName', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
+          autofocus: true,
+          decoration: InputDecoration(
             labelText: 'Daily Capacity Slots',
-            hintText: 'e.g. 100',
-            border: OutlineInputBorder(),
+            hintText: 'e.g. 200',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
@@ -1652,12 +1832,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ElevatedButton(
             onPressed: () async {
               final newCap = int.tryParse(controller.text) ?? currentCapacity;
+              Navigator.pop(ctx);
+              onSaved?.call(newCap);
               final result = await ApiService.updateHubInventory(productId: productId, dailyCapacitySlots: newCap);
               if (result != null) _loadHubInventory();
-              if (ctx.mounted) Navigator.pop(ctx);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: UiTone.surface),
-            child: const Text('Update'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            child: const Text('Update Limit'),
           ),
         ],
       ),
