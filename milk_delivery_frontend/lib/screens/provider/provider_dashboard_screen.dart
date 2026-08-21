@@ -341,9 +341,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final netEarnings = totalRevenue; // 100% money goes to Hub Owner
     final totalLitres = widget.state.totalDailyMilkVolume;
 
-    // Filter tasks & orders (only upcoming active orders appear on provider home dashboard by default)
+    // Filter tasks & orders (only upcoming active non-paused orders appear on provider home dashboard by default)
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
-      if (_selectedFilter == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED')) return false;
+      final sub = t.subscriptionDetail;
+      final isSubPaused = sub != null && sub.status == 'PAUSED';
+      if (_selectedFilter == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED' || t.status == 'SKIPPED' || isSubPaused)) {
+        return false;
+      }
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         return t.customerName.toLowerCase().contains(q) || t.deliveryAddress.toLowerCase().contains(q);
@@ -1234,10 +1238,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    task.deliveryAddress,
+                    task.deliveryAddress.replaceAll(', Hyderabad', ', Telangana').replaceAll('Hyderabad', 'Telangana'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: UiTone.softText),
+                    style: const TextStyle(fontSize: 11, color: UiTone.softText),
                   ),
                 ),
               ],

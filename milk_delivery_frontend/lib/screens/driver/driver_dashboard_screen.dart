@@ -180,9 +180,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
     final totalStops = tasks.length;
 
-    // Filter tasks (only upcoming active orders appear on driver home dashboard by default)
+    // Filter tasks (only upcoming active non-paused orders appear on driver home dashboard by default)
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
-      if (_selectedFilterIndex == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED')) return false;
+      final sub = t.subscriptionDetail;
+      final isSubPaused = sub != null && sub.status == 'PAUSED';
+      if (_selectedFilterIndex == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED' || t.status == 'SKIPPED' || isSubPaused)) {
+        return false;
+      }
       if (_selectedFilterIndex == 1 && t.status != 'PENDING') return false;
       if (_selectedFilterIndex == 2 && t.status != 'DELIVERED') return false;
 
