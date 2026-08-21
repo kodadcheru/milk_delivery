@@ -1,295 +1,344 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/notifications_screen.dart';
+import '../../theme/ui_tokens.dart';
 
-class HomeLocationBar extends StatelessWidget {
+class HomeLocationBar extends StatefulWidget {
   final AppState state;
   final VoidCallback onLocationTap;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
 
   const HomeLocationBar({
     super.key,
     required this.state,
     required this.onLocationTap,
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.onClearSearch,
   });
 
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning 🌅';
-    if (hour < 17) return 'Good Afternoon ☀️';
-    return 'Good Evening 🌙';
+  @override
+  State<HomeLocationBar> createState() => _HomeLocationBarState();
+}
+
+class _HomeLocationBarState extends State<HomeLocationBar>
+    with SingleTickerProviderStateMixin {
+  // Animated cycling search hints
+  static const List<String> _searchHints = [
+    'A2 Cow Milk',
+    'Farm Eggs',
+    'Chicken Breast',
+    'Water Can',
+    'Buffalo Milk',
+    'Mutton Cuts',
+  ];
+  int _hintIndex = 0;
+  Timer? _hintTimer;
+
+  // Bell shake animation
+  late AnimationController _bellController;
+  late Animation<double> _bellAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _hintTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) setState(() => _hintIndex = (_hintIndex + 1) % _searchHints.length);
+    });
+
+    _bellController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _bellAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: 0.12), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.12, end: -0.1), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.06), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.06, end: 0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _bellController, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeLocationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state.unreadNotificationCount > 0 &&
+        oldWidget.state.unreadNotificationCount != widget.state.unreadNotificationCount) {
+      _bellController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _hintTimer?.cancel();
+    _bellController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeAddr = state.activeAddress;
-    final fullAddress = activeAddr?.summaryAddress ?? state.currentDeliveryAddress;
-    final addressTitle = activeAddr?.title ?? 'Home';
-    final userFirstName = state.currentUser?.firstName.isNotEmpty == true
-        ? state.currentUser!.firstName
-        : (state.currentUser?.username.isNotEmpty == true ? state.currentUser!.username : 'Customer');
-
-    final walletBal = state.currentUser?.walletBalance ?? 0.0;
+    final topInset = MediaQuery.of(context).padding.top;
+    final state = widget.state;
+    final city = state.activeAddress?.title ?? 'Kodad';
+    final subtitle = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
     final unreadNotifs = state.unreadNotificationCount;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF0D7C66),
-            Color(0xFF042F2E),
-          ],
+          colors: [Color(0xFF16A267), Color(0xFF0E784D)],
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: const Border(
+          bottom: BorderSide(color: Color(0xFF0B6D44), width: 1.2),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top Header Row: Greeting & Action Buttons (Wallet + Notification Bell) ──
+          // ── Top Bar: Location Selector + Notification Bell ──
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // User Greeting & Verified Badge
+              // Location Selector
               Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        '${_greeting()}, $userFirstName',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.4)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.verified_rounded, size: 10, color: Color(0xFF34D399)),
-                          SizedBox(width: 2),
-                          Text(
-                            'VERIFIED',
-                            style: TextStyle(
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF34D399),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Right Action Buttons: Wallet Chip + Bell Icon Button
-              Row(
-                children: [
-                  // Wallet Chip Button
-                  InkWell(
-                    onTap: () {
-                      state.setTab(2); // Switch to Wallet Tab
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.account_balance_wallet_rounded, size: 13, color: Color(0xFF34D399)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '₹${walletBal.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Circle Notification Bell Button
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => NotificationsScreen(state: state),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
-                          if (unreadNotifs > 0)
-                            Positioned(
-                              right: 6,
-                              top: 6,
-                              child: Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE11D48),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  unreadNotifs > 9 ? '9+' : '$unreadNotifs',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.w900,
+                child: GestureDetector(
+                  onTap: widget.onLocationTap,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 18, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    city,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
+                              ],
                             ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ── Location Selector Card Bar ──
-          InkWell(
-            onTap: onLocationTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.location_on_rounded,
-                      size: 15,
-                      color: Color(0xFFFFD700),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
                             Text(
-                              'DELIVERING TO • ${addressTitle.toUpperCase()}',
+                              subtitle.length > 35 ? '${subtitle.substring(0, 35)}...' : subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF34D399),
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Container(
-                              width: 5,
-                              height: 5,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF34D399),
-                                shape: BoxShape.circle,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFDFF7EA),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 1),
-                        Text(
-                          fullAddress,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                ),
+              ),
+
+              // Notification Bell
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (ctx) => NotificationsScreen(state: state),
+                    ),
+                  );
+                },
+                child: AnimatedBuilder(
+                  animation: _bellAnimation,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _bellAnimation.value,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                      ),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Text(
-                          'Change',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                        const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
+                        if (unreadNotifs > 0)
+                          Positioned(
+                            right: 4,
+                            top: 4,
+                            child: Container(
+                              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(9),
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                unreadNotifs > 9 ? '9+' : '$unreadNotifs',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 2),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 14,
-                          color: Colors.white,
-                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Inline Search Bar ──
+          Container(
+            height: 46,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: TextField(
+              controller: widget.searchController,
+              onChanged: widget.onSearchChanged,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: InputBorder.none,
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF99A1AA), size: 22),
+                suffixIcon: widget.searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18, color: Color(0xFF94A3B8)),
+                        onPressed: widget.onClearSearch,
+                      )
+                    : null,
+                hintText: "Search for '${_searchHints[_hintIndex]}'",
+                hintStyle: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Morning Dispatch Promo Strip ──
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                ),
+                child: const Text(
+                  'MORNING DROP 05:30 AM ☀️',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700),
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                ),
+                child: const Text(
+                  '🥛 FRESH TODAY',
+                  style: TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Headline
+          const Text(
+            'Order by 11PM Tonight →',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -0.4,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          // Subtitle + CTA
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFDFF7EA),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                ),
+                child: const Text(
+                  'SUBSCRIBE NOW ➔',
+                  style: TextStyle(
+                    color: Color(0xFF0D7C66),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

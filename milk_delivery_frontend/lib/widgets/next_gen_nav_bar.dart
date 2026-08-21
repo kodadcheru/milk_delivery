@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../theme/ui_tokens.dart';
 
 class NextGenNavItem {
   final IconData icon;
@@ -31,23 +30,37 @@ class NextGenBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      margin: EdgeInsets.fromLTRB(12, 0, 12, bottomInset > 0 ? bottomInset : 8),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(UiRadius.xl),
+        borderRadius: BorderRadius.circular(22),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             height: 68,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: BoxDecoration(
-              color: UiTone.surface.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(UiRadius.xl),
+              color: Colors.white.withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: UiTone.surfaceBorder,
+                color: const Color(0xFF0D7C66).withValues(alpha: 0.10),
                 width: 1.2,
               ),
-              boxShadow: UiShadow.floatingNav,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x181A2B23),
+                  blurRadius: 24,
+                  offset: Offset(0, -2),
+                  spreadRadius: -4,
+                ),
+                BoxShadow(
+                  color: Color(0x0A10B766),
+                  blurRadius: 40,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -56,52 +69,63 @@ class NextGenBottomNavBar extends StatelessWidget {
                 final isSelected = selectedIndex == index;
 
                 return Expanded(
-                  child: InkWell(
+                  child: GestureDetector(
                     onTap: () {
                       AppTheme.hapticLight();
                       onItemSelected(index);
                     },
-                    borderRadius: BorderRadius.circular(UiRadius.md),
-                    splashColor: UiTone.primarySoft,
-                    highlightColor: Colors.transparent,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected ? UiTone.primarySoft : Colors.transparent,
-                        borderRadius: BorderRadius.circular(UiRadius.md),
-                        border: isSelected
-                            ? Border.all(
-                                color: UiTone.primary.withValues(alpha: 0.3),
-                                width: 1,
-                              )
-                            : null,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Stack(
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Animated Pill Indicator
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          width: isSelected ? 56 : 40,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF0D7C66), Color(0xFF10B766)],
+                                  )
+                                : null,
+                            color: isSelected ? null : Colors.transparent,
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF10B766).withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Stack(
                             clipBehavior: Clip.none,
                             children: [
                               Icon(
                                 isSelected ? item.activeIcon : item.icon,
-                                size: isSelected ? 22 : 20,
-                                color: isSelected ? UiTone.primary : UiTone.softText,
+                                size: isSelected ? 20 : 22,
+                                color: isSelected ? Colors.white : const Color(0xFF475569),
                               ),
-                              if (item.badgeText != null && item.badgeText!.isNotEmpty)
+                              if (item.badgeText != null &&
+                                  item.badgeText!.isNotEmpty &&
+                                  !isSelected)
                                 Positioned(
-                                  right: -12,
-                                  top: -5,
+                                  right: -14,
+                                  top: -6,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: UiTone.secondary,
-                                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                                      color: const Color(0xFF10B766),
+                                      borderRadius: BorderRadius.circular(999),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: UiTone.secondary.withValues(alpha: 0.3),
+                                          color: const Color(0xFF10B766).withValues(alpha: 0.3),
                                           blurRadius: 4,
                                         ),
                                       ],
@@ -110,7 +134,7 @@ class NextGenBottomNavBar extends StatelessWidget {
                                       item.badgeText!,
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 8.5,
+                                        fontSize: 8,
                                         fontWeight: FontWeight.w900,
                                       ),
                                     ),
@@ -118,20 +142,37 @@ class NextGenBottomNavBar extends StatelessWidget {
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected ? UiTone.primary : UiTone.softText,
-                              letterSpacing: isSelected ? -0.2 : 0,
-                            ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        // Label
+                        Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFF475569),
+                            letterSpacing: isSelected ? -0.2 : 0,
                           ),
-                        ],
-                      ),
+                        ),
+
+                        // Bottom accent line
+                        if (isSelected)
+                          Container(
+                            width: 20,
+                            height: 3,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D7C66),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          )
+                        else
+                          const SizedBox(height: 5),
+                      ],
                     ),
                   ),
                 );

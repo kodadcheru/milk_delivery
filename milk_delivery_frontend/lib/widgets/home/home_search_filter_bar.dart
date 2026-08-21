@@ -19,82 +19,79 @@ class HomeSearchFilterBar extends StatelessWidget {
     required this.onClearSearch,
   });
 
+  static const List<Map<String, dynamic>> _filters = [
+    {'key': 'ALL', 'label': 'All Products', 'icon': Icons.grid_view_rounded},
+    {'key': 'MILK', 'label': 'Milk', 'icon': Icons.local_drink_rounded},
+    {'key': 'MEAT', 'label': 'Meat', 'icon': Icons.restaurant_rounded},
+    {'key': 'EGGS', 'label': 'Eggs', 'icon': Icons.egg_rounded},
+    {'key': 'WATER_CAN', 'label': 'Water', 'icon': Icons.water_drop_rounded},
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(top: 4, bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Field
-          TextField(
-            controller: searchController,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              hintText: 'Search milk, chicken, mutton, eggs, water can...',
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-              prefixIcon: const Icon(Icons.search_rounded, color: UiTone.primary, size: 20),
-              suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 16),
-                      onPressed: onClearSearch,
-                    )
-                  : null,
-              filled: true,
-              fillColor: UiTone.surfaceMuted,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final filter = _filters[index];
+          final isSelected = selectedCategory == filter['key'];
+
+          return GestureDetector(
+            onTap: () => onCategorySelected(filter['key'] as String),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: isSelected
+                    ? const LinearGradient(
+                        colors: [Color(0xFF0D7C66), Color(0xFF14A38B)],
+                      )
+                    : null,
+                color: isSelected ? null : Colors.white,
+                borderRadius: BorderRadius.circular(UiRadius.pill),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF0D7C66)
+                      : UiTone.surfaceBorder,
+                  width: 1.2,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF0D7C66).withValues(alpha: 0.28),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    filter['icon'] as IconData,
+                    size: 15,
+                    color: isSelected ? Colors.white : const Color(0xFF0D7C66),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    filter['label'] as String,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-
-          // Horizontal Category Quick Filter Pills
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildCategoryPill('ALL', 'All Items ✨'),
-                const SizedBox(width: 8),
-                _buildCategoryPill('MILK', '🥛 Milk'),
-                const SizedBox(width: 8),
-                _buildCategoryPill('MEAT', '🥩 Meat'),
-                const SizedBox(width: 8),
-                _buildCategoryPill('EGGS', '🥚 Eggs'),
-                const SizedBox(width: 8),
-                _buildCategoryPill('WATER_CAN', '💧 Water Can'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryPill(String catKey, String label) {
-    final isSelected = selectedCategory == catKey;
-    return InkWell(
-      onTap: () => onCategorySelected(catKey),
-      borderRadius: BorderRadius.circular(UiRadius.sm),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
-          borderRadius: BorderRadius.circular(UiRadius.sm),
-          border: Border.all(
-            color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : UiTone.ink,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+          );
+        },
       ),
     );
   }
