@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/notifications_screen.dart';
@@ -6,11 +7,17 @@ import '../../theme/ui_tokens.dart';
 class HomeLocationBar extends StatefulWidget {
   final AppState state;
   final VoidCallback onLocationTap;
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onClearSearch;
 
   const HomeLocationBar({
     super.key,
     required this.state,
     required this.onLocationTap,
+    this.searchController,
+    this.onSearchChanged,
+    this.onClearSearch,
   });
 
   @override
@@ -22,6 +29,18 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   // Bell shake animation
   late AnimationController _bellController;
   late Animation<double> _bellAnimation;
+
+  // Search hint rotator
+  Timer? _hintTimer;
+  int _currentHintIndex = 0;
+  final List<String> _hints = const [
+    'A2 Fresh Cow Milk',
+    'Organic Farm Eggs',
+    'Thick Buffalo Curd',
+    'Mineral Water 20L',
+    'Pure Cow Ghee',
+    'Farm Fresh Paneer',
+  ];
 
   @override
   void initState() {
@@ -36,6 +55,20 @@ class _HomeLocationBarState extends State<HomeLocationBar>
       TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.06), weight: 1),
       TweenSequenceItem(tween: Tween(begin: 0.06, end: 0), weight: 1),
     ]).animate(CurvedAnimation(parent: _bellController, curve: Curves.easeInOut));
+
+    _hintTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentHintIndex = (_currentHintIndex + 1) % _hints.length;
+        });
+      }
+    });
+
+    widget.searchController?.addListener(_onSearchListener);
+  }
+
+  void _onSearchListener() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -49,7 +82,9 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
   @override
   void dispose() {
+    _hintTimer?.cancel();
     _bellController.dispose();
+    widget.searchController?.removeListener(_onSearchListener);
     super.dispose();
   }
 
@@ -200,7 +235,79 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+
+          // ── Integrated Top Banner Search Bar (Service-Mobile App Style) ──
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 14),
+                const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFF0D7C66),
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: widget.searchController,
+                    onChanged: widget.onSearchChanged,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "Search '${_hints[_currentHintIndex]}'...",
+                      hintStyle: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                if (widget.searchController?.text.isNotEmpty == true)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                    onPressed: widget.onClearSearch,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  )
+                else
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.tune_rounded,
+                      size: 16,
+                      color: Color(0xFF0D7C66),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
 
           // ── Morning Dispatch Promo Strip ──
           Row(

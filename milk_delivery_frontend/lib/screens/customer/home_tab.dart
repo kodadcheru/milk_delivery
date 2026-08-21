@@ -8,7 +8,6 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
-import '../../widgets/home/home_pinned_search_bar.dart';
 import '../../widgets/home/home_wallet_vacation_card.dart';
 import '../../widgets/home/home_promo_carousel.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
@@ -121,7 +120,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              // ── 1. Hero Green Gradient Banner ──
+              // ── 1. Hero Green Gradient Banner with Integrated Search Bar ──
               SliverToBoxAdapter(
                 child: FadeTransition(
                   opacity: _entryFade,
@@ -130,19 +129,15 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                     child: HomeLocationBar(
                       state: widget.state,
                       onLocationTap: () => HomeLocationSheet.show(context, widget.state),
+                      searchController: _searchController,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      onClearSearch: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
                     ),
                   ),
                 ),
-              ),
-
-              // ── 2. Pinned Frosted Glass Search Bar ──
-              HomePinnedSearchBar(
-                controller: _searchController,
-                onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-                onClearSearch: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = '');
-                },
               ),
 
               // ── 3. Wallet & Vacation Card ──
