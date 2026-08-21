@@ -18,6 +18,11 @@ class DeliveryTaskModel {
   final String? deliveredAt;
   final double customerLatitude;
   final double customerLongitude;
+  final String productName;
+  final String productImage;
+  final int quantity;
+  final String packSize;
+  final double pricePerUnit;
 
   DeliveryTaskModel({
     required this.id,
@@ -36,16 +41,37 @@ class DeliveryTaskModel {
     this.deliveredAt,
     this.customerLatitude = 17.4319,
     this.customerLongitude = 78.4073,
+    this.productName = 'Farm Fresh Cow Milk',
+    this.productImage = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
+    this.quantity = 1,
+    this.packSize = '1 Litre',
+    this.pricePerUnit = 72.0,
   });
+
+  String get displayProductName => (subscriptionDetail?.productDetail?.name.isNotEmpty == true)
+      ? subscriptionDetail!.productDetail!.name
+      : (productName.isNotEmpty ? productName : 'Farm Fresh Cow Milk');
+
+  String get displayProductImage => (subscriptionDetail?.productDetail?.imageUrl.isNotEmpty == true)
+      ? subscriptionDetail!.productDetail!.imageUrl
+      : (productImage.isNotEmpty ? productImage : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80');
+
+  int get displayQuantity => (subscriptionDetail != null && subscriptionDetail!.quantity > 0)
+      ? subscriptionDetail!.quantity
+      : (quantity > 0 ? quantity : 1);
+
+  String get displayPackSize => (subscriptionDetail?.packSize.isNotEmpty == true)
+      ? subscriptionDetail!.packSize
+      : (packSize.isNotEmpty ? packSize : '1 Litre');
 
   factory DeliveryTaskModel.fromJson(Map<String, dynamic> json) {
     SubscriptionModel? subDetail;
-    if (json['subscription_detail'] != null) {
+    if (json['subscription_detail'] != null && json['subscription_detail'] is Map<String, dynamic>) {
       subDetail = SubscriptionModel.fromJson(json['subscription_detail']);
     }
 
     UserModel? drvDetail;
-    if (json['driver_detail'] != null) {
+    if (json['driver_detail'] != null && json['driver_detail'] is Map<String, dynamic>) {
       drvDetail = UserModel.fromJson(json['driver_detail']);
     }
 
@@ -66,6 +92,9 @@ class DeliveryTaskModel {
       parsedLon = subDetail.deliveryLongitude;
     }
 
+    final rawPrice = json['price_per_unit'] ?? (subDetail?.productDetail?.pricePerUnit);
+    final parsedPrice = double.tryParse(rawPrice?.toString() ?? '72.0') ?? 72.0;
+
     return DeliveryTaskModel(
       id: json['id'] ?? 0,
       subscriptionId: json['subscription'] ?? 0,
@@ -77,12 +106,17 @@ class DeliveryTaskModel {
       deliveryAddress: json['delivery_address'] ?? 'Doorstep Delivery Location',
       deliveryInstructions: json['delivery_instructions'] ?? 'Leave near doorstep box',
       deliveryDate: json['delivery_date'] ?? '',
-      slotTime: json['slot_time'] ?? '05:30 AM - 07:00 AM',
+      slotTime: json['slot_time'] ?? (subDetail?.deliverySlot ?? '05:30 AM - 07:00 AM'),
       status: json['status'] ?? 'PENDING',
       proofImageUrl: json['proof_image_url'] ?? '',
       deliveredAt: json['delivered_at'],
       customerLatitude: parsedLat,
       customerLongitude: parsedLon,
+      productName: json['product_name'] ?? (subDetail?.productDetail?.name ?? 'Farm Fresh Cow Milk'),
+      productImage: json['product_image'] ?? (subDetail?.productDetail?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80'),
+      quantity: (json['quantity'] as num?)?.toInt() ?? (subDetail?.quantity ?? 1),
+      packSize: json['pack_size'] ?? (subDetail?.packSize ?? '1 Litre'),
+      pricePerUnit: parsedPrice,
     );
   }
 

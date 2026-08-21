@@ -30,6 +30,11 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
     delivery_instructions = serializers.SerializerMethodField()
     customer_latitude = serializers.SerializerMethodField()
     customer_longitude = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
+    product_image = serializers.SerializerMethodField()
+    quantity = serializers.SerializerMethodField()
+    pack_size = serializers.SerializerMethodField()
+    price_per_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = DeliveryTask
@@ -46,6 +51,11 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "delivery_instructions",
             "customer_latitude",
             "customer_longitude",
+            "product_name",
+            "product_image",
+            "quantity",
+            "pack_size",
+            "price_per_unit",
             "delivery_date",
             "slot_time",
             "status",
@@ -135,6 +145,47 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             except (ValueError, TypeError):
                 pass
         return 79.9670
+
+    def get_product_name(self, obj):
+        if obj.subscription and obj.subscription.product:
+            return obj.subscription.product.name
+        if obj.order:
+            first_item = obj.order.items.first()
+            if first_item and first_item.product:
+                return first_item.product.name
+        return "Farm Fresh Cow Milk"
+
+    def get_product_image(self, obj):
+        if obj.subscription and obj.subscription.product:
+            return obj.subscription.product.image_url
+        if obj.order:
+            first_item = obj.order.items.first()
+            if first_item and first_item.product:
+                return first_item.product.image_url
+        return "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80"
+
+    def get_quantity(self, obj):
+        if obj.subscription:
+            return obj.subscription.quantity
+        if obj.order:
+            first_item = obj.order.items.first()
+            if first_item:
+                return first_item.quantity
+        return 1
+
+    def get_pack_size(self, obj):
+        if obj.subscription:
+            return obj.subscription.pack_size or (obj.subscription.product.unit_quantity if obj.subscription.product else "1 Litre")
+        return "1 Litre"
+
+    def get_price_per_unit(self, obj):
+        if obj.subscription and obj.subscription.product:
+            return str(obj.subscription.product.price_per_unit)
+        if obj.order:
+            first_item = obj.order.items.first()
+            if first_item:
+                return str(first_item.unit_price)
+        return "72.00"
 
 
 class LiveOrderItemSerializer(serializers.ModelSerializer):
