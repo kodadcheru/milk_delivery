@@ -464,6 +464,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, dynamic>?> generateDailyTasks({String? date}) async {
+    final result = await ApiService.generateDailyTasks(date: date);
+    if (result != null) {
+      await reloadAllData();
+    }
+    return result;
+  }
+
   Future<void> reloadAllData() async {
     isLoading = true;
     notifyListeners();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_batch_model.dart';
@@ -27,6 +28,7 @@ class MorningBatchScreen extends StatefulWidget {
 class _MorningBatchScreenState extends State<MorningBatchScreen> {
   late RouteOptimizationResult _routeResult;
 
+  bool _isLoading = true;
   int _batchStage = 0; // 0: Depot Pre-Load Checklist, 1: Active Sequential Route, 2: Shift Completed / Reconciliation
   int _currentStopIndex = 0;
   int _totalBottlesCollected = 0;
@@ -159,9 +161,19 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   @override
   void initState() {
     super.initState();
-    _optimizeRoute();
-    for (var c in _dynamicCrateManifest) {
-      _verifiedCrates.add(c.crateLabel);
+    _loadFreshData();
+  }
+
+  Future<void> _loadFreshData() async {
+    await widget.state.reloadAllData();
+    if (mounted) {
+      setState(() {
+        _optimizeRoute();
+        for (var c in _dynamicCrateManifest) {
+          _verifiedCrates.add(c.crateLabel);
+        }
+        _isLoading = false;
+      });
     }
   }
 
@@ -237,24 +249,37 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
       deliveryAddress: stop.deliveryAddress,
       latitude: stop.customerLatitude,
       longitude: stop.customerLongitude,
-      onConfirmProof: (proofUrl) {
+      onConfirmProof: (proofUrl) async {
         widget.state.markDeliveryCompleted(stop.id, proofUrl);
+        
+        // Sync bottle returns to backend
+        if (_currentStopBottles > 0) {
+          await ApiService.createBottleReturn(
+            customerId: stop.subscriptionDetail?.customerId ?? 0,
+            productId: stop.subscriptionDetail?.productId ?? 0,
+            quantity: _currentStopBottles,
+            depositAmount: _currentStopBottles * 10.0,
+          );
+        }
+        
         setState(() {
           _totalBottlesCollected += _currentStopBottles;
           _currentStopBottles = 0;
           if (_currentStopIndex + 1 < _routeResult.orderedStops.length) {
             _currentStopIndex++;
           } else {
-            _batchStage = 2; // All stops complete, show reconciliation
+            _batchStage = 2;
           }
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: UiTone.primary,
-            content: Text('✅ Stop #$_currentStopIndex Delivered! Photo proof saved & wallet debited.'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: const Color(0xFF0D7C66),
+              content: Text('✅ Stop #${_currentStopIndex + 1} Delivered! Photo proof saved & wallet debited.'),
+            ),
+          );
+        }
       },
     );
   }
@@ -275,7 +300,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: _buildStageBody(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0D7C66)))
+          : _buildStageBody(),
     );
   }
 
@@ -299,9 +326,13 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
     final crateManifest = _dynamicCrateManifest;
     final totalUnits = crateManifest.fold<int>(0, (sum, c) => sum + c.totalUnits);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    return RefreshIndicator(
+      color: const Color(0xFF0D7C66),
+      onRefresh: _loadFreshData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Hub Origin Card ──
@@ -519,6 +550,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -940,7 +972,19 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () async {
+                // Reload fresh data so dashboard reflects completed batch
+                await widget.state.reloadAllData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Color(0xFF0D7C66),
+                      content: Text('🎉 Morning batch finalized! All data synced.'),
+                    ),
+                  );
+                  Navigator.pop(context);
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,

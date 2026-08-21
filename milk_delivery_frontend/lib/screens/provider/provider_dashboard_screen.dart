@@ -602,6 +602,52 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().add(const Duration(days: 1)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 7)),
+                    );
+                    if (date != null) {
+                      setState(() => _isGeneratingTasks = true);
+                      final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+                      final result = await widget.state.generateDailyTasks(date: dateStr);
+                      setState(() => _isGeneratingTasks = false);
+                      if (result != null && context.mounted) {
+                        final tasksCreated = result['tasks_created'] ?? 0;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF0D7C66),
+                            content: Text('✅ $tasksCreated tasks created for $dateStr'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.autorenew_rounded, color: Color(0xFF2563EB), size: 22),
+                        SizedBox(height: 6),
+                        Text('Gen Tasks', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0F172A))),
+                        Text('Create batch', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
                   onTap: () => _openManageCapacitySlotsDialog(context),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
