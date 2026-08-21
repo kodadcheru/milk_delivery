@@ -350,8 +350,10 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
               // ── 5. Orders List ──
               if (_isLoading)
                 const Center(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(color: UiTone.primary),
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(color: UiTone.primary),
+                  ),
                 )
               else if (filteredTasks.isEmpty && filteredExpress.isEmpty)
                 Container(
@@ -380,7 +382,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                 ...filteredExpress.map((ord) => _buildExpressCard(ord)),
 
                 // Delivery Tasks Card List
-                ...filteredTasks.map((task) => _buildDeliveryCard(task)),
+                ...filteredTasks.map((task) => _buildDeliveryTaskCard(task)),
               ],
             ],
           ),
@@ -396,22 +398,21 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
         _selectedDate.day == date.day;
 
     return Expanded(
-      child: InkWell(
-        onTap: () => _selectPresetDate(offsetDays),
-        borderRadius: BorderRadius.circular(UiRadius.xs),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedDate = date),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.15),
+            color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
             borderRadius: BorderRadius.circular(UiRadius.xs),
           ),
+          alignment: Alignment.center,
           child: Text(
             label,
-            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: isSelected ? UiTone.primary : Colors.white,
+              color: isSelected ? UiTone.surface : UiTone.softText,
             ),
           ),
         ),
@@ -462,49 +463,55 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
     );
   }
 
-  Widget _buildDeliveryCard(DeliveryTaskModel task) {
-    final sub = task.subscriptionDetail;
-    final product = sub?.productDetail;
+  Widget _buildDeliveryTaskCard(DeliveryTaskModel task) {
+    final product = task.subscriptionDetail?.productDetail;
+    final phone = task.customerPhone.isNotEmpty ? task.customerPhone : '+91 9876543210';
     final isDelivered = task.status == 'DELIVERED';
     final isSkipped = task.status == 'SKIPPED';
-    final phone = task.customerPhone.isNotEmpty ? task.customerPhone : '+91 9876543210';
+    final driverDisplay = task.driverDetail?.fullName ?? '';
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: UiTone.surface,
         borderRadius: BorderRadius.circular(UiRadius.md),
-        side: BorderSide(
+        border: Border.all(
           color: isDelivered
               ? UiTone.success.withValues(alpha: 0.3)
               : (isSkipped ? UiTone.warning.withValues(alpha: 0.3) : UiTone.surfaceBorder),
+          width: isDelivered || isSkipped ? 1.5 : 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Customer Header & Status
+            // Top Header: Customer + Status
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: isDelivered
-                        ? UiTone.successSoft
-                        : (isSkipped ? UiTone.warningSoft : UiTone.primarySoft),
+                    color: UiTone.primarySoft,
                     borderRadius: BorderRadius.circular(UiRadius.sm),
                   ),
                   child: Center(
                     child: Text(
                       product?.icon ?? '🥛',
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 18),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +522,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${product?.name ?? 'Milk Subscription'} • ${task.quantity} Unit(s)',
+                        '${product?.name ?? 'Milk Subscription'} • ${task.subscriptionDetail?.quantity ?? 1} Unit(s)',
                         style: const TextStyle(fontSize: 11.5, color: UiTone.softText),
                       ),
                     ],
@@ -577,9 +584,9 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                         'Slot: ${task.slotTime}',
                         style: const TextStyle(fontSize: 10.5, color: UiTone.softText, fontWeight: FontWeight.bold),
                       ),
-                      if (task.driverName != null && task.driverName!.isNotEmpty) ...[
+                      if (driverDisplay.isNotEmpty) ...[
                         const Text(' • ', style: TextStyle(color: UiTone.softText)),
-                        Text('🛵 Driver: ${task.driverName}', style: const TextStyle(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
+                        Text('🛵 Driver: $driverDisplay', style: const TextStyle(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
                       ],
                     ],
                   ),
@@ -633,9 +640,10 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       DoorstepCameraDialog.show(
                         context,
                         customerName: task.customerName,
-                        address: task.deliveryAddress,
-                        productName: product?.name ?? 'Milk Bottle',
-                        onComplete: (proofUrl) async {
+                        deliveryAddress: task.deliveryAddress,
+                        latitude: task.customerLatitude,
+                        longitude: task.customerLongitude,
+                        onConfirmProof: (proofUrl) async {
                           final ok = await ApiService.completeDelivery(task.id, proofUrl);
                           if (ok) {
                             _loadDayOrders();
@@ -651,8 +659,8 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                         },
                       );
                     },
-                    icon: const Icon(Icons.check_circle_rounded, size: 14),
-                    label: const Text('Deliver ✅', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.camera_alt_rounded, size: 14),
+                    label: const Text('Deliver 📸', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       minimumSize: Size.zero,

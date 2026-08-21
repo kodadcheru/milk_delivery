@@ -1868,7 +1868,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const Text('Request instant payout to transfer hub earnings directly to your bank account', style: TextStyle(fontSize: 11, color: UiTone.softText), textAlign: TextAlign.center),
                 const SizedBox(height: 14),
                 ElevatedButton.icon(
-                  onPressed: () => _openPayoutTransferDialog(context, widget.state.totalDailyRevenue),
+                  onPressed: () => _withdrawEarnings(context, widget.state.totalDailyRevenue),
                   icon: const Icon(Icons.flash_on_rounded, size: 15),
                   label: const Text('Request Settlement Transfer 💸', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   style: ElevatedButton.styleFrom(
