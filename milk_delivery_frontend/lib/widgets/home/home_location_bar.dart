@@ -102,7 +102,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, topInset + 14, 16, 26),
+      padding: EdgeInsets.fromLTRB(16, topInset + 18, 16, 36),
       decoration: BoxDecoration(
         color: const Color(0xFF0E784D),
         gradient: !hasCustomBanner
@@ -123,14 +123,14 @@ class _HomeLocationBarState extends State<HomeLocationBar>
               )
             : null,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0B6D44).withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -146,7 +146,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                   onTap: widget.onLocationTap,
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on, size: 18, color: Colors.white),
+                      const Icon(Icons.location_on, size: 20, color: Colors.white),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Column(
@@ -161,22 +161,22 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
+                                const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 22),
                               ],
                             ),
                             Text(
-                              subtitle.length > 35 ? '${subtitle.substring(0, 35)}...' : subtitle,
+                              subtitle.length > 38 ? '${subtitle.substring(0, 38)}...' : subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFFDFF7EA),
                               ),
@@ -208,23 +208,23 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                     );
                   },
                   child: Container(
-                    width: 38,
-                    height: 38,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.28),
+                        color: Colors.white.withValues(alpha: 0.32),
                       ),
                     ),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
+                        const Icon(Icons.notifications_outlined, color: Colors.white, size: 23),
                         if (unreadNotifs > 0)
                           Positioned(
-                            right: 4,
-                            top: 4,
+                            right: 5,
+                            top: 5,
                             child: Container(
                               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -252,19 +252,19 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
 
           // ── Integrated Top Banner Search Bar (Service-Mobile App Style) ──
           Container(
-            height: 48,
+            height: 52,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -274,7 +274,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 const Icon(
                   Icons.search_rounded,
                   color: Color(0xFF0D7C66),
-                  size: 22,
+                  size: 24,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -282,41 +282,41 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                     controller: widget.searchController,
                     onChanged: widget.onSearchChanged,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF0F172A),
                     ),
                     decoration: InputDecoration(
                       hintText: "Search '${_hints[_currentHintIndex]}'...",
                       hintStyle: const TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF94A3B8),
                       ),
                       border: InputBorder.none,
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
                 if (widget.searchController?.text.isNotEmpty == true)
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
                     onPressed: widget.onClearSearch,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                   )
                 else
                   Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.all(6),
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
                       Icons.tune_rounded,
-                      size: 16,
+                      size: 18,
                       color: Color(0xFF0D7C66),
                     ),
                   ),
@@ -324,23 +324,23 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
 
           // ── Storefront Promo Strip (Configured by Admin) ──
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(UiRadius.pill),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
                 ),
                 child: Text(
                   sf.dispatchTag,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.3,
                   ),
@@ -348,7 +348,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFD700),
                   borderRadius: BorderRadius.circular(UiRadius.pill),
@@ -357,7 +357,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                   sf.promoChip,
                   style: const TextStyle(
                     color: Color(0xFF0F172A),
-                    fontSize: 9.5,
+                    fontSize: 10,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -365,20 +365,20 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // Headline (Configured by Admin)
           Text(
             sf.headline,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.w900,
               color: Colors.white,
-              letterSpacing: -0.4,
+              letterSpacing: -0.5,
             ),
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
           // Subtitle + CTA (Configured by Admin)
           Row(
@@ -387,24 +387,31 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 child: Text(
                   sf.subtitle,
                   style: const TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFFDFF7EA),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(UiRadius.pill),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Text(
                   sf.ctaText,
                   style: const TextStyle(
                     color: Color(0xFF0D7C66),
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
