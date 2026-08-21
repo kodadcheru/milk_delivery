@@ -142,12 +142,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                     child: HomeLocationBar(
                       state: widget.state,
                       onLocationTap: () => HomeLocationSheet.show(context, widget.state),
-                      searchController: _searchController,
-                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-                      onClearSearch: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
                     ),
                   ),
                 ),

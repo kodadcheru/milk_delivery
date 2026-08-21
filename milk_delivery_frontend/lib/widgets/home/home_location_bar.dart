@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/notifications_screen.dart';
@@ -7,17 +6,11 @@ import '../../theme/ui_tokens.dart';
 class HomeLocationBar extends StatefulWidget {
   final AppState state;
   final VoidCallback onLocationTap;
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
-  final VoidCallback onClearSearch;
 
   const HomeLocationBar({
     super.key,
     required this.state,
     required this.onLocationTap,
-    required this.searchController,
-    required this.onSearchChanged,
-    required this.onClearSearch,
   });
 
   @override
@@ -26,18 +19,6 @@ class HomeLocationBar extends StatefulWidget {
 
 class _HomeLocationBarState extends State<HomeLocationBar>
     with SingleTickerProviderStateMixin {
-  // Animated cycling search hints
-  static const List<String> _searchHints = [
-    'A2 Cow Milk',
-    'Farm Eggs',
-    'Chicken Breast',
-    'Water Can',
-    'Buffalo Milk',
-    'Mutton Cuts',
-  ];
-  int _hintIndex = 0;
-  Timer? _hintTimer;
-
   // Bell shake animation
   late AnimationController _bellController;
   late Animation<double> _bellAnimation;
@@ -45,10 +26,6 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   @override
   void initState() {
     super.initState();
-    _hintTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) setState(() => _hintIndex = (_hintIndex + 1) % _searchHints.length);
-    });
-
     _bellController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -72,7 +49,6 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
   @override
   void dispose() {
-    _hintTimer?.cancel();
     _bellController.dispose();
     super.dispose();
   }
@@ -222,39 +198,6 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Inline Search Bar ──
-          Container(
-            height: 46,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: TextField(
-              controller: widget.searchController,
-              onChanged: widget.onSearchChanged,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                border: InputBorder.none,
-                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF99A1AA), size: 22),
-                suffixIcon: widget.searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close, size: 18, color: Color(0xFF94A3B8)),
-                        onPressed: widget.onClearSearch,
-                      )
-                    : null,
-                hintText: "Search for '${_searchHints[_hintIndex]}'",
-                hintStyle: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
           ),
 
           const SizedBox(height: 16),
