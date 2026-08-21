@@ -106,6 +106,21 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     }
   }
 
+  bool _matchesCategory(String pCat, String catKey) {
+    final c = pCat.toUpperCase().replaceAll('&', 'AND').replaceAll('-', '_');
+    final k = catKey.toUpperCase().replaceAll('-', '_');
+    if (c == k) return true;
+    if (k == 'MILK' && (c.contains('MILK') || c.contains('DAIRY'))) return true;
+    if (k == 'EGGS' && (c.contains('EGG') || c.contains('COUNTRY'))) return true;
+    if (k == 'MEAT' && (c.contains('MEAT') || c.contains('CHICKEN') || c.contains('MUTTON') || c.contains('POULTRY'))) return true;
+    if (k == 'WATER_CAN' && (c.contains('WATER') || c.contains('CAN') || c.contains('MINERAL'))) return true;
+    if (k == 'PANEER' && c.contains('PANEER')) return true;
+    if (k == 'GHEE' && (c.contains('GHEE') || c.contains('BUTTER'))) return true;
+    if (k == 'CURD' && (c.contains('CURD') || c.contains('DAHI') || c.contains('YOGURT'))) return true;
+    if (k == 'BAKERY' && (c.contains('BREAD') || c.contains('BAKERY'))) return true;
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final meta = _getCategoryMetadata(widget.categoryKey);
@@ -113,9 +128,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     final gradient = meta['gradient'] as List<Color>;
     final subtags = meta['subtags'] as List<String>;
 
-    // Filter products strictly for this category + search + subtag
+    // Filter products dynamically for this category + search + subtag
     final categoryProducts = widget.state.products.where((p) {
-      if (p.category != widget.categoryKey) return false;
+      if (!_matchesCategory(p.category, widget.categoryKey)) return false;
 
       final matchesQuery = _searchQuery.isEmpty ||
           p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||

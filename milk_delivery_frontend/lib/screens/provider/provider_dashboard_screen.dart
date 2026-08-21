@@ -281,7 +281,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final deliveries = widget.state.deliveries;
     final stateInventory = widget.state.hubInventory.isNotEmpty ? widget.state.hubInventory : _hubInventory;
 
-    return products.map((prod) {
+    final list = products.map((prod) {
       final existing = stateInventory.firstWhere(
         (inv) => (inv['product'] == prod.id || inv['product_id'] == prod.id || inv['product_name'] == prod.name),
         orElse: () => <String, dynamic>{},
@@ -315,6 +315,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         'is_available': isAvailable,
       };
     }).toList();
+
+    list.sort((a, b) {
+      final bSlots = (b['booked_slots'] as int? ?? 0);
+      final aSlots = (a['booked_slots'] as int? ?? 0);
+      if (bSlots != aSlots) return bSlots.compareTo(aSlots);
+      return (a['product_name'] as String).compareTo(b['product_name'] as String);
+    });
+
+    return list;
   }
 
   void _openManageCapacitySlotsDialog(BuildContext context) {
@@ -1626,19 +1635,46 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: booked > 0 ? const Color(0xFFF0FDF4) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isAvailable ? const Color(0xFFE2E8F0) : const Color(0xFFFECDD3),
-          width: 1.2,
+          color: booked > 0
+              ? const Color(0xFF10B981)
+              : (isAvailable ? const Color(0xFFE2E8F0) : const Color(0xFFFECDD3)),
+          width: booked > 0 ? 1.8 : 1.2,
         ),
-        boxShadow: const [
-          BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3)),
+        boxShadow: [
+          BoxShadow(
+            color: booked > 0 ? const Color(0x1210B981) : const Color(0x060F172A),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (booked > 0)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🔥', style: TextStyle(fontSize: 11)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'ACTIVE DEMAND: $booked CRATES SUBSCRIBED TODAY',
+                    style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF15803D)),
+                  ),
+                ],
+              ),
+            ),
           Row(
             children: [
               Text(icon, style: const TextStyle(fontSize: 22)),
