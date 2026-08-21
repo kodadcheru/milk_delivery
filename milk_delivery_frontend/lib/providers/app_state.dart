@@ -956,44 +956,11 @@ class AppState extends ChangeNotifier {
       packSize: pSize,
     );
     if (newSub != null) {
+      debugPrint('✅ [Subscription Created]: Sub #${newSub.id} for ${product.name}');
       await reloadAllData();
     } else {
-      int newId = 200 + subscriptions.length + 1;
-      final sub = SubscriptionModel(
-        id: newId,
-        customerId: currentUser?.id ?? 1,
-        productId: product.id,
-        productDetail: product,
-        quantity: qty,
-        scheduleType: schedule,
-        startDate: DateTime.now().toString().split(' ')[0],
-        status: 'ACTIVE',
-        deliveryAddress: targetAddr,
-        deliverySlot: slotStr,
-        deliveryLatitude: targetLat,
-        deliveryLongitude: targetLon,
-        deliveryInstructions: targetInst,
-        packSize: pSize,
-      );
-      subscriptions.add(sub);
-      deliveries.add(
-        DeliveryTaskModel(
-          id: 600 + deliveries.length + 1,
-          subscriptionId: newId,
-          subscriptionDetail: sub,
-          deliveryDate: DateTime.now().toString().split(' ')[0],
-          slotTime: slotStr,
-          status: 'PENDING',
-          deliveryAddress: targetAddr,
-          deliveryInstructions: targetInst,
-          customerLatitude: targetLat,
-          customerLongitude: targetLon,
-          proofImageUrl: product.imageUrl.isNotEmpty
-              ? product.imageUrl
-              : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
-        ),
-      );
-      notifyListeners();
+      debugPrint('⚠️ [Subscription Create Error]: ${ApiService.lastError}');
+      await reloadAllData();
     }
   }
 

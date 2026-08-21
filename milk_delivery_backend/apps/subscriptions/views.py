@@ -106,9 +106,32 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             status=Subscription.Statuses.ACTIVE,
         )
 
-        # Delivery tasks are NOT auto-created here.
-        # Hub manager triggers task generation via "Generate Today's Delivery Tasks" button
-        # which calls POST /api/admin/generate-tasks/
+        # Auto-create initial DeliveryTask so customer immediately sees their morning delivery in My Orders tab
+        try:
+            DeliveryTask.objects.get_or_create(
+                subscription=sub,
+                delivery_date=date.today(),
+                defaults={
+                    "hub": hub,
+                    "slot_time": deliv_slot,
+                    "status": DeliveryTask.Statuses.PENDING,
+                }
+            )
+        except Exception:
+            pass
+
+        # Broadcast real-time Redis event to Hub and Driver portals
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            hub_code = getattr(hub, "hub_code", "HUB-KDD-01") if hub else "HUB-KDD-01"
+            broadcast_hub_event(hub_code, "subscription_created", {
+                "subscription_id": sub.id,
+                "customer": user.username,
+                "product": prod_obj.name if 'prod_obj' in locals() and prod_obj else "Milk",
+                "slot": deliv_slot,
+            })
+        except Exception:
+            pass
 
 
 class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
