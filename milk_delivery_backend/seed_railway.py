@@ -15,15 +15,15 @@ def seed():
 
     # 1. Permanent Super Admin & Operations Hub
     hub_kodad, _ = LocationHub.objects.get_or_create(
-        hub_code="HUB-KODAD-01",
+        hub_code="HUB-KDD-01",
         defaults={
-            "name": "Kodad Central Depot",
-            "address": "Opp. Govt Hospital, Main Road, Kodad",
-            "latitude": 16.9972,
-            "longitude": 79.9678,
-            "manager_name": "Ramesh Kumar",
-            "manager_phone": "+91 9876543210",
-            "coverage_radius_km": 8.0,
+            "name": "Kodad Depot",
+            "address": "2X27+M36, Kodad, Telangana 508206, India",
+            "latitude": 17.001734,
+            "longitude": 79.962500,
+            "manager_name": "srinuvasa reddy",
+            "manager_phone": "8885199878",
+            "coverage_radius_km": 8.5,
         }
     )
 
@@ -39,9 +39,9 @@ def seed():
             "is_superuser": True,
             "assigned_hub": hub_kodad,
             "city": "Kodad",
-            "address": "Kodad Central Hub, Telangana",
-            "latitude": 16.9972,
-            "longitude": 79.9678,
+            "address": "2X27+M36, Kodad, Telangana 508206, India",
+            "latitude": 17.001734,
+            "longitude": 79.962500,
         },
     )
     if not created:
