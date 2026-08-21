@@ -987,6 +987,39 @@
               <!-- Rendered dynamically -->
             </div>
           </div>
+
+          <!-- 4. Hub Daily Capacity & Product Slots Management (Real-Time Live Inventory) -->
+          <div class="section-card" style="margin-bottom: 0;">
+            <div class="section-header" style="flex-wrap: wrap; gap: 10px;">
+              <div>
+                <div class="section-title"><i class="fa-solid fa-boxes-stacked" style="color: #10B981;"></i> Hub Product Capacity & Daily Slots Roster</div>
+                <span style="font-size: 12px; color: var(--text-muted);">Real-time inventory limits, live booked crates & availability for this depot</span>
+              </div>
+              <button class="btn btn-secondary" onclick="loadHubDailySlots(document.getElementById('detailHubDbId').value)" style="padding: 4px 10px; font-size: 11.5px;">
+                <i class="fa-solid fa-sync"></i> Refresh Inventory Slots
+              </button>
+            </div>
+            
+            <div class="data-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price / Unit</th>
+                    <th>Daily Capacity Slots</th>
+                    <th>Booked Crates</th>
+                    <th>Available Slots</th>
+                    <th>Status</th>
+                    <th>Quick Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="detail-inventory-tbody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -3832,6 +3865,159 @@
             </div>
           `;
         });
+      }
+
+      // Load Real-Time Hub Product Capacity & Daily Slots
+      loadHubDailySlots(hub.db_id);
+    }
+
+    // ── Hub Daily Capacity & Crate Slots Real-Time Operations ──
+    async function loadHubDailySlots(hubDbId) {
+      if (!hubDbId) return;
+      const tbody = document.getElementById('detail-inventory-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Loading live inventory slots & daily capacities...</td></tr>';
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const headers = { 'Authorization': token ? `Bearer ${token}` : '' };
+
+        const [prodRes, invRes, subRes] = await Promise.all([
+          fetch(`${baseUrl}/products/?all=true`),
+          fetch(`${baseUrl}/hub-inventory/`, { headers }),
+          fetch(`${baseUrl}/admin/subscriptions/`, { headers })
+        ]);
+
+        const products = prodRes.ok ? await prodRes.json() : [];
+        const inventories = invRes.ok ? await invRes.json() : [];
+        const subscriptions = subRes.ok ? await subRes.json() : [];
+
+        if (products.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No products found in catalog.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        products.forEach(p => {
+          const inv = inventories.find(i => (i.product === p.id || i.product_id === p.id) && (i.hub === parseInt(hubDbId) || i.hub_id === parseInt(hubDbId) || !i.hub)) || {};
+          
+          const bookedSubs = subscriptions
+            .filter(s => (s.product === p.id || s.product_id === p.id || (s.product_detail && s.product_detail.id === p.id)) && s.status === 'ACTIVE')
+            .reduce((sum, s) => sum + (s.quantity || 1), 0);
+
+          const booked = bookedSubs > 0 ? bookedSubs : (inv.booked_slots || 0);
+          const defaultCapacity = p.daily_capacity_slots || (booked > 80 ? (booked + 50) : 150);
+          const capacity = inv.daily_capacity_slots !== undefined ? inv.daily_capacity_slots : defaultCapacity;
+          const isAvailable = inv.is_available !== undefined ? inv.is_available : (p.is_available !== undefined ? p.is_available : true);
+          const available = Math.max(0, capacity - booked);
+          const fillPct = capacity > 0 ? Math.min(100, Math.round((booked / capacity) * 100)) : 0;
+          const barColor = fillPct > 85 ? '#EF4444' : (fillPct > 60 ? '#F59E0B' : '#10B981');
+
+          tbody.innerHTML += `
+            <tr id="inv-row-${p.id}">
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">${p.icon || '🥛'}</span>
+                  <div>
+                    <strong style="color: #FFFFFF; font-size: 13px;">${p.name}</strong><br>
+                    <small style="color: var(--text-muted);">${p.unit || ''} • ${p.unit_quantity || ''}</small>
+                  </div>
+                </div>
+              </td>
+              <td><span class="status-tag status-hub" style="font-size: 11px;">${p.category || 'DAIRY'}</span></td>
+              <td><strong style="color: var(--primary-accent);">₹${parseFloat(p.price || 0).toFixed(2)}</strong></td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <input type="number" id="cap-input-${p.id}" value="${capacity}" class="form-control" style="width: 80px; padding: 4px 8px; font-weight: bold; text-align: center; color: #38BDF8;" min="0">
+                  <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="saveHubSlotLimit(${p.id}, ${hubDbId})" title="Save Limit">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <strong style="color: #FBBF24;">${booked} Crates</strong>
+                <div style="width: 100px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 4px;">
+                  <div style="width: ${fillPct}%; height: 100%; background: ${barColor};"></div>
+                </div>
+              </td>
+              <td>
+                <strong style="color: ${available > 0 ? '#10B981' : '#EF4444'};">${available} Slots</strong>
+              </td>
+              <td>
+                <button class="btn" style="padding: 3px 10px; font-size: 11px; font-weight: 800; background: ${isAvailable ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color: ${isAvailable ? '#34D399' : '#F87171'}; border: 1px solid ${isAvailable ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'};" onclick="toggleHubSlotStock(${p.id}, ${hubDbId}, ${!isAvailable})">
+                  <i class="fa-solid ${isAvailable ? 'fa-circle-check' : 'fa-circle-pause'}"></i> ${isAvailable ? 'IN STOCK' : 'PAUSED'}
+                </button>
+              </td>
+              <td>
+                <div style="display: flex; gap: 4px;">
+                  <button class="btn btn-secondary" style="padding: 3px 7px; font-size: 11px;" onclick="adjustHubSlotStep(${p.id}, ${hubDbId}, -10)" title="Decrease 10 Slots">-10</button>
+                  <button class="btn btn-secondary" style="padding: 3px 7px; font-size: 11px;" onclick="adjustHubSlotStep(${p.id}, ${hubDbId}, 10)" title="Increase 10 Slots">+10</button>
+                  <button class="btn btn-secondary" style="padding: 3px 7px; font-size: 11px;" onclick="adjustHubSlotStep(${p.id}, ${hubDbId}, 50)" title="Increase 50 Slots">+50</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        console.error('[loadHubDailySlots Error]', err);
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: #F87171;">Failed to load hub inventory slots.</td></tr>';
+      }
+    }
+
+    async function saveHubSlotLimit(productId, hubDbId) {
+      const input = document.getElementById(`cap-input-${productId}`);
+      if (!input) return;
+      const slots = parseInt(input.value) || 0;
+      await syncHubSlotApi(productId, hubDbId, slots, null);
+    }
+
+    async function toggleHubSlotStock(productId, hubDbId, newStatus) {
+      const input = document.getElementById(`cap-input-${productId}`);
+      const slots = input ? (parseInt(input.value) || 100) : 100;
+      await syncHubSlotApi(productId, hubDbId, slots, newStatus);
+    }
+
+    async function adjustHubSlotStep(productId, hubDbId, delta) {
+      const input = document.getElementById(`cap-input-${productId}`);
+      if (!input) return;
+      const current = parseInt(input.value) || 0;
+      const updated = Math.max(0, current + delta);
+      input.value = updated;
+      await syncHubSlotApi(productId, hubDbId, updated, null);
+    }
+
+    async function syncHubSlotApi(productId, hubDbId, slots, isAvailable) {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const payload = {
+          product_id: productId,
+          hub_id: hubDbId,
+          daily_capacity_slots: slots
+        };
+        if (isAvailable !== null) payload.is_available = isAvailable;
+
+        const res = await fetch(`${baseUrl}/hub-inventory/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          if (typeof showToast === 'function') {
+            showToast('⚡ Hub product capacity slot updated in real-time!', 'success');
+          } else {
+            alert('⚡ Hub capacity updated successfully!');
+          }
+          loadHubDailySlots(hubDbId);
+        } else {
+          alert('Could not update slot capacity.');
+        }
+      } catch (e) {
+        alert('Network error syncing slot capacity.');
       }
     }
 
