@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,6 +30,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   List<Map<String, dynamic>> _hubInventory = [];
   List<Map<String, dynamic>> _liveFleet = [];
   bool _isGeneratingTasks = false;
+  Timer? _fleetRefreshTimer;
 
   final List<Map<String, dynamic>> _broadcastAlerts = [];
   List<ProviderPayoutModel> _payoutHistory = [];
@@ -46,6 +48,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     _loadHubInventory();
     _loadPayouts();
     _loadBottleReturns();
+    _fleetRefreshTimer = Timer.periodic(const Duration(seconds: 4), (_) => _loadLiveFleet());
+  }
+
+  @override
+  void dispose() {
+    _fleetRefreshTimer?.cancel();
+    super.dispose();
   }
 
   void _loadLiveFleet() async {

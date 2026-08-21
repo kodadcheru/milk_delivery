@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
 
@@ -497,18 +498,41 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
   // ── Interactive Modals & Handlers ──
 
-  void _toggleDutyStatus(BuildContext context) {
+  void _toggleDutyStatus(BuildContext context) async {
     setState(() {
       _isOnDuty = !_isOnDuty;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: _isOnDuty ? const Color(0xFF0D7C66) : const Color(0xFFEF4444),
-        content: Text(
-          _isOnDuty ? '🟢 Status set to ON DUTY. Ready for morning route!' : '⏸️ Status set to OFF DUTY. Break mode active.',
-        ),
-      ),
+
+    final driverUser = widget.state.currentUser;
+    final statusStr = _isOnDuty ? 'ON_DUTY' : 'OFFLINE';
+
+    double lat = 17.001734;
+    double lng = 79.9625;
+    if (driverUser != null && driverUser.latitude != 0.0) {
+      lat = driverUser.latitude;
+      lng = driverUser.longitude;
+    }
+
+    await ApiService.updateDriverLocation(
+      latitude: lat,
+      longitude: lng,
+      status: statusStr,
     );
+
+    if (driverUser != null && driverUser.id > 0) {
+      await ApiService.updateDriverStatus(driverUser.id, statusStr);
+    }
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: _isOnDuty ? const Color(0xFF0D7C66) : const Color(0xFFEF4444),
+          content: Text(
+            _isOnDuty ? '🟢 Status set to ON DUTY. GPS Broadcast live on Hub map!' : '⏸️ Status set to OFF DUTY. Break mode active.',
+          ),
+        ),
+      );
+    }
   }
 
   void _showEditDriverProfileDialog(
