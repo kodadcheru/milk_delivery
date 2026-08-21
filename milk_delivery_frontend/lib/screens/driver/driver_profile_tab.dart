@@ -26,17 +26,17 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   @override
   Widget build(BuildContext context) {
     final driverUser = widget.state.currentUser;
-    final driverName = (driverUser != null && (driverUser.firstName.isNotEmpty || driverUser.username.isNotEmpty))
-        ? '${driverUser.firstName} ${driverUser.lastName}'.trim()
-        : (driverUser?.username.isNotEmpty == true ? driverUser!.username : 'Partner Delivery Boy');
-    final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : '+91 8919548905';
-    final driverId = driverUser != null ? 'DRV-${driverUser.id}' : 'DRV-101';
+    final driverName = (driverUser != null && driverUser.fullName.isNotEmpty && driverUser.fullName != 'User')
+        ? driverUser.fullName
+        : (driverUser?.username.isNotEmpty == true ? driverUser!.username : 'Delivery Partner');
+    final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : 'Unregistered Phone';
+    final driverId = driverUser != null && driverUser.id > 0 ? 'DRV-${driverUser.id}' : 'DRV-101';
 
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
     final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
         ? activeHub['manager_phone'].toString()
-        : '+91 8919548905';
+        : '8885199878';
 
     final salaryText = (driverUser != null && driverUser.monthlySalary > 0)
         ? '₹${driverUser.monthlySalary.toStringAsFixed(0)}'
@@ -44,10 +44,15 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
     final vehicleText = (driverUser != null && driverUser.vehicleNumber.isNotEmpty)
         ? driverUser.vehicleNumber
-        : 'EV Scooter (TS 09 EZ 4821)';
+        : 'EV Scooter (Tap to Register)';
     final licenseText = (driverUser != null && driverUser.drivingLicense.isNotEmpty)
         ? driverUser.drivingLicense
-        : 'DL-0420210084321';
+        : 'DL Verified (Tap to Update)';
+
+    final totalStops = widget.state.deliveries.length;
+    final completedStops = widget.state.deliveries.where((d) => d.status == 'DELIVERED').length;
+    final pendingStops = widget.state.deliveries.where((d) => d.status == 'PENDING').length;
+    final onTimePct = totalStops > 0 ? ((completedStops / totalStops) * 100).toStringAsFixed(1) : '100.0';
 
     final topInset = MediaQuery.of(context).padding.top;
 
@@ -229,7 +234,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     ),
                     const SizedBox(width: 10),
                     _buildQuickStatCard(
-                      '99.2%',
+                      '$onTimePct%',
                       'On-Time Drops',
                       Icons.timer_rounded,
                       const Color(0xFF10B981),
