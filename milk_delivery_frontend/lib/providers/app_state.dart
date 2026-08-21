@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/customer_address_model.dart';
 import '../models/product_model.dart';
@@ -23,6 +24,7 @@ class AppState extends ChangeNotifier {
 
   bool isVacationMode = false;
   int currentTabIndex = 0;
+  String? customBannerImagePath;
 
   // Real-Time Location & Customer Address Book State
   String currentDeliveryAddress = 'Select Delivery Location';
@@ -297,11 +299,33 @@ class AppState extends ChangeNotifier {
 
   int get unreadNotificationCount => notifications.where((n) => !n.isRead).length;
 
+  Future<void> loadCustomBannerImage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      customBannerImagePath = prefs.getString('custom_home_banner_path');
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> setCustomBannerImage(String? path) async {
+    customBannerImagePath = path;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (path != null && path.isNotEmpty) {
+        await prefs.setString('custom_home_banner_path', path);
+      } else {
+        await prefs.remove('custom_home_banner_path');
+      }
+    } catch (_) {}
+  }
+
   AppState() {
     initApp();
   }
 
   Future<void> initApp() async {
+    await loadCustomBannerImage();
     await initDevicePermissionsAndLocation();
     final savedToken = await ApiService.initAuthToken();
     if (savedToken != null) {
