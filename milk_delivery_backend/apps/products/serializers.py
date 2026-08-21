@@ -94,3 +94,26 @@ class ProductSerializer(serializers.ModelSerializer):
             if inv:
                 return inv.daily_capacity_slots
         return 100
+
+
+class StorefrontConfigSerializer(serializers.ModelSerializer):
+    banner_image_url = serializers.CharField(source="effective_banner_url", read_only=True)
+    raw_banner_image_url = serializers.CharField(source="banner_image_url", required=False, allow_blank=True)
+
+    class Meta:
+        from apps.products.models import StorefrontConfig
+        model = StorefrontConfig
+        fields = [
+            "id",
+            "banner_image_url",
+            "raw_banner_image_url",
+            "banner_image",
+            "headline",
+            "subtitle",
+            "dispatch_tag",
+            "promo_chip",
+            "cta_text",
+            "is_active",
+            "updated_at",
+        ]
+

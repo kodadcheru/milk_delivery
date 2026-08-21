@@ -722,6 +722,7 @@
       <button class="tab-btn" onclick="switchTab('express-orders', this)"><i class="fa-solid fa-bolt"></i> Express Orders</button>
       <button class="tab-btn" onclick="switchTab('bottle-returns', this)"><i class="fa-solid fa-wine-bottle"></i> Bottle Returns</button>
       <button class="tab-btn" onclick="switchTab('payouts', this)"><i class="fa-solid fa-money-bill-transfer"></i> Provider Payouts</button>
+      <button class="tab-btn" onclick="switchTab('storefront', this)"><i class="fa-solid fa-paintbrush"></i> Storefront & App Banner</button>
       <button class="tab-btn" onclick="switchTab('support', this)"><i class="fa-solid fa-headset"></i> Support Desk & Live Chat</button>
       <button class="tab-btn" id="tabBtnProfile" onclick="switchTab('profile', this)"><i class="fa-solid fa-user-shield"></i> Admin Profile & Security</button>
     </div>
@@ -1490,6 +1491,163 @@
                   <!-- Rendered dynamically -->
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Storefront & App Banner ── -->
+    <div id="tab-storefront" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 800; color: #fff;">Storefront & Mobile App Banner Management</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Configure the live top hero banner image, promotional tags, and headlines displayed to all customers across mobile apps.</p>
+        </div>
+        <button class="btn btn-secondary" onclick="loadStorefrontConfig()" style="padding: 8px 16px; font-size: 13px;"><i class="fa-solid fa-sync"></i> Refresh Settings</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 24px;">
+        <!-- Left: Configuration Form -->
+        <div class="section-card">
+          <div class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-sliders"></i> Storefront Banner Settings</div>
+          
+          <form id="storefrontConfigForm" onsubmit="saveStorefrontConfig(event)">
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label>Top Banner Image URL (CDN / Unsplash / Direct Link)</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="url" id="sfBannerUrl" class="form-control" placeholder="https://images.unsplash.com/..." oninput="updateStorefrontLivePreview()">
+                <label class="btn btn-secondary" style="margin: 0; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Upload File
+                  <input type="file" id="sfBannerFileInput" accept="image/*" style="display: none;" onchange="handleStorefrontFilePick(event)">
+                </label>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div style="margin-bottom: 18px;">
+              <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 8px;">Quick Farm & Dairy Presets:</label>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <div onclick="setStorefrontPreset('https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80')" style="cursor: pointer; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); position: relative; height: 60px;">
+                  <img src="https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=300&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                  <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); font-size: 10px; text-align: center; padding: 2px;">Pasture 🐄</div>
+                </div>
+                <div onclick="setStorefrontPreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80')" style="cursor: pointer; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); position: relative; height: 60px;">
+                  <img src="https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=300&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                  <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); font-size: 10px; text-align: center; padding: 2px;">Fresh Milk 🥛</div>
+                </div>
+                <div onclick="setStorefrontPreset('https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80')" style="cursor: pointer; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); position: relative; height: 60px;">
+                  <img src="https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=300&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                  <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); font-size: 10px; text-align: center; padding: 2px;">Green Farm 🌿</div>
+                </div>
+                <div onclick="setStorefrontPreset('https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?auto=format&fit=crop&w=1200&q=80')" style="cursor: pointer; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); position: relative; height: 60px;">
+                  <img src="https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?auto=format&fit=crop&w=300&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                  <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); font-size: 10px; text-align: center; padding: 2px;">Sunrise 🌅</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label>Hero Headline</label>
+              <input type="text" id="sfHeadline" class="form-control" value="Order by 11PM Tonight →" oninput="updateStorefrontLivePreview()">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label>Subtitle & Value Proposition</label>
+              <input type="text" id="sfSubtitle" class="form-control" value="❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub" oninput="updateStorefrontLivePreview()">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+              <div class="form-group">
+                <label>Dispatch Schedule Tag</label>
+                <input type="text" id="sfDispatchTag" class="form-control" value="MORNING DROP 05:30 AM ☀️" oninput="updateStorefrontLivePreview()">
+              </div>
+              <div class="form-group">
+                <label>Promo Chip</label>
+                <input type="text" id="sfPromoChip" class="form-control" value="🥛 FRESH TODAY" oninput="updateStorefrontLivePreview()">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label>CTA Button Text</label>
+              <input type="text" id="sfCtaText" class="form-control" value="SUBSCRIBE NOW ➔" oninput="updateStorefrontLivePreview()">
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 12px;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish Storefront Banner
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="resetStorefrontDefault()" style="padding: 12px 18px;">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Real-Time Mobile Device Simulation Frame -->
+        <div class="section-card" style="display: flex; flex-direction: column; align-items: center; background: #070B14;">
+          <div class="section-title" style="width: 100%; text-align: left; margin-bottom: 14px;"><i class="fa-solid fa-mobile-screen"></i> Live Customer Mobile App Preview</div>
+          
+          <!-- Mobile Frame Simulator -->
+          <div style="width: 320px; border-radius: 36px; border: 8px solid #1E293B; background: #F8FAFC; box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow: hidden; position: relative;">
+            <!-- Notch -->
+            <div style="width: 100px; height: 18px; background: #000; border-radius: 0 0 12px 12px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 8px; height: 8px; background: #1E293B; border-radius: 50%;"></div>
+            </div>
+
+            <!-- Simulated Hero Banner inside App -->
+            <div id="sfLiveBannerContainer" style="background: linear-gradient(135deg, #16A267 0%, #0E784D 100%); background-size: cover; background-position: center; padding: 14px 14px 22px; border-radius: 0 0 24px 24px; position: relative; color: #fff; box-shadow: 0 4px 14px rgba(13,124,102,0.3);">
+              <!-- Top Row: Location + Bell -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-location-dot" style="font-size: 14px; color: #fff;"></i>
+                  <div>
+                    <div style="font-size: 12px; font-weight: 800;">Kodad <i class="fa-solid fa-chevron-down" style="font-size: 9px;"></i></div>
+                    <div style="font-size: 9px; opacity: 0.85;">Doorstep Delivery Point</div>
+                  </div>
+                </div>
+                <div style="width: 28px; height: 28px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                  <i class="fa-regular fa-bell"></i>
+                </div>
+              </div>
+
+              <!-- Search Bar -->
+              <div style="background: #fff; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; color: #0F172A; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-magnifying-glass" style="color: #0D7C66; font-size: 12px;"></i>
+                <div style="font-size: 11px; color: #94A3B8; font-weight: 500;">Search 'A2 Cow Milk', 'Eggs'...</div>
+              </div>
+
+              <!-- Promo Chips -->
+              <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <span id="sfLiveDispatchTag" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35); font-size: 8.5px; font-weight: 800; padding: 3px 8px; border-radius: 12px;">MORNING DROP 05:30 AM ☀️</span>
+                <span id="sfLivePromoChip" style="background: #FFD700; color: #0F172A; font-size: 8.5px; font-weight: 900; padding: 3px 8px; border-radius: 12px;">🥛 FRESH TODAY</span>
+              </div>
+
+              <!-- Headline -->
+              <div id="sfLiveHeadline" style="font-size: 15px; font-weight: 900; line-height: 1.2; margin-bottom: 4px;">Order by 11PM Tonight →</div>
+              
+              <!-- Subtitle & CTA -->
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 8px;">
+                <div id="sfLiveSubtitle" style="font-size: 9px; opacity: 0.9; line-height: 1.3;">❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub</div>
+                <span id="sfLiveCta" style="background: #fff; color: #0D7C66; font-size: 8px; font-weight: 900; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">SUBSCRIBE ➔</span>
+              </div>
+            </div>
+
+            <!-- Simulated Feed below -->
+            <div style="padding: 12px;">
+              <div style="font-size: 11px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">Popular Products</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div style="background: #fff; border-radius: 10px; padding: 8px; border: 1px solid #E2E8F0;">
+                  <div style="font-size: 20px; text-align: center;">🥛</div>
+                  <div style="font-size: 10px; font-weight: 700; color: #0F172A;">A2 Cow Milk</div>
+                  <div style="font-size: 9px; color: #0D7C66; font-weight: 800;">₹38.00</div>
+                </div>
+                <div style="background: #fff; border-radius: 10px; padding: 8px; border: 1px solid #E2E8F0;">
+                  <div style="font-size: 20px; text-align: center;">🥚</div>
+                  <div style="font-size: 10px; font-weight: 700; color: #0F172A;">Farm Eggs (6)</div>
+                  <div style="font-size: 9px; color: #0D7C66; font-weight: 800;">₹45.00</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2863,7 +3021,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'support', 'profile'].forEach(t => {
+      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'storefront', 'support', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -2872,6 +3030,8 @@
         setTimeout(initMap, 200);
       } else if (tabName === 'support') {
         loadSupportDesk();
+      } else if (tabName === 'storefront') {
+        loadStorefrontConfig();
       }
     }
 
@@ -2889,6 +3049,7 @@
         loadExpressOrders(),
         loadBottleReturns(),
         loadPayouts(),
+        loadStorefrontConfig(),
         loadSupportDesk(),
         loadVacationPauses()
       ]);
@@ -4860,6 +5021,143 @@
         }
       } catch (e) {
         alert('Could not delete category.');
+      }
+    }
+
+    let currentStorefrontConfig = null;
+    let selectedStorefrontFile = null;
+
+    async function loadStorefrontConfig() {
+      try {
+        const res = await fetch(`${baseUrl}/storefront/config/`);
+        if (res.ok) {
+          currentStorefrontConfig = await res.json();
+          const bannerUrlInput = document.getElementById('sfBannerUrl');
+          if (bannerUrlInput) {
+            bannerUrlInput.value = currentStorefrontConfig.raw_banner_image_url || currentStorefrontConfig.banner_image_url || '';
+            document.getElementById('sfHeadline').value = currentStorefrontConfig.headline || 'Order by 11PM Tonight →';
+            document.getElementById('sfSubtitle').value = currentStorefrontConfig.subtitle || '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub';
+            document.getElementById('sfDispatchTag').value = currentStorefrontConfig.dispatch_tag || 'MORNING DROP 05:30 AM ☀️';
+            document.getElementById('sfPromoChip').value = currentStorefrontConfig.promo_chip || '🥛 FRESH TODAY';
+            document.getElementById('sfCtaText').value = currentStorefrontConfig.cta_text || 'SUBSCRIBE NOW ➔';
+            updateStorefrontLivePreview();
+          }
+        }
+      } catch (err) {
+        console.error('Error loading storefront config:', err);
+      }
+    }
+
+    function setStorefrontPreset(url) {
+      document.getElementById('sfBannerUrl').value = url;
+      selectedStorefrontFile = null;
+      const fileInput = document.getElementById('sfBannerFileInput');
+      if (fileInput) fileInput.value = '';
+      updateStorefrontLivePreview();
+    }
+
+    function handleStorefrontFilePick(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedStorefrontFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById('sfBannerUrl').value = '';
+          updateStorefrontLivePreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function updateStorefrontLivePreview(overrideImgUrl) {
+      const urlInput = document.getElementById('sfBannerUrl');
+      if (!urlInput) return;
+      const url = overrideImgUrl || urlInput.value.trim();
+      const headline = document.getElementById('sfHeadline').value.trim() || 'Order by 11PM Tonight →';
+      const subtitle = document.getElementById('sfSubtitle').value.trim() || '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub';
+      const dispatchTag = document.getElementById('sfDispatchTag').value.trim() || 'MORNING DROP 05:30 AM ☀️';
+      const promoChip = document.getElementById('sfPromoChip').value.trim() || '🥛 FRESH TODAY';
+      const ctaText = document.getElementById('sfCtaText').value.trim() || 'SUBSCRIBE ➔';
+
+      const liveHead = document.getElementById('sfLiveHeadline');
+      if (liveHead) liveHead.innerText = headline;
+      const liveSub = document.getElementById('sfLiveSubtitle');
+      if (liveSub) liveSub.innerText = subtitle;
+      const liveTag = document.getElementById('sfLiveDispatchTag');
+      if (liveTag) liveTag.innerText = dispatchTag;
+      const liveChip = document.getElementById('sfLivePromoChip');
+      if (liveChip) liveChip.innerText = promoChip;
+      const liveCta = document.getElementById('sfLiveCta');
+      if (liveCta) liveCta.innerText = ctaText;
+
+      const container = document.getElementById('sfLiveBannerContainer');
+      if (container) {
+        if (url) {
+          container.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.52), rgba(0,0,0,0.52)), url('${url}')`;
+        } else {
+          container.style.backgroundImage = 'linear-gradient(135deg, #16A267 0%, #0E784D 100%)';
+        }
+      }
+    }
+
+    function resetStorefrontDefault() {
+      document.getElementById('sfBannerUrl').value = 'https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80';
+      document.getElementById('sfHeadline').value = 'Order by 11PM Tonight →';
+      document.getElementById('sfSubtitle').value = '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub';
+      document.getElementById('sfDispatchTag').value = 'MORNING DROP 05:30 AM ☀️';
+      document.getElementById('sfPromoChip').value = '🥛 FRESH TODAY';
+      document.getElementById('sfCtaText').value = 'SUBSCRIBE NOW ➔';
+      selectedStorefrontFile = null;
+      const fileInput = document.getElementById('sfBannerFileInput');
+      if (fileInput) fileInput.value = '';
+      updateStorefrontLivePreview();
+    }
+
+    async function saveStorefrontConfig(e) {
+      if (e) e.preventDefault();
+      const token = localStorage.getItem('milkdrop_admin_token');
+      const formData = new FormData();
+      
+      const bannerUrl = document.getElementById('sfBannerUrl').value.trim();
+      const headline = document.getElementById('sfHeadline').value.trim();
+      const subtitle = document.getElementById('sfSubtitle').value.trim();
+      const dispatchTag = document.getElementById('sfDispatchTag').value.trim();
+      const promoChip = document.getElementById('sfPromoChip').value.trim();
+      const ctaText = document.getElementById('sfCtaText').value.trim();
+
+      if (selectedStorefrontFile) {
+        formData.append('banner_image', selectedStorefrontFile);
+      } else if (bannerUrl) {
+        formData.append('banner_image_url', bannerUrl);
+      }
+
+      formData.append('headline', headline);
+      formData.append('subtitle', subtitle);
+      formData.append('dispatch_tag', dispatchTag);
+      formData.append('promo_chip', promoChip);
+      formData.append('cta_text', ctaText);
+
+      try {
+        const res = await fetch(`${baseUrl}/storefront/config/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentStorefrontConfig = data;
+          selectedStorefrontFile = null;
+          alert('✅ Storefront Banner & Branding published successfully to all customer mobile apps!');
+          loadStorefrontConfig();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(`❌ Failed to update storefront: ${err.detail || 'Please check admin credentials.'}`);
+        }
+      } catch (err) {
+        alert('Network error publishing storefront config.');
       }
     }
 

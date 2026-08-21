@@ -72,3 +72,47 @@ class HubProductInventory(models.Model):
     @property
     def available_slots(self):
         return max(0, self.daily_capacity_slots - self.booked_slots)
+
+
+class StorefrontConfig(models.Model):
+    banner_image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80",
+        help_text="Direct URL or CDN/S3 URL for top banner image",
+    )
+    banner_image = models.ImageField(upload_to="storefront_banners/", blank=True, null=True)
+    headline = models.CharField(max_length=200, default="Order by 11PM Tonight →")
+    subtitle = models.CharField(
+        max_length=300,
+        default="❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub",
+    )
+    dispatch_tag = models.CharField(max_length=100, default="MORNING DROP 05:30 AM ☀️")
+    promo_chip = models.CharField(max_length=100, default="🥛 FRESH TODAY")
+    cta_text = models.CharField(max_length=100, default="SUBSCRIBE NOW ➔")
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Storefront Configuration"
+        verbose_name_plural = "Storefront Configurations"
+
+    def __str__(self):
+        return f"Storefront Config ({self.headline})"
+
+    @classmethod
+    def get_active(cls):
+        obj = cls.objects.filter(is_active=True).first()
+        if not obj:
+            obj = cls.objects.create()
+        return obj
+
+    @property
+    def effective_banner_url(self):
+        if self.banner_image:
+            try:
+                return self.banner_image.url
+            except Exception:
+                pass
+        return self.banner_image_url or "https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80"
+

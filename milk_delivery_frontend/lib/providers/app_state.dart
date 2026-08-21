@@ -12,6 +12,7 @@ import '../models/wallet_transaction_model.dart';
 import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
 import '../models/service_area_model.dart';
+import '../models/storefront_config_model.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/permission_service.dart';
@@ -25,6 +26,7 @@ class AppState extends ChangeNotifier {
   bool isVacationMode = false;
   int currentTabIndex = 0;
   String? customBannerImagePath;
+  StorefrontConfigModel storefrontConfig = const StorefrontConfigModel();
 
   // Real-Time Location & Customer Address Book State
   String currentDeliveryAddress = 'Select Delivery Location';
@@ -327,6 +329,7 @@ class AppState extends ChangeNotifier {
   Future<void> initApp() async {
     await loadCustomBannerImage();
     await initDevicePermissionsAndLocation();
+    storefrontConfig = await ApiService.fetchStorefrontConfig();
     final savedToken = await ApiService.initAuthToken();
     if (savedToken != null) {
       await reloadAllData();
@@ -415,7 +418,10 @@ class AppState extends ChangeNotifier {
         ApiService.fetchNotifications(),
         ApiService.fetchHubs(),
         ApiService.fetchServiceAreas(),
+        ApiService.fetchStorefrontConfig(),
       ]);
+
+      storefrontConfig = results[10] as StorefrontConfigModel? ?? const StorefrontConfigModel();
 
       final user = results[0] as UserModel?;
       if (user != null) {
@@ -1066,4 +1072,29 @@ class AppState extends ChangeNotifier {
     }
     return total;
   }
+
+  Future<bool> updateStorefrontSettings({
+    String? bannerImageUrl,
+    String? headline,
+    String? subtitle,
+    String? dispatchTag,
+    String? promoChip,
+    String? ctaText,
+  }) async {
+    final updated = await ApiService.updateStorefrontConfig(
+      bannerImageUrl: bannerImageUrl,
+      headline: headline,
+      subtitle: subtitle,
+      dispatchTag: dispatchTag,
+      promoChip: promoChip,
+      ctaText: ctaText,
+    );
+    if (updated != null) {
+      storefrontConfig = updated;
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
 }
+

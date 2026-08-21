@@ -13,6 +13,7 @@ import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
 import '../models/bottle_return_model.dart';
 import '../models/provider_payout_model.dart';
+import '../models/storefront_config_model.dart';
 import 'image_upload_service.dart';
 
 /// Exception type for API errors — screens can catch this to show meaningful messages
@@ -1084,4 +1085,57 @@ class ApiService {
     } catch (e) { lastError = e.toString(); }
     return null;
   }
+
+  // ── Storefront Configuration & Top Banner ──
+
+  static Future<StorefrontConfigModel> fetchStorefrontConfig() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/storefront/config/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return StorefrontConfigModel.fromJson(data);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return const StorefrontConfigModel();
+  }
+
+  static Future<StorefrontConfigModel?> updateStorefrontConfig({
+    String? bannerImageUrl,
+    String? headline,
+    String? subtitle,
+    String? dispatchTag,
+    String? promoChip,
+    String? ctaText,
+  }) async {
+    try {
+      final payload = <String, dynamic>{};
+      if (bannerImageUrl != null) payload['banner_image_url'] = bannerImageUrl;
+      if (headline != null) payload['headline'] = headline;
+      if (subtitle != null) payload['subtitle'] = subtitle;
+      if (dispatchTag != null) payload['dispatch_tag'] = dispatchTag;
+      if (promoChip != null) payload['promo_chip'] = promoChip;
+      if (ctaText != null) payload['cta_text'] = ctaText;
+
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/storefront/config/'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final data = jsonDecode(res.body);
+        return StorefrontConfigModel.fromJson(data);
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
 }
+

@@ -157,3 +157,55 @@ class HubInventoryListUpdateView(APIView):
         inv.save()
 
         return Response(HubProductInventorySerializer(inv).data, status=status.HTTP_200_OK)
+
+
+class StorefrontConfigView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from apps.products.models import StorefrontConfig
+        from apps.products.serializers import StorefrontConfigSerializer
+        config = StorefrontConfig.get_active()
+        serializer = StorefrontConfigSerializer(config, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        return self._update_config(request)
+
+    def patch(self, request):
+        return self._update_config(request)
+
+    def _update_config(self, request):
+        from apps.products.models import StorefrontConfig
+        from apps.products.serializers import StorefrontConfigSerializer
+        if not (request.user and request.user.is_authenticated and (request.user.is_staff or getattr(request.user, "role", "") in ["ADMIN", "HUB_MANAGER", "PROVIDER"])):
+            return Response({"detail": "Admin authorization required to update storefront settings."}, status=status.HTTP_403_FORBIDDEN)
+
+        config = StorefrontConfig.get_active()
+        banner_url = request.data.get("banner_image_url") or request.data.get("raw_banner_image_url")
+        headline = request.data.get("headline")
+        subtitle = request.data.get("subtitle")
+        dispatch_tag = request.data.get("dispatch_tag")
+        promo_chip = request.data.get("promo_chip")
+        cta_text = request.data.get("cta_text")
+        banner_file = request.FILES.get("banner_image")
+
+        if banner_url is not None:
+            config.banner_image_url = banner_url.strip()
+        if headline is not None:
+            config.headline = headline.strip()
+        if subtitle is not None:
+            config.subtitle = subtitle.strip()
+        if dispatch_tag is not None:
+            config.dispatch_tag = dispatch_tag.strip()
+        if promo_chip is not None:
+            config.promo_chip = promo_chip.strip()
+        if cta_text is not None:
+            config.cta_text = cta_text.strip()
+        if banner_file:
+            config.banner_image = banner_file
+
+        config.save()
+        serializer = StorefrontConfigSerializer(config, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

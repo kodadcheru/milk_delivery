@@ -181,7 +181,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => _showBroadcastModal(context),
                   icon: const Icon(Icons.campaign_rounded, size: 16),
-                  label: const Text('📢 System Alert Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  label: const Text('📢 Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F172A),
                     foregroundColor: Colors.white,
@@ -190,12 +190,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showStorefrontBannerDialog(context),
+                  icon: const Icon(Icons.palette_rounded, size: 16),
+                  label: const Text('🏪 Store Banner', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _showWalletCreditDialog(context),
                   icon: const Icon(Icons.account_balance_wallet_rounded, size: 16),
-                  label: const Text('⚡ Manual Wallet Credit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  label: const Text('⚡ Credit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0D7C66),
                     foregroundColor: Colors.white,
@@ -1006,6 +1020,120 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
               child: const Text('Save Product'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStorefrontBannerDialog(BuildContext context) {
+    final sf = widget.state.storefrontConfig;
+    final bannerUrlCtrl = TextEditingController(text: sf.rawBannerImageUrl ?? sf.bannerImageUrl);
+    final headlineCtrl = TextEditingController(text: sf.headline);
+    final subtitleCtrl = TextEditingController(text: sf.subtitle);
+    final dispatchTagCtrl = TextEditingController(text: sf.dispatchTag);
+    final promoChipCtrl = TextEditingController(text: sf.promoChip);
+    final ctaCtrl = TextEditingController(text: sf.ctaText);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Text('🏪 Storefront & Banner Config', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Top Hero Banner Image URL (Cloud/Unsplash/Direct):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: bannerUrlCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'https://images.unsplash.com/...',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text('Hero Headline:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: headlineCtrl,
+                  decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+                ),
+                const SizedBox(height: 12),
+                const Text('Subtitle & Value Prop:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: subtitleCtrl,
+                  decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Dispatch Tag:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          TextField(controller: dispatchTagCtrl, decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Promo Chip:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          TextField(controller: promoChipCtrl, decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text('CTA Text:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: ctaCtrl,
+                  decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final success = await widget.state.updateStorefrontSettings(
+                  bannerImageUrl: bannerUrlCtrl.text.trim(),
+                  headline: headlineCtrl.text.trim(),
+                  subtitle: subtitleCtrl.text.trim(),
+                  dispatchTag: dispatchTagCtrl.text.trim(),
+                  promoChip: promoChipCtrl.text.trim(),
+                  ctaText: ctaCtrl.text.trim(),
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success ? '✅ Storefront Banner & Branding updated on live server!' : '❌ Failed to update storefront.'),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+              child: const Text('Publish Banner'),
             ),
           ],
         ),
