@@ -48,8 +48,14 @@ class ProductModel {
       defaultIcon = '🥚';
     } else if (cat == 'MEAT' || nameStr.toLowerCase().contains('mutton') || nameStr.toLowerCase().contains('meat') || nameStr.toLowerCase().contains('chicken')) {
       defaultIcon = nameStr.toLowerCase().contains('mutton') || nameStr.toLowerCase().contains('meat') ? '🥩' : '🍗';
-    } else if (nameStr.toLowerCase().contains('buffalo')) {
-      defaultIcon = '🍶';
+    } else if (cat == 'PANEER' || nameStr.toLowerCase().contains('paneer')) {
+      defaultIcon = '🧀';
+    } else if (cat == 'GHEE' || nameStr.toLowerCase().contains('ghee') || nameStr.toLowerCase().contains('butter') || nameStr.toLowerCase().contains('makkhan')) {
+      defaultIcon = '🧈';
+    } else if (cat == 'CURD' || nameStr.toLowerCase().contains('curd') || nameStr.toLowerCase().contains('dahi') || nameStr.toLowerCase().contains('yogurt')) {
+      defaultIcon = '🥣';
+    } else if (cat == 'BAKERY' || nameStr.toLowerCase().contains('bread') || nameStr.toLowerCase().contains('bakery')) {
+      defaultIcon = '🍞';
     } else {
       defaultIcon = '🥛';
     }
