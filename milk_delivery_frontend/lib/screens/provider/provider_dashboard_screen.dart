@@ -364,21 +364,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final activeFleetCount = _liveFleet.length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── 1. Hub Location Header Card ──
+          // ── 1. Hero Hub Header Card ──
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [UiTone.ink, UiTone.ink],
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0D7C66)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(UiRadius.lg),
-              boxShadow: UiShadow.elevated,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(color: Color(0x250D7C66), blurRadius: 20, offset: Offset(0, 8)),
+              ],
             ),
             child: Column(
               children: [
@@ -391,8 +394,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: UiTone.secondary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(UiRadius.sm),
+                              color: const Color(0xFF0D7C66).withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Text('🏬', style: TextStyle(fontSize: 22)),
                           ),
@@ -405,13 +408,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   hubName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 14.5),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
                                 ),
                                 Text(
                                   'Operating Zone • ID #$hubCode',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600),
+                                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),
@@ -421,16 +424,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: UiTone.secondary,
-                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.circle, color: UiTone.surface, size: 6),
+                          Icon(Icons.circle, color: Colors.white, size: 6),
                           SizedBox(width: 4),
-                          Text('LIVE HUB', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.w900, fontSize: 9.5)),
+                          Text('LIVE HUB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -439,19 +443,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const Divider(color: Colors.white24, height: 20),
                 Row(
                   children: [
-                    Expanded(child: _buildHubStatColumn(activeFamilies, 'Active Subscribers')),
+                    Expanded(child: _buildHubStatColumn(activeFamilies, 'Active Families')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Litres', 'Daily Milk Volume')),
+                    Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Litres', 'Daily Volume')),
                     Container(width: 1, height: 28, color: Colors.white30),
                     Expanded(child: _buildHubStatColumn('$activeFleetCount Drivers', 'Active Fleet')),
                     Container(width: 1, height: 28, color: Colors.white30),
-                    Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Bottles', 'Crate Inventory')),
+                    Expanded(child: _buildHubStatColumn('${totalLitres.toStringAsFixed(0)} Bottles', 'Crates Ready')),
                   ],
                 ),
                 const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
-                  height: 44,
+                  height: 42,
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.push(
@@ -464,13 +468,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.radar_rounded, size: 16, color: UiTone.surface),
-                    label: const Text('Live Fleet Radar & Depot Coverage Map 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                    icon: const Icon(Icons.radar_rounded, size: 16, color: Colors.white),
+                    label: const Text('Live Fleet Radar & Depot Coverage Map 🗺️', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: UiTone.accentBlue,
-                      foregroundColor: UiTone.surface,
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
@@ -479,10 +483,88 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 14),
 
+          // ── Quick Command Shortcuts Grid ──
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => _showBroadcastDialog(context),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.campaign_rounded, color: Color(0xFFE67E22), size: 22),
+                        SizedBox(height: 6),
+                        Text('Broadcast Alert', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A))),
+                        Text('Push to zone', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _withdrawEarnings(context, netEarnings),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF0D7C66), size: 22),
+                        const SizedBox(height: 6),
+                        Text('₹${netEarnings.toStringAsFixed(0)} Payout', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5, color: Color(0xFF0D7C66))),
+                        const Text('Instant Transfer', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _openManageCapacitySlotsDialog(context),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.inventory_2_rounded, color: Color(0xFF2563EB), size: 22),
+                        SizedBox(height: 6),
+                        Text('Daily Slots', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A))),
+                        Text('Crate stock', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
           // ── Generate Today's Delivery Tasks ──
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 46,
             child: ElevatedButton.icon(
               onPressed: _isGeneratingTasks ? null : () async {
                 setState(() => _isGeneratingTasks = true);
@@ -492,44 +574,45 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   await widget.state.reloadAllData();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      backgroundColor: UiTone.primary,
+                      backgroundColor: const Color(0xFF0D7C66),
                       content: Text('✅ ${result['tasks_created']} tasks created, ${result['subscriptions_skipped']} skipped for ${result['date']}'),
                     ),
                   );
                 } else if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      backgroundColor: UiTone.error,
+                      backgroundColor: const Color(0xFFDC2626),
                       content: Text('❌ Failed to generate tasks: ${ApiService.lastError ?? "Unknown error"}'),
                     ),
                   );
                 }
               },
               icon: _isGeneratingTasks
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.surface))
-                  : const Icon(Icons.auto_fix_high_rounded, size: 18, color: UiTone.surface),
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.auto_fix_high_rounded, size: 18, color: Colors.white),
               label: Text(
                 _isGeneratingTasks ? 'Generating Tasks...' : "Generate Today's Delivery Tasks ⚡",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: UiTone.primary,
-                foregroundColor: UiTone.surface,
-                disabledBackgroundColor: UiTone.primary.withValues(alpha: 0.5),
+                backgroundColor: const Color(0xFF0D7C66),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.5),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ),
           const SizedBox(height: 14),
+
           // ── Equal Load Balancer & Delivery Boys Configurator ──
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: UiTone.ink,
-              borderRadius: BorderRadius.circular(UiRadius.md),
-              border: Border.all(color: UiTone.secondary.withValues(alpha: 0.35), width: 1.5),
-              boxShadow: UiShadow.elevated,
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35), width: 1.2),
+              boxShadow: const [BoxShadow(color: Color(0x100F172A), blurRadius: 16, offset: Offset(0, 4))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,21 +624,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         children: [
                           const Text('⚖️', style: TextStyle(fontSize: 20)),
                           const SizedBox(width: 8),
-                          Expanded(
+                          const Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Equal Load Balancer & Fleet Dispatch',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
                                 ),
-                                const Text(
+                                Text(
                                   'Auto-partitions hub orders equally across active boys',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: UiTone.secondary, fontSize: 10, fontWeight: FontWeight.w600),
+                                  style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -566,8 +649,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: UiTone.secondary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                      child: const Text('EQUAL LOAD', style: TextStyle(color: UiTone.secondary, fontSize: 9, fontWeight: FontWeight.w900)),
+                      decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
+                      child: const Text('EQUAL LOAD', style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
@@ -575,10 +658,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
                 // Delivery Boys Input Stepper
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: UiTone.surface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white24),
                   ),
                   child: Row(
@@ -587,7 +670,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Active Delivery Boys Today:', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                            Text('Active Delivery Boys Today:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
                             Text('Hub operator input for shift partitioning', style: TextStyle(color: Colors.white60, fontSize: 10)),
                           ],
                         ),
@@ -601,14 +684,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                             constraints: const BoxConstraints(),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Text(
                               '$_activeDriverCount Boys',
-                              style: const TextStyle(color: UiTone.secondary, fontWeight: FontWeight.w900, fontSize: 14),
+                              style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.w900, fontSize: 13.5),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: UiTone.secondary, size: 22),
+                            icon: const Icon(Icons.add_circle_outline, color: Color(0xFF34D399), size: 22),
                             onPressed: _activeDriverCount < 10 ? () => setState(() => _activeDriverCount++) : null,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -632,232 +715,69 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Expanded(child: _buildPartitionStat('₹15k/mo', 'Fixed Salary')),
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Manage Capacity & Partitioned Fleet Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 44,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _openManageCapacitySlotsDialog(context),
-                          icon: const Icon(Icons.inventory_2_rounded, size: 16),
-                          label: const Text('Manage Daily Slots 📦', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: UiTone.primary,
-                            foregroundColor: UiTone.surface,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SizedBox(
-                        height: 44,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: UiTone.primary,
-                                content: Text('⚖️ Hub Orders Balanced! ${tasks.length} orders partitioned equally across $_activeDriverCount salaried delivery boys with zero route overlap.'),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.hub_rounded, size: 16),
-                          label: Text('Auto-Balance Fleet ($_activeDriverCount) 🚀', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: UiTone.secondary,
-                            foregroundColor: UiTone.surface,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // Live Partitions Summary
-                Builder(
-                  builder: (context) {
-                    final partitions = RouteOptimizer.partitionEquallyForDrivers(
-                      hub: HubLocationModel.defaultHub,
-                      allTasks: tasks,
-                      numberOfDrivers: _activeDriverCount,
-                    );
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 10),
-                        ...partitions.asMap().entries.map((entry) {
-                          final idx = entry.key;
-                          final res = entry.value;
-                          final dName = idx < _liveFleet.length ? (_liveFleet[idx]['name'] ?? 'Driver #${idx + 1}') : 'Driver #${idx + 1}';
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: UiTone.surface.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(UiRadius.xs),
-                            ),
-                            child: Row(
-                              children: [
-                                Flexible(child: Text('🛵 $dName', overflow: TextOverflow.ellipsis, style: const TextStyle(color: UiTone.surface, fontSize: 11, fontWeight: FontWeight.bold))),
-                                const SizedBox(width: 6),
-                                Flexible(child: Text('${res.orderedStops.length} Stops • ${res.totalDistanceKm.toStringAsFixed(1)} km • Salaried Staff', overflow: TextOverflow.ellipsis, style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600))),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
               ],
             ),
           ),
           const SizedBox(height: 14),
 
-          // ── 2. Provider Earnings & Settlement Card ──
+          // ── 3. Integrated Search Bar ──
           Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [UiTone.primary, UiTone.secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(UiRadius.md),
-              boxShadow: UiShadow.elevated,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: const [BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3))],
             ),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Net Provider Settlement Balance', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                        const SizedBox(height: 2),
-                        Text(
-                          '₹${netEarnings.toStringAsFixed(0)}',
-                          style: const TextStyle(color: UiTone.surface, fontSize: 24, fontWeight: FontWeight.w900),
-                        ),
-                      ],
+                const SizedBox(width: 12),
+                const Icon(Icons.search_rounded, color: Color(0xFF0D7C66), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                    decoration: const InputDecoration(
+                      hintText: 'Search customer, apartment, or mobile...',
+                      hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: () => _withdrawEarnings(context, netEarnings),
-                      icon: const Icon(Icons.account_balance_wallet_rounded, size: 15),
-                      label: const Text('Withdraw Bank', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.surface,
-                        foregroundColor: UiTone.primary,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: UiTone.ink.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(UiRadius.sm)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Gross Daily GMV: ₹${totalRevenue.toStringAsFixed(0)}', style: const TextStyle(color: UiTone.surface, fontSize: 10.5, fontWeight: FontWeight.w700)),
-                      const Text('75% Provider Share • 25% Logistics', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                    ],
                   ),
                 ),
+                if (_searchQuery.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 18, color: Colors.grey),
+                    onPressed: () => setState(() => _searchQuery = ''),
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // ── 3. Search Bar & Broadcast CTA ──
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: UiTone.surface,
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    border: Border.all(color: UiTone.surfaceBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, color: UiTone.softText, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          onChanged: (val) => setState(() => _searchQuery = val),
-                          decoration: const InputDecoration(
-                            hintText: 'Search customer, apartment, or phone...',
-                            hintStyle: TextStyle(color: UiTone.softText, fontSize: 12.5),
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                      if (_searchQuery.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.clear, size: 16),
-                          onPressed: () => setState(() => _searchQuery = ''),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () => _showBroadcastDialog(context),
-                borderRadius: BorderRadius.circular(UiRadius.sm),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: UiTone.primary,
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    boxShadow: UiShadow.elevated,
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.campaign_rounded, color: UiTone.surface, size: 18),
-                      SizedBox(width: 4),
-                      Text('Alert', style: TextStyle(color: UiTone.surface, fontWeight: FontWeight.bold, fontSize: 11)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ── 4. Filter Tabs (Active / Paused / Express / Fleet / Alerts / Payouts) ──
+          // ── 4. Filter Tabs Carousel ──
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildFilterChip(0, '⚡ Upcoming Orders (${filteredTasks.length + liveOrders.length})'),
+                _buildFilterChip(0, '⚡ Upcoming Orders', filteredTasks.length + liveOrders.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(1, '✅ Active (${activeSubs.length})'),
+                _buildFilterChip(1, '✅ Active Subs', activeSubs.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(7, '⏸️ Paused (${pausedSubs.length})'),
+                _buildFilterChip(7, '⏸️ Paused Subs', pausedSubs.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(2, '⚡ Express (${liveOrders.length})'),
+                _buildFilterChip(2, '⚡ Express Orders', liveOrders.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(3, '🛵 Fleet (${_liveFleet.length})'),
+                _buildFilterChip(3, '🛵 Fleet Status', _liveFleet.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(4, '📦 Crates'),
+                _buildFilterChip(4, '📦 Crates & Stock', 0),
                 const SizedBox(width: 8),
-                _buildFilterChip(8, '🍼 Bottles (${_bottleReturns.length})'),
+                _buildFilterChip(8, '🍼 Bottles Returned', _bottleReturns.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(5, '📢 Alerts (${_broadcastAlerts.length})'),
+                _buildFilterChip(5, '📢 Alerts Broadcasted', _broadcastAlerts.length),
                 const SizedBox(width: 8),
-                _buildFilterChip(6, '💰 Payouts (${_payoutHistory.length})'),
+                _buildFilterChip(6, '💰 Bank Payouts', _payoutHistory.length),
               ],
             ),
           ),
@@ -2204,25 +2124,54 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
-  Widget _buildFilterChip(int idx, String label) {
+  Widget _buildFilterChip(int idx, String label, int count) {
     final isSelected = _selectedFilter == idx;
     return InkWell(
       onTap: () => setState(() => _selectedFilter = idx),
-      borderRadius: BorderRadius.circular(UiRadius.lg),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
-          borderRadius: BorderRadius.circular(UiRadius.lg),
-          border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? UiTone.surface : UiTone.softText,
+          color: isSelected ? const Color(0xFF0D7C66) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
           ),
+          boxShadow: [
+            if (isSelected)
+              const BoxShadow(color: Color(0x200D7C66), blurRadius: 8, offset: Offset(0, 3)),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+              ),
+            ),
+            if (count > 0) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
