@@ -37,18 +37,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         title: Row(
           children: [
-            const Text('Notifications 🔔', style: TextStyle(color: UiTone.surface, fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Notifications 🔔', style: TextStyle(color: UiTone.surface, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
             if (unreadCount > 0) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
                   color: UiTone.error,
                   borderRadius: BorderRadius.circular(UiRadius.sm),
                 ),
                 child: Text(
-                  '$unreadCount New',
-                  style: const TextStyle(color: UiTone.surface, fontSize: 10, fontWeight: FontWeight.bold),
+                  '$unreadCount NEW',
+                  style: const TextStyle(color: UiTone.surface, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                 ),
               ),
             ],

@@ -159,18 +159,18 @@ class HomeLocationBar extends StatelessWidget {
                       onTap: onLocationTap,
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5.5),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: Colors.white.withValues(alpha: 0.16),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.32), width: 1.1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(
                               Icons.location_on_rounded,
-                              size: 13,
+                              size: 13.5,
                               color: Color(0xFFFFD700),
                             ),
                             const SizedBox(width: 5),
@@ -183,6 +183,7 @@ class HomeLocationBar extends StatelessWidget {
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
                             ),
