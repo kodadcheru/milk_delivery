@@ -95,7 +95,68 @@ class AppState extends ChangeNotifier {
   List<DeliveryTaskModel> deliveries = [];
   List<LiveOrderModel> liveOrders = [];
   List<NotificationModel> notifications = [];
+  List<Map<String, dynamic>> hubInventory = [];
   Map<String, dynamic>? adminSummary;
+
+  // Real-Time Hub Product Slot & Capacity Manager (Optimistic 0ms Latency)
+  Future<void> updateHubProductCapacity(int productId, int dailyCapacitySlots, {bool? isAvailable}) async {
+    HapticFeedback.lightImpact();
+
+    final existingIdx = hubInventory.indexWhere((inv) => (inv['product'] == productId || inv['product_id'] == productId));
+    if (existingIdx >= 0) {
+      hubInventory[existingIdx]['daily_capacity_slots'] = dailyCapacitySlots;
+      if (isAvailable != null) {
+        hubInventory[existingIdx]['is_available'] = isAvailable;
+      }
+    } else {
+      hubInventory.add({
+        'product': productId,
+        'product_id': productId,
+        'daily_capacity_slots': dailyCapacitySlots,
+        'is_available': isAvailable ?? true,
+      });
+    }
+
+    final prodIdx = products.indexWhere((p) => p.id == productId);
+    if (prodIdx >= 0) {
+      final old = products[prodIdx];
+      products[prodIdx] = ProductModel(
+        id: old.id,
+        name: old.name,
+        category: old.category,
+        description: old.description,
+        pricePerUnit: old.pricePerUnit,
+        unit: old.unit,
+        unitQuantity: old.unitQuantity,
+        imageUrl: old.imageUrl,
+        badgeText: old.badgeText,
+        nutritionInfo: old.nutritionInfo,
+        farmOrigin: old.farmOrigin,
+        isAvailable: isAvailable ?? old.isAvailable,
+        availableSlots: (dailyCapacitySlots - (old.dailyCapacitySlots - old.availableSlots)).clamp(0, 9999),
+        dailyCapacitySlots: dailyCapacitySlots,
+        rating: old.rating,
+        icon: old.icon,
+      );
+    }
+
+    notifyListeners();
+
+    try {
+      final updated = await ApiService.updateHubInventory(
+        productId: productId,
+        dailyCapacitySlots: dailyCapacitySlots,
+        isAvailable: isAvailable,
+      );
+      if (updated != null) {
+        final idx = hubInventory.indexWhere((inv) => (inv['product'] == productId || inv['product_id'] == productId));
+        if (idx >= 0) {
+          hubInventory[idx] = updated;
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
 
   // In-memory Shopping Cart State
   final Map<String, MapEntry<ProductModel, int>> cartItems = {};
@@ -419,9 +480,11 @@ class AppState extends ChangeNotifier {
         ApiService.fetchHubs(),
         ApiService.fetchServiceAreas(),
         ApiService.fetchStorefrontConfig(),
+        ApiService.fetchHubInventory(),
       ]);
 
       storefrontConfig = results[10] as StorefrontConfigModel? ?? const StorefrontConfigModel();
+      hubInventory = (results[11] as List<Map<String, dynamic>>?) ?? [];
 
       final user = results[0] as UserModel?;
       if (user != null) {

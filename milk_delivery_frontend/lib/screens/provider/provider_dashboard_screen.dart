@@ -279,9 +279,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final products = widget.state.products;
     final subscriptions = widget.state.subscriptions;
     final deliveries = widget.state.deliveries;
+    final stateInventory = widget.state.hubInventory.isNotEmpty ? widget.state.hubInventory : _hubInventory;
 
     return products.map((prod) {
-      final existing = _hubInventory.firstWhere(
+      final existing = stateInventory.firstWhere(
         (inv) => (inv['product'] == prod.id || inv['product_id'] == prod.id || inv['product_name'] == prod.name),
         orElse: () => <String, dynamic>{},
       );
@@ -295,9 +296,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           .fold<int>(0, (sum, d) => sum + (d.subscriptionDetail?.quantity ?? 1));
 
       final booked = subBooked > 0 ? subBooked : (deliveryBooked > 0 ? deliveryBooked : (existing['booked_slots'] ?? 0));
-      final defaultCapacity = booked > 80 ? (booked + 50) : 150;
+      final defaultCapacity = prod.dailyCapacitySlots > 0 ? prod.dailyCapacitySlots : (booked > 80 ? (booked + 50) : 150);
       final capacity = (existing['daily_capacity_slots'] as int?) ?? defaultCapacity;
-      final isAvailable = (existing['is_available'] as bool?) ?? true;
+      final isAvailable = (existing['is_available'] as bool?) ?? prod.isAvailable;
       final available = (capacity - booked).clamp(0, 9999);
 
       return {
@@ -1659,17 +1660,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   ],
                 ),
               ),
-              // Availability Switch
+              // Real-Time Availability Switch Pill
               InkWell(
-                onTap: () async {
+                onTap: () {
                   final newStatus = !isAvailable;
                   inv['is_available'] = newStatus;
                   onUpdated?.call();
                   setState(() {});
-                  await ApiService.updateHubInventory(
-                    productId: productId,
-                    dailyCapacitySlots: dailyCapacity,
-                    isAvailable: newStatus,
+                  widget.state.updateHubProductCapacity(productId, dailyCapacity, isAvailable: newStatus);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      duration: const Duration(milliseconds: 1400),
+                      backgroundColor: newStatus ? const Color(0xFF0D7C66) : const Color(0xFFDC2626),
+                      content: Text(newStatus ? '🟢 $productName set to IN STOCK for hub zone.' : '⏸️ $productName set to PAUSED for hub zone.'),
+                    ),
                   );
                 },
                 borderRadius: BorderRadius.circular(12),
@@ -1704,7 +1708,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Capacity Usage Progress Bar
+          // Real-Time Capacity Usage Progress Bar
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
@@ -1739,12 +1743,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Quick Stepper & Edit Actions
+          // Instant Real-Time Stepper Actions (-10, +10, +50, Custom)
           Row(
             children: [
               // Stepper: -10
               IconButton.filledTonal(
                 icon: const Icon(Icons.remove, size: 14),
+                tooltip: 'Decrease 10 Slots',
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0xFFF1F5F9),
                   foregroundColor: const Color(0xFF0F172A),
@@ -1752,13 +1757,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   minimumSize: const Size(34, 32),
                 ),
                 onPressed: dailyCapacity > 10
-                    ? () async {
+                    ? () {
                         final newCap = dailyCapacity - 10;
                         inv['daily_capacity_slots'] = newCap;
                         inv['available_slots'] = (newCap - booked).clamp(0, 9999);
                         onUpdated?.call();
                         setState(() {});
-                        await ApiService.updateHubInventory(productId: productId, dailyCapacitySlots: newCap);
+                        widget.state.updateHubProductCapacity(productId, newCap, isAvailable: isAvailable);
                       }
                     : null,
               ),
@@ -1766,20 +1771,43 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               // Stepper: +10
               IconButton.filledTonal(
                 icon: const Icon(Icons.add, size: 14),
+                tooltip: 'Add 10 Slots',
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0xFFE6F5F0),
                   foregroundColor: const Color(0xFF0D7C66),
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(34, 32),
                 ),
-                onPressed: () async {
+                onPressed: () {
                   final newCap = dailyCapacity + 10;
                   inv['daily_capacity_slots'] = newCap;
                   inv['available_slots'] = (newCap - booked).clamp(0, 9999);
                   onUpdated?.call();
                   setState(() {});
-                  await ApiService.updateHubInventory(productId: productId, dailyCapacitySlots: newCap);
+                  widget.state.updateHubProductCapacity(productId, newCap, isAvailable: isAvailable);
                 },
+              ),
+              const SizedBox(width: 6),
+              // Quick +50 Chip
+              InkWell(
+                onTap: () {
+                  final newCap = dailyCapacity + 50;
+                  inv['daily_capacity_slots'] = newCap;
+                  inv['available_slots'] = (newCap - booked).clamp(0, 9999);
+                  onUpdated?.call();
+                  setState(() {});
+                  widget.state.updateHubProductCapacity(productId, newCap, isAvailable: isAvailable);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Text('+50', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                ),
               ),
               const SizedBox(width: 8),
               // Custom Edit Dialog Button
@@ -1794,7 +1822,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       setState(() {});
                     }),
                     icon: const Icon(Icons.tune_rounded, size: 13),
-                    label: const Text('Set Custom Limit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                    label: const Text('Custom Limit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0D7C66),
                       side: const BorderSide(color: Color(0xFF0D7C66)),
@@ -1812,35 +1840,112 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   void _showEditCapacityDialog(int productId, String productName, int currentCapacity, {Function(int)? onSaved}) {
     final controller = TextEditingController(text: currentCapacity.toString());
+    final presets = [50, 100, 150, 200, 300, 500, 1000];
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Edit Daily Capacity: $productName', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: 'Daily Capacity Slots',
-            hintText: 'e.g. 200',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final newCap = int.tryParse(controller.text) ?? currentCapacity;
-              Navigator.pop(ctx);
-              onSaved?.call(newCap);
-              final result = await ApiService.updateHubInventory(productId: productId, dailyCapacitySlots: newCap);
-              if (result != null) _loadHubInventory();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
-            child: const Text('Update Limit'),
-          ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: const Color(0xFFE6F5F0), borderRadius: BorderRadius.circular(10)),
+                  child: const Text('📦', style: TextStyle(fontSize: 18)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Daily Capacity Limit', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      Text(productName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Quick Preset Slots:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: presets.map((p) {
+                    final isCurrent = controller.text == p.toString();
+                    return InkWell(
+                      onTap: () {
+                        setDialogState(() {
+                          controller.text = p.toString();
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isCurrent ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: isCurrent ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          '$p Slots',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isCurrent ? Colors.white : const Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  decoration: InputDecoration(
+                    labelText: 'Exact Daily Capacity Slots',
+                    hintText: 'e.g. 200',
+                    prefixIcon: const Icon(Icons.inventory_2_outlined, color: Color(0xFF0D7C66), size: 20),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  final newCap = int.tryParse(controller.text) ?? currentCapacity;
+                  Navigator.pop(ctx);
+                  onSaved?.call(newCap);
+                  widget.state.updateHubProductCapacity(productId, newCap);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      duration: const Duration(milliseconds: 1400),
+                      backgroundColor: const Color(0xFF0D7C66),
+                      content: Text('⚡ $productName capacity set to $newCap slots in real-time!'),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D7C66),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Save Limit'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
