@@ -9,13 +9,10 @@ import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
 import '../../widgets/home/home_pinned_search_bar.dart';
-import '../../widgets/home/home_story_reels.dart';
 import '../../widgets/home/home_wallet_vacation_card.dart';
 import '../../widgets/home/home_promo_carousel.dart';
-import '../../widgets/home/home_quick_chips.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
 import '../../widgets/home/home_category_showcase.dart';
-import '../../widgets/home/home_search_filter_bar.dart';
 import '../../widgets/home/home_product_card.dart';
 import '../../widgets/home/home_trust_assurance_strip.dart';
 import '../../widgets/home/home_serving_soon_view.dart';
@@ -35,7 +32,6 @@ typedef HomeTab = CustomerHomeTab;
 
 class _CustomerHomeTabState extends State<CustomerHomeTab>
     with TickerProviderStateMixin {
-  String _selectedCategory = 'ALL';
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
@@ -105,20 +101,12 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
         ? widget.state.subscriptions.first
         : null;
 
-    // Filter products dynamically across the 4 core categories
+    // Show ALL products by default, filtered only by search query
     final filteredProducts = widget.state.products.where((p) {
-      final matchesCategory = _selectedCategory == 'ALL' ||
-          (_selectedCategory == 'MILK' && p.category == 'MILK') ||
-          (_selectedCategory == 'MEAT' && p.category == 'MEAT') ||
-          (_selectedCategory == 'EGGS' && p.category == 'EGGS') ||
-          (_selectedCategory == 'WATER_CAN' && p.category == 'WATER_CAN');
-
-      final matchesQuery = _searchQuery.isEmpty ||
-          p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      if (_searchQuery.isEmpty) return true;
+      return p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           p.description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           p.badgeText.toLowerCase().contains(_searchQuery.toLowerCase());
-
-      return matchesCategory && matchesQuery;
     }).toList();
 
     return Stack(
@@ -133,7 +121,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              // ── 1. Hero Green Gradient Banner (full-bleed) ──
+              // ── 1. Hero Green Gradient Banner ──
               SliverToBoxAdapter(
                 child: FadeTransition(
                   opacity: _entryFade,
@@ -157,19 +145,14 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                 },
               ),
 
-              // ── 3. Story Reels ──
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: HomeStoryReels(),
-                ),
-              ),
-
-              // ── 4. Wallet & Vacation Card ──
+              // ── 3. Wallet & Vacation Card ──
               SliverToBoxAdapter(
-                child: HomeWalletVacationCard(
-                  state: widget.state,
-                  onRechargeTap: () => HomeTopUpDialog.show(context, widget.state),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: HomeWalletVacationCard(
+                    state: widget.state,
+                    onRechargeTap: () => HomeTopUpDialog.show(context, widget.state),
+                  ),
                 ),
               ),
 
@@ -183,24 +166,13 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   ),
                 ),
               ] else ...[
-                // ── 5. Promo Carousel ──
+                // ── 4. Promo Carousel ──
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: HomePromoCarousel(
-                      state: widget.state,
-                      controller: _bannerController,
-                      currentIndex: _currentBannerIndex,
-                      onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
-                    ),
-                  ),
-                ),
-
-                // ── 6. Quick Action Gradient Chips ──
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 14),
-                    child: HomeQuickChips(),
+                  child: HomePromoCarousel(
+                    state: widget.state,
+                    controller: _bannerController,
+                    currentIndex: _currentBannerIndex,
+                    onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
                   ),
                 ),
 
@@ -214,78 +186,28 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   ),
                 ],
 
-                // ── 7. Section Title: Explore Categories ──
+                // ── 5. Category Grid ──
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Explore Essential Categories',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: UiTone.ink,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Professional quality at your doorstep',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.only(top: 18),
+                    child: HomeCategoryShowcase(
+                      state: widget.state,
+                      selectedCategory: 'ALL',
+                      onSelectCategory: (_) {},
                     ),
                   ),
                 ),
 
-                // ── 8. Category Filter Scrollbar (horizontal pills) ──
-                SliverToBoxAdapter(
-                  child: HomeSearchFilterBar(
-                    searchController: _searchController,
-                    searchQuery: _searchQuery,
-                    selectedCategory: _selectedCategory,
-                    onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-                    onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
-                    onClearSearch: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  ),
-                ),
-
-                // ── 9. 3-Column Category Grid ──
-                SliverToBoxAdapter(
-                  child: HomeCategoryShowcase(
-                    state: widget.state,
-                    selectedCategory: _selectedCategory,
-                    onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
-                  ),
-                ),
-
-                // ── 10. Section Title: Products ──
+                // ── 6. Section Title: Popular Products ──
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+                    padding: const EdgeInsets.fromLTRB(16, 22, 16, 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _selectedCategory == 'MILK'
-                              ? '🥛 Farm Fresh Milk & Dairy'
-                              : _selectedCategory == 'MEAT'
-                                  ? '🥩 Tender Meat & Chicken'
-                                  : _selectedCategory == 'EGGS'
-                                      ? '🥚 Farm Fresh Eggs'
-                                      : _selectedCategory == 'WATER_CAN'
-                                          ? '💧 Mineral & Purified Water'
-                                          : 'Popular Products',
-                          style: const TextStyle(
+                        const Text(
+                          'Popular Products',
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: UiTone.ink,
@@ -308,10 +230,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
 
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                // ── 11. Product Grid (2-column SliverGrid) ──
+                // ── 7. Product Grid (ALL products) ──
                 _buildProductGrid(filteredProducts),
 
-                // ── 12. Trust Assurance Strip ──
+                // ── 8. Trust Assurance Strip ──
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.only(top: 24),
