@@ -343,8 +343,153 @@ def seed():
         p.is_available = pdata["is_available"]
         p.save()
 
-    print("🎉 [Railway DB Seeder] All Categories and Products updated with real-world photography!")
+    # 5. Hub Product Inventory & Daily Capacity Slots
+    from apps.products.models import HubProductInventory
+    from apps.subscriptions.models import Subscription
+    from apps.deliveries.models import DeliveryTask
+    from datetime import date
+
+    all_products = Product.objects.all()
+    for prod in all_products:
+        inv, _ = HubProductInventory.objects.get_or_create(
+            hub=hub_kodad,
+            product=prod,
+            defaults={
+                "daily_capacity_slots": 150,
+                "booked_slots": 0,
+                "is_available": True,
+            }
+        )
+        inv.daily_capacity_slots = 150
+        inv.is_available = True
+        inv.save()
+
+    print(f"📦 [Hub Capacity Slots Configured]: {all_products.count()} products assigned 150 slots each at {hub_kodad.name}")
+
+    # 6. Seed Subscriptions and Slots for Demo Customers
+    demo_customers_data = [
+        {
+            "username": "venkat_reddy",
+            "phone": "9848012345",
+            "first_name": "Venkat",
+            "last_name": "Reddy",
+            "address": "House #4-12, Bank Colony, Kodad",
+            "lat": 16.9982,
+            "lng": 79.9641,
+            "prod_name": "A2 Vedic Desi Cow Milk",
+            "qty": 2,
+            "slot": "05:30 AM - 07:00 AM",
+            "schedule": "DAILY",
+        },
+        {
+            "username": "lakshmi_devi",
+            "phone": "9848054321",
+            "first_name": "Lakshmi",
+            "last_name": "Devi",
+            "address": "Plot #18, Teachers Colony, Main Road, Kodad",
+            "lat": 17.0034,
+            "lng": 79.9610,
+            "prod_name": "Pure Buffalo Whole Milk (High Fat)",
+            "qty": 1,
+            "slot": "05:30 AM - 07:00 AM",
+            "schedule": "DAILY",
+        },
+        {
+            "username": "srinivas_rao",
+            "phone": "9440123456",
+            "first_name": "Srinivas",
+            "last_name": "Rao",
+            "address": "D.No 2-89, Bus Stand Road, Kodad",
+            "lat": 16.9945,
+            "lng": 79.9680,
+            "prod_name": "Pasteurized Toned Cow Milk",
+            "qty": 2,
+            "slot": "06:00 AM - 07:30 AM",
+            "schedule": "DAILY",
+        },
+        {
+            "username": "anitha_k",
+            "phone": "9866123456",
+            "first_name": "Anitha",
+            "last_name": "Kumari",
+            "address": "Flat 302, Sri Sai Residency, Shanti Nagar, Kodad",
+            "lat": 17.0060,
+            "lng": 79.9590,
+            "prod_name": "Fresh Organic Set Curd",
+            "qty": 1,
+            "slot": "07:00 AM - 08:30 AM",
+            "schedule": "DAILY",
+        },
+    ]
+
+    for cdata in demo_customers_data:
+        cust, _ = User.objects.get_or_create(
+            username=cdata["username"],
+            defaults={
+                "phone": f"+91 {cdata['phone']}",
+                "first_name": cdata["first_name"],
+                "last_name": cdata["last_name"],
+                "role": User.Roles.CUSTOMER,
+                "address": cdata["address"],
+                "latitude": Decimal(str(cdata["lat"])),
+                "longitude": Decimal(str(cdata["lng"])),
+                "city": "Kodad",
+                "wallet_balance": Decimal("500.00"),
+                "assigned_hub": hub_kodad,
+            }
+        )
+        if not cust.check_password("pass123"):
+            cust.set_password("pass123")
+            cust.save()
+
+        prod = Product.objects.filter(name=cdata["prod_name"]).first()
+        if prod:
+            sub, _ = Subscription.objects.get_or_create(
+                customer=cust,
+                product=prod,
+                defaults={
+                    "hub": hub_kodad,
+                    "quantity": cdata["qty"],
+                    "schedule_type": cdata["schedule"],
+                    "start_date": date.today(),
+                    "status": Subscription.Statuses.ACTIVE,
+                    "delivery_slot": cdata["slot"],
+                    "delivery_address": cdata["address"],
+                    "delivery_latitude": Decimal(str(cdata["lat"])),
+                    "delivery_longitude": Decimal(str(cdata["lng"])),
+                    "delivery_instructions": "Leave near milk bag at door",
+                }
+            )
+            sub.delivery_slot = cdata["slot"]
+            sub.status = Subscription.Statuses.ACTIVE
+            sub.hub = hub_kodad
+            sub.save()
+
+            # Ensure delivery task for today exists
+            DeliveryTask.objects.get_or_create(
+                subscription=sub,
+                delivery_date=date.today(),
+                defaults={
+                    "hub": hub_kodad,
+                    "slot_time": cdata["slot"],
+                    "status": DeliveryTask.Statuses.PENDING,
+                }
+            )
+
+    # Recalculate booked capacity slots per product
+    for inv in HubProductInventory.objects.filter(hub=hub_kodad):
+        booked = Subscription.objects.filter(
+            hub=hub_kodad,
+            product=inv.product,
+            status=Subscription.Statuses.ACTIVE,
+        ).count()
+        inv.booked_slots = booked
+        inv.save()
+
+    print(f"🥛 [Subscriptions & Slots Seeded]: Demo subscriptions active across delivery slots: 05:30-07:00 AM, 06:00-07:30 AM, 07:00-08:30 AM.")
+    print("🎉 [Railway DB Seeder] Seeding completed successfully!")
 
 
 if __name__ == "__main__":
     seed()
+
