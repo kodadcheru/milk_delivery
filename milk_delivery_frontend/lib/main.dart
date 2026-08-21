@@ -20,6 +20,7 @@ import 'screens/provider/provider_profile_tab.dart';
 import 'screens/common/day_wise_orders_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_profile_tab.dart';
+import 'screens/driver/morning_batch_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -147,10 +148,20 @@ class _MainAppShellState extends State<MainAppShell> {
     if (widget.state.currentRole == 'DRIVER') {
       final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
       final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+      final pendingCount = widget.state.deliveries.where((d) => d.status == "PENDING").length;
+
+      final driverScreens = [
+        DriverDashboardScreen(state: widget.state),
+        DayWiseOrdersScreen(state: widget.state, role: 'DRIVER'),
+        MorningBatchScreen(state: widget.state),
+        DriverProfileTab(state: widget.state, onLogout: widget.onLogout),
+      ];
 
       return Scaffold(
+        extendBody: false,
         appBar: AppBar(
           backgroundColor: UiTone.ink,
+          elevation: 0,
           title: InkWell(
             onTap: () => _showDriverLocationZoneSheet(context, widget.state),
             borderRadius: BorderRadius.circular(UiRadius.sm),
@@ -182,7 +193,7 @@ class _MainAppShellState extends State<MainAppShell> {
                         ],
                       ),
                       Text(
-                        'Operating Zone • ${widget.state.deliveries.where((d) => d.status == "PENDING").length} Pending Drops',
+                        'Operating Zone • $pendingCount Pending Drops',
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: UiTone.secondary, fontSize: 10, fontWeight: FontWeight.w600),
                       ),
@@ -238,28 +249,30 @@ class _MainAppShellState extends State<MainAppShell> {
             ),
           ],
         ),
-        body: _driverTab == 0
-            ? DriverDashboardScreen(state: widget.state)
-            : (_driverTab == 1
-                ? DayWiseOrdersScreen(state: widget.state, role: 'DRIVER')
-                : DriverProfileTab(state: widget.state, onLogout: widget.onLogout)),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _driverTab,
-          onDestinationSelected: (idx) => setState(() => _driverTab = idx),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.local_shipping_outlined),
-              selectedIcon: Icon(Icons.local_shipping_rounded),
-              label: 'Route Deliveries',
+        body: driverScreens[_driverTab.clamp(0, driverScreens.length - 1)],
+        bottomNavigationBar: NextGenBottomNavBar(
+          selectedIndex: _driverTab.clamp(0, driverScreens.length - 1),
+          onItemSelected: (idx) => setState(() => _driverTab = idx),
+          items: [
+            NextGenNavItem(
+              icon: Icons.local_shipping_outlined,
+              activeIcon: Icons.local_shipping_rounded,
+              label: 'Route Drops',
+              badgeText: pendingCount > 0 ? '$pendingCount' : null,
             ),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              selectedIcon: Icon(Icons.calendar_month_rounded),
+            const NextGenNavItem(
+              icon: Icons.calendar_month_outlined,
+              activeIcon: Icons.calendar_month_rounded,
               label: 'Day Orders',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
+            const NextGenNavItem(
+              icon: Icons.inventory_2_outlined,
+              activeIcon: Icons.inventory_2_rounded,
+              label: 'Batch Packing',
+            ),
+            const NextGenNavItem(
+              icon: Icons.person_outline,
+              activeIcon: Icons.person_rounded,
               label: 'Driver Profile',
             ),
           ],
@@ -271,10 +284,20 @@ class _MainAppShellState extends State<MainAppShell> {
     if (widget.state.currentRole == 'PROVIDER' || widget.state.currentRole == 'HUB_MANAGER') {
       final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
       final hubTitle = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
+      final activeDeliveriesCount = widget.state.deliveries.length;
+
+      final providerScreens = [
+        ProviderDashboardScreen(state: widget.state),
+        DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER'),
+        MorningBatchScreen(state: widget.state),
+        ProviderProfileTab(state: widget.state, onLogout: widget.onLogout),
+      ];
 
       return Scaffold(
+        extendBody: false,
         appBar: AppBar(
           backgroundColor: UiTone.ink,
+          elevation: 0,
           title: Row(
             children: [
               Container(
@@ -286,15 +309,18 @@ class _MainAppShellState extends State<MainAppShell> {
                 child: const Text('🏬', style: TextStyle(fontSize: 20)),
               ),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text(
-                    '$hubTitle • ${widget.state.deliveries.length} Active Deliveries',
-                    style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text(
+                      '$hubTitle • $activeDeliveriesCount Active Deliveries',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -344,28 +370,30 @@ class _MainAppShellState extends State<MainAppShell> {
             ),
           ],
         ),
-        body: _providerTab == 0
-            ? ProviderDashboardScreen(state: widget.state)
-            : (_providerTab == 1
-                ? DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER')
-                : ProviderProfileTab(state: widget.state, onLogout: widget.onLogout)),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _providerTab,
-          onDestinationSelected: (idx) => setState(() => _providerTab = idx),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront_rounded),
+        body: providerScreens[_providerTab.clamp(0, providerScreens.length - 1)],
+        bottomNavigationBar: NextGenBottomNavBar(
+          selectedIndex: _providerTab.clamp(0, providerScreens.length - 1),
+          onItemSelected: (idx) => setState(() => _providerTab = idx),
+          items: [
+            const NextGenNavItem(
+              icon: Icons.storefront_outlined,
+              activeIcon: Icons.storefront_rounded,
               label: 'Hub Command',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              selectedIcon: Icon(Icons.calendar_month_rounded),
+            NextGenNavItem(
+              icon: Icons.calendar_month_outlined,
+              activeIcon: Icons.calendar_month_rounded,
               label: 'Day Orders',
+              badgeText: activeDeliveriesCount > 0 ? '$activeDeliveriesCount' : null,
             ),
-            NavigationDestination(
-              icon: Icon(Icons.business_center_outlined),
-              selectedIcon: Icon(Icons.business_center_rounded),
+            const NextGenNavItem(
+              icon: Icons.inventory_2_outlined,
+              activeIcon: Icons.inventory_2_rounded,
+              label: 'Batch Packing',
+            ),
+            const NextGenNavItem(
+              icon: Icons.business_center_outlined,
+              activeIcon: Icons.business_center_rounded,
               label: 'Hub Profile',
             ),
           ],
@@ -375,9 +403,18 @@ class _MainAppShellState extends State<MainAppShell> {
 
     // ── 3. ADMIN ROLE APP SHELL ──
     if (widget.state.currentRole == 'ADMIN') {
+      final adminScreens = [
+        AdminDashboardScreen(state: widget.state),
+        DayWiseOrdersScreen(state: widget.state, role: 'ADMIN'),
+        MorningBatchScreen(state: widget.state),
+        AdminProfileTab(state: widget.state, onLogout: widget.onLogout),
+      ];
+
       return Scaffold(
+        extendBody: false,
         appBar: AppBar(
           backgroundColor: UiTone.ink,
+          elevation: 0,
           title: Row(
             children: [
               Container(
@@ -389,15 +426,18 @@ class _MainAppShellState extends State<MainAppShell> {
                 child: const Text('🛡️', style: TextStyle(fontSize: 20)),
               ),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Admin Operations Hub', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text(
-                    '${widget.state.totalDailyMilkVolume.toStringAsFixed(1)}L Total • ₹${widget.state.totalDailyRevenue.toStringAsFixed(0)} Daily Rev',
-                    style: const TextStyle(color: UiTone.secondary, fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Admin Operations Hub', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text(
+                      '${widget.state.totalDailyMilkVolume.toStringAsFixed(1)}L Total • ₹${widget.state.totalDailyRevenue.toStringAsFixed(0)} Daily Rev',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -447,21 +487,29 @@ class _MainAppShellState extends State<MainAppShell> {
             ),
           ],
         ),
-        body: _adminTab == 0
-            ? AdminDashboardScreen(state: widget.state)
-            : AdminProfileTab(state: widget.state, onLogout: widget.onLogout),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _adminTab,
-          onDestinationSelected: (idx) => setState(() => _adminTab = idx),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard_rounded),
-              label: 'Command Center',
+        body: adminScreens[_adminTab.clamp(0, adminScreens.length - 1)],
+        bottomNavigationBar: NextGenBottomNavBar(
+          selectedIndex: _adminTab.clamp(0, adminScreens.length - 1),
+          onItemSelected: (idx) => setState(() => _adminTab = idx),
+          items: [
+            const NextGenNavItem(
+              icon: Icons.dashboard_outlined,
+              activeIcon: Icons.dashboard_rounded,
+              label: 'Command',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.admin_panel_settings_outlined),
-              selectedIcon: Icon(Icons.admin_panel_settings_rounded),
+            const NextGenNavItem(
+              icon: Icons.calendar_month_outlined,
+              activeIcon: Icons.calendar_month_rounded,
+              label: 'Day Orders',
+            ),
+            const NextGenNavItem(
+              icon: Icons.inventory_2_outlined,
+              activeIcon: Icons.inventory_2_rounded,
+              label: 'Batch Packing',
+            ),
+            const NextGenNavItem(
+              icon: Icons.admin_panel_settings_outlined,
+              activeIcon: Icons.admin_panel_settings_rounded,
               label: 'Admin Profile',
             ),
           ],
