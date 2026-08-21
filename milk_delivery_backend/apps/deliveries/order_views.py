@@ -57,14 +57,30 @@ class ExpressOrderListCreateView(APIView):
 
         # Auto-resolve hub based on delivery location
         from apps.deliveries.hub_resolver import find_hub_for_location
-        active_hub = getattr(user, "assigned_hub", None)
+        active_hub = find_hub_for_location(
+            pincode=pincode,
+            latitude=delivery_lat,
+            longitude=delivery_lon,
+            address=delivery_address,
+            strict=True,
+        )
         if not active_hub:
-            active_hub = find_hub_for_location(
-                pincode=pincode,
-                latitude=delivery_lat,
-                longitude=delivery_lon,
-                address=delivery_address,
-            )
+            active_hub = getattr(user, "assigned_hub", None)
+
+        if active_hub and delivery_lat and delivery_lon:
+            from apps.deliveries.hub_resolver import _haversine_km
+            try:
+                dist = _haversine_km(float(delivery_lat), float(delivery_lon), float(active_hub.latitude), float(active_hub.longitude))
+                if dist > active_hub.coverage_radius_km:
+                    return Response(
+                        {"detail": f"Delivery location is outside {active_hub.name} service coverage ({dist:.1f} km away, max radius is {active_hub.coverage_radius_km} km)."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except (ValueError, TypeError):
+                pass
+
+        if not active_hub:
+            return Response({"detail": "Delivery location is outside our operational service area."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate slot capacity
         from .models import DeliverySlot

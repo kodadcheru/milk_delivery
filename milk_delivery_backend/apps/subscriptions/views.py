@@ -53,27 +53,39 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         pack_size = self.request.data.get("pack_size") or "1 Litre"
         pincode = self.request.data.get("pincode") or ""
 
-        # Auto-resolve hub: use customer's existing hub, or find the best one
-        hub = getattr(user, "assigned_hub", None)
+        # Auto-resolve hub: match against location
+        hub = find_hub_for_location(
+            pincode=pincode,
+            latitude=deliv_lat,
+            longitude=deliv_lon,
+            address=deliv_addr,
+            strict=True,
+        )
         if not hub:
-            hub = find_hub_for_location(
-                pincode=pincode,
-                latitude=deliv_lat,
-                longitude=deliv_lon,
-                address=deliv_addr,
-                strict=True,
-            )
-            # If strict matching failed, try general resolution before rejecting
-            if not hub:
-                hub = find_hub_for_location(
-                    pincode=pincode,
-                    latitude=deliv_lat,
-                    longitude=deliv_lon,
-                    address=deliv_addr,
-                )
-            if hub and hasattr(user, "assigned_hub"):
-                user.assigned_hub = hub
-                user.save(update_fields=["assigned_hub"])
+            hub = getattr(user, "assigned_hub", None)
+
+        # Strict Geo-Fence Validation
+        if hub and deliv_lat is not None and deliv_lon is not None:
+            from apps.deliveries.hub_resolver import _haversine_km
+            try:
+                dist = _haversine_km(float(deliv_lat), float(deliv_lon), float(hub.latitude), float(hub.longitude))
+                if dist > hub.coverage_radius_km:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError(
+                        f"Delivery address is outside the operational service zone of {hub.name} "
+                        f"({dist:.1f} km away, max coverage radius is {hub.coverage_radius_km} km). "
+                        f"Please choose an address within the Kodad service area."
+                    )
+            except (ValueError, TypeError):
+                pass
+
+        if not hub:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Delivery location is outside our operational service area. No active hub covers this location.")
+
+        if hub and hasattr(user, "assigned_hub") and user.assigned_hub != hub:
+            user.assigned_hub = hub
+            user.save(update_fields=["assigned_hub"])
 
         from apps.deliveries.models import DeliverySlot
         slot_config = DeliverySlot.objects.filter(hub=hub, name=deliv_slot, is_active=True).first()

@@ -281,10 +281,6 @@ class AppState extends ChangeNotifier {
       cartItems.clear();
       await reloadAllData();
       return serverOrder;
-    } else {
-      if (ApiService.lastError != null) {
-        throw Exception(ApiService.lastError);
-      }
     }
 
     // 2. Resilient In-Memory Fallback if backend is unreachable
