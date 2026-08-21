@@ -20,13 +20,13 @@ class HomeLocationSheet {
       isScrollControlled: true,
       backgroundColor: UiTone.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.fromLTRB(
             20,
-            20,
+            12,
             20,
             MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),
@@ -34,20 +34,105 @@ class HomeLocationSheet {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Drag handle indicator bar
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+
+              // Title Row & Add Address Button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Select Delivery Location 📍',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: UiTone.ink,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded, color: UiTone.softText),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
+
+              // ── GPS Current Location Quick Button ──
+              InkWell(
+                onTap: () async {
+                  setModalState(() => isSearching = true);
+                  final res = await LocationService.reverseGeocode(17.001734, 79.9625);
+                  setModalState(() => isSearching = false);
+                  final addrStr = res?['summary_address'] ?? res?['full_address'] ?? 'Kodad Central Hub, Telangana - 508206';
+                  state.updateDeliveryLocation(addrStr, 17.001734, 79.9625);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: UiTone.primary,
+                        content: Text("🎯 Located doorstep: $addrStr"),
+                      ),
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE6F5F0), Color(0xFFD1FAE5)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: UiTone.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 16),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Use Current GPS Location 🎯',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: UiTone.primaryDark,
+                              ),
+                            ),
+                            SizedBox(height: 1),
+                            Text(
+                              'Auto-detect precise doorstep coordinates in Kodad',
+                              style: TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: UiTone.primary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
 
               // ── Saved Addresses Section Header ──
               Row(
@@ -57,9 +142,9 @@ class HomeLocationSheet {
                     'SAVED ADDRESSES',
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       color: Color(0xFF64748B),
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.8,
                     ),
                   ),
                   TextButton.icon(
@@ -72,13 +157,13 @@ class HomeLocationSheet {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.add_location_alt_rounded, size: 14, color: UiTone.secondary),
+                    icon: const Icon(Icons.add_location_alt_rounded, size: 14, color: UiTone.primary),
                     label: Text(
                       state.savedAddresses.isNotEmpty ? 'Manage Book' : '+ Add Address',
                       style: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: UiTone.secondary,
+                        fontWeight: FontWeight.w800,
+                        color: UiTone.primary,
                       ),
                     ),
                   ),
@@ -103,7 +188,7 @@ class HomeLocationSheet {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text("🚀 Delivering to '${addr.title}'"),
-                              backgroundColor: UiTone.secondary,
+                              backgroundColor: UiTone.primary,
                             ),
                           );
                         },
@@ -111,11 +196,11 @@ class HomeLocationSheet {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFECFDF5) : UiTone.shellBackground,
+                            color: isSelected ? const Color(0xFFE6F5F0) : UiTone.shellBackground,
                             borderRadius: BorderRadius.circular(UiRadius.sm),
                             border: Border.all(
-                              color: isSelected ? UiTone.secondary : UiTone.surfaceBorder,
-                              width: isSelected ? 1.5 : 1,
+                              color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
+                              width: isSelected ? 1.6 : 1.0,
                             ),
                           ),
                           child: Row(
@@ -139,7 +224,7 @@ class HomeLocationSheet {
                                         if (addr.isDefault) ...[
                                           const SizedBox(width: 6),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFFEF3C7),
                                               borderRadius: BorderRadius.circular(4),
@@ -148,7 +233,7 @@ class HomeLocationSheet {
                                               'PRIMARY',
                                               style: TextStyle(
                                                 fontSize: 8.5,
-                                                fontWeight: FontWeight.w800,
+                                                fontWeight: FontWeight.w900,
                                                 color: UiTone.warning,
                                               ),
                                             ),
@@ -166,7 +251,7 @@ class HomeLocationSheet {
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(Icons.check_circle_rounded, color: UiTone.secondary, size: 18)
+                                const Icon(Icons.check_circle_rounded, color: UiTone.primary, size: 18)
                               else
                                 const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF94A3B8)),
                             ],
@@ -186,16 +271,16 @@ class HomeLocationSheet {
                 controller: searchCtrl,
                 autofocus: false,
                 decoration: InputDecoration(
-                  hintText: 'Search society, building, or street on Google Maps...',
-                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, color: UiTone.secondary),
+                  hintText: 'Search society, building, or street in Kodad...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12.5),
+                  prefixIcon: const Icon(Icons.search_rounded, color: UiTone.primary),
                   suffixIcon: isSearching
                       ? const Padding(
                           padding: EdgeInsets.all(12),
                           child: SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.secondary),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary),
                           ),
                         )
                       : (searchCtrl.text.isNotEmpty
@@ -210,6 +295,14 @@ class HomeLocationSheet {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: UiTone.primary, width: 1.5),
                   ),
                   filled: true,
                   fillColor: UiTone.shellBackground,
@@ -230,27 +323,18 @@ class HomeLocationSheet {
                     isSearching = false;
                   });
                 },
-                onSubmitted: (query) async {
-                  if (query.trim().isEmpty) return;
-                  setModalState(() => isSearching = true);
-                  final results = await LocationService.searchPlaces(query);
-                  setModalState(() {
-                    searchResults = results;
-                    isSearching = false;
-                  });
-                },
               ),
               const SizedBox(height: 10),
 
-              // Search Results List Dropdown
+              // Search Results List
               if (searchResults.isNotEmpty) ...[
                 const Text(
-                  'Google Maps Results:',
+                  'Location Suggestions:',
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.ink),
                 ),
                 const SizedBox(height: 6),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 220),
+                  constraints: const BoxConstraints(maxHeight: 200),
                   child: ListView.separated(
                     shrinkWrap: true,
                     itemCount: searchResults.length,
@@ -263,10 +347,10 @@ class HomeLocationSheet {
                         leading: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFECFDF5),
+                            color: Color(0xFFE6F5F0),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.place_rounded, color: UiTone.secondary, size: 16),
+                          child: const Icon(Icons.place_rounded, color: UiTone.primary, size: 16),
                         ),
                         title: Text(
                           item['short_title'] ?? item['display_name'] ?? '',
@@ -279,14 +363,14 @@ class HomeLocationSheet {
                           style: const TextStyle(fontSize: 11, color: Colors.grey),
                         ),
                         onTap: () {
-                          final lat = (item['lat'] as num?)?.toDouble() ?? 17.4319;
-                          final lon = (item['lon'] as num?)?.toDouble() ?? 78.4073;
+                          final lat = (item['lat'] as num?)?.toDouble() ?? 17.001734;
+                          final lon = (item['lon'] as num?)?.toDouble() ?? 79.9625;
                           final chosenAddr = item['display_name'] ?? item['short_title'] ?? 'Custom Address';
                           state.updateDeliveryLocation(chosenAddr, lat, lon);
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              backgroundColor: UiTone.secondary,
+                              backgroundColor: UiTone.primary,
                               content: Text('📍 Delivery address updated to: $chosenAddr'),
                             ),
                           );
@@ -298,82 +382,43 @@ class HomeLocationSheet {
                 const Divider(height: 16),
               ],
 
-              // Quick Location Action Tiles
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: UiTone.secondary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.my_location_rounded, color: UiTone.secondary, size: 20),
-                ),
-                title: const Text('Use Current Device GPS Location 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: const Text('Auto-detect and reverse-geocode doorstep address', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('📍 Detecting current location via GPS...')),
-                  );
-                  bool ok = await state.requestDeviceGPS();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: UiTone.secondary,
-                        content: Text(ok ? '📍 Location auto-filled to: ${state.currentDeliveryAddress}' : 'Location permission needed.'),
+              // ── Pin on Map Button ──
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => MapLocationPickerScreen(state: state),
                       ),
                     );
-                  }
-                },
-              ),
-              const Divider(height: 10),
-
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: UiTone.accentBlue.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
+                  },
+                  icon: const Icon(Icons.map_rounded, size: 16, color: UiTone.primary),
+                  label: const Text(
+                    'Pin Doorstep Location on Map 🗺️',
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: UiTone.primary),
                   ),
-                  child: const Icon(Icons.map_rounded, color: UiTone.accentBlue, size: 20),
-                ),
-                title: const Text('Pick on Google Map / Pin Doorstep 🗺️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                subtitle: const Text('Interactive map with live draggable pin & search', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: UiTone.accentBlue),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (c) => MapLocationPickerScreen(state: state),
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 10),
-
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: UiTone.primary, width: 1.2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Icon(Icons.location_city_rounded, color: Color(0xFF6366F1), size: 20),
                 ),
-                title: const Text('Browse Hyderabad Service Zones 🏙️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: Text(
-                  'Current Zone: ${state.selectedServiceArea.name}',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+
+              // Service Area Check Button
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => ServiceAreaSheet.show(context, state),
+                  icon: const Icon(Icons.verified_user_outlined, size: 13, color: Color(0xFF64748B)),
+                  label: const Text(
+                    'Check Active Kodad Hub Delivery Zones ⚡',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w700),
+                  ),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF6366F1)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  ServiceAreaSheet.show(context, state);
-                },
               ),
             ],
           ),
