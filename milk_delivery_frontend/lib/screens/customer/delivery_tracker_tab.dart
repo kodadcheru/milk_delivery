@@ -83,53 +83,55 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: RefreshIndicator(
-        color: const Color(0xFF0D7C66),
-        strokeWidth: 2.5,
-        onRefresh: () => widget.state.reloadAllData(),
-        child: (totalCount == 0 && _selectedFilterIndex == 0)
-            ? _buildEmptyState()
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-                children: [
-                  _buildHeaderRow(totalCount),
-                  _buildFilterChips(totalCount),
-                  if (firstActiveOrder != null) ...[
-                    const SizedBox(height: 16),
-                    _buildActiveOrderHeroCard(firstActiveOrder),
-                  ],
-                  if (remainingOrders.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.only(top: 20, bottom: 14),
-                      child: Text(
-                        'Recent Orders',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: const Color(0xFF0D7C66),
+          strokeWidth: 2.5,
+          onRefresh: () => widget.state.reloadAllData(),
+          child: (totalCount == 0 && _selectedFilterIndex == 0)
+              ? _buildEmptyState()
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+                  children: [
+                    _buildHeaderRow(totalCount),
+                    _buildFilterChips(totalCount),
+                    if (firstActiveOrder != null) ...[
+                      const SizedBox(height: 16),
+                      _buildActiveOrderHeroCard(firstActiveOrder),
+                    ],
+                    if (remainingOrders.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 20, bottom: 14),
+                        child: Text(
+                          'Recent Orders',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
                       ),
-                    ),
-                    ...remainingOrders.map((o) => _buildOrderCard(o)),
-                  ],
-                  if (subscriptions.isNotEmpty && (_selectedFilterIndex == 0 || _selectedFilterIndex == 1)) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20, bottom: 14),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Morning Subscriptions',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                            decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                            child: Text('${subscriptions.length}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                          ),
-                        ],
+                      ...remainingOrders.map((o) => _buildOrderCard(o)),
+                    ],
+                    if (subscriptions.isNotEmpty && (_selectedFilterIndex == 0 || _selectedFilterIndex == 1)) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20, bottom: 14),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Morning Subscriptions',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                              decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                              child: Text('${subscriptions.length}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    ...subscriptions.map((task) => _buildSubscriptionCard(task)),
+                      ...subscriptions.map((task) => _buildSubscriptionCard(task)),
+                    ],
                   ],
-                ],
-              ),
+                ),
+        ),
       ),
     );
   }

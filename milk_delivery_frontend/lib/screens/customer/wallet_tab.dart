@@ -184,14 +184,15 @@ class _WalletTabState extends State<WalletTab> {
       return true;
     }).toList();
 
-    return RefreshIndicator(
-      color: AppTheme.primaryTeal,
-      onRefresh: () => widget.state.reloadAllData(),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      child: RefreshIndicator(
+        color: AppTheme.primaryTeal,
+        onRefresh: () => widget.state.reloadAllData(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── 💳 Holographic Platinum Milk Card ──
             Container(
@@ -479,8 +480,9 @@ class _WalletTabState extends State<WalletTab> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _filterChip(String filterKey, String label) {
     final isSelected = _selectedFilter == filterKey;

@@ -63,14 +63,15 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
       totalDailyUnits += s.quantity;
     }
 
-    return RefreshIndicator(
-      color: UiTone.primary,
-      onRefresh: () => widget.state.reloadAllData(),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      child: RefreshIndicator(
+        color: UiTone.primary,
+        onRefresh: () => widget.state.reloadAllData(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── 1. Header Summary Card with Live Dispatch Countdown ──
             Container(
@@ -471,8 +472,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStatCol(String label, String value, IconData icon) {
     return Column(

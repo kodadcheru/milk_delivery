@@ -478,85 +478,8 @@ class _MainAppShellState extends State<MainAppShell> {
       ProfileTab(state: widget.state, onLogout: widget.onLogout),
     ];
 
-    final isHomeTab = widget.state.currentTabIndex == 0;
-
     return Scaffold(
       extendBody: false,
-      appBar: isHomeTab
-          ? null
-          : AppBar(
-              backgroundColor: UiTone.ink,
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: UiTone.secondary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(UiRadius.sm),
-                    ),
-                    child: const Text('🥛', style: TextStyle(fontSize: 18)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('MilkDrop Express', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_rounded, color: UiTone.secondary, size: 11),
-                            const SizedBox(width: 2),
-                            Expanded(
-                              child: Text(
-                                widget.state.currentDeliveryAddress,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white70, fontSize: 10.5, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                // Notification Bell with Unread Badge
-                IconButton(
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
-                      if (widget.state.unreadNotificationCount > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
-                            constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                            child: Text(
-                              '${widget.state.unreadNotificationCount}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (ctx) => NotificationsScreen(state: widget.state),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 4),
-              ],
-            ),
       body: screens[widget.state.currentTabIndex],
       bottomNavigationBar: NextGenBottomNavBar(
         selectedIndex: widget.state.currentTabIndex,
