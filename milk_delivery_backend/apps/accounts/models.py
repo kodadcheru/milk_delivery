@@ -77,6 +77,8 @@ class Notification(models.Model):
     title = models.CharField(max_length=150)
     message = models.TextField()
     notification_type = models.CharField(max_length=20, choices=Types.choices, default=Types.DELIVERY)
+    target_screen = models.CharField(max_length=50, blank=True, default="", help_text="Target screen code: DELIVERIES, WALLET, SUBSCRIPTIONS, CATEGORY, OFFERS, SUPPORT")
+    target_param = models.CharField(max_length=100, blank=True, default="", help_text="Target parameter like category key or ID")
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 

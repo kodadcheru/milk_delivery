@@ -2742,13 +2742,40 @@
           <option value="DRIVER">Delivery Fleet Drivers Only</option>
         </select>
       </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Target Screen Redirection 🎯</label>
+          <select id="bcTargetScreen" class="form-control">
+            <option value="DELIVERIES">🚚 Morning Delivery Tracker (Live Drops)</option>
+            <option value="WALLET">💳 Customer Wallet (Recharge & Cashback)</option>
+            <option value="SUBSCRIPTIONS">📅 Subscriptions & Vacation Pause</option>
+            <option value="CATEGORY">🛒 Browse Specific Category / Catalog</option>
+            <option value="SUPPORT">💬 Customer Support & Help Desk</option>
+            <option value="MORNING_BATCH">☀️ Morning Batch (Delivery Fleet)</option>
+            <option value="DRIVER_ROUTE">🗺️ Route Navigation (Delivery Fleet)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Category Param (if Catalog selected)</label>
+          <select id="bcTargetParam" class="form-control">
+            <option value="MILK">🥛 Fresh Milk</option>
+            <option value="CURD">🥣 Curd & Yogurt</option>
+            <option value="GHEE">🧈 Pure Ghee & Butter</option>
+            <option value="PANEER">🧀 Farm Paneer</option>
+            <option value="EGGS">🥚 Farm Eggs</option>
+            <option value="WATER_CAN">💧 Water Cans</option>
+            <option value="BAKERY">🍞 Artisanal Breads</option>
+            <option value="MEAT">🥩 Meat & Poultry</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group">
         <label>Notification Title</label>
         <input type="text" id="bcTitle" class="form-control" value="Fresh Morning Farm Batch Dispatched 🥛">
       </div>
       <div class="form-group">
         <label>Message Content</label>
-        <textarea id="bcMessage" class="form-control" rows="3">Our refrigerated farm milk tankers have arrived at Hyderabad central depot. Deliveries commence by 05:30 AM!</textarea>
+        <textarea id="bcMessage" class="form-control" rows="3">Our refrigerated farm milk tankers have arrived at Kodad central depot. Deliveries commence by 05:30 AM!</textarea>
       </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
@@ -6521,15 +6548,32 @@
       const role = document.getElementById('bcRole').value;
       const title = document.getElementById('bcTitle').value;
       const message = document.getElementById('bcMessage').value;
+      const targetScreen = document.getElementById('bcTargetScreen').value;
+      const targetParam = document.getElementById('bcTargetParam').value;
 
-      await fetch(`${baseUrl}/admin/broadcast-notification/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
-        body: JSON.stringify({ title, message, target_role: role })
-      });
+      try {
+        const res = await fetch(`${baseUrl}/admin/broadcast-notification/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          body: JSON.stringify({
+            title,
+            message,
+            target_role: role,
+            target_screen: targetScreen,
+            target_param: targetParam,
+            notification_type: targetScreen === 'WALLET' ? 'WALLET' : (targetScreen === 'SUBSCRIPTIONS' ? 'VACATION' : (targetScreen === 'DELIVERIES' ? 'DELIVERY' : 'OFFER'))
+          })
+        });
 
-      closeModal('broadcastModal');
-      alert('Notification broadcast sent successfully!');
+        if (res.ok) {
+          closeModal('broadcastModal');
+          alert('🚀 Notification broadcast dispatched with instant deep-link routing!');
+        } else {
+          alert('Could not dispatch notification broadcast.');
+        }
+      } catch (e) {
+        alert('Network error while dispatching broadcast.');
+      }
     }
 
     // ═════════════════════════════════════════════════════════════════════════

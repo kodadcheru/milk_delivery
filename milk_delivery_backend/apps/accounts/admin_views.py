@@ -298,6 +298,9 @@ class AdminBroadcastNotificationView(APIView):
         title = request.data.get("title", "MilkDrop Announcement")
         message = request.data.get("message", "Important update regarding morning deliveries.")
         target_role = request.data.get("target_role", "ALL")
+        notification_type = request.data.get("notification_type", Notification.Types.OFFER)
+        target_screen = request.data.get("target_screen", "")
+        target_param = request.data.get("target_param", "")
 
         users = User.objects.all()
         if target_role == "CUSTOMER":
@@ -310,7 +313,9 @@ class AdminBroadcastNotificationView(APIView):
                 user=u,
                 title=title,
                 message=message,
-                notification_type=Notification.Types.OFFER,
+                notification_type=notification_type,
+                target_screen=target_screen,
+                target_param=target_param,
             )
             for u in users
         ]

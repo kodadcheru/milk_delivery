@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../models/notification_model.dart';
+import '../../services/notification_router.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final AppState state;
@@ -313,9 +314,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       },
       child: GestureDetector(
         onTap: () {
-          if (!item.isRead) {
-            widget.state.markNotificationRead(item.id);
-          }
+          NotificationRouter.navigate(context, item, widget.state);
         },
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -350,20 +349,46 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   children: [
                     Text(
                       item.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+                      style: TextStyle(
+                        fontWeight: item.isRead ? FontWeight.w700 : FontWeight.w800,
+                        color: const Color(0xFF0F172A),
                         height: 1.28,
+                        fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.createdAt,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
+                    if (item.message.isNotEmpty && item.message != item.title) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        item.message,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF334155),
+                          height: 1.35,
+                        ),
                       ),
+                    ],
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          item.createdAt,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Tap to view ➔',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: catColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

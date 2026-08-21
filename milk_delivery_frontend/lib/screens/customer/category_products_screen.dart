@@ -57,6 +57,42 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           'banner': '💧 8-Stage RO + UV Purified • Mineral Rich',
           'subtags': ['ALL', '20L CAN', 'DISPENSER', 'MINERAL'],
         };
+      case 'PANEER':
+        return {
+          'title': 'Farm Fresh Paneer',
+          'icon': '🧀',
+          'gradient': [const Color(0xFF6D28D9), const Color(0xFF8B5CF6)],
+          'accent': const Color(0xFF7C3AED),
+          'banner': '🧀 Soft Malai Paneer • Crafted Fresh Daily',
+          'subtags': ['ALL', 'MALAI', 'PANEER', 'VACUUM PACK'],
+        };
+      case 'GHEE':
+        return {
+          'title': 'Pure Desi Ghee & Butter',
+          'icon': '🧈',
+          'gradient': [const Color(0xFFD97706), const Color(0xFFF59E0B)],
+          'accent': const Color(0xFFD97706),
+          'banner': '🧈 Traditional Bilona Vedic Cow Ghee & White Butter',
+          'subtags': ['ALL', 'BILONA GHEE', 'BUTTER', 'A2 VEDIC'],
+        };
+      case 'CURD':
+        return {
+          'title': 'Natural Set Curd (Dahi)',
+          'icon': '🥣',
+          'gradient': [const Color(0xFF0D9488), const Color(0xFF14B8A6)],
+          'accent': const Color(0xFF0D7C66),
+          'banner': '🥣 Probiotic-Rich Natural Set Curd in Eco Tubs',
+          'subtags': ['ALL', 'MATKA DAHI', 'SET CURD', 'ORGANIC'],
+        };
+      case 'BAKERY':
+        return {
+          'title': 'Artisanal Breads & Bakery',
+          'icon': '🍞',
+          'gradient': [const Color(0xFFB45309), const Color(0xFFD97706)],
+          'accent': const Color(0xFFB45309),
+          'banner': '🍞 Fresh Morning Multi-Grain & Sourdough Breads',
+          'subtags': ['ALL', 'MULTI-GRAIN', 'SOURDOUGH', 'WHOLE WHEAT'],
+        };
       case 'MILK':
       default:
         return {
