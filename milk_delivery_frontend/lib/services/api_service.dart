@@ -777,6 +777,21 @@ class ApiService {
     return false;
   }
 
+  static Future<List<Map<String, dynamic>>> fetchSlotAvailability({int? hubId, String? date}) async {
+    try {
+      final params = <String, String>{};
+      if (hubId != null) params['hub_id'] = hubId.toString();
+      if (date != null) params['date'] = date;
+      final uri = Uri.parse('$baseUrl/slots/availability/').replace(queryParameters: params.isNotEmpty ? params : null);
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      if (res.statusCode == 200) {
+        final List decoded = jsonDecode(res.body);
+        return decoded.cast<Map<String, dynamic>>();
+      }
+    } catch (e) { lastError = e.toString(); }
+    return [];
+  }
+
   // ── 12. Customer Address Book APIs ──
   static Future<List<CustomerAddressModel>> fetchCustomerAddresses({int? customerId, String? phone}) async {
     try {

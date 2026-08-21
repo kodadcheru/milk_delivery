@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
 import '../screens/customer/subscription_address_selection_screen.dart';
+import '../services/api_service.dart';
 import '../theme/ui_tokens.dart';
 
 enum SubscriptionPlanType { weekly, monthly }
@@ -36,11 +37,18 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   String _selectedSlot = '05:30 AM - 07:00 AM';
   final _slotController = TextEditingController(text: '05:30 AM - 07:00 AM');
   final _instructionsController = TextEditingController();
+  List<Map<String, dynamic>>? _slotsData;
 
   @override
   void initState() {
     super.initState();
     _initDefaultPackSize();
+    _fetchSlots();
+  }
+
+  Future<void> _fetchSlots() async {
+    final slots = await ApiService.fetchSlotAvailability();
+    if (mounted) setState(() => _slotsData = slots);
   }
 
   @override
@@ -578,21 +586,41 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSlotOptionTile('05:30 AM - 07:00 AM', '⚡ Peak Morning'),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _buildSlotOptionTile('07:00 AM - 08:30 AM', '🌅 Std Morning'),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _buildSlotOptionTile('05:00 PM - 07:00 PM', '🌇 Evening'),
-                        ),
-                      ],
-                    ),
+                    if (_slotsData == null)
+                      const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+                    else
+                      Wrap(
+                        spacing: 8,
+                        children: _slotsData!.map((slotMap) {
+                          final slotName = slotMap['name']?.toString() ?? slotMap['time_range']?.toString() ?? '';
+                          final available = slotMap['available_capacity'] ?? slotMap['available'] ?? 0;
+                          final max = slotMap['max_capacity'] ?? 0;
+                          final isFull = slotMap['is_full'] == true;
+                          final isCutoff = slotMap['is_cutoff_passed'] == true;
+                          
+                          return ChoiceChip(
+                            label: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(slotName),
+                                if (isFull)
+                                  const Text('FULL', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.bold))
+                                else if (isCutoff)
+                                  const Text('CLOSED', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold))
+                                else
+                                  Text('$available/$max left', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                              ],
+                            ),
+                            selected: _selectedSlot == slotName,
+                            onSelected: (isFull || isCutoff) ? null : (val) {
+                              setState(() {
+                                _selectedSlot = slotName;
+                                _slotController.text = slotName;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
                     const SizedBox(height: 8),
                     // Typable Slot Input
                     TextField(

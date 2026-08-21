@@ -66,6 +66,30 @@ class ExpressOrderListCreateView(APIView):
                 address=delivery_address,
             )
 
+        # Validate slot capacity
+        from .models import DeliverySlot
+        slot_config = DeliverySlot.objects.filter(hub=active_hub, name=delivery_slot, is_active=True).first()
+        if slot_config:
+            delivery_date_for_check = delivery_date
+            if isinstance(delivery_date_for_check, str):
+                from datetime import datetime as dt
+                try:
+                    delivery_date_for_check = dt.strptime(delivery_date_for_check, '%Y-%m-%d').date()
+                except ValueError:
+                    from django.utils import timezone
+                    delivery_date_for_check = timezone.now().date()
+            
+            if slot_config.is_full(delivery_date_for_check):
+                return Response(
+                    {"error": f"The '{delivery_slot}' slot is full for this date. Only {slot_config.max_orders} orders allowed. Please choose another time slot."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if slot_config.is_cutoff_passed():
+                return Response(
+                    {"error": f"The '{delivery_slot}' slot has passed its cutoff time. Please choose a later slot or order for tomorrow."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         order_id = f"MD-{uuid.uuid4().hex[:6].upper()}"
         while LiveOrder.objects.filter(id=order_id).exists():
             order_id = f"MD-{uuid.uuid4().hex[:6].upper()}"

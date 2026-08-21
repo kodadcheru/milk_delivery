@@ -75,6 +75,17 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 user.assigned_hub = hub
                 user.save(update_fields=["assigned_hub"])
 
+        from apps.deliveries.models import DeliverySlot
+        slot_config = DeliverySlot.objects.filter(hub=hub, name=deliv_slot, is_active=True).first()
+        if slot_config:
+            from datetime import date as date_cls
+            check_date = date_cls.today()
+            if slot_config.is_full(check_date):
+                return Response(
+                    {"error": f"The '{deliv_slot}' slot is full. Max {slot_config.max_orders} orders per slot. Please choose another time."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         # Capacity slot enforcement check for hub & product
         if hub:
             from apps.products.models import HubProductInventory

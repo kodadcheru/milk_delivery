@@ -281,6 +281,10 @@ class AppState extends ChangeNotifier {
       cartItems.clear();
       await reloadAllData();
       return serverOrder;
+    } else {
+      if (ApiService.lastError != null) {
+        throw Exception(ApiService.lastError);
+      }
     }
 
     // 2. Resilient In-Memory Fallback if backend is unreachable
@@ -361,7 +365,7 @@ class AppState extends ChangeNotifier {
   }) async {
     final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : null));
     for (var entry in cartProductsList) {
-      await createNewSubscription(entry.key, entry.value, schedule, deliveryAddress: addr);
+      await createNewSubscription(entry.key, entry.value, schedule, deliveryAddress: addr, deliverySlot: slot);
     }
     cartItems.clear();
     notifyListeners();
@@ -960,6 +964,9 @@ class AppState extends ChangeNotifier {
       await reloadAllData();
     } else {
       debugPrint('⚠️ [Subscription Create Error]: ${ApiService.lastError}');
+      if (ApiService.lastError != null) {
+        throw Exception(ApiService.lastError);
+      }
       await reloadAllData();
     }
   }

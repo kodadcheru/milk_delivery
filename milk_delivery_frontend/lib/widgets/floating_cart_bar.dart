@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../providers/app_state.dart';
 import 'home/home_location_sheet.dart';
 import '../theme/ui_tokens.dart';
+import '../services/api_service.dart';
 
 
 class FloatingCartBar extends StatelessWidget {
@@ -139,6 +140,9 @@ class FloatingCartBar extends StatelessWidget {
       return weekdayNames[d.weekday - 1];
     }
 
+    List<Map<String, dynamic>>? slotsData;
+    bool hasFetchedSlots = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -146,6 +150,15 @@ class FloatingCartBar extends StatelessWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
+          if (!hasFetchedSlots) {
+            hasFetchedSlots = true;
+            import_api_fetch() async {
+              final slots = await ApiService.fetchSlotAvailability();
+              if (ctx.mounted) setSheetState(() => slotsData = slots);
+            }
+            import_api_fetch();
+          }
+
           final items = state.cartProductsList;
           final total = state.totalCartPrice;
 
@@ -396,21 +409,41 @@ class FloatingCartBar extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildSlotTile('05:30 AM - 07:00 AM', '⚡ Morning Peak', slot, (val) => setSheetState(() { slot = val; slotController.text = val; })),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildSlotTile('07:00 AM - 08:30 AM', '🌅 Morning Std', slot, (val) => setSheetState(() { slot = val; slotController.text = val; })),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildSlotTile('05:00 PM - 07:00 PM', '🌇 Evening', slot, (val) => setSheetState(() { slot = val; slotController.text = val; })),
-                              ),
-                            ],
-                          ),
+                          if (slotsData == null)
+                            const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+                          else
+                            Wrap(
+                              spacing: 8,
+                              children: slotsData!.map((slotMap) {
+                                final slotName = slotMap['name']?.toString() ?? slotMap['time_range']?.toString() ?? '';
+                                final available = slotMap['available_capacity'] ?? slotMap['available'] ?? 0;
+                                final max = slotMap['max_capacity'] ?? 0;
+                                final isFull = slotMap['is_full'] == true;
+                                final isCutoff = slotMap['is_cutoff_passed'] == true;
+                                
+                                return ChoiceChip(
+                                  label: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(slotName),
+                                      if (isFull)
+                                        const Text('FULL', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.bold))
+                                      else if (isCutoff)
+                                        const Text('CLOSED', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold))
+                                      else
+                                        Text('$available/$max left', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                                    ],
+                                  ),
+                                  selected: slot == slotName,
+                                  onSelected: (isFull || isCutoff) ? null : (val) {
+                                    setSheetState(() {
+                                      slot = slotName;
+                                      slotController.text = slotName;
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
                           const SizedBox(height: 8),
                           // Typable Slot Input
                           TextField(
@@ -583,19 +616,31 @@ class FloatingCartBar extends StatelessWidget {
                       onPressed: () async {
                         Navigator.pop(ctx);
                         final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
-                        final order = await state.placeExpressOrder(
-                          deliveryDate: formatDate(selectedDate),
-                          deliverySlot: slot,
-                          deliveryAddress: currentAddr,
-                        );
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: UiTone.primary,
-                              content: Text('🎉 Order ${order.id} Scheduled for ${formatDate(selectedDate)} ($slot)!'),
-                            ),
+                        try {
+                          final order = await state.placeExpressOrder(
+                            deliveryDate: formatDate(selectedDate),
+                            deliverySlot: slot,
+                            deliveryAddress: currentAddr,
                           );
-                          state.setTab(3); // Bookings Tab
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: UiTone.primary,
+                                content: Text('🎉 Order ${order.id} Scheduled for ${formatDate(selectedDate)} ($slot)!'),
+                              ),
+                            );
+                            state.setTab(3); // Bookings Tab
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            final errorMsg = e.toString().replaceFirst('Exception: ', '');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: const Color(0xFFDC2626),
+                                content: Text('❌ $errorMsg'),
+                              ),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(

@@ -542,3 +542,50 @@ class GenerateTodayTasksView(APIView):
         driver = drivers[idx % len(drivers)]
         hub_driver_indices[hub_id] = idx + 1
         return driver
+
+
+class SlotAvailabilityView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models import DeliverySlot, LocationHub
+        from datetime import date as date_cls
+        
+        hub_id = request.query_params.get('hub_id')
+        date_str = request.query_params.get('date')
+        
+        # Parse date or default to today
+        if date_str:
+            try:
+                from datetime import datetime
+                target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                target_date = date_cls.today()
+        else:
+            target_date = date_cls.today()
+        
+        # Get hub
+        if hub_id:
+            slots = DeliverySlot.objects.filter(hub_id=hub_id, is_active=True)
+        else:
+            slots = DeliverySlot.objects.filter(is_active=True)
+        
+        result = []
+        for slot in slots:
+            booked = slot.booked_count(target_date)
+            result.append({
+                'id': slot.id,
+                'name': slot.name,
+                'label': slot.label,
+                'start_time': slot.start_time.strftime('%H:%M'),
+                'end_time': slot.end_time.strftime('%H:%M'),
+                'max_orders': slot.max_orders,
+                'booked_count': booked,
+                'available_count': max(0, slot.max_orders - booked),
+                'is_full': booked >= slot.max_orders,
+                'is_cutoff_passed': slot.is_cutoff_passed(),
+                'hub_id': slot.hub_id,
+                'hub_name': slot.hub.name if slot.hub else '',
+            })
+        
+        return Response(result)

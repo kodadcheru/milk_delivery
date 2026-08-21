@@ -48,6 +48,44 @@ class ServiceArea(models.Model):
         return f"{self.name} ({self.city}) - Pincodes: {self.pincodes}"
 
 
+class DeliverySlot(models.Model):
+    hub = models.ForeignKey('LocationHub', on_delete=models.CASCADE, related_name='delivery_slots')
+    name = models.CharField(max_length=50)  # '05:30 AM - 07:00 AM'
+    label = models.CharField(max_length=50, default='Morning')  # 'Peak Morning'
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    max_orders = models.PositiveIntegerField(default=50)
+    is_active = models.BooleanField(default=True)
+    cutoff_minutes_before = models.IntegerField(default=30)
+
+    class Meta:
+        unique_together = ['hub', 'name']
+        ordering = ['start_time']
+
+    def __str__(self):
+        return f"{self.name} ({self.hub.name}) - {self.max_orders} max"
+
+    def booked_count(self, date):
+        """Count how many delivery tasks are booked for this slot on a given date."""
+        return DeliveryTask.objects.filter(
+            hub=self.hub,
+            slot_time=self.name,
+            delivery_date=date,
+            status__in=['PENDING', 'DELIVERED']
+        ).count()
+
+    def is_full(self, date):
+        return self.booked_count(date) >= self.max_orders
+
+    def is_cutoff_passed(self):
+        from django.utils import timezone
+        import datetime
+        now = timezone.localtime()
+        cutoff = datetime.datetime.combine(now.date(), self.start_time) - datetime.timedelta(minutes=self.cutoff_minutes_before)
+        cutoff = timezone.make_aware(cutoff) if timezone.is_naive(cutoff) else cutoff
+        return now >= cutoff
+
+
 class DeliveryTask(models.Model):
     class Statuses(models.TextChoices):
         PENDING = "PENDING", "Scheduled (Pending)"

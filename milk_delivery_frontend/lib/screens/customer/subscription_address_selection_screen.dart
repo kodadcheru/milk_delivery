@@ -84,17 +84,30 @@ class _SubscriptionAddressSelectionScreenState
 
     widget.state.selectActiveAddress(_selectedAddress!);
 
-    await widget.state.createNewSubscription(
-      widget.product,
-      widget.quantity,
-      widget.schedule,
-      deliveryAddress: _selectedAddress!.summaryAddress,
-      deliverySlot: widget.timeSlot,
-      deliveryLatitude: _selectedAddress!.latitude,
-      deliveryLongitude: _selectedAddress!.longitude,
-      deliveryInstructions: widget.deliveryInstructions,
-      packSize: widget.packSize,
-    );
+    try {
+      await widget.state.createNewSubscription(
+        widget.product,
+        widget.quantity,
+        widget.schedule,
+        deliveryAddress: _selectedAddress!.summaryAddress,
+        deliverySlot: widget.timeSlot,
+        deliveryLatitude: _selectedAddress!.latitude,
+        deliveryLongitude: _selectedAddress!.longitude,
+        deliveryInstructions: widget.deliveryInstructions,
+        packSize: widget.packSize,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          content: Text('❌ $errorMsg'),
+        ),
+      );
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
