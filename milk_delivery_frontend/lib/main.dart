@@ -17,6 +17,7 @@ import 'screens/driver/driver_dashboard_screen.dart';
 import 'screens/driver/driver_profile_tab.dart';
 import 'screens/provider/provider_dashboard_screen.dart';
 import 'screens/provider/provider_profile_tab.dart';
+import 'screens/common/day_wise_orders_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_profile_tab.dart';
 
@@ -239,7 +240,9 @@ class _MainAppShellState extends State<MainAppShell> {
         ),
         body: _driverTab == 0
             ? DriverDashboardScreen(state: widget.state)
-            : DriverProfileTab(state: widget.state, onLogout: widget.onLogout),
+            : (_driverTab == 1
+                ? DayWiseOrdersScreen(state: widget.state, role: 'DRIVER')
+                : DriverProfileTab(state: widget.state, onLogout: widget.onLogout)),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _driverTab,
           onDestinationSelected: (idx) => setState(() => _driverTab = idx),
@@ -248,6 +251,11 @@ class _MainAppShellState extends State<MainAppShell> {
               icon: Icon(Icons.local_shipping_outlined),
               selectedIcon: Icon(Icons.local_shipping_rounded),
               label: 'Route Deliveries',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month_rounded),
+              label: 'Day Orders',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),
@@ -338,7 +346,9 @@ class _MainAppShellState extends State<MainAppShell> {
         ),
         body: _providerTab == 0
             ? ProviderDashboardScreen(state: widget.state)
-            : ProviderProfileTab(state: widget.state, onLogout: widget.onLogout),
+            : (_providerTab == 1
+                ? DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER')
+                : ProviderProfileTab(state: widget.state, onLogout: widget.onLogout)),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _providerTab,
           onDestinationSelected: (idx) => setState(() => _providerTab = idx),
@@ -347,6 +357,11 @@ class _MainAppShellState extends State<MainAppShell> {
               icon: Icon(Icons.storefront_outlined),
               selectedIcon: Icon(Icons.storefront_rounded),
               label: 'Hub Command',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month_rounded),
+              label: 'Day Orders',
             ),
             NavigationDestination(
               icon: Icon(Icons.business_center_outlined),
