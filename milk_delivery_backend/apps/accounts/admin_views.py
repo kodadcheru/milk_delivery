@@ -692,6 +692,12 @@ class AdminHubDetailView(APIView):
             hub.longitude = float(request.data["longitude"])
         hub.save()
 
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            broadcast_hub_event(hub.hub_code, "hub_updated", {"hub_code": hub.hub_code, "name": hub.name})
+        except Exception:
+            pass
+
         return Response({
             "message": f"Hub '{hub.name}' updated successfully!",
             "hub_code": hub.hub_code,

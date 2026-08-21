@@ -10,6 +10,7 @@ import '../../models/bottle_return_model.dart';
 import '../../models/provider_payout_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
+import '../../services/hub_realtime_service.dart';
 import '../../services/route_optimizer.dart';
 import 'provider_fleet_map_screen.dart';
 import '../driver/morning_batch_screen.dart';
@@ -30,7 +31,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   List<Map<String, dynamic>> _hubInventory = [];
   List<Map<String, dynamic>> _liveFleet = [];
   bool _isGeneratingTasks = false;
-  Timer? _fleetRefreshTimer;
+  Timer? _hubRealtimeTimer;
 
   final List<Map<String, dynamic>> _broadcastAlerts = [];
   List<ProviderPayoutModel> _payoutHistory = [];
@@ -44,17 +45,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLiveFleet();
-    _loadHubInventory();
-    _loadPayouts();
-    _loadBottleReturns();
-    _fleetRefreshTimer = Timer.periodic(const Duration(seconds: 4), (_) => _loadLiveFleet());
+    _loadAllHubData();
+    _hubRealtimeTimer = Timer.periodic(const Duration(seconds: 3), (_) => _loadAllHubData());
   }
 
   @override
   void dispose() {
-    _fleetRefreshTimer?.cancel();
+    _hubRealtimeTimer?.cancel();
     super.dispose();
+  }
+
+  void _loadAllHubData() {
+    _loadLiveFleet();
+    _loadHubInventory();
+    _loadPayouts();
+    _loadBottleReturns();
   }
 
   void _loadLiveFleet() async {
@@ -176,18 +181,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               if (controller.text.trim().isEmpty) return;
               final msg = controller.text.trim();
               Navigator.pop(ctx);
+              HubRealtimeService.sendBroadcast(msg);
               setState(() {
                 _broadcastAlerts.insert(0, {
                   'title': msg,
                   'time': 'Just Now',
                   'recipients': '${widget.state.deliveries.length} Subscribers',
-                  'status': 'BROADCAST SENT ✅',
+                  'status': 'BROADCAST SENT (REDIS) ⚡',
                 });
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: UiTone.primary,
-                  content: Text('📢 Broadcast Sent to ${widget.state.deliveries.length} Subscribers in Hub Zone!'),
+                  content: Text('📢 Broadcast Sent via Redis to ${widget.state.deliveries.length} Subscribers in Hub Zone!'),
                 ),
               );
             },

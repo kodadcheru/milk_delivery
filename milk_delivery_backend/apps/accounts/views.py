@@ -185,6 +185,19 @@ class DriverLocationUpdateView(APIView):
             user.last_location_updated = timezone.now()
             user.save(update_fields=["latitude", "longitude", "driver_status", "last_location_updated"])
 
+            try:
+                from apps.core.consumers import broadcast_hub_event
+                hub_code = getattr(user.assigned_hub, "hub_code", "HUB-KDD-01") if user.assigned_hub else "HUB-KDD-01"
+                broadcast_hub_event(hub_code, "fleet_updated", {
+                    "driver_id": user.id,
+                    "driver_name": f"{user.first_name} {user.last_name}".strip() or user.username,
+                    "latitude": float(user.latitude),
+                    "longitude": float(user.longitude),
+                    "status": user.driver_status,
+                })
+            except Exception:
+                pass
+
         return Response({
             "message": "Driver location updated successfully",
             "driver_id": user.id,

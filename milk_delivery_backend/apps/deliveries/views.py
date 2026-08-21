@@ -101,6 +101,16 @@ class DeliveryTaskCompleteView(APIView):
                     notification_type=Notification.Types.WALLET,
                 )
 
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            hub_code = getattr(task.hub, "hub_code", "HUB-KDD-01") if task.hub else "HUB-KDD-01"
+            broadcast_hub_event(hub_code, "delivery_updated", {
+                "task_id": task.id,
+                "status": task.status,
+            })
+        except Exception:
+            pass
+
         return Response(
             {
                 "message": "Delivery completed successfully.",
@@ -121,6 +131,16 @@ class DeliveryTaskSkipView(APIView):
 
         task.status = DeliveryTask.Statuses.SKIPPED
         task.save()
+
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            hub_code = getattr(task.hub, "hub_code", "HUB-KDD-01") if task.hub else "HUB-KDD-01"
+            broadcast_hub_event(hub_code, "delivery_updated", {
+                "task_id": task.id,
+                "status": task.status,
+            })
+        except Exception:
+            pass
 
         return Response(
             {

@@ -317,7 +317,42 @@ class _MainAppShellState extends State<MainAppShell> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                    Row(
+                      children: [
+                        const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w800)),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (widget.state.isRedisConnected ? const Color(0xFF10B981) : Colors.amber).withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: (widget.state.isRedisConnected ? const Color(0xFF34D399) : Colors.amberAccent).withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: widget.state.isRedisConnected ? const Color(0xFF10B981) : Colors.amber,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.state.isRedisConnected ? 'Live Redis' : 'Auto-Sync',
+                                style: TextStyle(
+                                  color: widget.state.isRedisConnected ? const Color(0xFF34D399) : Colors.amberAccent,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                     Text(
                       '$hubTitle • $activeDeliveriesCount Active Deliveries',
                       overflow: TextOverflow.ellipsis,
@@ -367,7 +402,10 @@ class _MainAppShellState extends State<MainAppShell> {
                 await widget.state.reloadAllData();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Hub orders and stats refreshed!')),
+                    const SnackBar(
+                      backgroundColor: Color(0xFF0D7C66),
+                      content: Text('⚡ Hub Redis Stream & Data Refreshed!'),
+                    ),
                   );
                 }
               },
@@ -377,7 +415,10 @@ class _MainAppShellState extends State<MainAppShell> {
         body: providerScreens[_providerTab.clamp(0, providerScreens.length - 1)],
         bottomNavigationBar: NextGenBottomNavBar(
           selectedIndex: _providerTab.clamp(0, providerScreens.length - 1),
-          onItemSelected: (idx) => setState(() => _providerTab = idx),
+          onItemSelected: (idx) {
+            setState(() => _providerTab = idx);
+            widget.state.syncProviderTab(idx);
+          },
           items: [
             const NextGenNavItem(
               icon: Icons.storefront_outlined,

@@ -147,6 +147,17 @@ class ExpressOrderListCreateView(APIView):
                 status=DeliveryTask.Statuses.PENDING,
             )
 
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            hub_code = getattr(active_hub, "hub_code", "HUB-KDD-01") if active_hub else "HUB-KDD-01"
+            broadcast_hub_event(hub_code, "order_created", {
+                "order_id": order.id,
+                "customer": user.username,
+                "amount": float(total_amount),
+            })
+        except Exception:
+            pass
+
         return Response(LiveOrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
@@ -223,4 +234,15 @@ class ExpressOrderDetailView(APIView):
                 proof_image_url=proof_url if proof_url else "",
                 delivered_at=timezone.now() if new_status == LiveOrder.Statuses.DELIVERED else None,
             )
+
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            hub_code = getattr(order.hub, "hub_code", "HUB-KDD-01") if order.hub else "HUB-KDD-01"
+            broadcast_hub_event(hub_code, "order_updated", {
+                "order_id": order.id,
+                "status": new_status,
+            })
+        except Exception:
+            pass
+
         return Response(LiveOrderSerializer(order).data)

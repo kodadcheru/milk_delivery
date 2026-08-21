@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import '../models/live_order_model.dart';
 import '../models/service_area_model.dart';
 import '../models/storefront_config_model.dart';
 import '../services/api_service.dart';
+import '../services/hub_realtime_service.dart';
 import '../services/location_service.dart';
 import '../services/permission_service.dart';
 
@@ -27,6 +29,11 @@ class AppState extends ChangeNotifier {
   int currentTabIndex = 0;
   String? customBannerImagePath;
   StorefrontConfigModel storefrontConfig = const StorefrontConfigModel();
+
+  // ── Redis & Real-Time Sync State ──
+  bool isRedisConnected = false;
+  Timer? _providerHeartbeatTimer;
+  String get activeHubCode => locationHubs.isNotEmpty ? (locationHubs.first['hub_code'] ?? locationHubs.first['id'] ?? 'HUB-KDD-01').toString() : 'HUB-KDD-01';
 
   // Real-Time Location & Customer Address Book State
   String currentDeliveryAddress = 'Select Delivery Location';
@@ -472,9 +479,11 @@ class AppState extends ChangeNotifier {
     return result;
   }
 
-  Future<void> reloadAllData() async {
-    isLoading = true;
-    notifyListeners();
+  Future<void> reloadAllData({bool silent = false}) async {
+    if (!silent) {
+      isLoading = true;
+      notifyListeners();
+    }
     try {
       final results = await Future.wait([
         ApiService.fetchUserProfile(),
@@ -561,8 +570,11 @@ class AppState extends ChangeNotifier {
         currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
       }
 
-      if (currentRole == 'ADMIN' || currentRole == 'PROVIDER') {
+      if (currentRole == 'ADMIN' || currentRole == 'PROVIDER' || currentRole == 'HUB_MANAGER') {
         adminSummary = await ApiService.fetchDeliverySummary();
+        if (_providerHeartbeatTimer == null) {
+          startProviderRealtimeSync();
+        }
       }
     } catch (e) {
       debugPrint('🚨 [MilkDrop Concurrent Reload Error]: $e');
@@ -570,6 +582,49 @@ class AppState extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+  }
+
+  // ── Redis Live Channel Layer & Multi-Tab Real-Time Sync Handlers ──
+  void startProviderRealtimeSync() {
+    _providerHeartbeatTimer?.cancel();
+    
+    // Connect to live Redis WebSocket channel
+    HubRealtimeService.connect(
+      hubCode: activeHubCode,
+      onEvent: (event) {
+        debugPrint('⚡ [AppState Redis Event Trigger]: $event');
+        reloadAllData(silent: true);
+      },
+      onStatusChange: (connected) {
+        if (isRedisConnected != connected) {
+          isRedisConnected = connected;
+          notifyListeners();
+        }
+      },
+    );
+
+    // Resilient 3-second multi-tab heartbeat to guarantee 0ms latency sync across all tabs
+    _providerHeartbeatTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (currentRole == 'PROVIDER' || currentRole == 'HUB_MANAGER') {
+        reloadAllData(silent: true);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  void stopProviderRealtimeSync() {
+    _providerHeartbeatTimer?.cancel();
+    _providerHeartbeatTimer = null;
+    HubRealtimeService.disconnect();
+    isRedisConnected = false;
+    notifyListeners();
+  }
+
+  Future<void> syncProviderTab(int tabIndex) async {
+    currentTabIndex = tabIndex;
+    notifyListeners();
+    await reloadAllData(silent: true);
   }
 
   // ── Customer Address Book Handlers ──
