@@ -97,37 +97,56 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
     }
   }
 
+  double _driverMarkerHue(Map<String, dynamic> driver) {
+    final lastUpdated = driver['last_location_updated'];
+    if (lastUpdated == null) return BitmapDescriptor.hueRed;
+    try {
+      final dt = DateTime.parse(lastUpdated);
+      final age = DateTime.now().difference(dt);
+      if (age.inSeconds < 30) return BitmapDescriptor.hueGreen;
+      if (age.inSeconds < 120) return BitmapDescriptor.hueOrange;
+      return BitmapDescriptor.hueRed;
+    } catch (_) {
+      return BitmapDescriptor.hueRed;
+    }
+  }
+
+  String _relativeTime(String? isoString) {
+    if (isoString == null) return 'No GPS data';
+    try {
+      final dt = DateTime.parse(isoString);
+      final age = DateTime.now().difference(dt);
+      if (age.inSeconds < 10) return 'Just now';
+      if (age.inSeconds < 60) return '${age.inSeconds}s ago';
+      if (age.inMinutes < 60) return '${age.inMinutes}m ago';
+      return '${age.inHours}h ago';
+    } catch (_) {
+      return 'Unknown';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final double hubLat = _hubs.isNotEmpty ? (_hubs.first['lat'] as double) : 17.001734;
     final double hubLng = _hubs.isNotEmpty ? (_hubs.first['lng'] as double) : 79.9625;
 
-    // Generate driver coordinates spread around active hub operating sector
     final List<Map<String, dynamic>> driversWithCoords = [];
     final drivers = _liveDrivers.isNotEmpty
         ? _liveDrivers
-        : (widget.fleetDrivers.isNotEmpty
-            ? widget.fleetDrivers
-            : [
-                {'id': 1, 'name': 'Route Partner #1', 'phone': '+91 8885199878', 'hub': _hubs.first['name'], 'completed_stops': 12, 'assigned_stops': 14, 'salary': '₹15,000 / mo'},
-              ]);
-
-    final offsets = [
-      LatLng(hubLat + 0.0032, hubLng + 0.0025),
-      LatLng(hubLat - 0.0028, hubLng - 0.0038),
-      LatLng(hubLat + 0.0045, hubLng - 0.0021),
-      LatLng(hubLat - 0.0020, hubLng + 0.0042),
-      LatLng(hubLat + 0.0015, hubLng - 0.0050),
-    ];
+        : (widget.fleetDrivers.isNotEmpty ? widget.fleetDrivers : []);
 
     for (int i = 0; i < drivers.length; i++) {
       final d = Map<String, dynamic>.from(drivers[i]);
       final latVal = d['latitude'] ?? d['lat'];
       final lngVal = d['longitude'] ?? d['lng'];
-      if (latVal != null && lngVal != null && (latVal as num) != 0.0) {
-        d['coord'] = LatLng((latVal as num).toDouble(), (lngVal as num).toDouble());
+      // Use REAL coordinates from backend — only offset if truly missing
+      if (latVal != null && lngVal != null && (latVal as num).toDouble() != 0.0 && (lngVal as num).toDouble() != 0.0) {
+        d['coord'] = LatLng(latVal.toDouble(), lngVal.toDouble());
+        d['is_live'] = true;
       } else {
-        d['coord'] = offsets[i % offsets.length];
+        // Fallback offset for drivers with no GPS data
+        d['coord'] = LatLng(hubLat + 0.003 * (i % 2 == 0 ? 1 : -1), hubLng + 0.003 * (i % 2 == 0 ? -1 : 1));
+        d['is_live'] = false;
       }
       driversWithCoords.add(d);
     }
@@ -197,7 +216,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                   markerId: MarkerId('driver_${d['id']}'),
                   position: pt,
                   icon: BitmapDescriptor.defaultMarkerWithHue(
-                    isSelected ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueGreen,
+                    isSelected ? BitmapDescriptor.hueAzure : _driverMarkerHue(d),
                   ),
                   infoWindow: InfoWindow(
                     title: d['name'] ?? 'Driver',
@@ -257,6 +276,28 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                               Text(
                                 '${_selectedDriver!['hub']} • ₹15,000 / mo',
                                 style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _driverMarkerHue(_selectedDriver!) == BitmapDescriptor.hueGreen 
+                                          ? Colors.greenAccent 
+                                          : _driverMarkerHue(_selectedDriver!) == BitmapDescriptor.hueOrange 
+                                              ? Colors.orangeAccent 
+                                              : Colors.redAccent,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _relativeTime(_selectedDriver!['last_location_updated']),
+                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

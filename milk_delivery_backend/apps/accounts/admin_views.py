@@ -847,6 +847,7 @@ class AdminFleetListView(APIView):
                 "completed_stops": completed_stops,
                 "salary": f"₹{int(d.monthly_salary):,} / month",
                 "bottles_collected": assigned_tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count(),
+                "last_location_updated": d.last_location_updated.isoformat() if d.last_location_updated else None,
             })
 
         return Response(fleet_data)

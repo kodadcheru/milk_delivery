@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -30,6 +31,7 @@ class User(AbstractUser):
     assigned_hub = models.ForeignKey("deliveries.LocationHub", on_delete=models.SET_NULL, null=True, blank=True, related_name="delivery_partners")
     monthly_salary = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("15000.00"))
     driver_status = models.CharField(max_length=20, default="ACTIVE")
+    last_location_updated = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         hub_info = f" • {self.assigned_hub.name}" if self.assigned_hub else ""

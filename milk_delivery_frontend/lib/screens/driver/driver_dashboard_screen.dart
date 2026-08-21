@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
@@ -43,18 +44,54 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   Future<void> _syncDriverLocation() async {
     if (!mounted) return;
-    
-    // Resolve current coordinates: active task coordinate, driver profile coordinate, or Kodad hub coordinate
-    final pendingDeliveries = widget.state.deliveries.where((d) => d.status == 'PENDING').toList();
+
     double lat = 17.001734;
     double lng = 79.9625;
 
-    if (pendingDeliveries.isNotEmpty) {
-      lat = pendingDeliveries.first.customerLatitude;
-      lng = pendingDeliveries.first.customerLongitude;
-    } else if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
-      lat = widget.state.currentUser!.latitude;
-      lng = widget.state.currentUser!.longitude;
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Fall back to profile coordinates
+        if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
+          lat = widget.state.currentUser!.latitude;
+          lng = widget.state.currentUser!.longitude;
+        }
+      } else {
+        // Check permissions
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+
+        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+          // Get REAL device GPS position
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          ).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => throw Exception('GPS timeout'),
+          );
+          lat = position.latitude;
+          lng = position.longitude;
+        } else {
+          // Permission denied — use profile coordinates as fallback
+          if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
+            lat = widget.state.currentUser!.latitude;
+            lng = widget.state.currentUser!.longitude;
+          }
+        }
+      }
+    } catch (_) {
+      // GPS error — fall back to pending delivery or profile coordinates
+      final pendingDeliveries = widget.state.deliveries.where((d) => d.status == 'PENDING').toList();
+      if (pendingDeliveries.isNotEmpty) {
+        lat = pendingDeliveries.first.customerLatitude;
+        lng = pendingDeliveries.first.customerLongitude;
+      } else if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
+        lat = widget.state.currentUser!.latitude;
+        lng = widget.state.currentUser!.longitude;
+      }
     }
 
     await ApiService.updateDriverLocation(

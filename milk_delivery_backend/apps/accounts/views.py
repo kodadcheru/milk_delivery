@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -181,7 +182,8 @@ class DriverLocationUpdateView(APIView):
             user.latitude = Decimal(str(lat))
             user.longitude = Decimal(str(lng))
             user.driver_status = status_val
-            user.save(update_fields=["latitude", "longitude", "driver_status"])
+            user.last_location_updated = timezone.now()
+            user.save(update_fields=["latitude", "longitude", "driver_status", "last_location_updated"])
 
         return Response({
             "message": "Driver location updated successfully",
@@ -190,5 +192,25 @@ class DriverLocationUpdateView(APIView):
             "latitude": float(user.latitude) if user.latitude else 17.001734,
             "longitude": float(user.longitude) if user.longitude else 79.9625,
             "driver_status": user.driver_status,
+            "last_location_updated": user.last_location_updated.isoformat() if user.last_location_updated else None,
+        })
+
+
+class DriverLocationByOrderView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, order_id):
+        from apps.deliveries.models import LiveOrder
+        order = LiveOrder.objects.filter(id=order_id).select_related('driver').first()
+        if not order or not order.driver:
+            return Response({"detail": "Order or driver not found"}, status=status.HTTP_404_NOT_FOUND)
+        driver = order.driver
+        return Response({
+            "driver_id": driver.id,
+            "driver_name": f"{driver.first_name} {driver.last_name}".strip() or driver.username,
+            "latitude": float(driver.latitude) if driver.latitude else 17.001734,
+            "longitude": float(driver.longitude) if driver.longitude else 79.9625,
+            "driver_status": driver.driver_status,
+            "last_location_updated": driver.last_location_updated.isoformat() if driver.last_location_updated else None,
         })
 
