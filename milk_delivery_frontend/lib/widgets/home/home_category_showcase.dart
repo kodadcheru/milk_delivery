@@ -14,12 +14,13 @@ class HomeCategoryShowcase extends StatelessWidget {
     required this.onSelectCategory,
   });
 
-  // 6-color cyclic tint palette (matching service-mobile reference)
+  // 6-color cyclic tint palette with real-world photography
   static const List<Map<String, dynamic>> categoriesData = [
     {
       'key': 'MILK',
       'title': 'Fresh Milk',
       'icon': '🥛',
+      'image': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFE6F5F0),
       'fg': Color(0xFF0D7C66),
     },
@@ -27,6 +28,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'key': 'MEAT',
       'title': 'Meat & Poultry',
       'icon': '🥩',
+      'image': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFFDE8E8),
       'fg': Color(0xFFDC2626),
     },
@@ -34,6 +36,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'key': 'EGGS',
       'title': 'Farm Eggs',
       'icon': '🥚',
+      'image': 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFFFF3E6),
       'fg': Color(0xFFE67E22),
     },
@@ -41,6 +44,7 @@ class HomeCategoryShowcase extends StatelessWidget {
       'key': 'WATER_CAN',
       'title': 'Water Cans',
       'icon': '💧',
+      'image': 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFE8F2FE),
       'fg': Color(0xFF2563EB),
     },
@@ -48,13 +52,15 @@ class HomeCategoryShowcase extends StatelessWidget {
       'key': 'PANEER',
       'title': 'Paneer & Curd',
       'icon': '🧀',
+      'image': 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFF0EAFC),
       'fg': Color(0xFF7C3AED),
     },
     {
       'key': 'GHEE',
       'title': 'Desi Ghee',
-      'icon': '🫙',
+      'icon': '🧈',
+      'image': 'https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=300&q=80',
       'bg': Color(0xFFFEF3C7),
       'fg': Color(0xFFD97706),
     },
@@ -136,13 +142,72 @@ class HomeCategoryShowcase extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(19),
-                child: Container(
-                  color: bgColor,
-                  alignment: Alignment.center,
-                  child: Text(
-                    cat['icon'] as String,
-                    style: const TextStyle(fontSize: 34),
-                  ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (cat['image'] != null)
+                      Image.network(
+                        cat['image'] as String,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: bgColor,
+                          alignment: Alignment.center,
+                          child: Text(
+                            cat['icon'] as String,
+                            style: const TextStyle(fontSize: 34),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        color: bgColor,
+                        alignment: Alignment.center,
+                        child: Text(
+                          cat['icon'] as String,
+                          style: const TextStyle(fontSize: 34),
+                        ),
+                      ),
+
+                    // Subtle bottom gradient for depth
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.05),
+                              Colors.black.withValues(alpha: 0.45),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Bottom-Right mini icon badge
+                    Positioned(
+                      bottom: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.94),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          cat['icon'] as String,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

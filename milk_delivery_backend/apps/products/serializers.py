@@ -33,6 +33,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "icon",
+            "image_url",
             "description",
             "display_order",
             "is_active",

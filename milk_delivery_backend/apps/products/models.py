@@ -6,6 +6,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     icon = models.CharField(max_length=50, default="🥛", help_text="Emoji or Icon symbol e.g. 🥛, 🥩, 🥚, 💧, 🥬")
+    image_url = models.URLField(max_length=500, blank=True, default="")
     description = models.TextField(blank=True, default="")
     display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)

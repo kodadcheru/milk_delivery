@@ -2432,19 +2432,48 @@
   </div>
 
   <!-- ── Modal: Add Category ── -->
+  <!-- ── Modal: Create Category ── -->
   <div class="modal-overlay" id="addCategoryModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-tags" style="color: var(--primary-accent);"></i> Create New Product Category</div>
       <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
         <div class="form-group">
           <label>Category Icon / Emoji</label>
-          <input type="text" id="catIcon" class="form-control" placeholder="🥛, 🥩, 🥚, 💧, 🥬" value="🥛" style="font-size: 18px; text-align: center;">
+          <input type="text" id="catIcon" class="form-control" placeholder="🥛, 🥩, 🥚, 💧, 🥬" value="🥛" style="font-size: 20px; text-align: center;">
         </div>
         <div class="form-group">
           <label>Category Name</label>
           <input type="text" id="catName" class="form-control" placeholder="e.g. Milk & Dairy, Organic Eggs">
         </div>
       </div>
+      
+      <!-- Category Image Upload & Live Preview -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+        <label style="font-weight: 700; font-size: 12px; display: block; margin-bottom: 6px;">Category Cover Image (Real-World Photography)</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+          <img id="addCatImagePreview" src="https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80" style="width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); background: #000;">
+          <div style="flex: 1; display: flex; gap: 8px;">
+            <input type="text" id="catImage" class="form-control" placeholder="https://images.unsplash.com/..." oninput="updateImagePreview('catImage', 'addCatImagePreview')">
+            <label class="btn btn-secondary" style="margin: 0; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 12px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+              <input type="file" accept="image/*" style="display: none;" onchange="uploadImageFile(this, 'catImage', 'addCatImagePreview')">
+            </label>
+          </div>
+        </div>
+        <!-- Quick Presets -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Quick Presets:</span>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥛 Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥣 Curd</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🧈 Ghee</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🧀 Paneer</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥚 Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">💧 Water</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🍞 Bread</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥩 Meat</button>
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Description</label>
         <input type="text" id="catDesc" class="form-control" placeholder="e.g. Farm fresh A2 & buffalo whole milk">
@@ -2462,19 +2491,47 @@
 
   <!-- ── Modal: Edit Category ── -->
   <div class="modal-overlay" id="editCategoryModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-pen-to-square" style="color: #38BDF8;"></i> Edit Product Category</div>
       <input type="hidden" id="editCatId">
       <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
         <div class="form-group">
           <label>Category Icon / Emoji</label>
-          <input type="text" id="editCatIcon" class="form-control" style="font-size: 18px; text-align: center;">
+          <input type="text" id="editCatIcon" class="form-control" style="font-size: 20px; text-align: center;">
         </div>
         <div class="form-group">
           <label>Category Name</label>
           <input type="text" id="editCatName" class="form-control">
         </div>
       </div>
+
+      <!-- Category Image Upload & Live Preview -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+        <label style="font-weight: 700; font-size: 12px; display: block; margin-bottom: 6px;">Category Cover Image (Real-World Photography)</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+          <img id="editCatImagePreview" src="https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80" style="width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); background: #000;">
+          <div style="flex: 1; display: flex; gap: 8px;">
+            <input type="text" id="editCatImage" class="form-control" placeholder="https://images.unsplash.com/..." oninput="updateImagePreview('editCatImage', 'editCatImagePreview')">
+            <label class="btn btn-secondary" style="margin: 0; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 12px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+              <input type="file" accept="image/*" style="display: none;" onchange="uploadImageFile(this, 'editCatImage', 'editCatImagePreview')">
+            </label>
+          </div>
+        </div>
+        <!-- Quick Presets -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Quick Presets:</span>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🥛 Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🥣 Curd</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🧈 Ghee</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🧀 Paneer</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🥚 Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">💧 Water</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🍞 Bread</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80', 'editCatImage', 'editCatImagePreview')">🥩 Meat</button>
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Description</label>
         <input type="text" id="editCatDesc" class="form-control">
@@ -2492,7 +2549,7 @@
 
   <!-- ── Modal: Add Product / Item ── -->
   <div class="modal-overlay" id="addProductModal">
-    <div class="modal-card" style="max-width: 580px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-card" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-box-open" style="color: var(--primary-accent);"></i> Add New Item under Category</div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
@@ -2526,10 +2583,36 @@
           <input type="text" id="prodOrigin" class="form-control" placeholder="Jubilee Farms, Hyderabad" value="Heritage Source, Hyderabad">
         </div>
       </div>
-      <div class="form-group">
-        <label>Image URL (Optional)</label>
-        <input type="text" id="prodImage" class="form-control" placeholder="https://images.unsplash.com/photo-...">
+
+      <!-- Product Real-World Image Box -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+        <label style="font-weight: 700; font-size: 12px; display: block; margin-bottom: 6px;">Product Image (Real-World HD Photo)</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+          <img id="prodImagePreview" src="https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80" style="width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); background: #000;">
+          <div style="flex: 1; display: flex; gap: 8px;">
+            <input type="text" id="prodImage" class="form-control" placeholder="https://images.unsplash.com/photo-..." oninput="updateImagePreview('prodImage', 'prodImagePreview')">
+            <label class="btn btn-secondary" style="margin: 0; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 12px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+              <input type="file" accept="image/*" style="display: none;" onchange="uploadImageFile(this, 'prodImage', 'prodImagePreview')">
+            </label>
+          </div>
+        </div>
+        <!-- Quick Real-World Product Image Presets -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Presets:</span>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🥛 Cow Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🥛 Buffalo Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🥣 Curd Tub</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🧈 Ghee Jar</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🧀 Paneer</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🥚 Brown Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🥚 White Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">💧 Water 20L</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🍞 Bread</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=800&q=80', 'prodImage', 'prodImagePreview')">🧈 Butter</button>
+        </div>
       </div>
+
       <div class="form-group">
         <label>Description</label>
         <input type="text" id="prodDesc" class="form-control" placeholder="100% Raw, unpasteurized farm fresh">
@@ -2543,7 +2626,7 @@
 
   <!-- ── Modal: Edit Product / Item ── -->
   <div class="modal-overlay" id="editProductModal">
-    <div class="modal-card" style="max-width: 580px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-card" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-pen-to-square" style="color: #38BDF8;"></i> Edit Product Item Details</div>
       <input type="hidden" id="editProdId">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -2578,10 +2661,36 @@
           <input type="text" id="editProdOrigin" class="form-control">
         </div>
       </div>
-      <div class="form-group">
-        <label>Image URL</label>
-        <input type="text" id="editProdImage" class="form-control">
+
+      <!-- Product Real-World Image Box -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+        <label style="font-weight: 700; font-size: 12px; display: block; margin-bottom: 6px;">Product Image (Real-World HD Photo)</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+          <img id="editProdImagePreview" src="https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80" style="width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); background: #000;">
+          <div style="flex: 1; display: flex; gap: 8px;">
+            <input type="text" id="editProdImage" class="form-control" placeholder="https://images.unsplash.com/..." oninput="updateImagePreview('editProdImage', 'editProdImagePreview')">
+            <label class="btn btn-secondary" style="margin: 0; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 12px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+              <input type="file" accept="image/*" style="display: none;" onchange="uploadImageFile(this, 'editProdImage', 'editProdImagePreview')">
+            </label>
+          </div>
+        </div>
+        <!-- Quick Real-World Product Image Presets -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Presets:</span>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🥛 Cow Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🥛 Buffalo Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🥣 Curd Tub</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🧈 Ghee Jar</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🧀 Paneer</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🥚 Brown Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🥚 White Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">💧 Water 20L</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🍞 Bread</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=800&q=80', 'editProdImage', 'editProdImagePreview')">🧈 Butter</button>
+        </div>
       </div>
+
       <div class="form-group">
         <label>Description</label>
         <input type="text" id="editProdDesc" class="form-control">
@@ -4863,17 +4972,27 @@
       }
 
       categories.forEach(c => {
+        const coverImgHtml = c.image_url 
+          ? `<div style="position: relative; height: 85px; border-radius: 10px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border-color);">
+               <img src="${c.image_url}" alt="${c.name}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80'">
+               <div style="position: absolute; top: 6px; left: 6px; width: 34px; height: 34px; border-radius: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                 ${c.icon || '🥛'}
+               </div>
+               <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}" style="position: absolute; top: 6px; right: 6px;">${c.is_active ? 'Active' : 'Hidden'}</span>
+             </div>`
+          : `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+               <div style="font-size: 28px; background: rgba(255,255,255,0.06); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                 ${c.icon || '🥛'}
+               </div>
+               <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}">${c.is_active ? 'Active' : 'Hidden'}</span>
+             </div>`;
+
         grid.innerHTML += `
-          <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <div style="font-size: 28px; background: rgba(255,255,255,0.06); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                  ${c.icon || '🥛'}
-                </div>
-                <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}">${c.is_active ? 'Active' : 'Hidden'}</span>
-              </div>
+              ${coverImgHtml}
               <h4 style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${c.name}</h4>
-              <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">${c.description || 'Category for morning catalog items'}</p>
+              <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4;">${c.description || 'Category for morning catalog items'}</p>
               <div style="font-size: 11px; color: var(--primary-accent); font-weight: 700; margin-bottom: 12px;">
                 <i class="fa-solid fa-boxes-stacked"></i> ${c.items_count || 0} Item(s) in this Category
               </div>
@@ -4936,6 +5055,8 @@
       document.getElementById('catName').value = '';
       document.getElementById('catDesc').value = '';
       document.getElementById('catIcon').value = '🥛';
+      document.getElementById('catImage').value = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80';
+      updateImagePreview('catImage', 'addCatImagePreview');
       document.getElementById('catOrder').value = (rawCategories.length + 1);
       document.getElementById('addCategoryModal').style.display = 'flex';
     }
@@ -4943,6 +5064,7 @@
     async function submitAddCategory() {
       const name = document.getElementById('catName').value.trim();
       const icon = document.getElementById('catIcon').value.trim() || '🥛';
+      const image_url = document.getElementById('catImage').value.trim();
       const desc = document.getElementById('catDesc').value.trim();
       const order = document.getElementById('catOrder').value.trim() || 1;
 
@@ -4955,7 +5077,7 @@
         const res = await fetch(`${baseUrl}/categories/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
-          body: JSON.stringify({ name, icon, description: desc, display_order: order, is_active: true })
+          body: JSON.stringify({ name, icon, image_url, description: desc, display_order: order, is_active: true })
         });
 
         if (res.ok) {
@@ -4977,6 +5099,8 @@
       document.getElementById('editCatId').value = cat.id;
       document.getElementById('editCatName').value = cat.name;
       document.getElementById('editCatIcon').value = cat.icon || '🥛';
+      document.getElementById('editCatImage').value = cat.image_url || '';
+      updateImagePreview('editCatImage', 'editCatImagePreview');
       document.getElementById('editCatDesc').value = cat.description || '';
       document.getElementById('editCatOrder').value = cat.display_order || 1;
 
@@ -4987,6 +5111,7 @@
       const catId = document.getElementById('editCatId').value;
       const name = document.getElementById('editCatName').value.trim();
       const icon = document.getElementById('editCatIcon').value.trim();
+      const image_url = document.getElementById('editCatImage').value.trim();
       const desc = document.getElementById('editCatDesc').value.trim();
       const order = document.getElementById('editCatOrder').value.trim();
 
@@ -4994,7 +5119,7 @@
         const res = await fetch(`${baseUrl}/categories/${catId}/`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
-          body: JSON.stringify({ name, icon, description: desc, display_order: order })
+          body: JSON.stringify({ name, icon, image_url, description: desc, display_order: order })
         });
 
         if (res.ok) {
@@ -5022,6 +5147,55 @@
       } catch (e) {
         alert('Could not delete category.');
       }
+    }
+
+    // ── Universal Media Upload & Image Helpers ──
+    async function uploadImageFile(fileInput, targetInputId, previewImgId) {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('folder', 'products');
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const res = await fetch(`${baseUrl}/upload/image/`, {
+          method: 'POST',
+          headers: headers,
+          body: formData
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const url = data.url || data.relative_url;
+          document.getElementById(targetInputId).value = url;
+          if (previewImgId) {
+            document.getElementById(previewImgId).src = url;
+          }
+        } else {
+          alert('Image upload failed. Please verify file format (JPG/PNG/WEBP) or paste direct URL.');
+        }
+      } catch (e) {
+        console.error('Upload error:', e);
+        alert('Network error while uploading image.');
+      }
+    }
+
+    function updateImagePreview(inputId, previewImgId) {
+      const url = document.getElementById(inputId).value.trim();
+      const img = document.getElementById(previewImgId);
+      if (img) {
+        img.src = url || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80';
+      }
+    }
+
+    function setImagePreset(url, inputId, previewImgId) {
+      document.getElementById(inputId).value = url;
+      updateImagePreview(inputId, previewImgId);
     }
 
     let currentStorefrontConfig = null;
@@ -5184,8 +5358,8 @@
         const catName = (p.category_detail && p.category_detail.name) || p.category || 'General';
         const catIcon = (p.category_detail && p.category_detail.icon) || '📦';
         const imgHtml = p.image_url 
-          ? `<img src="${p.image_url}" alt="${p.name}" style="width:38px; height:38px; border-radius:8px; object-fit:cover; border:1px solid var(--border-color); margin-right:10px;">` 
-          : `<div style="width:38px; height:38px; border-radius:8px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:18px; margin-right:10px;">${catIcon}</div>`;
+          ? `<img src="${p.image_url}" alt="${p.name}" style="width:48px; height:48px; border-radius:10px; object-fit:cover; border:1px solid var(--border-color); margin-right:12px;" onerror="this.src='https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80'">` 
+          : `<div style="width:48px; height:48px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:22px; margin-right:12px;">${catIcon}</div>`;
 
         tbody.innerHTML += `
           <tr>
@@ -5194,7 +5368,7 @@
               <div style="display:flex; align-items:center;">
                 ${imgHtml}
                 <div>
-                  <strong>${p.name}</strong> ${p.badge_text ? `<span style="font-size:10px; background:rgba(16,185,129,0.2); color:#34D399; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:4px;">${p.badge_text}</span>` : ''}
+                  <strong style="font-size:14px; color:#FFF;">${p.name}</strong> ${p.badge_text ? `<span style="font-size:10px; background:rgba(16,185,129,0.2); color:#34D399; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:4px;">${p.badge_text}</span>` : ''}
                   <br><small style="color:var(--text-muted);">${p.description || ''}</small>
                 </div>
               </div>
@@ -5253,7 +5427,8 @@
       document.getElementById('prodUnitQty').value = '1 Litre Glass Bottle';
       document.getElementById('prodBadge').value = 'Bestseller';
       document.getElementById('prodOrigin').value = 'Heritage Source, Hyderabad';
-      document.getElementById('prodImage').value = '';
+      document.getElementById('prodImage').value = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80';
+      updateImagePreview('prodImage', 'prodImagePreview');
       
       document.getElementById('addProductModal').style.display = 'flex';
     }
@@ -5316,6 +5491,7 @@
       document.getElementById('editProdBadge').value = p.badge_text || '';
       document.getElementById('editProdOrigin').value = p.farm_origin || '';
       document.getElementById('editProdImage').value = p.image_url || '';
+      updateImagePreview('editProdImage', 'editProdImagePreview');
       document.getElementById('editProdDesc').value = p.description || '';
 
       document.getElementById('editProductModal').style.display = 'flex';
