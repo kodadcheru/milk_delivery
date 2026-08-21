@@ -5,6 +5,8 @@ import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../models/subscription_model.dart';
+import '../../models/bottle_return_model.dart';
+import '../../models/provider_payout_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../services/route_optimizer.dart';
@@ -20,7 +22,7 @@ class ProviderDashboardScreen extends StatefulWidget {
 }
 
 class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
-  int _selectedFilter = 0; // 0: All, 1: Active Subs, 2: Express, 3: Fleet, 4: Capacity, 5: Broadcasts, 6: Payouts, 7: Paused
+  int _selectedFilter = 0; // 0: All, 1: Active Subs, 2: Express, 3: Fleet, 4: Capacity, 5: Broadcasts, 6: Payouts, 7: Paused, 8: Bottles
   String _searchQuery = '';
   int _activeDriverCount = 4;
   List<Map<String, dynamic>> _hubInventory = [];
@@ -28,7 +30,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   bool _isGeneratingTasks = false;
 
   final List<Map<String, dynamic>> _broadcastAlerts = [];
-  final List<Map<String, dynamic>> _payoutHistory = [];
+  List<ProviderPayoutModel> _payoutHistory = [];
+  List<BottleReturnModel> _bottleReturns = [];
 
   String get _activeHubName {
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
@@ -40,6 +43,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     super.initState();
     _loadLiveFleet();
     _loadHubInventory();
+    _loadPayouts();
+    _loadBottleReturns();
   }
 
   void _loadLiveFleet() async {
@@ -56,6 +61,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final inventory = await ApiService.fetchHubInventory();
     if (mounted) {
       setState(() => _hubInventory = inventory);
+    }
+  }
+
+  void _loadPayouts() async {
+    final payouts = await ApiService.fetchProviderPayouts();
+    if (mounted) {
+      setState(() => _payoutHistory = payouts);
+    }
+  }
+
+  void _loadBottleReturns() async {
+    final bottles = await ApiService.fetchBottleReturns();
+    if (mounted) {
+      setState(() => _bottleReturns = bottles);
     }
   }
 
@@ -219,24 +238,29 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              final txnId = 'PAY-HYD-${1000 + DateTime.now().second * 37}';
-              setState(() {
-                _payoutHistory.insert(0, {
-                  'id': txnId,
-                  'date': 'Just Now',
-                  'amount': amount,
-                  'status': 'SETTLED ✅',
-                  'bank': 'Primary Bank (A/C **4892)',
-                });
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: UiTone.primary,
-                  content: Text('💸 Instant Payout of ₹${amount.toStringAsFixed(0)} transferred to Bank! Ref: $txnId'),
-                ),
-              );
+              final newPayout = await ApiService.requestInstantPayout(amount: amount);
+              if (newPayout != null) {
+                _loadPayouts();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: UiTone.primary,
+                      content: Text('💸 Instant Payout of ₹${newPayout.amount.toStringAsFixed(0)} transferred to Bank! Ref: ${newPayout.id}'),
+                    ),
+                  );
+                }
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: UiTone.error,
+                      content: Text('❌ Transfer failed. Please try again.'),
+                    ),
+                  );
+                }
+              }
             },
             icon: const Icon(Icons.flash_on_rounded, size: 15),
             label: const Text('Confirm Transfer', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -824,6 +848,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const SizedBox(width: 8),
                 _buildFilterChip(4, '📦 Crates'),
                 const SizedBox(width: 8),
+                _buildFilterChip(8, '🍼 Bottles (${_bottleReturns.length})'),
+                const SizedBox(width: 8),
                 _buildFilterChip(5, '📢 Alerts (${_broadcastAlerts.length})'),
                 const SizedBox(width: 8),
                 _buildFilterChip(6, '💰 Payouts (${_payoutHistory.length})'),
@@ -833,7 +859,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           const SizedBox(height: 16),
 
           // ── 5. Content Section Based on Filter ──
-          if (_selectedFilter == 6) ...[
+          if (_selectedFilter == 8) ...[
+            _buildBottleReturnsSection(),
+          ] else if (_selectedFilter == 6) ...[
             _buildPayoutLedgerSection(),
           ] else if (_selectedFilter == 5) ...[
             _buildBroadcastAlertsSection(),
@@ -1809,47 +1837,365 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('💰 Settlement & Payout Receipts Ledger:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
-            Text('${_payoutHistory.length} Receipts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary)),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: _loadPayouts,
+                  icon: const Icon(Icons.refresh, size: 14),
+                  label: const Text('Refresh', style: TextStyle(fontSize: 11)),
+                ),
+                Text('${_payoutHistory.length} Receipts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.primary)),
+              ],
+            ),
           ],
         ),
         const SizedBox(height: 10),
-        ..._payoutHistory.map((p) => Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        if (_payoutHistory.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: UiTone.surfaceMuted,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.account_balance_wallet_outlined, size: 44, color: UiTone.softText),
+                const SizedBox(height: 10),
+                const Text('No payout settlements requested yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.softText)),
+                const SizedBox(height: 4),
+                const Text('Request instant payout to transfer hub earnings directly to your bank account', style: TextStyle(fontSize: 11, color: UiTone.softText), textAlign: TextAlign.center),
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: () => _openPayoutTransferDialog(context, widget.state.totalDailyRevenue),
+                  icon: const Icon(Icons.flash_on_rounded, size: 15),
+                  label: const Text('Request Settlement Transfer 💸', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UiTone.primary,
+                    foregroundColor: UiTone.surface,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ..._payoutHistory.map((p) => Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: UiTone.secondary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                            child: const Icon(Icons.receipt_long_rounded, color: UiTone.primary, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(p.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: UiTone.ink)),
+                              Text('${p.date} • ${p.bank}', style: const TextStyle(fontSize: 10.5, color: UiTone.softText)),
+                              if (p.totalDeliveries > 0)
+                                Text('📦 ${p.totalDeliveries} Deliveries • Rev: ₹${p.totalRevenue.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10, color: UiTone.primary, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('₹${p.amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.primary)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: UiTone.successSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                            child: Text(p.status, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.success)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BOTTLE RETURNS SECTION
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _buildBottleReturnsSection() {
+    final depositedCount = _bottleReturns.where((b) => b.status == 'DEPOSITED').length;
+    final returnedCount = _bottleReturns.where((b) => b.status == 'RETURNED').length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('🍼 Bottle Deposits & Returns Ledger:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink)),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: _loadBottleReturns,
+                  icon: const Icon(Icons.refresh, size: 14),
+                  label: const Text('Refresh', style: TextStyle(fontSize: 11)),
+                ),
+                TextButton.icon(
+                  onPressed: () => _showAddBottleDepositDialog(context),
+                  icon: const Icon(Icons.add_circle_outline, size: 14),
+                  label: const Text('+ Deposit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            _buildBottleStatChip('📦 Total Recorded', '${_bottleReturns.length}', UiTone.primary),
+            const SizedBox(width: 8),
+            _buildBottleStatChip('⏳ Pending Return', '$depositedCount', UiTone.warning),
+            const SizedBox(width: 8),
+            _buildBottleStatChip('✅ Refunded', '$returnedCount', UiTone.success),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_bottleReturns.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: UiTone.surfaceMuted,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.cleaning_services_rounded, size: 44, color: UiTone.softText),
+                const SizedBox(height: 10),
+                const Text('No bottle return records yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.softText)),
+                const SizedBox(height: 4),
+                const Text('Glass bottle deposits collected by drivers or customers will show here for refund processing.', style: TextStyle(fontSize: 11, color: UiTone.softText), textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _showAddBottleDepositDialog(context),
+                  icon: const Icon(Icons.add, size: 14),
+                  label: const Text('Record Customer Bottle Deposit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(foregroundColor: UiTone.primary, side: const BorderSide(color: UiTone.primary)),
+                ),
+              ],
+            ),
+          )
+        else
+          ..._bottleReturns.map((b) => _buildBottleReturnCard(b)),
+      ],
+    );
+  }
+
+  Widget _buildBottleStatChip(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(UiRadius.sm),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: color)),
+            Text(label, style: const TextStyle(fontSize: 9.5, color: UiTone.softText), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottleReturnCard(BottleReturnModel b) {
+    final isDeposited = b.status == 'DEPOSITED';
+    final isReturned = b.status == 'RETURNED';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        side: BorderSide(
+          color: isDeposited ? UiTone.warning.withValues(alpha: 0.4) : UiTone.surfaceBorder,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: isDeposited ? UiTone.warningSoft : (isReturned ? UiTone.successSoft : UiTone.errorSoft),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                  ),
+                  child: const Center(
+                    child: Text('🍼', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(b.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+                      Text('${b.quantity}x ${b.productName} • Driver: ${b.driverName}', style: const TextStyle(fontSize: 11, color: UiTone.softText)),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: UiTone.secondary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                          child: const Icon(Icons.receipt_long_rounded, color: UiTone.primary, size: 20),
+                    Text('Deposit: ₹${b.depositAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: UiTone.primary)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDeposited ? UiTone.warningSoft : (isReturned ? UiTone.successSoft : UiTone.errorSoft),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                      ),
+                      child: Text(
+                        b.status,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: isDeposited ? UiTone.warning : (isReturned ? UiTone.success : UiTone.error),
                         ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(p['id'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: UiTone.ink)),
-                            Text('${p['date']} • ${p['bank']}', style: TextStyle(fontSize: 10.5, color: UiTone.softText)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('₹${(p['amount'] as num).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.primary)),
-                        Text(p['status'] ?? 'SETTLED', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.secondary)),
-                      ],
+                      ),
                     ),
                   ],
                 ),
+              ],
+            ),
+            if (isDeposited) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 32,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final success = await ApiService.updateBottleReturnStatus(b.id, 'RETURNED');
+                          if (success) {
+                            _loadBottleReturns();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(backgroundColor: UiTone.primary, content: Text('✅ Refunded ₹${b.depositAmount.toStringAsFixed(0)} deposit to ${b.customerName}\'s wallet!')),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.price_check_rounded, size: 14),
+                        label: const Text('Mark Returned & Refund Deposit 💸', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: UiTone.surface),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 32,
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        final success = await ApiService.updateBottleReturnStatus(b.id, 'LOST');
+                        if (success) _loadBottleReturns();
+                      },
+                      style: OutlinedButton.styleFrom(foregroundColor: UiTone.error, side: const BorderSide(color: UiTone.error)),
+                      child: const Text('Lost ❌', style: TextStyle(fontSize: 10.5)),
+                    ),
+                  ),
+                ],
               ),
-            )),
-      ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddBottleDepositDialog(BuildContext context) {
+    int qty = 1;
+    double deposit = 50.0;
+    final notesCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) => AlertDialog(
+          title: const Text('Record Customer Bottle Deposit 🍼', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Bottle Quantity:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: qty > 1 ? () => setDlgState(() => qty--) : null,
+                        icon: const Icon(Icons.remove_circle_outline, size: 18),
+                      ),
+                      Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      IconButton(
+                        onPressed: () => setDlgState(() => qty++),
+                        icon: const Icon(Icons.add_circle_outline, size: 18),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Total Deposit Amount (₹)', border: OutlineInputBorder()),
+                controller: TextEditingController(text: '${deposit * qty}'),
+                onChanged: (val) => deposit = double.tryParse(val) ?? 50.0,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: notesCtrl,
+                decoration: const InputDecoration(labelText: 'Notes / Customer Reference', border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final res = await ApiService.createBottleReturn(
+                  quantity: qty,
+                  depositAmount: deposit,
+                  notes: notesCtrl.text,
+                );
+                if (res != null) {
+                  _loadBottleReturns();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(backgroundColor: UiTone.primary, content: Text('✅ Bottle deposit recorded successfully!')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: UiTone.surface),
+              child: const Text('Record Deposit'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

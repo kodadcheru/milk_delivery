@@ -11,6 +11,8 @@ import '../models/delivery_task_model.dart';
 import '../models/wallet_transaction_model.dart';
 import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
+import '../models/bottle_return_model.dart';
+import '../models/provider_payout_model.dart';
 import 'image_upload_service.dart';
 
 /// Exception type for API errors — screens can catch this to show meaningful messages
@@ -973,6 +975,111 @@ class ApiService {
           ));
       if (res.statusCode == 200) {
         return Map<String, dynamic>.from(jsonDecode(res.body));
+      }
+    } catch (e) { lastError = e.toString(); }
+    return null;
+  }
+
+  // ── Bottle Return Tracking ──
+
+  static Future<List<BottleReturnModel>> fetchBottleReturns() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/bottles/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((item) => BottleReturnModel.fromJson(item)).toList();
+      }
+    } catch (e) { lastError = e.toString(); }
+    return [];
+  }
+
+  static Future<BottleReturnModel?> createBottleReturn({
+    int? customerId,
+    int? productId,
+    required int quantity,
+    double depositAmount = 0.0,
+    String notes = '',
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'quantity': quantity,
+        'deposit_amount': depositAmount,
+        'notes': notes,
+      };
+      if (customerId != null) payload['customer_id'] = customerId;
+      if (productId != null) payload['product_id'] = productId;
+
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/bottles/'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ));
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return BottleReturnModel(
+          id: data['id'] ?? 0,
+          customerName: 'Customer',
+          driverName: 'Driver',
+          hubName: '',
+          productName: 'Glass Bottle',
+          quantity: quantity,
+          depositAmount: depositAmount,
+          status: data['status'] ?? 'DEPOSITED',
+          collectedDate: DateTime.now().toString().split(' ')[0],
+          notes: notes,
+        );
+      }
+    } catch (e) { lastError = e.toString(); }
+    return null;
+  }
+
+  static Future<bool> updateBottleReturnStatus(int bottleId, String status) async {
+    try {
+      final res = await _executeWithRetry(() => http.patch(
+            Uri.parse('$baseUrl/bottles/$bottleId/'),
+            headers: _headers,
+            body: jsonEncode({'status': status}),
+          ));
+      if (res.statusCode == 200) {
+        return true;
+      }
+    } catch (e) { lastError = e.toString(); }
+    return false;
+  }
+
+  // ── Provider Payouts ──
+
+  static Future<List<ProviderPayoutModel>> fetchProviderPayouts() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/payouts/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((item) => ProviderPayoutModel.fromJson(item)).toList();
+      }
+    } catch (e) { lastError = e.toString(); }
+    return [];
+  }
+
+  static Future<ProviderPayoutModel?> requestInstantPayout({double? amount}) async {
+    try {
+      final payload = <String, dynamic>{};
+      if (amount != null) payload['amount'] = amount;
+
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/payouts/'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ));
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final payoutData = data['payout'] ?? data;
+        return ProviderPayoutModel.fromJson(payoutData);
       }
     } catch (e) { lastError = e.toString(); }
     return null;

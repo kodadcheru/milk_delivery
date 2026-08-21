@@ -70,6 +70,7 @@ from apps.deliveries.views import (
     DeliveryTaskListView,
     DeliveryTaskSkipView,
     GenerateTodayTasksView,
+    ProviderPayoutListCreateView,
 )
 from apps.deliveries.order_views import (
     ExpressOrderListCreateView,
@@ -169,9 +170,10 @@ urlpatterns = [
     path("api/deliveries/<int:pk>/skip/", DeliveryTaskSkipView.as_view(), name="delivery_skip"),
     path("api/deliveries/summary/", DeliverySummaryView.as_view(), name="delivery_summary"),
     path("api/admin/generate-tasks/", GenerateTodayTasksView.as_view(), name="generate_tasks"),
-    # Bottle Return Tracking endpoints
+    # Bottle Return & Payout Tracking endpoints
     path("api/bottles/", BottleReturnListCreateView.as_view(), name="bottle_list_create"),
     path("api/bottles/<int:pk>/", BottleReturnUpdateView.as_view(), name="bottle_update"),
+    path("api/payouts/", ProviderPayoutListCreateView.as_view(), name="provider_payouts"),
     # Express / Live Orders endpoints
     path("api/orders/express/", ExpressOrderListCreateView.as_view(), name="express_order_list_create"),
     path("api/orders/express/<str:order_id>/", ExpressOrderDetailView.as_view(), name="express_order_detail"),
