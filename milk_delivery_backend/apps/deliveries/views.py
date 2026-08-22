@@ -28,12 +28,13 @@ class DeliveryTaskListView(generics.ListAPIView):
             qs = qs.filter(delivery_date=req_date)
 
         # Scope by role
+        from django.db.models import Q
         if user.role == "CUSTOMER":
-            return qs.filter(subscription__customer=user)
+            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
         elif user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
             return qs.filter(driver=user)
-        elif user.role in (User.Roles.HUB_MANAGER, "PROVIDER") and user.assigned_hub:
-            return qs.filter(hub=user.assigned_hub)
+        elif user.role in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
+            return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
         # Admin/staff see all
         return qs
 
@@ -495,9 +496,11 @@ class GenerateTodayTasksView(APIView):
             Product.objects.filter(name__icontains=first_w).update(price_per_unit=float(price_val))
 
         # Generate tasks for active subscriptions
+        from django.db.models import Q
         active_subs = (
             Subscription.objects
-            .filter(status=Subscription.Statuses.ACTIVE, start_date__lte=target_date)
+            .filter(status=Subscription.Statuses.ACTIVE)
+            .filter(Q(start_date__lte=target_date) | Q(created_at__date__lte=target_date))
             .select_related("customer", "product", "hub", "customer__assigned_hub")
         )
 
@@ -507,10 +510,6 @@ class GenerateTodayTasksView(APIView):
         hub_driver_indices = {}
 
         for sub in active_subs:
-            if DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).exists():
-                skipped_count += 1
-                continue
-
             # Check active vacation pause
             active_pause = VacationPause.objects.filter(
                 subscription=sub,
@@ -519,6 +518,16 @@ class GenerateTodayTasksView(APIView):
             ).exists()
             if active_pause:
                 skipped_count += 1
+                continue
+
+            existing_task = DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).first()
+            if existing_task:
+                if existing_task.status == DeliveryTask.Statuses.SKIPPED:
+                    existing_task.status = DeliveryTask.Statuses.PENDING
+                    existing_task.save(update_fields=["status"])
+                    created_count += 1
+                else:
+                    skipped_count += 1
                 continue
 
             # Schedule eligibility
