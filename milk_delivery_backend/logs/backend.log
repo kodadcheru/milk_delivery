@@ -318,3 +318,27 @@ Traceback (most recent call last):
                                                 ^^^^^^^^^^^^^^^^^
 AttributeError: type object 'Roles' has no attribute 'DRIVER'
 [2026-08-19 15:46:58,368] ERROR [django.request:246] Internal Server Error: /api/admin/hubs/
+[2026-08-22 23:50:45,513] ERROR [django.request:61] Unhandled Exception in <apps.subscriptions.views.SubscriptionPauseView object at 0x10c0d1e80>: Notification() got unexpected keyword arguments: 'notif_type'
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/subscriptions/views.py", line 228, in post
+    Notification.objects.create(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        user=hub_manager,
+        ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        notif_type=Notification.Types.VACATION,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/django/db/models/query.py", line 658, in create
+    obj = self.model(**kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+    ...<2 lines>...
+    )
+TypeError: Notification() got unexpected keyword arguments: 'notif_type'

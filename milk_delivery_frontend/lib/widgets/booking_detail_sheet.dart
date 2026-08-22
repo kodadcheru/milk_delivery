@@ -383,17 +383,16 @@ class BookingDetailSheet extends StatelessWidget {
                                             padding: EdgeInsets.zero,
                                             constraints: const BoxConstraints(),
                                             onPressed: () async {
-                                              final sub = subscriptionTask!.subscriptionDetail;
-                                              if (sub != null && sub.quantity > 1) {
-                                                final success = await ApiService.updateSubscription(sub.id, quantity: sub.quantity - 1);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity - 1}' : 'Failed to update subscription')),
-                                                  );
-                                                  if (success) state.reloadAllData();
-                                                }
-                                              }
-                                            },
+                                             final sub = subscriptionTask!.subscriptionDetail;
+                                             if (sub != null && sub.quantity > 1) {
+                                               final success = await state.updateSubscriptionDetails(sub.id, quantity: sub.quantity - 1);
+                                               if (context.mounted) {
+                                                 ScaffoldMessenger.of(context).showSnackBar(
+                                                   SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity - 1}' : 'Failed to update subscription')),
+                                                 );
+                                               }
+                                             }
+                                           },
                                           ),
                                           Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -404,17 +403,16 @@ class BookingDetailSheet extends StatelessWidget {
                                             padding: EdgeInsets.zero,
                                             constraints: const BoxConstraints(),
                                             onPressed: () async {
-                                              final sub = subscriptionTask!.subscriptionDetail;
-                                              if (sub != null) {
-                                                final success = await ApiService.updateSubscription(sub.id, quantity: sub.quantity + 1);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity + 1}' : 'Failed to update subscription')),
-                                                  );
-                                                  if (success) state.reloadAllData();
-                                                }
-                                              }
-                                            },
+                                             final sub = subscriptionTask!.subscriptionDetail;
+                                             if (sub != null) {
+                                               final success = await state.updateSubscriptionDetails(sub.id, quantity: sub.quantity + 1);
+                                               if (context.mounted) {
+                                                 ScaffoldMessenger.of(context).showSnackBar(
+                                                   SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity + 1}' : 'Failed to update subscription')),
+                                                 );
+                                               }
+                                             }
+                                           },
                                           ),
                                         ],
                                       ),
@@ -425,30 +423,29 @@ class BookingDetailSheet extends StatelessWidget {
                               const SizedBox(width: 8),
                               ElevatedButton.icon(
                                 onPressed: () async {
-                                  final sub = subscriptionTask!.subscriptionDetail;
-                                  if (sub == null) return;
-                                  final now = DateTime.now();
-                                  final picked = await showDateRangePicker(
-                                    context: context,
-                                    firstDate: now,
-                                    lastDate: now.add(const Duration(days: 90)),
-                                    helpText: 'Select Vacation Dates to Pause Milk Drops',
-                                  );
-                                  if (picked != null && context.mounted) {
-                                    final startStr = picked.start.toIso8601String().split('T')[0];
-                                    final endStr = picked.end.toIso8601String().split('T')[0];
-                                    final success = await ApiService.pauseSubscription(sub.id, startStr, endStr);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          backgroundColor: success ? UiTone.primary : Colors.red,
-                                          content: Text(success ? '🌴 Vacation Mode Active: Paused drops from $startStr to $endStr' : 'Failed to activate vacation mode'),
-                                        ),
-                                      );
-                                      if (success) state.reloadAllData();
-                                    }
-                                  }
-                                },
+                                 final sub = subscriptionTask!.subscriptionDetail;
+                                 if (sub == null) return;
+                                 final now = DateTime.now();
+                                 final picked = await showDateRangePicker(
+                                   context: context,
+                                   firstDate: now,
+                                   lastDate: now.add(const Duration(days: 90)),
+                                   helpText: 'Select Vacation Dates to Pause Milk Drops',
+                                 );
+                                 if (picked != null && context.mounted) {
+                                   final startStr = picked.start.toIso8601String().split('T')[0];
+                                   final endStr = picked.end.toIso8601String().split('T')[0];
+                                   final success = await state.pauseSubscriptionWithDates(sub.id, startStr, endStr, 'Vacation');
+                                   if (context.mounted) {
+                                     ScaffoldMessenger.of(context).showSnackBar(
+                                       SnackBar(
+                                         backgroundColor: success ? UiTone.primary : Colors.red,
+                                         content: Text(success ? '🌴 Vacation Mode Active: Paused drops from $startStr to $endStr' : 'Failed to activate vacation mode'),
+                                       ),
+                                     );
+                                   }
+                                 }
+                               },
                                 icon: const Icon(Icons.beach_access_rounded, size: 14),
                                 label: const Text('Vacation 🌴', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                 style: ElevatedButton.styleFrom(

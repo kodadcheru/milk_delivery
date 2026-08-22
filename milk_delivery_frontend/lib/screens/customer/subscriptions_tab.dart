@@ -395,12 +395,20 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                             children: [
                               // Pause / Resume Button
                               TextButton.icon(
-                                onPressed: () {
+                                onPressed: () async {
                                   HapticFeedback.lightImpact();
-                                  widget.state.toggleSubscriptionStatus(sub.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isPaused ? '▶️ Subscription Resumed!' : '⏸ Subscription Paused!')),
-                                  );
+                                  final wasPaused = isPaused;
+                                  final ok = await widget.state.toggleSubscriptionStatus(sub.id);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: wasPaused ? UiTone.primary : Colors.amber[900],
+                                        content: Text(ok
+                                            ? (wasPaused ? '▶️ Subscription Resumed! Daily morning drops active.' : '⏸ Subscription Paused!')
+                                            : 'Failed to update subscription status'),
+                                      ),
+                                    );
+                                  }
                                 },
                                 icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 16),
                                 label: Text(isPaused ? 'Resume' : 'Pause'),
@@ -554,10 +562,26 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    widget.state.updateSubscriptionQuantity(sub.id, qty);
-                    widget.state.updateSubscriptionSchedule(sub.id, sched);
-                    Navigator.pop(ctx);
+                  onPressed: () async {
+                    HapticFeedback.mediumImpact();
+                    final ok = await widget.state.updateSubscriptionDetails(
+                      sub.id,
+                      quantity: qty,
+                      scheduleType: sched,
+                    );
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: UiTone.primary,
+                          content: Text(ok
+                              ? '✅ Subscription updated: $qty Unit(s) • ${sched == 'DAILY' ? 'Every Day' : (sched == 'ALTERNATE' ? 'Alternate' : 'Custom')}!'
+                              : 'Failed to update subscription'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Save Changes ✨'),
                 ),
@@ -587,12 +611,12 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     if (picked != null) {
       final start = picked.start.toString().split(' ')[0];
       final end = picked.end.toString().split(' ')[0];
-      widget.state.pauseSubscriptionWithDates(sub.id, start, end, 'Vacation');
+      final ok = await widget.state.pauseSubscriptionWithDates(sub.id, start, end, 'Vacation');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: UiTone.primary,
-            content: Text('🌴 Paused deliveries from $start to $end'),
+            content: Text(ok ? '🌴 Paused deliveries from $start to $end' : 'Failed to set vacation dates'),
           ),
         );
       }

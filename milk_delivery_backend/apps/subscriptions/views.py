@@ -231,7 +231,7 @@ class SubscriptionPauseView(APIView):
                     message=f"{sub.customer.first_name} {sub.customer.last_name} paused their "
                             f"{sub.product.name if sub.product else 'subscription'} from {start_date} to {end_date}. "
                             f"Reason: {reason}",
-                    notif_type=Notification.Types.VACATION,
+                    notification_type=Notification.Types.VACATION,
                 )
 
         return Response(

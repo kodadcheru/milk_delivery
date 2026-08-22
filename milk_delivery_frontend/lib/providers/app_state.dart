@@ -1007,25 +1007,29 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> updateSubscriptionQuantity(int subId, int newQty) async {
+  Future<bool> updateSubscriptionQuantity(int subId, int newQty) async {
     final idx = subscriptions.indexWhere((s) => s.id == subId);
     if (idx != -1) {
       subscriptions[idx] = subscriptions[idx].copyWith(quantity: newQty);
       notifyListeners();
     }
-    await ApiService.updateSubscription(subId, quantity: newQty);
+    final ok = await ApiService.updateSubscription(subId, quantity: newQty);
+    await reloadAllData(silent: true);
+    return ok;
   }
 
-  Future<void> updateSubscriptionSchedule(int subId, String newSchedule) async {
+  Future<bool> updateSubscriptionSchedule(int subId, String newSchedule) async {
     final idx = subscriptions.indexWhere((s) => s.id == subId);
     if (idx != -1) {
       subscriptions[idx] = subscriptions[idx].copyWith(scheduleType: newSchedule);
       notifyListeners();
     }
-    await ApiService.updateSubscription(subId, scheduleType: newSchedule);
+    final ok = await ApiService.updateSubscription(subId, scheduleType: newSchedule);
+    await reloadAllData(silent: true);
+    return ok;
   }
 
-  Future<void> toggleSubscriptionStatus(int subId) async {
+  Future<bool> toggleSubscriptionStatus(int subId) async {
     final idx = subscriptions.indexWhere((s) => s.id == subId);
     if (idx != -1) {
       final sub = subscriptions[idx];
@@ -1033,37 +1037,47 @@ class AppState extends ChangeNotifier {
       subscriptions[idx] = sub.copyWith(status: newStatus);
       notifyListeners();
 
+      bool ok = false;
       if (newStatus == 'ACTIVE') {
-        await ApiService.resumeSubscription(subId);
+        ok = await ApiService.resumeSubscription(subId);
       } else {
         final todayStr = DateTime.now().toString().split(' ')[0];
         final nextMonthStr = DateTime.now().add(const Duration(days: 30)).toString().split(' ')[0];
-        await ApiService.pauseSubscription(subId, todayStr, nextMonthStr);
+        ok = await ApiService.pauseSubscription(subId, todayStr, nextMonthStr);
       }
+      await reloadAllData(silent: true);
+      return ok;
     }
+    return false;
   }
 
-  Future<void> pauseSubscriptionWithDates(int subId, String startDate, String endDate, String reason) async {
+  Future<bool> pauseSubscriptionWithDates(int subId, String startDate, String endDate, String reason) async {
     final idx = subscriptions.indexWhere((s) => s.id == subId);
     if (idx != -1) {
       subscriptions[idx] = subscriptions[idx].copyWith(status: 'PAUSED');
       notifyListeners();
     }
-    await ApiService.pauseSubscription(subId, startDate, endDate);
+    final ok = await ApiService.pauseSubscription(subId, startDate, endDate);
+    await reloadAllData(silent: true);
+    return ok;
   }
 
-  Future<void> cancelSubscription(int subId) async {
+  Future<bool> cancelSubscription(int subId) async {
     subscriptions.removeWhere((s) => s.id == subId);
     notifyListeners();
-    await ApiService.cancelSubscription(subId);
+    final ok = await ApiService.cancelSubscription(subId);
+    await reloadAllData(silent: true);
+    return ok;
   }
 
-  Future<void> updateSubscriptionDetails(
+  Future<bool> updateSubscriptionDetails(
     int subId, {
     int? quantity,
     String? scheduleType,
     String? deliveryAddress,
     String? deliverySlot,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
     String? deliveryInstructions,
     String? packSize,
   }) async {
@@ -1075,21 +1089,27 @@ class AppState extends ChangeNotifier {
         scheduleType: scheduleType ?? old.scheduleType,
         deliveryAddress: deliveryAddress ?? old.deliveryAddress,
         deliverySlot: deliverySlot ?? old.deliverySlot,
+        deliveryLatitude: deliveryLatitude ?? old.deliveryLatitude,
+        deliveryLongitude: deliveryLongitude ?? old.deliveryLongitude,
         deliveryInstructions: deliveryInstructions ?? old.deliveryInstructions,
         packSize: packSize ?? old.packSize,
       );
       notifyListeners();
     }
 
-    await ApiService.updateSubscription(
+    final ok = await ApiService.updateSubscription(
       subId,
       quantity: quantity,
       scheduleType: scheduleType,
       deliveryAddress: deliveryAddress,
       deliverySlot: deliverySlot,
+      deliveryLatitude: deliveryLatitude,
+      deliveryLongitude: deliveryLongitude,
       deliveryInstructions: deliveryInstructions,
       packSize: packSize,
     );
+    await reloadAllData(silent: true);
+    return ok;
   }
 
   Future<void> markDeliveryCompleted(int taskId, String proofUrl) async {
