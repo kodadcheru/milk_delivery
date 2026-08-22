@@ -51,35 +51,88 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     }
   }
 
-  bool _isActive(String status) {
-    return status == 'PLACED' || status == 'PENDING' || status == 'PACKED' || status == 'OUT_FOR_DELIVERY' || status == 'PREPARING';
+  bool _isActiveOrder(String status) {
+    final s = status.toUpperCase();
+    return s == 'PLACED' ||
+        s == 'PENDING' ||
+        s == 'CONFIRMED' ||
+        s == 'PREPARING' ||
+        s == 'PACKED' ||
+        s == 'OUT_FOR_DELIVERY' ||
+        s == 'PROCESSING' ||
+        s == 'IN_TRANSIT';
   }
+
+  bool _isDeliveredOrder(String status) {
+    final s = status.toUpperCase();
+    return s == 'DELIVERED' || s == 'COMPLETED';
+  }
+
+  bool _isCancelledOrder(String status) {
+    final s = status.toUpperCase();
+    return s == 'CANCELLED' || s == 'REJECTED' || s == 'FAILED';
+  }
+
+  bool _isActiveTask(String status) {
+    final s = status.toUpperCase();
+    return s == 'PENDING' || s == 'OUT_FOR_DELIVERY' || s == 'ACTIVE';
+  }
+
+  bool _isDeliveredTask(String status) {
+    final s = status.toUpperCase();
+    return s == 'DELIVERED' || s == 'COMPLETED';
+  }
+
+  bool _isCancelledTask(String status) {
+    final s = status.toUpperCase();
+    return s == 'SKIPPED' || s == 'CANCELLED' || s == 'PAUSED';
+  }
+
+  bool _isActive(String status) => _isActiveOrder(status);
 
   @override
   Widget build(BuildContext context) {
     final liveOrders = widget.state.liveOrders;
     final subscriptions = widget.state.deliveries;
-    
+
+    final activeOrdersCount = liveOrders.where((o) => _isActiveOrder(o.status)).length +
+        subscriptions.where((t) => _isActiveTask(t.status)).length;
+    final deliveredOrdersCount = liveOrders.where((o) => _isDeliveredOrder(o.status)).length +
+        subscriptions.where((t) => _isDeliveredTask(t.status)).length;
+    final cancelledOrdersCount = liveOrders.where((o) => _isCancelledOrder(o.status)).length +
+        subscriptions.where((t) => _isCancelledTask(t.status)).length;
     final totalCount = liveOrders.length + subscriptions.length;
-    
+
     // Filter orders based on selected chip
-    List<LiveOrderModel> filteredOrders = liveOrders;
+    List<LiveOrderModel> filteredOrders;
+    List<DeliveryTaskModel> filteredSubscriptions;
+
     if (_selectedFilterIndex == 1) {
-      filteredOrders = liveOrders.where((o) => _isActive(o.status)).toList();
+      filteredOrders = liveOrders.where((o) => _isActiveOrder(o.status)).toList();
+      filteredSubscriptions = subscriptions.where((t) => _isActiveTask(t.status)).toList();
     } else if (_selectedFilterIndex == 2) {
-      filteredOrders = liveOrders.where((o) => o.status == 'DELIVERED').toList();
+      filteredOrders = liveOrders.where((o) => _isDeliveredOrder(o.status)).toList();
+      filteredSubscriptions = subscriptions.where((t) => _isDeliveredTask(t.status)).toList();
     } else if (_selectedFilterIndex == 3) {
-      filteredOrders = liveOrders.where((o) => o.status == 'CANCELLED').toList();
+      filteredOrders = liveOrders.where((o) => _isCancelledOrder(o.status)).toList();
+      filteredSubscriptions = subscriptions.where((t) => _isCancelledTask(t.status)).toList();
+    } else {
+      filteredOrders = List.from(liveOrders);
+      filteredSubscriptions = List.from(subscriptions);
     }
 
-    final activeOrders = filteredOrders.where((o) => _isActive(o.status)).toList();
-    final firstActiveOrder = activeOrders.isNotEmpty ? activeOrders.first : null;
-    
+    final activeOrders = filteredOrders.where((o) => _isActiveOrder(o.status)).toList();
+    final firstActiveOrder = (_selectedFilterIndex == 0 || _selectedFilterIndex == 1) && activeOrders.isNotEmpty
+        ? activeOrders.first
+        : null;
+
     // Remaining orders excluding the hero one
     final remainingOrders = List<LiveOrderModel>.from(filteredOrders);
     if (firstActiveOrder != null) {
       remainingOrders.removeWhere((o) => o.id == firstActiveOrder.id);
     }
+
+    final isListEmpty = filteredOrders.isEmpty && filteredSubscriptions.isEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -88,49 +141,64 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           color: const Color(0xFF0D7C66),
           strokeWidth: 2.5,
           onRefresh: () => widget.state.reloadAllData(),
-          child: (totalCount == 0 && _selectedFilterIndex == 0)
-              ? _buildEmptyState()
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-                  children: [
-                    _buildHeaderRow(totalCount),
-                    _buildFilterChips(totalCount),
-                    if (firstActiveOrder != null) ...[
-                      const SizedBox(height: 16),
-                      _buildActiveOrderHeroCard(firstActiveOrder),
-                    ],
-                    if (remainingOrders.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(top: 20, bottom: 14),
-                        child: Text(
-                          'Recent Orders',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+            children: [
+              _buildHeaderRow(totalCount),
+              _buildFilterChips(
+                totalCount: totalCount,
+                activeCount: activeOrdersCount,
+                deliveredCount: deliveredOrdersCount,
+                cancelledCount: cancelledOrdersCount,
+              ),
+              if (isListEmpty)
+                _buildFilteredEmptyState(_selectedFilterIndex)
+              else ...[
+                if (firstActiveOrder != null) ...[
+                  const SizedBox(height: 16),
+                  _buildActiveOrderHeroCard(firstActiveOrder),
+                ],
+                if (remainingOrders.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, bottom: 14),
+                    child: Text(
+                      _selectedFilterIndex == 2
+                          ? 'Delivered Orders'
+                          : _selectedFilterIndex == 3
+                              ? 'Cancelled Orders'
+                              : 'Recent Orders',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                  ),
+                  ...remainingOrders.map((o) => _buildOrderCard(o)),
+                ],
+                if (filteredSubscriptions.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, bottom: 14),
+                    child: Row(
+                      children: [
+                        Text(
+                          _selectedFilterIndex == 2
+                              ? 'Delivered Morning Milk'
+                              : _selectedFilterIndex == 3
+                                  ? 'Skipped / Paused Deliveries'
+                                  : 'Morning Subscriptions',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
-                      ),
-                      ...remainingOrders.map((o) => _buildOrderCard(o)),
-                    ],
-                    if (subscriptions.isNotEmpty && (_selectedFilterIndex == 0 || _selectedFilterIndex == 1)) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20, bottom: 14),
-                        child: Row(
-                          children: [
-                            const Text(
-                              'Morning Subscriptions',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                              decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                              child: Text('${subscriptions.length}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                            ),
-                          ],
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                          child: Text('${filteredSubscriptions.length}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
                         ),
-                      ),
-                      ...subscriptions.map((task) => _buildSubscriptionCard(task)),
-                    ],
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                  ...filteredSubscriptions.map((task) => _buildSubscriptionCard(task)),
+                ],
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -167,12 +235,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     );
   }
 
-  Widget _buildFilterChips(int totalCount) {
+  Widget _buildFilterChips({
+    required int totalCount,
+    required int activeCount,
+    required int deliveredCount,
+    required int cancelledCount,
+  }) {
     final chips = [
       'All ($totalCount)',
-      '⚡ Active',
-      '✅ Delivered',
-      '❌ Cancelled'
+      '⚡ Active ($activeCount)',
+      '✅ Delivered ($deliveredCount)',
+      '❌ Cancelled ($cancelledCount)',
     ];
 
     return Container(
@@ -209,6 +282,90 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               ),
             );
           }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilteredEmptyState(int filterIndex) {
+    String title;
+    String subtitle;
+    IconData icon;
+
+    switch (filterIndex) {
+      case 1:
+        title = 'No Active Orders';
+        subtitle = 'You do not have any orders or morning deliveries currently in transit.';
+        icon = Icons.bolt_rounded;
+        break;
+      case 2:
+        title = 'No Delivered Orders';
+        subtitle = 'Delivered express items and past morning milk deliveries will appear here.';
+        icon = Icons.check_circle_outline_rounded;
+        break;
+      case 3:
+        title = 'No Cancelled Orders';
+        subtitle = 'You have not cancelled or skipped any orders or deliveries.';
+        icon = Icons.cancel_outlined;
+        break;
+      default:
+        title = 'No Orders Yet';
+        subtitle = 'Your express orders and morning subscriptions will appear here.';
+        icon = Icons.receipt_long_rounded;
+        break;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 40.0, bottom: 20.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)]),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 36, color: const Color(0xFF94A3B8)),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                subtitle,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8), height: 1.4),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (filterIndex > 0)
+              OutlinedButton(
+                onPressed: () => setState(() => _selectedFilterIndex = 0),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF0D7C66)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('View All Orders', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
+              )
+            else
+              ElevatedButton(
+                onPressed: () => widget.state.setTab(0),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D7C66),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('Start Shopping 🛒', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+          ],
         ),
       ),
     );
@@ -716,49 +873,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)]),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.receipt_long_rounded, size: 36, color: Color(0xFF94A3B8)),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No orders yet',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-          ),
-          const SizedBox(height: 6),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Your express orders and morning deliveries will appear here',
-              style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton(
-            onPressed: () => widget.state.setTab(0),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF0D7C66)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text('Start Shopping 🛒', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
     );
   }
 }
