@@ -49,6 +49,7 @@ class AppState extends ChangeNotifier {
   List<ServiceAreaModel> serviceAreas = [];
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
   List<Map<String, dynamic>> dailyMilkBatches = [];
+  List<Map<String, dynamic>> qualityHistory = [];
 
   List<Map<String, dynamic>> locationHubs = [
     {
@@ -500,6 +501,11 @@ class AppState extends ChangeNotifier {
     return result;
   }
 
+  Future<void> loadQualityHistory() async {
+    qualityHistory = await ApiService.fetchQualityHistory();
+    notifyListeners();
+  }
+
   Future<void> reloadAllData({bool silent = false}) async {
     if (!silent) {
       isLoading = true;
@@ -525,6 +531,8 @@ class AppState extends ChangeNotifier {
       storefrontConfig = results[10] as StorefrontConfigModel? ?? const StorefrontConfigModel();
       hubInventory = (results[11] as List<Map<String, dynamic>>?) ?? [];
       dailyMilkBatches = (results[12] as List<Map<String, dynamic>>?) ?? [];
+      
+      await loadQualityHistory();
 
       final user = results[0] as UserModel?;
       if (user != null) {

@@ -1090,6 +1090,20 @@ class ApiService {
 
   // ── Hub Daily Milk Batch & Quality Lab Certifications ──
 
+  static Future<List<Map<String, dynamic>>> fetchQualityHistory() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+        Uri.parse('$baseUrl/deliveries/quality-history/'),
+        headers: _headers,
+      ));
+      if (res.statusCode == 200) {
+        final List decoded = jsonDecode(res.body);
+        return decoded.cast<Map<String, dynamic>>();
+      }
+    } catch (e) { lastError = e.toString(); }
+    return [];
+  }
+
   static Future<List<Map<String, dynamic>>> fetchDailyMilkBatches({String? date, String? productName, String? hubCode}) async {
     try {
       final queryParams = <String, String>{};

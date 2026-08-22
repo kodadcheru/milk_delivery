@@ -50,6 +50,11 @@ class LiveOrderModel {
   final String createdAt;
   final String? deliveredAt;
   final String proofImageUrl;
+  final double fatPercentage;
+  final double snfPercentage;
+  final double waterPercentage;
+  final double batchPricePerLitre;
+  final String batchCode;
 
   LiveOrderModel({
     required this.id,
@@ -71,6 +76,11 @@ class LiveOrderModel {
     required this.createdAt,
     this.deliveredAt,
     this.proofImageUrl = '',
+    this.fatPercentage = 0.0,
+    this.snfPercentage = 0.0,
+    this.waterPercentage = 0.0,
+    this.batchPricePerLitre = 0.0,
+    this.batchCode = '',
   });
 
   int get totalItemCount => items.fold(0, (sum, i) => sum + i.quantity);
@@ -81,6 +91,11 @@ class LiveOrderModel {
     String? deliverySlot,
     String? deliveredAt,
     String? proofImageUrl,
+    double? fatPercentage,
+    double? snfPercentage,
+    double? waterPercentage,
+    double? batchPricePerLitre,
+    String? batchCode,
   }) {
     return LiveOrderModel(
       id: id,
@@ -102,6 +117,11 @@ class LiveOrderModel {
       createdAt: createdAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       proofImageUrl: proofImageUrl ?? this.proofImageUrl,
+      fatPercentage: fatPercentage ?? this.fatPercentage,
+      snfPercentage: snfPercentage ?? this.snfPercentage,
+      waterPercentage: waterPercentage ?? this.waterPercentage,
+      batchPricePerLitre: batchPricePerLitre ?? this.batchPricePerLitre,
+      batchCode: batchCode ?? this.batchCode,
     );
   }
 
@@ -131,6 +151,11 @@ class LiveOrderModel {
       createdAt: json['created_at'] ?? 'Today',
       deliveredAt: json['delivered_at'],
       proofImageUrl: json['proof_image_url'] ?? '',
+      fatPercentage: double.tryParse(json['fat_percentage']?.toString() ?? '0') ?? 0.0,
+      snfPercentage: double.tryParse(json['snf_percentage']?.toString() ?? '0') ?? 0.0,
+      waterPercentage: double.tryParse(json['water_percentage']?.toString() ?? '0') ?? 0.0,
+      batchPricePerLitre: double.tryParse(json['batch_price_per_litre']?.toString() ?? '0') ?? 0.0,
+      batchCode: json['batch_code']?.toString() ?? '',
     );
   }
 }

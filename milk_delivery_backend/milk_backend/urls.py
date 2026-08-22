@@ -75,6 +75,7 @@ from apps.deliveries.views import (
     GenerateTodayTasksView,
     ProviderPayoutListCreateView,
     SlotAvailabilityView,
+    QualityHistoryView,
 )
 from apps.deliveries.order_views import (
     ExpressOrderListCreateView,
@@ -185,6 +186,7 @@ urlpatterns = [
     path("api/payouts/", ProviderPayoutListCreateView.as_view(), name="provider_payouts"),
     # Hub Provider Daily Milk Batch certification & quality metrics
     path("api/deliveries/daily-batches/", DailyMilkBatchListCreateView.as_view(), name="daily_milk_batches"),
+    path("api/deliveries/quality-history/", QualityHistoryView.as_view(), name="quality_history"),
     # Express / Live Orders endpoints
     path("api/orders/express/", ExpressOrderListCreateView.as_view(), name="express_order_list_create"),
     path("api/orders/express/<str:order_id>/", ExpressOrderDetailView.as_view(), name="express_order_detail"),

@@ -274,6 +274,12 @@ class LiveOrderSerializer(serializers.ModelSerializer):
     customer_phone = serializers.SerializerMethodField()
     driver_name = serializers.SerializerMethodField()
     driver_phone = serializers.SerializerMethodField()
+    fat_percentage = serializers.SerializerMethodField()
+    snf_percentage = serializers.SerializerMethodField()
+    water_percentage = serializers.SerializerMethodField()
+    batch_price_per_litre = serializers.SerializerMethodField()
+    batch_code = serializers.SerializerMethodField()
+    temperature_celsius = serializers.SerializerMethodField()
 
     class Meta:
         from apps.deliveries.models import LiveOrder
@@ -303,6 +309,12 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "items",
+            "fat_percentage",
+            "snf_percentage",
+            "water_percentage",
+            "batch_price_per_litre",
+            "batch_code",
+            "temperature_celsius",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
@@ -325,3 +337,36 @@ class LiveOrderSerializer(serializers.ModelSerializer):
 
     def get_driver_phone(self, obj):
         return obj.driver.phone if obj.driver else ""
+
+    def _get_batch(self, obj):
+        from apps.deliveries.models import DailyMilkBatch
+        if not hasattr(obj, "_cached_batch"):
+            if obj.batch:
+                obj._cached_batch = obj.batch
+            else:
+                obj._cached_batch = DailyMilkBatch.objects.filter(hub=obj.hub, batch_date=obj.delivery_date).first()
+        return obj._cached_batch
+
+    def get_fat_percentage(self, obj):
+        batch = self._get_batch(obj)
+        return float(batch.fat_percentage) if batch else 6.8
+
+    def get_snf_percentage(self, obj):
+        batch = self._get_batch(obj)
+        return float(batch.snf_percentage) if batch else 9.0
+
+    def get_water_percentage(self, obj):
+        batch = self._get_batch(obj)
+        return float(batch.water_percentage) if batch else 0.0
+
+    def get_batch_price_per_litre(self, obj):
+        batch = self._get_batch(obj)
+        return float(batch.price_per_litre) if batch else float(obj.total_amount)
+
+    def get_batch_code(self, obj):
+        batch = self._get_batch(obj)
+        return batch.batch_code if batch else ""
+
+    def get_temperature_celsius(self, obj):
+        batch = self._get_batch(obj)
+        return float(batch.temperature_celsius) if batch else 3.8

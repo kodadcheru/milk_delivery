@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.pagination import LargeResultsSetPagination
-from apps.core.permissions import IsAdminOrStaff
+from apps.core.permissions import IsAdminOrStaff, IsAdminOrHubManager
 from apps.accounts.models import User, WalletTransaction, Notification
 from apps.deliveries.models import DeliveryTask, LiveOrder
 from apps.deliveries.serializers import DeliveryTaskSerializer
@@ -419,7 +419,7 @@ class ProviderPayoutListCreateView(APIView):
 
 class GenerateTodayTasksView(APIView):
     """Admin / Hub Manager endpoint to trigger daily delivery task generation."""
-    permission_classes = [IsAdminOrStaff]
+    permission_classes = [IsAdminOrHubManager]
 
     def post(self, request):
         from datetime import timedelta
@@ -560,6 +560,15 @@ class GenerateTodayTasksView(APIView):
                 status=DeliveryTask.Statuses.PENDING,
             )
             created_count += 1
+
+        # Auto-link quality batch to generated tasks
+        from .models import DailyMilkBatch
+        batches = DailyMilkBatch.objects.filter(batch_date=target_date)
+        for task in DeliveryTask.objects.filter(delivery_date=target_date, batch__isnull=True):
+            matching_batch = batches.filter(hub=task.hub).first()
+            if matching_batch:
+                task.batch = matching_batch
+                task.save(update_fields=['batch'])
 
         return Response({
             "message": f"Task generation complete for {target_date}.",
@@ -791,3 +800,37 @@ class DailyMilkBatchListCreateView(APIView):
                 "status": batch.status,
             }
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class QualityHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models import DailyMilkBatch
+        user = request.user
+        # Get batches for user's hub or all batches
+        hub = getattr(user, 'assigned_hub', None)
+        if hub:
+            batches = DailyMilkBatch.objects.filter(hub=hub).order_by('-batch_date')[:30]
+        else:
+            batches = DailyMilkBatch.objects.all().order_by('-batch_date')[:30]
+        
+        result = []
+        for b in batches:
+            result.append({
+                'id': b.id,
+                'batch_code': b.batch_code,
+                'product_name': b.product_name,
+                'batch_date': b.batch_date.isoformat() if b.batch_date else None,
+                'fat_percentage': float(b.fat_percentage) if b.fat_percentage else None,
+                'snf_percentage': float(b.snf_percentage) if b.snf_percentage else None,
+                'water_percentage': float(b.water_percentage) if b.water_percentage else None,
+                'price_per_litre': float(b.price_per_litre) if b.price_per_litre else None,
+                'total_litres': float(b.total_litres) if b.total_litres else None,
+                'temperature_celsius': float(b.temperature_celsius) if b.temperature_celsius else None,
+                'status': b.status,
+                'quality_certificate_note': b.quality_certificate_note or '',
+                'hub_name': b.hub.name if b.hub else '',
+                'dispatched_by': b.dispatched_by.username if b.dispatched_by else '',
+            })
+        return Response(result)

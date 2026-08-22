@@ -94,6 +94,7 @@ class DeliveryTask(models.Model):
 
     subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.CASCADE, related_name="deliveries", null=True, blank=True)
     order = models.ForeignKey("LiveOrder", on_delete=models.CASCADE, related_name="deliveries", null=True, blank=True)
+    batch = models.ForeignKey('DailyMilkBatch', null=True, blank=True, on_delete=models.SET_NULL, related_name='delivery_tasks')
     hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_deliveries")
     delivery_date = models.DateField()
@@ -130,6 +131,7 @@ class LiveOrder(models.Model):
     id = models.CharField(max_length=50, primary_key=True)  # e.g., MD-8042
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="live_orders")
     hub = models.ForeignKey(LocationHub, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_orders")
+    batch = models.ForeignKey('DailyMilkBatch', null=True, blank=True, on_delete=models.SET_NULL, related_name='live_orders')
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_orders")
     order_type = models.CharField(max_length=30, choices=OrderTypes.choices, default=OrderTypes.ONE_TIME)
     status = models.CharField(max_length=30, choices=Statuses.choices, default=Statuses.PREPARING)

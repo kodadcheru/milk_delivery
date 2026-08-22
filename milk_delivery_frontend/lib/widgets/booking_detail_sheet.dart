@@ -575,63 +575,89 @@ class BookingDetailSheet extends StatelessWidget {
     final nameLower = productName.toLowerCase();
     
     // 1. Check if the delivery task itself has batch parameters wired
-    String fatVal = '${subscriptionTask?.fatPercentage ?? 6.8}%';
-    String snfVal = '${subscriptionTask?.snfPercentage ?? 9.0}%';
-    String waterVal = '${subscriptionTask?.waterPercentage ?? 0.0}%';
-    String priceVal = subscriptionTask != null ? '₹${subscriptionTask!.batchPricePerLitre.toStringAsFixed(0)}/L' : '';
-    String batchCode = subscriptionTask?.batchCode ?? 'BATCH-KDD-01';
-    String tempVal = '${subscriptionTask?.temperatureCelsius ?? 3.8}°C';
+    double directFat = subscriptionTask?.fatPercentage ?? liveOrder?.fatPercentage ?? 0.0;
+    double directSnf = subscriptionTask?.snfPercentage ?? liveOrder?.snfPercentage ?? 0.0;
+    double directWater = subscriptionTask?.waterPercentage ?? liveOrder?.waterPercentage ?? 0.0;
+    double directPrice = subscriptionTask?.batchPricePerLitre ?? liveOrder?.batchPricePerLitre ?? 0.0;
+    String directBatchCode = subscriptionTask?.batchCode ?? liveOrder?.batchCode ?? '';
+    double directTemp = subscriptionTask?.temperatureCelsius ?? 3.8;
 
-    // 2. Check if Hub Provider certified a batch for today
-    Map<String, dynamic>? activeBatch;
-    final batches = state.dailyMilkBatches;
-    if (batches.isNotEmpty) {
-      activeBatch = batches.firstWhere(
-        (b) {
-          final bName = b['product_name']?.toString().toLowerCase() ?? '';
-          return bName.contains(nameLower.split(' ').first) || (nameLower.split(' ').isNotEmpty && bName.contains(nameLower.split(' ').first));
-        },
-        orElse: () => batches.first,
-      );
-    }
+    String fatVal = '';
+    String snfVal = '';
+    String waterVal = '';
+    String priceVal = '';
+    String batchCode = '';
+    String tempVal = '';
+    String puritySub = '';
 
-    if (activeBatch != null) {
-      fatVal = '${activeBatch['fat_percentage']}%';
-      snfVal = '${activeBatch['snf_percentage']}%';
-      waterVal = '${activeBatch['water_percentage']}%';
-      priceVal = '₹${(activeBatch['price_per_litre'] as num).toStringAsFixed(0)}/L';
-      batchCode = activeBatch['batch_code']?.toString() ?? batchCode;
-      tempVal = '${activeBatch['temperature_celsius']}°C';
-    }
-
-    String puritySub = 'Hub Certified ($batchCode) • Chilled at $tempVal';
-
-    if (activeBatch == null) {
-      if (nameLower.contains('buffalo')) {
-        fatVal = '6.8%';
-        snfVal = '9.0%';
-        waterVal = '0.0%';
-      } else if (nameLower.contains('desi') || nameLower.contains('gir') || nameLower.contains('a2')) {
-        fatVal = '4.5%';
-        snfVal = '8.8%';
-        waterVal = '0.0%';
-      } else if (nameLower.contains('paneer')) {
-        fatVal = '22.0%';
-        snfVal = '18.0%';
-        waterVal = '0.0%';
-      } else if (nameLower.contains('curd') || nameLower.contains('dahi')) {
-        fatVal = '5.0%';
-        snfVal = '9.0%';
-        waterVal = '0.0%';
-      } else if (nameLower.contains('ghee')) {
-        fatVal = '99.7%';
-        snfVal = '0.3%';
-        waterVal = '0.0%';
-      } else if (category.toUpperCase() == 'MILK' || nameLower.contains('milk')) {
-        fatVal = '4.2%';
-        snfVal = '8.5%';
-        waterVal = '0.0%';
+    // Consider > 0 for fat to indicate it was directly provided from the DB instead of defaulted
+    // In DeliveryTaskModel, default was 6.8 but maybe it comes as 0.0 from DB if not set, wait...
+    // Actually the prompt says: "If those are null/0, fall back to the existing state.dailyMilkBatches string matching"
+    // Since delivery_task_model has 6.8 as default, if it's 6.8 it might be the default. But we'll just check > 0 and batchCode != 'BATCH-LIVE-01' maybe?
+    // Wait, let's just do > 0.
+    if (directFat > 0 && directSnf > 0 && (directBatchCode.isNotEmpty && directBatchCode != 'BATCH-LIVE-01' && directBatchCode != 'BATCH-TODAY-01')) {
+      fatVal = '$directFat%';
+      snfVal = '$directSnf%';
+      waterVal = '$directWater%';
+      priceVal = directPrice > 0 ? '₹${directPrice.toStringAsFixed(0)}/L' : '';
+      batchCode = directBatchCode;
+      tempVal = '$directTemp°C';
+      puritySub = 'Hub Certified ($batchCode) • Chilled at $tempVal';
+    } else {
+      // 2. Check if Hub Provider certified a batch for today
+      Map<String, dynamic>? activeBatch;
+      final batches = state.dailyMilkBatches;
+      if (batches.isNotEmpty) {
+        activeBatch = batches.firstWhere(
+          (b) {
+            final bName = b['product_name']?.toString().toLowerCase() ?? '';
+            return bName.contains(nameLower.split(' ').first) || (nameLower.split(' ').isNotEmpty && bName.contains(nameLower.split(' ').first));
+          },
+          orElse: () => batches.first,
+        );
       }
+
+      if (activeBatch != null) {
+        fatVal = '${activeBatch['fat_percentage']}%';
+        snfVal = '${activeBatch['snf_percentage']}%';
+        waterVal = '${activeBatch['water_percentage']}%';
+        priceVal = '₹${(activeBatch['price_per_litre'] as num).toStringAsFixed(0)}/L';
+        batchCode = activeBatch['batch_code']?.toString() ?? 'BATCH-KDD-01';
+        tempVal = '${activeBatch['temperature_celsius']}°C';
+      } else {
+        batchCode = 'BATCH-KDD-01';
+        tempVal = '3.8°C';
+        if (nameLower.contains('buffalo')) {
+          fatVal = '6.8%';
+          snfVal = '9.0%';
+          waterVal = '0.0%';
+        } else if (nameLower.contains('desi') || nameLower.contains('gir') || nameLower.contains('a2')) {
+          fatVal = '4.5%';
+          snfVal = '8.8%';
+          waterVal = '0.0%';
+        } else if (nameLower.contains('paneer')) {
+          fatVal = '22.0%';
+          snfVal = '18.0%';
+          waterVal = '0.0%';
+        } else if (nameLower.contains('curd') || nameLower.contains('dahi')) {
+          fatVal = '5.0%';
+          snfVal = '9.0%';
+          waterVal = '0.0%';
+        } else if (nameLower.contains('ghee')) {
+          fatVal = '99.7%';
+          snfVal = '0.3%';
+          waterVal = '0.0%';
+        } else if (category.toUpperCase() == 'MILK' || nameLower.contains('milk')) {
+          fatVal = '4.2%';
+          snfVal = '8.5%';
+          waterVal = '0.0%';
+        } else {
+          fatVal = '6.8%';
+          snfVal = '9.0%';
+          waterVal = '0.0%';
+        }
+      }
+      puritySub = 'Hub Certified ($batchCode) • Chilled at $tempVal';
     }
 
     return Container(
