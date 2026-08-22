@@ -572,6 +572,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 14),
 
+          // ── Today's Daily Batch Lab Quality & Litre Rate ──
+          _buildDailyBatchLabCard(context),
+          const SizedBox(height: 14),
+
           // ── Quick Command Shortcuts Grid (4 Hub Actions) ──
           Row(
             children: [
@@ -2584,6 +2588,443 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Daily Batch Lab Certification Card & Modal ──
+
+  Widget _buildDailyBatchLabCard(BuildContext context) {
+    final batches = widget.state.dailyMilkBatches;
+    final latestBatch = batches.isNotEmpty ? batches.first : null;
+
+    final fat = latestBatch?['fat_percentage'] != null ? '${latestBatch!['fat_percentage']}%' : '6.8%';
+    final snf = latestBatch?['snf_percentage'] != null ? '${latestBatch!['snf_percentage']}%' : '9.0%';
+    final water = latestBatch?['water_percentage'] != null ? '${latestBatch!['water_percentage']}%' : '0.0%';
+    final price = latestBatch?['price_per_litre'] != null ? '₹${(latestBatch!['price_per_litre'] as num).toStringAsFixed(0)}/L' : '₹68/L';
+    final product = latestBatch?['product_name']?.toString() ?? 'Pure Buffalo Milk';
+    final batchCode = latestBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Daily Milk Batch Quality & Pricing 🥛',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
+                      ),
+                      Text(
+                        '$product • $batchCode',
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _showBatchLabQualityDialog(context),
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 14),
+                label: const Text('Certify Batch', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 4 Stat Tiles: FAT, SNF, Water %, Rate
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricTile(
+                  icon: '🧈',
+                  title: 'FAT %',
+                  value: fat,
+                  color: const Color(0xFFD97706),
+                  bgColor: const Color(0xFFFEF3C7),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildMetricTile(
+                  icon: '🔬',
+                  title: 'SNF %',
+                  value: snf,
+                  color: const Color(0xFF2563EB),
+                  bgColor: const Color(0xFFEFF6FF),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildMetricTile(
+                  icon: '💧',
+                  title: 'Water %',
+                  value: water,
+                  color: const Color(0xFF059669),
+                  bgColor: const Color(0xFFDCFCE7),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildMetricTile(
+                  icon: '₹',
+                  title: 'Rate/L',
+                  value: price,
+                  color: const Color(0xFF0D7C66),
+                  bgColor: const Color(0xFFE6F5F0),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricTile({
+    required String icon,
+    required String title,
+    required String value,
+    required Color color,
+    required Color bgColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 10.5)),
+              const SizedBox(width: 2),
+              Text(title, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color)),
+        ],
+      ),
+    );
+  }
+
+  void _showBatchLabQualityDialog(BuildContext context) {
+    String selectedProduct = 'Pure Buffalo Milk';
+    final fatCtrl = TextEditingController(text: '6.8');
+    final snfCtrl = TextEditingController(text: '9.0');
+    final waterCtrl = TextEditingController(text: '0.0');
+    final priceCtrl = TextEditingController(text: '68');
+    final volumeCtrl = TextEditingController(text: '450');
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalCtx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 16,
+                bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Text('🥛', style: TextStyle(fontSize: 22)),
+                            SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Hub Provider Batch Dispatch', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                                Text('Enter daily lab purity & price per litre', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                      ],
+                    ),
+                    const Divider(height: 20),
+
+                    // 1. Select Milk Product
+                    const Text('1. Select Milk Product:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedProduct,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(value: 'Pure Buffalo Milk', child: Text('🥛 Pure Buffalo Milk (Standard 6.8% Fat)')),
+                            DropdownMenuItem(value: 'Vedic A2 Desi Cow Milk', child: Text('🐄 Vedic A2 Desi Cow Milk (4.5% Fat)')),
+                            DropdownMenuItem(value: 'Farm Fresh Cow Milk', child: Text('🥛 Farm Fresh Cow Milk (4.2% Fat)')),
+                            DropdownMenuItem(value: 'Fresh Malai Paneer', child: Text('🧀 Fresh Malai Paneer (22.0% Fat)')),
+                            DropdownMenuItem(value: 'Vedic Bilona Ghee', child: Text('🧈 Vedic Bilona Ghee (99.7% Fat)')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() {
+                                selectedProduct = val;
+                                if (val.contains('Buffalo')) {
+                                  fatCtrl.text = '6.8';
+                                  snfCtrl.text = '9.0';
+                                  priceCtrl.text = '68';
+                                } else if (val.contains('A2') || val.contains('Desi')) {
+                                  fatCtrl.text = '4.5';
+                                  snfCtrl.text = '8.8';
+                                  priceCtrl.text = '85';
+                                } else if (val.contains('Cow')) {
+                                  fatCtrl.text = '4.2';
+                                  snfCtrl.text = '8.5';
+                                  priceCtrl.text = '60';
+                                }
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 2. Lab Purity Parameters
+                    const Text('2. Lab Quality Measurements:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildBatchInputField(
+                            label: 'FAT %',
+                            hint: '6.8',
+                            controller: fatCtrl,
+                            icon: '🧈',
+                            color: const Color(0xFFD97706),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildBatchInputField(
+                            label: 'SNF %',
+                            hint: '9.0',
+                            controller: snfCtrl,
+                            icon: '🔬',
+                            color: const Color(0xFF2563EB),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildBatchInputField(
+                            label: 'Water %',
+                            hint: '0.0',
+                            controller: waterCtrl,
+                            icon: '💧',
+                            color: const Color(0xFF059669),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 3. Litre Rate & Volume
+                    const Text('3. Litre Pricing & Batch Volume:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildBatchInputField(
+                            label: 'Price / Litre (₹)',
+                            hint: '68',
+                            controller: priceCtrl,
+                            icon: '₹',
+                            color: const Color(0xFF0D7C66),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildBatchInputField(
+                            label: 'Total Litres (L)',
+                            hint: '450',
+                            controller: volumeCtrl,
+                            icon: '📦',
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Dispatch CTA
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                setModalState(() => isSubmitting = true);
+                                final fat = double.tryParse(fatCtrl.text) ?? 6.8;
+                                final snf = double.tryParse(snfCtrl.text) ?? 9.0;
+                                final water = double.tryParse(waterCtrl.text) ?? 0.0;
+                                final price = double.tryParse(priceCtrl.text) ?? 68.0;
+                                final volume = double.tryParse(volumeCtrl.text) ?? 450.0;
+
+                                final res = await ApiService.submitDailyMilkBatch(
+                                  productName: selectedProduct,
+                                  fatPercentage: fat,
+                                  snfPercentage: snf,
+                                  waterPercentage: water,
+                                  pricePerLitre: price,
+                                  totalLitres: volume,
+                                  temperatureCelsius: 3.8,
+                                  hubCode: widget.state.activeHubCode,
+                                );
+
+                                if (modalCtx.mounted) {
+                                  Navigator.pop(ctx);
+                                  await widget.state.reloadAllData();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: const Color(0xFF0D7C66),
+                                        content: Text(res != null
+                                            ? '✅ Today\'s $selectedProduct batch certified: $fat% Fat, $snf% SNF @ ₹$price/L!'
+                                            : 'Failed to record batch'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        icon: isSubmitting
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Icon(Icons.verified_rounded),
+                        label: Text(
+                          isSubmitting ? 'Certifying Batch...' : '🔬 Certify Lab Report & Dispatch 🚀',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D7C66),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBatchInputField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required String icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 11)),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 4),
+              border: InputBorder.none,
+              hintText: hint,
+            ),
+          ),
+        ],
       ),
     );
   }

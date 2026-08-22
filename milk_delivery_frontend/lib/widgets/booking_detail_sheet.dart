@@ -576,41 +576,59 @@ class BookingDetailSheet extends StatelessWidget {
     required String category,
   }) {
     final nameLower = productName.toLowerCase();
-    String fatVal = '4.5%';
-    String snfVal = '8.5%';
-    String waterVal = '0.0%';
-    String puritySub = '100% Farm-Direct A2 Quality';
+    
+    // Check if Hub Provider certified a batch for today
+    Map<String, dynamic>? activeBatch;
+    final batches = state.dailyMilkBatches;
+    if (batches.isNotEmpty) {
+      activeBatch = batches.firstWhere(
+        (b) {
+          final bName = b['product_name']?.toString().toLowerCase() ?? '';
+          return bName.contains(nameLower.split(' ').first) || (nameLower.split(' ').isNotEmpty && bName.contains(nameLower.split(' ').first));
+        },
+        orElse: () => batches.first,
+      );
+    }
 
-    if (nameLower.contains('buffalo')) {
-      fatVal = '6.8%';
-      snfVal = '9.0%';
-      waterVal = '0.0%';
-      puritySub = 'Rich Natural Butterfat • High Calcium';
-    } else if (nameLower.contains('desi') || nameLower.contains('gir') || nameLower.contains('a2')) {
-      fatVal = '4.5%';
-      snfVal = '8.8%';
-      waterVal = '0.0%';
-      puritySub = 'A2 Beta-Casein Certified • Easy Digest';
-    } else if (nameLower.contains('paneer')) {
-      fatVal = '22.0%';
-      snfVal = '18.0%';
-      waterVal = '0.0%';
-      puritySub = 'High Protein Soft Malai Curds';
-    } else if (nameLower.contains('curd') || nameLower.contains('dahi')) {
-      fatVal = '5.0%';
-      snfVal = '9.0%';
-      waterVal = '0.0%';
-      puritySub = 'Thick Natural Set • Probiotic Cultures';
-    } else if (nameLower.contains('ghee')) {
-      fatVal = '99.7%';
-      snfVal = '0.3%';
-      waterVal = '0.0%';
-      puritySub = 'Traditional Bilona Churned • Zero Moisture';
-    } else if (category.toUpperCase() == 'MILK' || nameLower.contains('milk')) {
-      fatVal = '4.2%';
-      snfVal = '8.5%';
-      waterVal = '0.0%';
-      puritySub = 'Fresh Cold-Chain Direct from Farm';
+    String fatVal = activeBatch?['fat_percentage'] != null ? '${activeBatch!['fat_percentage']}%' : '4.5%';
+    String snfVal = activeBatch?['snf_percentage'] != null ? '${activeBatch!['snf_percentage']}%' : '8.5%';
+    String waterVal = activeBatch?['water_percentage'] != null ? '${activeBatch!['water_percentage']}%' : '0.0%';
+    String priceVal = activeBatch?['price_per_litre'] != null ? '₹${(activeBatch!['price_per_litre'] as num).toStringAsFixed(0)}/L' : '';
+    String batchCode = activeBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
+    String tempVal = activeBatch?['temperature_celsius'] != null ? '${activeBatch!['temperature_celsius']}°C' : '3.8°C';
+
+    String puritySub = activeBatch != null
+        ? 'Hub Certified ($batchCode) • Chilled at $tempVal'
+        : (nameLower.contains('buffalo')
+            ? 'Rich Natural Butterfat • High Calcium'
+            : '100% Farm-Direct A2 Quality');
+
+    if (activeBatch == null) {
+      if (nameLower.contains('buffalo')) {
+        fatVal = '6.8%';
+        snfVal = '9.0%';
+        waterVal = '0.0%';
+      } else if (nameLower.contains('desi') || nameLower.contains('gir') || nameLower.contains('a2')) {
+        fatVal = '4.5%';
+        snfVal = '8.8%';
+        waterVal = '0.0%';
+      } else if (nameLower.contains('paneer')) {
+        fatVal = '22.0%';
+        snfVal = '18.0%';
+        waterVal = '0.0%';
+      } else if (nameLower.contains('curd') || nameLower.contains('dahi')) {
+        fatVal = '5.0%';
+        snfVal = '9.0%';
+        waterVal = '0.0%';
+      } else if (nameLower.contains('ghee')) {
+        fatVal = '99.7%';
+        snfVal = '0.3%';
+        waterVal = '0.0%';
+      } else if (category.toUpperCase() == 'MILK' || nameLower.contains('milk')) {
+        fatVal = '4.2%';
+        snfVal = '8.5%';
+        waterVal = '0.0%';
+      }
     }
 
     return Container(
@@ -634,17 +652,19 @@ class BookingDetailSheet extends StatelessWidget {
                 child: const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 18),
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Daily Milk Quality & Lab Report 🥛',
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF065F46)),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF065F46)),
                     ),
                     Text(
-                      'FSSAI Certified • Passed 24 Quality Checks',
-                      style: TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w500),
+                      priceVal.isNotEmpty
+                          ? 'Today\'s Hub Price: $priceVal • FSSAI Grade A+'
+                          : 'FSSAI Certified • Passed 24 Quality Checks',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -655,7 +675,7 @@ class BookingDetailSheet extends StatelessWidget {
                   color: const Color(0xFF059669),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('GRADE A+', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                child: Text(priceVal.isNotEmpty ? priceVal : 'GRADE A+', style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
@@ -711,7 +731,7 @@ class BookingDetailSheet extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Chilled at 3.8°C • Zero Adulteration • $puritySub',
+                    'Zero Adulteration • $puritySub',
                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155), fontWeight: FontWeight.w600),
                   ),
                 ),

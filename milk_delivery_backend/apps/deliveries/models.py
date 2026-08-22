@@ -222,3 +222,39 @@ class ProviderPayout(models.Model):
     def __str__(self):
         return f"Payout #{self.id}: {self.hub.name} ({self.period_start} to {self.period_end}) - ₹{self.net_payout} ({self.status})"
 
+
+class DailyMilkBatch(models.Model):
+    """
+    Daily milk batch entered and certified by the Hub Provider/Depot Manager.
+    Includes lab test metrics (FAT %, SNF %, Water %) and the dynamic per-litre price.
+    """
+    class Statuses(models.TextChoices):
+        TESTED = "TESTED", "Lab Tested & Verified"
+        DISPATCHED = "DISPATCHED", "Dispatched to Drivers"
+        COMPLETED = "COMPLETED", "Fully Delivered"
+
+    hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="daily_batches", null=True, blank=True)
+    batch_code = models.CharField(max_length=50, unique=True)
+    product_name = models.CharField(max_length=150, default="Pure Buffalo Milk")
+    batch_date = models.DateField(default=date.today)
+    fat_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=6.80)
+    snf_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=9.00)
+    water_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
+    price_per_litre = models.DecimalField(max_digits=8, decimal_places=2, default=68.00)
+    total_litres = models.DecimalField(max_digits=8, decimal_places=2, default=450.00)
+    temperature_celsius = models.DecimalField(max_digits=4, decimal_places=1, default=3.8)
+    dispatched_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="dispatched_batches")
+    status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.DISPATCHED)
+    quality_certificate_note = models.CharField(max_length=255, blank=True, default="FSSAI Certified • Passed 24 Purity Checks")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-batch_date", "-created_at"]
+        indexes = [
+            models.Index(fields=["batch_date", "product_name"], name="batch_date_prod_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.batch_code} ({self.product_name}) - {self.fat_percentage}% FAT, {self.snf_percentage}% SNF @ ₹{self.price_per_litre}/L"
+

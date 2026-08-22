@@ -1143,7 +1143,6 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () {
-              state.setRole('CUSTOMER');
               Navigator.pop(ctx);
               onLogout();
             },

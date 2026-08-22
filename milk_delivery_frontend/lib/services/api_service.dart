@@ -1070,6 +1070,71 @@ class ApiService {
     return null;
   }
 
+  // ── Hub Daily Milk Batch & Quality Lab Certifications ──
+
+  static Future<List<Map<String, dynamic>>> fetchDailyMilkBatches({String? date, String? productName, String? hubCode}) async {
+    try {
+      final queryParams = <String, String>{};
+      if (date != null) queryParams['date'] = date;
+      if (productName != null) queryParams['product'] = productName;
+      if (hubCode != null) queryParams['hub_code'] = hubCode;
+
+      final uri = Uri.parse('$baseUrl/deliveries/daily-batches/').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map && decoded['batches'] is List) {
+          return List<Map<String, dynamic>>.from(decoded['batches']);
+        } else if (decoded is List) {
+          return List<Map<String, dynamic>>.from(decoded);
+        }
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>?> submitDailyMilkBatch({
+    required String productName,
+    required double fatPercentage,
+    required double snfPercentage,
+    required double waterPercentage,
+    required double pricePerLitre,
+    required double totalLitres,
+    double temperatureCelsius = 3.8,
+    String? hubCode,
+    String? batchCode,
+    String qualityCertificateNote = 'FSSAI Certified • Passed 24 Purity Checks',
+  }) async {
+    try {
+      final payload = {
+        'product_name': productName,
+        'fat_percentage': fatPercentage,
+        'snf_percentage': snfPercentage,
+        'water_percentage': waterPercentage,
+        'price_per_litre': pricePerLitre,
+        'total_litres': totalLitres,
+        'temperature_celsius': temperatureCelsius,
+        if (hubCode != null) 'hub_code': hubCode,
+        if (batchCode != null) 'batch_code': batchCode,
+        'quality_certificate_note': qualityCertificateNote,
+      };
+
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/daily-batches/'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return Map<String, dynamic>.from(jsonDecode(res.body));
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
+
   // ── Bottle Return Tracking ──
 
   static Future<List<BottleReturnModel>> fetchBottleReturns() async {

@@ -589,3 +589,147 @@ class SlotAvailabilityView(APIView):
             })
         
         return Response(result)
+
+
+class DailyMilkBatchListCreateView(APIView):
+    """
+    Handles recording and querying daily milk batches submitted by the Hub Provider.
+    Includes FAT %, SNF %, Water %, Litre Price, Total Volume, and temperature.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from django.db import models
+        from .models import DailyMilkBatch, LocationHub
+        from datetime import date as date_cls
+
+        date_str = request.query_params.get("date")
+        product_name = request.query_params.get("product")
+        hub_code = request.query_params.get("hub_code") or request.query_params.get("hub_id")
+
+        batches = DailyMilkBatch.objects.all()
+
+        if date_str:
+            try:
+                from datetime import datetime
+                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                batches = batches.filter(batch_date=target_date)
+            except ValueError:
+                pass
+        
+        if product_name:
+            batches = batches.filter(product_name__icontains=product_name)
+
+        if hub_code:
+            batches = batches.filter(models.Q(hub__hub_code=hub_code) | models.Q(hub__id__iexact=str(hub_code)))
+
+        data = []
+        for b in batches[:50]:
+            data.append({
+                "id": b.id,
+                "batch_code": b.batch_code,
+                "product_name": b.product_name,
+                "batch_date": str(b.batch_date),
+                "fat_percentage": float(b.fat_percentage),
+                "snf_percentage": float(b.snf_percentage),
+                "water_percentage": float(b.water_percentage),
+                "price_per_litre": float(b.price_per_litre),
+                "total_litres": float(b.total_litres),
+                "temperature_celsius": float(b.temperature_celsius),
+                "status": b.status,
+                "quality_certificate_note": b.quality_certificate_note,
+                "hub_id": b.hub_id,
+                "hub_name": b.hub.name if b.hub else "",
+                "created_at": b.created_at.isoformat(),
+            })
+
+        return Response({"count": len(data), "batches": data})
+
+    def post(self, request):
+        from django.db import models
+        from .models import DailyMilkBatch, LocationHub
+        from apps.products.models import Product
+        from datetime import date as date_cls
+        import random
+
+        payload = request.data
+        product_name = payload.get("product_name", "Pure Buffalo Milk").strip()
+        try:
+            fat = float(payload.get("fat_percentage", 6.80))
+        except (ValueError, TypeError):
+            fat = 6.80
+        try:
+            snf = float(payload.get("snf_percentage", 9.00))
+        except (ValueError, TypeError):
+            snf = 9.00
+        try:
+            water = float(payload.get("water_percentage", 0.00))
+        except (ValueError, TypeError):
+            water = 0.00
+        try:
+            litre_price = float(payload.get("price_per_litre", 68.00))
+        except (ValueError, TypeError):
+            litre_price = 68.00
+        try:
+            total_litres = float(payload.get("total_litres", 450.00))
+        except (ValueError, TypeError):
+            total_litres = 450.00
+        try:
+            temperature = float(payload.get("temperature_celsius", 3.8))
+        except (ValueError, TypeError):
+            temperature = 3.8
+
+        hub_code = payload.get("hub_code") or payload.get("hub_id")
+        
+        hub = None
+        if hub_code:
+            hub = LocationHub.objects.filter(models.Q(hub_code=hub_code) | models.Q(id__iexact=str(hub_code))).first()
+        if not hub:
+            hub = LocationHub.objects.first()
+
+        batch_code = payload.get("batch_code") or f"BATCH-{date_cls.today().strftime('%Y%m%d')}-{random.randint(100, 999)}"
+
+        batch, created = DailyMilkBatch.objects.update_or_create(
+            batch_code=batch_code,
+            defaults={
+                "hub": hub,
+                "product_name": product_name,
+                "batch_date": date_cls.today(),
+                "fat_percentage": fat,
+                "snf_percentage": snf,
+                "water_percentage": water,
+                "price_per_litre": litre_price,
+                "total_litres": total_litres,
+                "temperature_celsius": temperature,
+                "status": "DISPATCHED",
+                "quality_certificate_note": payload.get("quality_certificate_note", "FSSAI Certified • Passed 24 Purity Checks"),
+            }
+        )
+
+        # Sync/Update matching product's unit price in database
+        try:
+            first_word = product_name.split()[0] if product_name.split() else "Milk"
+            matching_products = Product.objects.filter(name__icontains=first_word)
+            for p in matching_products:
+                p.price_per_unit = litre_price
+                p.save(update_fields=["price_per_unit"])
+        except Exception:
+            pass
+
+        return Response({
+            "status": "success",
+            "message": f"Daily milk batch {batch.batch_code} certified and dispatched successfully!",
+            "batch": {
+                "id": batch.id,
+                "batch_code": batch.batch_code,
+                "product_name": batch.product_name,
+                "batch_date": str(batch.batch_date),
+                "fat_percentage": float(batch.fat_percentage),
+                "snf_percentage": float(batch.snf_percentage),
+                "water_percentage": float(batch.water_percentage),
+                "price_per_litre": float(batch.price_per_litre),
+                "total_litres": float(batch.total_litres),
+                "temperature_celsius": float(batch.temperature_celsius),
+                "status": batch.status,
+            }
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

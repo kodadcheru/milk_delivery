@@ -48,6 +48,7 @@ class AppState extends ChangeNotifier {
 
   List<ServiceAreaModel> serviceAreas = [];
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
+  List<Map<String, dynamic>> dailyMilkBatches = [];
 
   List<Map<String, dynamic>> locationHubs = [
     {
@@ -498,10 +499,12 @@ class AppState extends ChangeNotifier {
         ApiService.fetchServiceAreas(),
         ApiService.fetchStorefrontConfig(),
         ApiService.fetchHubInventory(),
+        ApiService.fetchDailyMilkBatches(),
       ]);
 
       storefrontConfig = results[10] as StorefrontConfigModel? ?? const StorefrontConfigModel();
       hubInventory = (results[11] as List<Map<String, dynamic>>?) ?? [];
+      dailyMilkBatches = (results[12] as List<Map<String, dynamic>>?) ?? [];
 
       final user = results[0] as UserModel?;
       if (user != null) {
