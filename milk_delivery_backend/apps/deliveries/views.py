@@ -29,12 +29,14 @@ class DeliveryTaskListView(generics.ListAPIView):
 
         # Scope by role
         from django.db.models import Q
-        if user.role == "CUSTOMER":
-            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
+        if user.role in (User.Roles.HUB_MANAGER, "PROVIDER"):
+            if getattr(user, "assigned_hub", None):
+                return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
+            return qs
         elif user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
             return qs.filter(driver=user)
-        elif user.role in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
-            return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
+        elif user.role == "CUSTOMER":
+            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
         # Admin/staff see all
         return qs
 

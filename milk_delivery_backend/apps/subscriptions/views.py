@@ -22,8 +22,10 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 return qs.filter(customer=user)
             elif getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
                 return qs
-            elif getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
-                return qs.filter(hub=user.assigned_hub)
+            elif getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER"):
+                if getattr(user, "assigned_hub", None):
+                    return qs.filter(hub=user.assigned_hub)
+                return qs
 
         if customer_id:
             return qs.filter(customer_id=customer_id)

@@ -712,38 +712,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             width: double.infinity,
             height: 46,
             child: ElevatedButton.icon(
-              onPressed: _isGeneratingTasks ? null : () async {
-                setState(() => _isGeneratingTasks = true);
-                final result = await ApiService.generateTodayTasks();
-                setState(() => _isGeneratingTasks = false);
-                if (result != null && context.mounted) {
-                  await widget.state.reloadAllData();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: const Color(0xFF0D7C66),
-                      content: Text('✅ ${result['tasks_created']} tasks created, ${result['subscriptions_skipped']} skipped for ${result['date']}'),
-                    ),
-                  );
-                } else if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: const Color(0xFFDC2626),
-                      content: Text('❌ Failed to generate tasks: ${ApiService.lastError ?? "Unknown error"}'),
-                    ),
-                  );
-                }
-              },
-              icon: _isGeneratingTasks
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.auto_fix_high_rounded, size: 18, color: Colors.white),
-              label: Text(
-                _isGeneratingTasks ? 'Generating Tasks...' : "Generate Today's Delivery Tasks ⚡",
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+              onPressed: () => _showBatchLabQualityDialog(context, isGeneratingDeliveries: true),
+              icon: const Icon(Icons.auto_fix_high_rounded, size: 18, color: Colors.white),
+              label: const Text(
+                "Generate Today's Delivery Tasks ⚡",
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0D7C66),
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.5),
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
