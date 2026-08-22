@@ -35,6 +35,12 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
     quantity = serializers.SerializerMethodField()
     pack_size = serializers.SerializerMethodField()
     price_per_unit = serializers.SerializerMethodField()
+    fat_percentage = serializers.SerializerMethodField()
+    snf_percentage = serializers.SerializerMethodField()
+    water_percentage = serializers.SerializerMethodField()
+    batch_price_per_litre = serializers.SerializerMethodField()
+    batch_code = serializers.SerializerMethodField()
+    temperature_celsius = serializers.SerializerMethodField()
 
     class Meta:
         model = DeliveryTask
@@ -56,6 +62,12 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "quantity",
             "pack_size",
             "price_per_unit",
+            "fat_percentage",
+            "snf_percentage",
+            "water_percentage",
+            "batch_price_per_litre",
+            "batch_code",
+            "temperature_celsius",
             "delivery_date",
             "slot_time",
             "status",
@@ -186,6 +198,63 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             if first_item:
                 return str(first_item.unit_price)
         return "72.00"
+
+    def _get_batch(self, obj):
+        from apps.deliveries.models import DailyMilkBatch
+        if not hasattr(obj, "_cached_batch"):
+            prod_name = self.get_product_name(obj)
+            first_word = prod_name.split()[0] if prod_name else ""
+            batch = DailyMilkBatch.objects.filter(
+                batch_date=obj.delivery_date,
+                product_name__icontains=first_word,
+            ).first()
+            if not batch:
+                batch = DailyMilkBatch.objects.filter(batch_date=obj.delivery_date).first()
+            if not batch:
+                batch = DailyMilkBatch.objects.first()
+            obj._cached_batch = batch
+        return obj._cached_batch
+
+    def get_fat_percentage(self, obj):
+        batch = self._get_batch(obj)
+        if batch:
+            return float(batch.fat_percentage)
+        prod = self.get_product_name(obj).lower()
+        return 6.8 if "buffalo" in prod else (4.5 if "a2" in prod or "desi" in prod else 4.2)
+
+    def get_snf_percentage(self, obj):
+        batch = self._get_batch(obj)
+        if batch:
+            return float(batch.snf_percentage)
+        prod = self.get_product_name(obj).lower()
+        return 9.0 if "buffalo" in prod else 8.5
+
+    def get_water_percentage(self, obj):
+        batch = self._get_batch(obj)
+        if batch:
+            return float(batch.water_percentage)
+        return 0.0
+
+    def get_batch_price_per_litre(self, obj):
+        batch = self._get_batch(obj)
+        if batch:
+            return float(batch.price_per_litre)
+        try:
+            return float(self.get_price_per_unit(obj))
+        except (ValueError, TypeError):
+            return 68.0
+
+    def get_batch_code(self, obj):
+        batch = self._get_batch(obj)
+        if batch:
+            return batch.batch_code
+        return f"BATCH-{obj.delivery_date.strftime('%Y%m%d')}-01"
+
+    def get_temperature_celsius(self, obj):
+        batch = self._get_batch(obj)
+        if batch:
+            return float(batch.temperature_celsius)
+        return 3.8
 
 
 class LiveOrderItemSerializer(serializers.ModelSerializer):

@@ -610,29 +610,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now().add(const Duration(days: 1)),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 7)),
-                    );
-                    if (date != null) {
-                      setState(() => _isGeneratingTasks = true);
-                      final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-                      final result = await widget.state.generateDailyTasks(date: dateStr);
-                      setState(() => _isGeneratingTasks = false);
-                      if (result != null && context.mounted) {
-                        final tasksCreated = result['tasks_created'] ?? 0;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: const Color(0xFF0D7C66),
-                            content: Text('✅ $tasksCreated tasks created for $dateStr'),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onTap: () => _showBatchLabQualityDialog(context, isGeneratingDeliveries: true),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -2746,8 +2724,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
-  void _showBatchLabQualityDialog(BuildContext context) {
+  void _showBatchLabQualityDialog(BuildContext context, {bool isGeneratingDeliveries = false}) {
     String selectedProduct = 'Pure Buffalo Milk';
+    DateTime selectedDate = isGeneratingDeliveries ? DateTime.now().add(const Duration(days: 1)) : DateTime.now();
     final fatCtrl = TextEditingController(text: '6.8');
     final snfCtrl = TextEditingController(text: '9.0');
     final waterCtrl = TextEditingController(text: '0.0');
@@ -2763,6 +2742,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
+            final dateStr = "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
+            final nowStr = "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}";
+            final isToday = dateStr == nowStr;
+
             return Padding(
               padding: EdgeInsets.only(
                 left: 20,
@@ -2786,15 +2769,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Text('🥛', style: TextStyle(fontSize: 22)),
-                            SizedBox(width: 8),
+                            Text(isGeneratingDeliveries ? '🚀' : '🥛', style: const TextStyle(fontSize: 22)),
+                            const SizedBox(width: 8),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Hub Provider Batch Dispatch', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                                Text('Enter daily lab purity & price per litre', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                Text(
+                                  isGeneratingDeliveries ? 'Generate Deliveries & Certify Batch' : 'Hub Daily Batch Certification',
+                                  style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                ),
+                                Text(
+                                  isGeneratingDeliveries
+                                      ? 'Certify today\'s milk quality & create morning drop tasks'
+                                      : 'Enter daily lab purity & dynamic litre rate',
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                ),
                               ],
                             ),
                           ],
@@ -2804,8 +2795,62 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                     const Divider(height: 20),
 
-                    // 1. Select Milk Product
-                    const Text('1. Select Milk Product:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    // 1. Delivery Date Selection
+                    const Text('1. Delivery Batch Target Date:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ChoiceChip(
+                          label: Text('Today (${DateTime.now().day}/${DateTime.now().month})', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                          selected: isToday,
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedDate = DateTime.now());
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: Text('Tomorrow (${DateTime.now().add(const Duration(days: 1)).day}/${DateTime.now().add(const Duration(days: 1)).month})', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                          selected: selectedDate.day == DateTime.now().add(const Duration(days: 1)).day,
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedDate = DateTime.now().add(const Duration(days: 1)));
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(const Duration(days: 14)),
+                            );
+                            if (picked != null) {
+                              setModalState(() => selectedDate = picked);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_month_rounded, size: 14, color: Color(0xFF475569)),
+                                const SizedBox(width: 4),
+                                Text(dateStr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 2. Select Milk Product
+                    const Text('2. Select Milk Product Variety:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -2850,8 +2895,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // 2. Lab Purity Parameters
-                    const Text('2. Lab Quality Measurements:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    // 3. Lab Purity Parameters
+                    const Text('3. Certified Lab Quality Measurements:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -2888,8 +2933,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // 3. Litre Rate & Volume
-                    const Text('3. Litre Pricing & Batch Volume:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                    // 4. Litre Rate & Volume
+                    const Text('4. Dynamic Litre Pricing & Volume:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -2931,7 +2976,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                 final price = double.tryParse(priceCtrl.text) ?? 68.0;
                                 final volume = double.tryParse(volumeCtrl.text) ?? 450.0;
 
-                                final res = await ApiService.submitDailyMilkBatch(
+                                // Submit daily batch lab report
+                                await ApiService.submitDailyMilkBatch(
+                                  batchDate: dateStr,
                                   productName: selectedProduct,
                                   fatPercentage: fat,
                                   snfPercentage: snf,
@@ -2942,16 +2989,34 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   hubCode: widget.state.activeHubCode,
                                 );
 
+                                // If generating daily tasks or requested, trigger daily tasks generator with lab parameters
+                                Map<String, dynamic>? taskRes;
+                                if (isGeneratingDeliveries) {
+                                  taskRes = await widget.state.generateDailyTasks(
+                                    date: dateStr,
+                                    productName: selectedProduct,
+                                    fatPercentage: fat,
+                                    snfPercentage: snf,
+                                    waterPercentage: water,
+                                    pricePerLitre: price,
+                                    totalLitres: volume,
+                                    temperatureCelsius: 3.8,
+                                    hubCode: widget.state.activeHubCode,
+                                  );
+                                } else {
+                                  await widget.state.reloadAllData();
+                                }
+
                                 if (modalCtx.mounted) {
                                   Navigator.pop(ctx);
-                                  await widget.state.reloadAllData();
                                   if (context.mounted) {
+                                    final tasksCount = taskRes?['tasks_created'] ?? 0;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: const Color(0xFF0D7C66),
-                                        content: Text(res != null
-                                            ? '✅ Today\'s $selectedProduct batch certified: $fat% Fat, $snf% SNF @ ₹$price/L!'
-                                            : 'Failed to record batch'),
+                                        content: Text(isGeneratingDeliveries
+                                            ? '🚀 Certified $selectedProduct ($fat% Fat, $snf% SNF @ ₹$price/L) & generated $tasksCount deliveries for $dateStr!'
+                                            : '✅ Batch certified for $dateStr: $fat% Fat, $snf% SNF @ ₹$price/L!'),
                                       ),
                                     );
                                   }
@@ -2959,10 +3024,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               },
                         icon: isSubmitting
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Icon(Icons.verified_rounded),
+                            : Icon(isGeneratingDeliveries ? Icons.local_shipping_rounded : Icons.verified_rounded),
                         label: Text(
-                          isSubmitting ? 'Certifying Batch...' : '🔬 Certify Lab Report & Dispatch 🚀',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          isSubmitting
+                              ? 'Certifying & Generating...'
+                              : (isGeneratingDeliveries
+                                  ? '🚀 Certify Lab & Generate Deliveries'
+                                  : '🔬 Certify Lab Report & Dispatch 🚀'),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0D7C66),

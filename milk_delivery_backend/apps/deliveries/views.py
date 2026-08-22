@@ -447,6 +447,53 @@ class GenerateTodayTasksView(APIView):
             )
             resumed_count += 1
 
+        # Record & wire daily batch lab certification if provided
+        product_name = request.data.get("product_name", "Pure Buffalo Milk")
+        fat_val = request.data.get("fat_percentage")
+        snf_val = request.data.get("snf_percentage")
+        water_val = request.data.get("water_percentage", 0.0)
+        price_val = request.data.get("price_per_litre")
+        total_litres = request.data.get("total_litres", 450.0)
+        temp_val = request.data.get("temperature_celsius", 3.8)
+
+        created_batch_code = None
+        if fat_val is not None and price_val is not None:
+            from django.db import models
+            from apps.deliveries.models import DailyMilkBatch, LocationHub
+            from apps.products.models import Product
+            import random
+            
+            hub_code = request.data.get("hub_code") or request.data.get("hub_id")
+            hub_obj = None
+            if hub_code:
+                hub_obj = LocationHub.objects.filter(models.Q(hub_code=hub_code) | models.Q(id__iexact=str(hub_code))).first()
+            if not hub_obj:
+                hub_obj = LocationHub.objects.first()
+
+            batch_code = request.data.get("batch_code") or f"BATCH-{target_date.strftime('%Y%m%d')}-{random.randint(100, 999)}"
+            created_batch_code = batch_code
+
+            DailyMilkBatch.objects.update_or_create(
+                batch_date=target_date,
+                product_name=product_name,
+                defaults={
+                    "hub": hub_obj,
+                    "batch_code": batch_code,
+                    "fat_percentage": float(fat_val),
+                    "snf_percentage": float(snf_val or 9.0),
+                    "water_percentage": float(water_val or 0.0),
+                    "price_per_litre": float(price_val),
+                    "total_litres": float(total_litres or 450.0),
+                    "temperature_celsius": float(temp_val or 3.8),
+                    "status": "DISPATCHED",
+                    "dispatched_by": request.user if request.user.is_authenticated else None,
+                }
+            )
+
+            # Update product unit price
+            first_w = product_name.split()[0] if product_name else "Milk"
+            Product.objects.filter(name__icontains=first_w).update(price_per_unit=float(price_val))
+
         # Generate tasks for active subscriptions
         active_subs = (
             Subscription.objects

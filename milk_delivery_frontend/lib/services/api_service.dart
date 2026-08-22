@@ -985,10 +985,28 @@ class ApiService {
     return null;
   }
 
-  static Future<Map<String, dynamic>?> generateTodayTasks({String? date}) async {
+  static Future<Map<String, dynamic>?> generateTodayTasks({
+    String? date,
+    String? productName,
+    double? fatPercentage,
+    double? snfPercentage,
+    double? waterPercentage,
+    double? pricePerLitre,
+    double? totalLitres,
+    double? temperatureCelsius,
+    String? hubCode,
+  }) async {
     try {
       final body = <String, dynamic>{};
       if (date != null) body['date'] = date;
+      if (productName != null) body['product_name'] = productName;
+      if (fatPercentage != null) body['fat_percentage'] = fatPercentage;
+      if (snfPercentage != null) body['snf_percentage'] = snfPercentage;
+      if (waterPercentage != null) body['water_percentage'] = waterPercentage;
+      if (pricePerLitre != null) body['price_per_litre'] = pricePerLitre;
+      if (totalLitres != null) body['total_litres'] = totalLitres;
+      if (temperatureCelsius != null) body['temperature_celsius'] = temperatureCelsius;
+      if (hubCode != null) body['hub_code'] = hubCode;
 
       final res = await _executeWithRetry(() => _client.post(
             Uri.parse('$baseUrl/admin/generate-tasks/'),
@@ -1103,6 +1121,7 @@ class ApiService {
     required double pricePerLitre,
     required double totalLitres,
     double temperatureCelsius = 3.8,
+    String? batchDate,
     String? hubCode,
     String? batchCode,
     String qualityCertificateNote = 'FSSAI Certified • Passed 24 Purity Checks',
@@ -1116,6 +1135,7 @@ class ApiService {
         'price_per_litre': pricePerLitre,
         'total_litres': totalLitres,
         'temperature_celsius': temperatureCelsius,
+        if (batchDate != null) 'batch_date': batchDate,
         if (hubCode != null) 'hub_code': hubCode,
         if (batchCode != null) 'batch_code': batchCode,
         'quality_certificate_note': qualityCertificateNote,

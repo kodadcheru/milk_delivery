@@ -472,8 +472,28 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<String, dynamic>?> generateDailyTasks({String? date}) async {
-    final result = await ApiService.generateDailyTasks(date: date);
+  Future<Map<String, dynamic>?> generateDailyTasks({
+    String? date,
+    String? productName,
+    double? fatPercentage,
+    double? snfPercentage,
+    double? waterPercentage,
+    double? pricePerLitre,
+    double? totalLitres,
+    double? temperatureCelsius,
+    String? hubCode,
+  }) async {
+    final result = await ApiService.generateTodayTasks(
+      date: date,
+      productName: productName,
+      fatPercentage: fatPercentage,
+      snfPercentage: snfPercentage,
+      waterPercentage: waterPercentage,
+      pricePerLitre: pricePerLitre,
+      totalLitres: totalLitres,
+      temperatureCelsius: temperatureCelsius,
+      hubCode: hubCode ?? activeHubCode,
+    );
     if (result != null) {
       await reloadAllData();
     }

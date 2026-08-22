@@ -23,6 +23,12 @@ class DeliveryTaskModel {
   final int quantity;
   final String packSize;
   final double pricePerUnit;
+  final double fatPercentage;
+  final double snfPercentage;
+  final double waterPercentage;
+  final double batchPricePerLitre;
+  final String batchCode;
+  final double temperatureCelsius;
 
   DeliveryTaskModel({
     required this.id,
@@ -46,6 +52,12 @@ class DeliveryTaskModel {
     this.quantity = 1,
     this.packSize = '1 Litre',
     this.pricePerUnit = 72.0,
+    this.fatPercentage = 6.8,
+    this.snfPercentage = 9.0,
+    this.waterPercentage = 0.0,
+    this.batchPricePerLitre = 68.0,
+    this.batchCode = 'BATCH-TODAY-01',
+    this.temperatureCelsius = 3.8,
   });
 
   String get displayProductName => (subscriptionDetail?.productDetail?.name.isNotEmpty == true)
@@ -95,6 +107,13 @@ class DeliveryTaskModel {
     final rawPrice = json['price_per_unit'] ?? (subDetail?.productDetail?.pricePerUnit);
     final parsedPrice = double.tryParse(rawPrice?.toString() ?? '72.0') ?? 72.0;
 
+    final parsedFat = double.tryParse(json['fat_percentage']?.toString() ?? '6.8') ?? 6.8;
+    final parsedSnf = double.tryParse(json['snf_percentage']?.toString() ?? '9.0') ?? 9.0;
+    final parsedWater = double.tryParse(json['water_percentage']?.toString() ?? '0.0') ?? 0.0;
+    final parsedBatchPrice = double.tryParse(json['batch_price_per_litre']?.toString() ?? '$parsedPrice') ?? parsedPrice;
+    final parsedBatchCode = json['batch_code']?.toString() ?? 'BATCH-LIVE-01';
+    final parsedTemp = double.tryParse(json['temperature_celsius']?.toString() ?? '3.8') ?? 3.8;
+
     return DeliveryTaskModel(
       id: json['id'] ?? 0,
       subscriptionId: json['subscription'] ?? 0,
@@ -117,6 +136,12 @@ class DeliveryTaskModel {
       quantity: (json['quantity'] as num?)?.toInt() ?? (subDetail?.quantity ?? 1),
       packSize: json['pack_size'] ?? (subDetail?.packSize ?? '1 Litre'),
       pricePerUnit: parsedPrice,
+      fatPercentage: parsedFat,
+      snfPercentage: parsedSnf,
+      waterPercentage: parsedWater,
+      batchPricePerLitre: parsedBatchPrice,
+      batchCode: parsedBatchCode,
+      temperatureCelsius: parsedTemp,
     );
   }
 
@@ -124,6 +149,12 @@ class DeliveryTaskModel {
     String? status,
     String? proofImageUrl,
     String? deliveredAt,
+    double? fatPercentage,
+    double? snfPercentage,
+    double? waterPercentage,
+    double? batchPricePerLitre,
+    String? batchCode,
+    double? temperatureCelsius,
   }) {
     return DeliveryTaskModel(
       id: id,
@@ -142,6 +173,17 @@ class DeliveryTaskModel {
       deliveredAt: deliveredAt ?? this.deliveredAt,
       customerLatitude: customerLatitude,
       customerLongitude: customerLongitude,
+      productName: productName,
+      productImage: productImage,
+      quantity: quantity,
+      packSize: packSize,
+      pricePerUnit: pricePerUnit,
+      fatPercentage: fatPercentage ?? this.fatPercentage,
+      snfPercentage: snfPercentage ?? this.snfPercentage,
+      waterPercentage: waterPercentage ?? this.waterPercentage,
+      batchPricePerLitre: batchPricePerLitre ?? this.batchPricePerLitre,
+      batchCode: batchCode ?? this.batchCode,
+      temperatureCelsius: temperatureCelsius ?? this.temperatureCelsius,
     );
   }
 

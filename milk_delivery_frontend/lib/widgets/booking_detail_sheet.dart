@@ -574,7 +574,15 @@ class BookingDetailSheet extends StatelessWidget {
   }) {
     final nameLower = productName.toLowerCase();
     
-    // Check if Hub Provider certified a batch for today
+    // 1. Check if the delivery task itself has batch parameters wired
+    String fatVal = '${subscriptionTask?.fatPercentage ?? 6.8}%';
+    String snfVal = '${subscriptionTask?.snfPercentage ?? 9.0}%';
+    String waterVal = '${subscriptionTask?.waterPercentage ?? 0.0}%';
+    String priceVal = subscriptionTask != null ? '₹${subscriptionTask!.batchPricePerLitre.toStringAsFixed(0)}/L' : '';
+    String batchCode = subscriptionTask?.batchCode ?? 'BATCH-KDD-01';
+    String tempVal = '${subscriptionTask?.temperatureCelsius ?? 3.8}°C';
+
+    // 2. Check if Hub Provider certified a batch for today
     Map<String, dynamic>? activeBatch;
     final batches = state.dailyMilkBatches;
     if (batches.isNotEmpty) {
@@ -587,18 +595,16 @@ class BookingDetailSheet extends StatelessWidget {
       );
     }
 
-    String fatVal = activeBatch?['fat_percentage'] != null ? '${activeBatch!['fat_percentage']}%' : '4.5%';
-    String snfVal = activeBatch?['snf_percentage'] != null ? '${activeBatch!['snf_percentage']}%' : '8.5%';
-    String waterVal = activeBatch?['water_percentage'] != null ? '${activeBatch!['water_percentage']}%' : '0.0%';
-    String priceVal = activeBatch?['price_per_litre'] != null ? '₹${(activeBatch!['price_per_litre'] as num).toStringAsFixed(0)}/L' : '';
-    String batchCode = activeBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
-    String tempVal = activeBatch?['temperature_celsius'] != null ? '${activeBatch!['temperature_celsius']}°C' : '3.8°C';
+    if (activeBatch != null) {
+      fatVal = '${activeBatch['fat_percentage']}%';
+      snfVal = '${activeBatch['snf_percentage']}%';
+      waterVal = '${activeBatch['water_percentage']}%';
+      priceVal = '₹${(activeBatch['price_per_litre'] as num).toStringAsFixed(0)}/L';
+      batchCode = activeBatch['batch_code']?.toString() ?? batchCode;
+      tempVal = '${activeBatch['temperature_celsius']}°C';
+    }
 
-    String puritySub = activeBatch != null
-        ? 'Hub Certified ($batchCode) • Chilled at $tempVal'
-        : (nameLower.contains('buffalo')
-            ? 'Rich Natural Butterfat • High Calcium'
-            : '100% Farm-Direct A2 Quality');
+    String puritySub = 'Hub Certified ($batchCode) • Chilled at $tempVal';
 
     if (activeBatch == null) {
       if (nameLower.contains('buffalo')) {
