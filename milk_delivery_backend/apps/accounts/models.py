@@ -131,3 +131,29 @@ class CustomerAddress(models.Model):
             CustomerAddress.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(is_default=False)
         super().save(*args, **kwargs)
 
+
+class SupportMessage(models.Model):
+    class SenderTypes(models.TextChoices):
+        USER = "user", "Customer"
+        AGENT = "agent", "Support Agent"
+        SYSTEM = "system", "System"
+
+    phone = models.CharField(max_length=20, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="support_messages")
+    sender_type = models.CharField(max_length=10, choices=SenderTypes.choices, default=SenderTypes.USER)
+    sender_name = models.CharField(max_length=100, default="Customer")
+    text = models.TextField()
+    order_id = models.CharField(max_length=50, blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["phone", "created_at"], name="supp_phone_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"[{self.sender_type}] {self.sender_name} ({self.phone}): {self.text[:30]}"
+
+

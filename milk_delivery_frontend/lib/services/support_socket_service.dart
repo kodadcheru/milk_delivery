@@ -106,7 +106,7 @@ class SupportSocketService {
       } catch (_) {}
     }
 
-    // 3. Transmit via HTTP POST to Redis backend so Web Admin Console receives it
+    // 3. Transmit via HTTP POST to backend DB & Redis so Web Admin Console receives it
     final phone = userPhone ?? '+917794893990';
     ApiService.sendSupportChatMessage(
       phone: phone,
@@ -127,54 +127,7 @@ class SupportSocketService {
         );
         _messageController.add(agentMsg);
       }
-    }).catchError((_) {
-      // Fallback local agent reply if offline
-      _dispatchAutomatedAgentReply(text, orderId: orderId);
-    });
-  }
-
-  void _dispatchAutomatedAgentReply(String userQuery, {String? orderId}) {
-    _typingController.add(true);
-
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      _typingController.add(false);
-
-      final lower = userQuery.toLowerCase();
-      String replyText;
-      List<String>? quickReplies;
-
-      if (lower.contains('where') || lower.contains('track') || lower.contains('order') || lower.contains('late') || lower.contains('delivery')) {
-        replyText = '🥛 Your morning farm delivery is scheduled for guaranteed dispatch by 05:30 AM and doorstep delivery by 06:00 AM.\n\nOur driver will place the chilled insulated bag at your doorstep and notify you with a live delivery photo proof! 📸';
-        quickReplies = ['Track live on Map', 'Contact Driver', 'I need immediate assistance'];
-      } else if (lower.contains('vacation') || lower.contains('pause') || lower.contains('stop')) {
-        replyText = '🏖️ Going on vacation? You can easily pause your daily subscription anytime with 1 tap from the Subscriptions Tab!\n\nNo charges will be deducted from your wallet for paused days.';
-        quickReplies = ['Pause Subscription', 'Check Wallet Balance'];
-      } else if (lower.contains('wallet') || lower.contains('refund') || lower.contains('money') || lower.contains('balance')) {
-        replyText = '💳 All unused subscription days and skipped deliveries are automatically credited back to your prepaid wallet in real-time. You can top up anytime via UPI or Card in the Wallet tab.';
-        quickReplies = ['Open Wallet', 'Top Up ₹500', 'Top Up ₹1000'];
-      } else if (lower.contains('quantity') || lower.contains('change') || lower.contains('more milk') || lower.contains('extra')) {
-        replyText = '🥛 Need extra milk tomorrow? Simply go to your Active Subscription and use the + / - steppers to adjust your daily liters before 10:00 PM!';
-        quickReplies = ['Change Quantity', 'Add Water Cans', 'Add Fresh Eggs'];
-      } else if (lower.contains('call') || lower.contains('human') || lower.contains('agent') || lower.contains('specialist')) {
-        replyText = '👨‍💼 Routing you to our senior live support manager... You can also dial our 24/7 toll-free priority line at 1800-6455-3767 for instant telephone assistance!';
-        quickReplies = ['📞 Call 1800-6455-3767', '💬 Continue Chat'];
-      } else {
-        replyText = '👋 Thank you for contacting MilkDrop Express Support! I am connected to your account. How can our team assist you with your delivery, subscriptions, or fresh orders today?';
-        quickReplies = ['Delivery Timing ⏰', 'Vacation Pause 🏖️', 'Wallet & Refunds 💳', 'Speak to Agent 👨‍💼'];
-      }
-
-      final agentMsg = SupportChatMessage(
-        id: 'rep_${DateTime.now().millisecondsSinceEpoch}',
-        senderType: MessageSenderType.agent,
-        senderName: 'Priya (MilkDrop Support)',
-        text: replyText,
-        timestamp: DateTime.now(),
-        quickReplies: quickReplies,
-        orderId: orderId,
-      );
-
-      _messageController.add(agentMsg);
-    });
+    }).catchError((_) {});
   }
 
   void dispose() {
@@ -185,3 +138,4 @@ class SupportSocketService {
     _connectionStatusController.close();
   }
 }
+

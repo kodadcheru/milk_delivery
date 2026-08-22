@@ -1976,6 +1976,14 @@
               </div>
             </div>
 
+            <!-- Canned Quick Replies -->
+            <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px; border-radius: 12px;" onclick="insertQuickReply('🥛 Your morning delivery is confirmed for 05:30 AM - 07:00 AM.')">🥛 Delivery Confirmed</button>
+              <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px; border-radius: 12px;" onclick="insertQuickReply('💳 Your prepaid wallet has been credited in real-time.')">💳 Wallet Credited</button>
+              <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px; border-radius: 12px;" onclick="insertQuickReply('🏖️ Vacation pause is active. No wallet deductions will occur.')">🏖️ Vacation Pause Active</button>
+              <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px; border-radius: 12px;" onclick="insertQuickReply('📞 Our hub operations team is reaching out to you on phone.')">📞 Manager Calling</button>
+            </div>
+
             <!-- Reply Input Bar -->
             <div style="display: flex; gap: 10px;">
               <input type="text" id="adminSupportReplyInput" class="form-control" placeholder="Type support reply to customer..." style="flex: 1; border-radius: 24px; padding: 10px 18px;" onkeypress="if(event.key==='Enter') sendAdminSupportReply()">
@@ -6989,7 +6997,22 @@
       }
     }
 
-    // ── Live Support Chat Console Logic (Redis-backed) ──
+    // ── Live Support Chat Console Logic (PostgreSQL & Redis Backed) ──
+    let lastRenderedChatMsgCount = -1;
+    let lastRenderedChatPhone = null;
+
+    function getCleanDigits(p) {
+      return String(p || '').replace(/\D/g, '').slice(-10);
+    }
+
+    function insertQuickReply(txt) {
+      const input = document.getElementById('adminSupportReplyInput');
+      if (input) {
+        input.value = txt;
+        input.focus();
+      }
+    }
+
     async function loadSupportChatThreads() {
       try {
         const token = localStorage.getItem('milkdrop_admin_token');
@@ -7011,15 +7034,17 @@
       const container = document.getElementById('supportThreadsList');
       if (!container) return;
 
+      const activeDigits = getCleanDigits(activeSupportChatPhone);
       let html = '';
+
       if (threads && threads.length > 0) {
         html += '<div style="font-size: 11px; font-weight: bold; color: #10B981; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Active Chat Sessions</div>';
         html += threads.map(t => {
-          const isSelected = activeSupportChatPhone === t.phone;
+          const isSelected = activeDigits && (activeDigits === getCleanDigits(t.phone) || activeDigits === getCleanDigits(t.clean_phone));
           const timeStr = t.last_timestamp ? new Date(t.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
           return `
             <div onclick="openSupportChatThread('${t.phone}', '${(t.customer_name || 'Customer').replace(/'/g, "\\'")}')" 
-                 style="padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(13, 124, 102, 0.25)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${isSelected ? '#0D7C66' : 'rgba(255, 255, 255, 0.06)'};">
+                 style="padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(13, 124, 102, 0.35)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${isSelected ? '#10B981' : 'rgba(255, 255, 255, 0.06)'}; box-shadow: ${isSelected ? '0 0 10px rgba(16,185,129,0.2)' : 'none'};">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                 <span style="font-weight: 600; font-size: 13px; color: ${isSelected ? '#38BDF8' : '#fff'};">${t.customer_name || 'Customer'}</span>
                 <span style="font-size: 10.5px; color: var(--text-muted);">${timeStr}</span>
@@ -7034,13 +7059,13 @@
 
       // Also render registered customer directory for direct 1-click chat initiation
       if (rawCustomers && rawCustomers.length > 0) {
-        html += '<div style="font-size: 11px; font-weight: bold; color: #38BDF8; margin: 12px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">👥 Registered Customers</div>';
+        html += '<div style="font-size: 11px; font-weight: bold; color: #38BDF8; margin: 12px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">👥 All Customers Directory</div>';
         html += rawCustomers.map(c => {
-          const isSelected = activeSupportChatPhone === c.phone;
+          const isSelected = activeDigits && (activeDigits === getCleanDigits(c.phone));
           const cName = `${c.first_name || c.username} ${c.last_name || ''}`.trim();
           return `
             <div onclick="openSupportChatThread('${c.phone}', '${cName.replace(/'/g, "\\'")}')"
-                 style="padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.02)'}; border: 1px solid ${isSelected ? '#0284C7' : 'rgba(255, 255, 255, 0.04)'}; display: flex; justify-content: space-between; align-items: center;">
+                 style="padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(2, 132, 199, 0.25)' : 'rgba(255, 255, 255, 0.02)'}; border: 1px solid ${isSelected ? '#38BDF8' : 'rgba(255, 255, 255, 0.04)'}; display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div style="font-size: 12.5px; font-weight: 500; color: #fff;">${cName}</div>
                 <div style="font-size: 10.5px; color: var(--text-muted);">${c.phone}</div>
@@ -7052,7 +7077,7 @@
       }
 
       if (!html) {
-        html = '<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 12px;"><i class="fa-solid fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.4;"></i>No active customer chats in Redis yet.</div>';
+        html = '<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 12px;"><i class="fa-solid fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.4;"></i>No active customer chats yet.</div>';
       }
 
       container.innerHTML = html;
@@ -7061,6 +7086,7 @@
     async function openSupportChatThread(phone, customerName) {
       activeSupportChatPhone = phone;
       activeSupportChatName = customerName;
+      lastRenderedChatMsgCount = -1; // Reset counter for new conversation
 
       document.getElementById('activeChatCustName').innerText = customerName;
       document.getElementById('activeChatCustPhone').innerText = `📞 ${phone} • Live Support Session`;
@@ -7072,7 +7098,7 @@
       if (supportChatPollInterval) clearInterval(supportChatPollInterval);
       supportChatPollInterval = setInterval(() => {
         if (activeSupportChatPhone) fetchAndRenderChatMessages(activeSupportChatPhone);
-      }, 3000);
+      }, 2500);
     }
 
     async function fetchAndRenderChatMessages(phone) {
@@ -7083,7 +7109,13 @@
         });
         if (res.ok) {
           const data = await res.json();
-          renderSupportChatMessages(data.messages || []);
+          const msgs = data.messages || [];
+          // Only re-render if phone changed or new messages arrived to prevent flickering
+          if (phone !== lastRenderedChatPhone || msgs.length !== lastRenderedChatMsgCount) {
+            lastRenderedChatPhone = phone;
+            lastRenderedChatMsgCount = msgs.length;
+            renderSupportChatMessages(msgs);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -7126,6 +7158,23 @@
       if (!text) return;
 
       input.value = '';
+
+      // Optimistically append message to box
+      const box = document.getElementById('supportChatMessagesBox');
+      if (box) {
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dummy = document.createElement('div');
+        dummy.style.cssText = 'display: flex; flex-direction: column; align-items: flex-end;';
+        dummy.innerHTML = `
+          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">Support Executive (You) • ${timeStr}</div>
+          <div style="max-width: 75%; padding: 9px 15px; border-radius: 14px; font-size: 12.5px; line-height: 1.45; background: linear-gradient(135deg, #0D7C66, #0284C7); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15);">
+            ${text}
+          </div>
+        `;
+        box.appendChild(dummy);
+        box.scrollTop = box.scrollHeight;
+        lastRenderedChatMsgCount += 1;
+      }
 
       try {
         const token = localStorage.getItem('milkdrop_admin_token');

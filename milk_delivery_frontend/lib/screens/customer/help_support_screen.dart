@@ -130,7 +130,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     });
 
     _loadHistory();
-    _historyPollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _syncIncomingMessages());
+    _historyPollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _syncIncomingMessages());
 
     if (widget.initialTopic != null) {
       _sendMessage(widget.initialTopic!);
@@ -144,6 +144,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
       setState(() {
+        _messages.removeWhere((m) => m.id == 'init_welcome');
         for (var h in history) {
           final id = h['id']?.toString() ?? 'hist_${h.hashCode}';
           if (!_messages.any((m) => m.id == id)) {
