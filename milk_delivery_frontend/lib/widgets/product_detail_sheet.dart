@@ -264,22 +264,71 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── Lab Quality & Purity Assurance Certificate ──
+                    // ── Lab Quality & Purity Assurance Certificate (FAT, SNF, Water %) ──
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0FDF4),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1.2),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      child: Column(
                         children: [
-                          _buildPurityMetric('🧪 0% Adulterants', 'Chemical Free'),
-                          Container(height: 20, width: 1, color: const Color(0xFFCBD5E1)),
-                          _buildPurityMetric('❄️ < 4°C Chilled', 'Direct Cold Chain'),
-                          Container(height: 20, width: 1, color: const Color(0xFFCBD5E1)),
-                          _buildPurityMetric('🔬 24 Tests Passed', 'FSSAI Certified'),
+                          Row(
+                            children: [
+                              const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 16),
+                              const SizedBox(width: 6),
+                              const Expanded(
+                                child: Text(
+                                  'Lab Quality & Purity Breakdown',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF059669),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text('GRADE A+', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildPurityMetric(
+                                item.name.toLowerCase().contains('buffalo') ? '🧈 6.8% Fat' : (item.name.toLowerCase().contains('desi') || item.name.toLowerCase().contains('gir') || item.name.toLowerCase().contains('a2') ? '🧈 4.5% Fat' : (item.category == 'PANEER' ? '🧈 22.0% Fat' : (item.category == 'GHEE' ? '🧈 99.7% Fat' : '🧈 4.2% Fat'))),
+                                'Natural Cream',
+                              ),
+                              Container(height: 24, width: 1, color: const Color(0xFFCBD5E1)),
+                              _buildPurityMetric(
+                                item.name.toLowerCase().contains('buffalo') ? '🔬 9.0% SNF' : (item.name.toLowerCase().contains('desi') || item.name.toLowerCase().contains('gir') || item.name.toLowerCase().contains('a2') ? '🔬 8.8% SNF' : (item.category == 'PANEER' ? '🔬 18.0% SNF' : (item.category == 'GHEE' ? '🔬 0.3% SNF' : '🔬 8.5% SNF'))),
+                                'Solid-Not-Fat',
+                              ),
+                              Container(height: 24, width: 1, color: const Color(0xFFCBD5E1)),
+                              _buildPurityMetric(
+                                '💧 0.0% Water',
+                                'Zero Added Water',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: const Text(
+                              '❄️ Chilled at 3.8°C • Tested 0% Adulterants • 24 Purity Checks Passed',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 10, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         ],
                       ),
                     ),
