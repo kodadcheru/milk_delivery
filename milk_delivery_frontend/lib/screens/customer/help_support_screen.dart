@@ -143,21 +143,21 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     final phone = widget.state.currentUser?.phone ?? '+917794893990';
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
+      final serverMsgs = history.map((h) {
+        return SupportChatMessage(
+          id: h['id']?.toString() ?? 'hist_${h.hashCode}',
+          senderType: h['sender_type'] == 'agent' ? MessageSenderType.agent : MessageSenderType.user,
+          senderName: h['sender_name']?.toString() ?? (h['sender_type'] == 'agent' ? 'Support Executive' : 'You'),
+          text: h['text']?.toString() ?? '',
+          timestamp: h['timestamp'] != null ? (DateTime.tryParse(h['timestamp'].toString()) ?? DateTime.now()) : DateTime.now(),
+          orderId: h['order_id']?.toString(),
+        );
+      }).toList();
+
       setState(() {
-        _messages.removeWhere((m) => m.id == 'init_welcome');
-        for (var h in history) {
-          final id = h['id']?.toString() ?? 'hist_${h.hashCode}';
-          if (!_messages.any((m) => m.id == id)) {
-            _messages.add(SupportChatMessage(
-              id: id,
-              senderType: h['sender_type'] == 'agent' ? MessageSenderType.agent : MessageSenderType.user,
-              senderName: h['sender_name']?.toString() ?? (h['sender_type'] == 'agent' ? 'Priya (MilkDrop Support)' : 'You'),
-              text: h['text']?.toString() ?? '',
-              timestamp: h['timestamp'] != null ? (DateTime.tryParse(h['timestamp'].toString()) ?? DateTime.now()) : DateTime.now(),
-              orderId: h['order_id']?.toString(),
-            ));
-          }
-        }
+        _messages
+          ..clear()
+          ..addAll(serverMsgs);
       });
       _scrollToBottom();
     }
@@ -167,23 +167,24 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     final phone = widget.state.currentUser?.phone ?? '+917794893990';
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
-      bool hasNew = false;
-      for (var h in history) {
-        final id = h['id']?.toString() ?? 'hist_${h.hashCode}';
-        if (!_messages.any((m) => m.id == id)) {
-          _messages.add(SupportChatMessage(
-            id: id,
-            senderType: h['sender_type'] == 'agent' ? MessageSenderType.agent : MessageSenderType.user,
-            senderName: h['sender_name']?.toString() ?? (h['sender_type'] == 'agent' ? 'Priya (MilkDrop Support)' : 'You'),
-            text: h['text']?.toString() ?? '',
-            timestamp: h['timestamp'] != null ? (DateTime.tryParse(h['timestamp'].toString()) ?? DateTime.now()) : DateTime.now(),
-            orderId: h['order_id']?.toString(),
-          ));
-          hasNew = true;
-        }
-      }
-      if (hasNew) {
-        setState(() {});
+      final serverMsgs = history.map((h) {
+        return SupportChatMessage(
+          id: h['id']?.toString() ?? 'hist_${h.hashCode}',
+          senderType: h['sender_type'] == 'agent' ? MessageSenderType.agent : MessageSenderType.user,
+          senderName: h['sender_name']?.toString() ?? (h['sender_type'] == 'agent' ? 'Support Executive' : 'You'),
+          text: h['text']?.toString() ?? '',
+          timestamp: h['timestamp'] != null ? (DateTime.tryParse(h['timestamp'].toString()) ?? DateTime.now()) : DateTime.now(),
+          orderId: h['order_id']?.toString(),
+        );
+      }).toList();
+
+      // Only update if server list count is different or content changed
+      if (serverMsgs.length != _messages.length) {
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(serverMsgs);
+        });
         _scrollToBottom();
       }
     }
@@ -215,13 +216,33 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
 
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
+    final trimmed = text.trim();
     _messageController.clear();
 
-    _socketService.sendMessage(
-      text: text.trim(),
+    // 1. Instantly show user message in UI
+    final tempMsg = SupportChatMessage(
+      id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+      senderType: MessageSenderType.user,
       senderName: widget.state.currentUser?.firstName ?? 'You',
-      userPhone: widget.state.currentUser?.phone,
+      text: trimmed,
+      timestamp: DateTime.now(),
     );
+
+    setState(() {
+      _messages.add(tempMsg);
+    });
+    _scrollToBottom();
+
+    // 2. Transmit to backend
+    final phone = widget.state.currentUser?.phone ?? '+917794893990';
+    ApiService.sendSupportChatMessage(
+      phone: phone,
+      text: trimmed,
+      senderType: 'user',
+      senderName: widget.state.currentUser?.fullName ?? 'Customer',
+    ).then((_) {
+      _syncIncomingMessages();
+    });
   }
 
   Future<void> _callSupportHotline() async {
