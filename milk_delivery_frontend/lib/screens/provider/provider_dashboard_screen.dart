@@ -2987,12 +2987,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                 if (modalCtx.mounted) {
                                   Navigator.pop(ctx);
                                   if (context.mounted) {
-                                    final tasksCount = taskRes?['tasks_created'] ?? 0;
+                                    final tasksCreated = taskRes?['tasks_created'] ?? 0;
+                                    final totalTasks = taskRes?['total_tasks'] ?? tasksCreated;
+                                    final String taskMsg;
+                                    if (tasksCreated > 0) {
+                                      taskMsg = '& generated $tasksCreated new deliveries for $dateStr!';
+                                    } else if (totalTasks > 0) {
+                                      taskMsg = '— $totalTasks deliveries already scheduled for $dateStr ✅';
+                                    } else {
+                                      taskMsg = '— no active subscriptions found for $dateStr';
+                                    }
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: const Color(0xFF0D7C66),
                                         content: Text(isGeneratingDeliveries
-                                            ? '🚀 Certified $selectedProduct ($fat% Fat, $snf% SNF @ ₹$price/L) & generated $tasksCount deliveries for $dateStr!'
+                                            ? '🚀 Certified $selectedProduct ($fat% Fat, $snf% SNF @ ₹$price/L) $taskMsg'
                                             : '✅ Batch certified for $dateStr: $fat% Fat, $snf% SNF @ ₹$price/L!'),
                                       ),
                                     );

@@ -570,10 +570,14 @@ class GenerateTodayTasksView(APIView):
                 task.batch = matching_batch
                 task.save(update_fields=['batch'])
 
+        # Count total existing tasks for this date (including ones just created)
+        total_tasks = DeliveryTask.objects.filter(delivery_date=target_date).count()
+
         return Response({
             "message": f"Task generation complete for {target_date}.",
             "date": str(target_date),
             "tasks_created": created_count,
+            "total_tasks": total_tasks,
             "subscriptions_skipped": skipped_count,
             "vacations_resumed": resumed_count,
         })
