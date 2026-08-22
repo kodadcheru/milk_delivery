@@ -152,11 +152,11 @@ class FloatingCartBar extends StatelessWidget {
         builder: (ctx, setSheetState) {
           if (!hasFetchedSlots) {
             hasFetchedSlots = true;
-            import_api_fetch() async {
+            Future<void> fetchSlots() async {
               final slots = await ApiService.fetchSlotAvailability();
               if (ctx.mounted) setSheetState(() => slotsData = slots);
             }
-            import_api_fetch();
+            fetchSlots();
           }
 
           final items = state.cartProductsList;
@@ -667,30 +667,6 @@ class FloatingCartBar extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildSlotTile(String slotTime, String subtitle, String currentVal, Function(String) onSelect) {
-    final isSelected = currentVal == slotTime;
-    return InkWell(
-      onTap: () => onSelect(slotTime),
-      borderRadius: BorderRadius.circular(UiRadius.sm),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary.withValues(alpha: 0.1) : UiTone.shellBackground,
-          borderRadius: BorderRadius.circular(UiRadius.sm),
-          border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder, width: isSelected ? 1.5 : 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(slotTime, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5, color: isSelected ? UiTone.primary : Colors.black87)),
-            const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(fontSize: 9.5, color: isSelected ? UiTone.primary : Colors.grey[600], fontWeight: FontWeight.w600)),
-          ],
-        ),
       ),
     );
   }

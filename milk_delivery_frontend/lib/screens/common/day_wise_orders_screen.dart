@@ -399,7 +399,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedDate = date),
+        onTap: () => _selectPresetDate(offsetDays),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(

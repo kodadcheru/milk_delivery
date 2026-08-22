@@ -6990,11 +6990,15 @@
     // ── Live Support Chat Console Logic (Redis-backed) ──
     async function loadSupportChatThreads() {
       try {
-        const res = await fetch(`${baseUrl}/admin/support/threads/`);
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/support/threads/`, {
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
         if (res.ok) {
           const data = await res.json();
+          const threads = data.threads || [];
           document.getElementById('supp-active-threads').innerText = data.count || 0;
-          renderSupportChatThreads(data.threads || []);
+          renderSupportChatThreads(threads);
         }
       } catch (err) {
         console.error(err);
@@ -7005,27 +7009,51 @@
       const container = document.getElementById('supportThreadsList');
       if (!container) return;
 
-      if (!threads || threads.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 12px;"><i class="fa-solid fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.4;"></i>No active customer chats in Redis yet.</div>';
-        return;
+      let html = '';
+      if (threads && threads.length > 0) {
+        html += '<div style="font-size: 11px; font-weight: bold; color: #10B981; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Active Chat Sessions</div>';
+        html += threads.map(t => {
+          const isSelected = activeSupportChatPhone === t.phone;
+          const timeStr = t.last_timestamp ? new Date(t.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          return `
+            <div onclick="openSupportChatThread('${t.phone}', '${(t.customer_name || 'Customer').replace(/'/g, "\\'")}')" 
+                 style="padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(13, 124, 102, 0.25)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${isSelected ? '#0D7C66' : 'rgba(255, 255, 255, 0.06)'};">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-weight: 600; font-size: 13px; color: ${isSelected ? '#38BDF8' : '#fff'};">${t.customer_name || 'Customer'}</span>
+                <span style="font-size: 10.5px; color: var(--text-muted);">${timeStr}</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${t.last_message || 'Active thread'}
+              </div>
+            </div>
+          `;
+        }).join('');
       }
 
-      container.innerHTML = threads.map(t => {
-        const isSelected = activeSupportChatPhone === t.phone;
-        const timeStr = t.last_timestamp ? new Date(t.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-        return `
-          <div onclick="openSupportChatThread('${t.phone}', '${(t.customer_name || 'Customer').replace(/'/g, "\\'")}')" 
-               style="padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(13, 124, 102, 0.25)' : 'rgba(255, 255, 255, 0.03)'}; border: 1px solid ${isSelected ? '#0D7C66' : 'rgba(255, 255, 255, 0.06)'};">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-weight: 600; font-size: 13px; color: ${isSelected ? '#38BDF8' : '#fff'};">${t.customer_name || 'Customer'}</span>
-              <span style="font-size: 10.5px; color: var(--text-muted);">${timeStr}</span>
+      // Also render registered customer directory for direct 1-click chat initiation
+      if (rawCustomers && rawCustomers.length > 0) {
+        html += '<div style="font-size: 11px; font-weight: bold; color: #38BDF8; margin: 12px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">👥 Registered Customers</div>';
+        html += rawCustomers.map(c => {
+          const isSelected = activeSupportChatPhone === c.phone;
+          const cName = `${c.first_name || c.username} ${c.last_name || ''}`.trim();
+          return `
+            <div onclick="openSupportChatThread('${c.phone}', '${cName.replace(/'/g, "\\'")}')"
+                 style="padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; background: ${isSelected ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.02)'}; border: 1px solid ${isSelected ? '#0284C7' : 'rgba(255, 255, 255, 0.04)'}; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 12.5px; font-weight: 500; color: #fff;">${cName}</div>
+                <div style="font-size: 10.5px; color: var(--text-muted);">${c.phone}</div>
+              </div>
+              <i class="fa-solid fa-message" style="font-size: 11px; color: #38BDF8; opacity: 0.7;"></i>
             </div>
-            <div style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              ${t.last_message || 'Active thread'}
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
+
+      if (!html) {
+        html = '<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 12px;"><i class="fa-solid fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.4;"></i>No active customer chats in Redis yet.</div>';
+      }
+
+      container.innerHTML = html;
     }
 
     async function openSupportChatThread(phone, customerName) {
@@ -7033,7 +7061,7 @@
       activeSupportChatName = customerName;
 
       document.getElementById('activeChatCustName').innerText = customerName;
-      document.getElementById('activeChatCustPhone').innerText = `📞 ${phone} • Live Session`;
+      document.getElementById('activeChatCustPhone').innerText = `📞 ${phone} • Live Support Session`;
       document.getElementById('activeChatBadge').style.display = 'inline-block';
 
       loadSupportChatThreads();
@@ -7047,7 +7075,10 @@
 
     async function fetchAndRenderChatMessages(phone) {
       try {
-        const res = await fetch(`${baseUrl}/support/chat/history/?phone=${encodeURIComponent(phone)}`);
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/support/chat/history/?phone=${encodeURIComponent(phone)}`, {
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
         if (res.ok) {
           const data = await res.json();
           renderSupportChatMessages(data.messages || []);
@@ -7062,16 +7093,19 @@
       if (!box) return;
 
       if (!messages || messages.length === 0) {
-        box.innerHTML = '<div style="margin: auto; text-align: center; color: var(--text-muted); font-size: 12px;">No messages exchanged yet in this session.</div>';
+        box.innerHTML = '<div style="margin: auto; text-align: center; color: var(--text-muted); font-size: 12px;"><i class="fa-solid fa-comments" style="font-size: 24px; margin-bottom: 6px; display: block; opacity: 0.3;"></i>No messages exchanged yet with this customer.<br><span style="font-size: 11px; opacity: 0.7;">Type a message below to start a live support session.</span></div>';
         return;
       }
 
       box.innerHTML = messages.map(m => {
         const isAgent = m.sender_type === 'agent';
+        const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         return `
           <div style="display: flex; flex-direction: column; align-items: ${isAgent ? 'flex-end' : 'flex-start'};">
-            <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">${m.sender_name || (isAgent ? 'Support' : 'Customer')}</div>
-            <div style="max-width: 75%; padding: 8px 14px; border-radius: 14px; font-size: 12.5px; line-height: 1.4; background: ${isAgent ? 'linear-gradient(135deg, #0D7C66, #0284C7)' : 'rgba(255, 255, 255, 0.08)'}; color: #fff; border: 1px solid ${isAgent ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)'};">
+            <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">
+              ${isAgent ? 'Support Executive (You)' : (m.sender_name || 'Customer')} • ${timeStr}
+            </div>
+            <div style="max-width: 75%; padding: 9px 15px; border-radius: 14px; font-size: 12.5px; line-height: 1.45; background: ${isAgent ? 'linear-gradient(135deg, #0D7C66, #0284C7)' : 'rgba(255, 255, 255, 0.08)'}; color: #fff; border: 1px solid ${isAgent ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)'};">
               ${m.text}
             </div>
           </div>
@@ -7092,9 +7126,13 @@
       input.value = '';
 
       try {
+        const token = localStorage.getItem('milkdrop_admin_token');
         await fetch(`${baseUrl}/support/chat/send/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
           body: JSON.stringify({
             phone: activeSupportChatPhone,
             sender_type: 'agent',

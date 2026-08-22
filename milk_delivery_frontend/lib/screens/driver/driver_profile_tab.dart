@@ -54,7 +54,6 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
     final totalStops = widget.state.deliveries.length;
     final completedStops = widget.state.deliveries.where((d) => d.status == 'DELIVERED').length;
-    final pendingStops = widget.state.deliveries.where((d) => d.status == 'PENDING').length;
     final onTimePct = totalStops > 0 ? ((completedStops / totalStops) * 100).toStringAsFixed(1) : '100.0';
 
     final topInset = MediaQuery.of(context).padding.top;

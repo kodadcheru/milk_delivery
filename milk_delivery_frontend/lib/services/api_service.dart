@@ -1226,5 +1226,68 @@ class ApiService {
     }
     return null;
   }
+
+  // ── 20. Support Desk & Live Chat ──
+  static Future<Map<String, dynamic>?> sendSupportChatMessage({
+    required String phone,
+    required String text,
+    String senderType = 'user',
+    String senderName = 'Customer',
+    String? orderId,
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/support/chat/send/'),
+            headers: _headers,
+            body: jsonEncode({
+              'phone': phone,
+              'sender_type': senderType,
+              'sender_name': senderName,
+              'text': text,
+              if (orderId != null) 'order_id': orderId,
+            }),
+          ));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchSupportChatHistory(String phone) async {
+    try {
+      final uri = Uri.parse('$baseUrl/support/chat/history/').replace(queryParameters: {'phone': phone});
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data['messages'] is List) {
+          return (data['messages'] as List).map((m) => m as Map<String, dynamic>).toList();
+        }
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchAdminSupportThreads() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/admin/support/threads/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data['threads'] is List) {
+          return (data['threads'] as List).map((t) => t as Map<String, dynamic>).toList();
+        }
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return [];
+  }
 }
 

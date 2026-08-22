@@ -923,46 +923,4 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
       ),
     );
   }
-
-  Widget _buildSlotOptionTile(String slotVal, String label) {
-    final isSelected = _selectedSlot == slotVal;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedSlot = slotVal;
-          _slotController.text = slotVal;
-        });
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66).withValues(alpha: 0.15) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0), width: isSelected ? 1.5 : 1),
-        ),
-        child: Column(
-          children: [
-            Text(
-              slotVal,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 9.5,
-                color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 1),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 8.5,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? const Color(0xFF0D7C66) : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

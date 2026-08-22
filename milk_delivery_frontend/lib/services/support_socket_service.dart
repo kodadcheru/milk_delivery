@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../config/app_config.dart';
 import '../models/support_chat_model.dart';
+import 'api_service.dart';
 
 class SupportSocketService {
   static final SupportSocketService _instance = SupportSocketService._internal();
@@ -105,8 +106,31 @@ class SupportSocketService {
       } catch (_) {}
     }
 
-    // 3. Intelligent Instant Support Agent / Assistant auto-response
-    _dispatchAutomatedAgentReply(text, orderId: orderId);
+    // 3. Transmit via HTTP POST to Redis backend so Web Admin Console receives it
+    final phone = userPhone ?? '+917794893990';
+    ApiService.sendSupportChatMessage(
+      phone: phone,
+      text: text,
+      senderType: 'user',
+      senderName: senderName,
+      orderId: orderId,
+    ).then((res) {
+      if (res != null && res['auto_reply'] is Map<String, dynamic>) {
+        final autoReply = res['auto_reply'] as Map<String, dynamic>;
+        final agentMsg = SupportChatMessage(
+          id: autoReply['id']?.toString() ?? 'rep_${DateTime.now().millisecondsSinceEpoch}',
+          senderType: MessageSenderType.agent,
+          senderName: autoReply['sender_name']?.toString() ?? 'Priya (MilkDrop Care)',
+          text: autoReply['text']?.toString() ?? '',
+          timestamp: DateTime.now(),
+          orderId: orderId,
+        );
+        _messageController.add(agentMsg);
+      }
+    }).catchError((_) {
+      // Fallback local agent reply if offline
+      _dispatchAutomatedAgentReply(text, orderId: orderId);
+    });
   }
 
   void _dispatchAutomatedAgentReply(String userQuery, {String? orderId}) {

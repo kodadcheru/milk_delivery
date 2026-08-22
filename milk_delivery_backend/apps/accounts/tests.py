@@ -13,12 +13,24 @@ from apps.deliveries.models import DeliveryTask
 class MilkBackendAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        from apps.deliveries.models import LocationHub
+        self.hub = LocationHub.objects.create(
+            hub_code="HUB-KODAD",
+            name="Kodad Main Hub",
+            address="Main Bazaar, Kodad",
+            latitude=Decimal("17.00173400"),
+            longitude=Decimal("79.96250000"),
+            coverage_radius_km=25.0,
+        )
         self.user = User.objects.create_user(
             username="testcustomer",
             password="password123",
             role=User.Roles.CUSTOMER,
             phone="+91 9999999999",
             wallet_balance=Decimal("500.00"),
+            assigned_hub=self.hub,
+            latitude=Decimal("17.00173400"),
+            longitude=Decimal("79.96250000"),
         )
         self.client.force_authenticate(user=self.user)
 

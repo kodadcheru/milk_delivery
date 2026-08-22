@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../models/subscription_model.dart';
@@ -11,7 +10,6 @@ import '../../models/provider_payout_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../services/hub_realtime_service.dart';
-import '../../services/route_optimizer.dart';
 import 'provider_fleet_map_screen.dart';
 import '../driver/morning_batch_screen.dart';
 

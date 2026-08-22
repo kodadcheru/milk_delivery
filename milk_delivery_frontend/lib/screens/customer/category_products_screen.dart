@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../widgets/floating_cart_bar.dart';
-import '../../widgets/product_detail_sheet.dart';
 import '../../widgets/home/home_product_card.dart';
 
 class CategoryProductsScreen extends StatefulWidget {

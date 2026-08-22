@@ -8,11 +8,23 @@ from apps.subscriptions.models import Subscription
 class SubscriptionAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        from apps.deliveries.models import LocationHub
+        self.hub = LocationHub.objects.create(
+            hub_code="HUB-KODAD",
+            name="Kodad Main Hub",
+            address="Main Bazaar, Kodad",
+            latitude=17.0017,
+            longitude=79.9625,
+            coverage_radius_km=25.0,
+        )
         self.user = User.objects.create_user(
             username="9876543210",
             phone="9876543210",
             first_name="Ramesh",
             role=User.Roles.CUSTOMER,
+            assigned_hub=self.hub,
+            latitude=17.0017,
+            longitude=79.9625,
         )
         self.product = Product.objects.create(
             name="Farm Fresh A2 Desi Cow Milk",

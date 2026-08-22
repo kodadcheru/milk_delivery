@@ -5,6 +5,7 @@ import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/support_chat_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 import '../../services/support_socket_service.dart';
 
 class HelpSupportScreen extends StatefulWidget {
@@ -128,13 +129,68 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       }
     });
 
+    _loadHistory();
+    _historyPollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _syncIncomingMessages());
+
     if (widget.initialTopic != null) {
       _sendMessage(widget.initialTopic!);
     }
   }
 
+  Timer? _historyPollTimer;
+
+  Future<void> _loadHistory() async {
+    final phone = widget.state.currentUser?.phone ?? '+917794893990';
+    final history = await ApiService.fetchSupportChatHistory(phone);
+    if (history.isNotEmpty && mounted) {
+      setState(() {
+        for (var h in history) {
+          final id = h['id']?.toString() ?? 'hist_${h.hashCode}';
+          if (!_messages.any((m) => m.id == id)) {
+            _messages.add(SupportChatMessage(
+              id: id,
+              senderType: h['sender_type'] == 'agent' ? MessageSenderType.agent : MessageSenderType.user,
+              senderName: h['sender_name']?.toString() ?? (h['sender_type'] == 'agent' ? 'Priya (MilkDrop Support)' : 'You'),
+              text: h['text']?.toString() ?? '',
+              timestamp: h['timestamp'] != null ? (DateTime.tryParse(h['timestamp'].toString()) ?? DateTime.now()) : DateTime.now(),
+              orderId: h['order_id']?.toString(),
+            ));
+          }
+        }
+      });
+      _scrollToBottom();
+    }
+  }
+
+  Future<void> _syncIncomingMessages() async {
+    final phone = widget.state.currentUser?.phone ?? '+917794893990';
+    final history = await ApiService.fetchSupportChatHistory(phone);
+    if (history.isNotEmpty && mounted) {
+      bool hasNew = false;
+      for (var h in history) {
+        final id = h['id']?.toString() ?? 'hist_${h.hashCode}';
+        if (!_messages.any((m) => m.id == id)) {
+          _messages.add(SupportChatMessage(
+            id: id,
+            senderType: h['sender_type'] == 'agent' ? MessageSenderType.agent : MessageSenderType.user,
+            senderName: h['sender_name']?.toString() ?? (h['sender_type'] == 'agent' ? 'Priya (MilkDrop Support)' : 'You'),
+            text: h['text']?.toString() ?? '',
+            timestamp: h['timestamp'] != null ? (DateTime.tryParse(h['timestamp'].toString()) ?? DateTime.now()) : DateTime.now(),
+            orderId: h['order_id']?.toString(),
+          ));
+          hasNew = true;
+        }
+      }
+      if (hasNew) {
+        setState(() {});
+        _scrollToBottom();
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _historyPollTimer?.cancel();
     _msgSub?.cancel();
     _typingSub?.cancel();
     _statusSub?.cancel();
