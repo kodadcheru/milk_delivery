@@ -341,12 +341,12 @@ class BookingDetailSheet extends StatelessWidget {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  '${subscriptionTask!.subscriptionDetail?.quantity ?? 1}x ${subscriptionTask!.subscriptionDetail?.productDetail?.name ?? "Fresh Vedic Milk"}',
+                                  '${subscriptionTask!.subscriptionDetail?.quantity ?? 1}x ${subscriptionTask!.subscriptionDetail?.packSize ?? "1 Litre"}',
                                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                                 ),
                               ),
                               Text(
-                                '₹${((subscriptionTask!.subscriptionDetail?.productDetail?.pricePerUnit ?? 40) * (subscriptionTask!.subscriptionDetail?.quantity ?? 1)).toStringAsFixed(0)}',
+                                '₹${((subscriptionTask!.subscriptionDetail?.displayPrice ?? 40) * (subscriptionTask!.subscriptionDetail?.quantity ?? 1)).toStringAsFixed(0)}',
                                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.primary),
                               ),
                             ],

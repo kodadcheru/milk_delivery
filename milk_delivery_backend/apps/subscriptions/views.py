@@ -101,10 +101,24 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 )
 
         # Capacity slot enforcement check for hub & product
+        prod_obj = serializer.validated_data.get("product")
+        req_qty = serializer.validated_data.get("quantity", 1)
+        
+        # Calculate effective unit price based on pack_size
+        base_price = float(prod_obj.price_per_unit)
+        pack_size_val = self.request.data.get('pack_size', '1 Litre') or '1 Litre'
+        if '500' in pack_size_val.lower():
+            effective_price = round(base_price * 0.55, 2)
+            volume_multiplier = 0.5
+        elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+            effective_price = round(base_price * 1.95, 2)
+            volume_multiplier = 2
+        else:
+            effective_price = base_price
+            volume_multiplier = 1
+
         if hub:
             from apps.products.models import HubProductInventory
-            prod_obj = serializer.validated_data.get("product")
-            req_qty = serializer.validated_data.get("quantity", 1)
             inv, _ = HubProductInventory.objects.get_or_create(
                 hub=hub,
                 product=prod_obj,
@@ -116,7 +130,7 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                     f"Hub daily capacity limit reached for {prod_obj.name}. "
                     f"Only {inv.available_slots} slot(s) available at {hub.name}."
                 )
-            inv.booked_slots += req_qty
+            inv.booked_slots += int(req_qty * volume_multiplier)
             inv.save(update_fields=["booked_slots"])
 
         sub = serializer.save(
@@ -127,7 +141,8 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             delivery_latitude=deliv_lat or 16.9950,
             delivery_longitude=deliv_lon or 79.9670,
             delivery_instructions=deliv_inst,
-            pack_size=pack_size,
+            pack_size=pack_size_val,
+            effective_unit_price=effective_price,
             status=Subscription.Statuses.ACTIVE,
         )
 

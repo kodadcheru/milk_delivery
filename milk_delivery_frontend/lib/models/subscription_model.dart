@@ -15,6 +15,7 @@ class SubscriptionModel {
   final double deliveryLongitude;
   final String deliveryInstructions;
   final String packSize;
+  final double effectiveUnitPrice;
 
   SubscriptionModel({
     required this.id,
@@ -31,7 +32,18 @@ class SubscriptionModel {
     this.deliveryLongitude = 78.4073,
     this.deliveryInstructions = '',
     this.packSize = '1 Litre',
+    this.effectiveUnitPrice = 0.0,
   });
+
+  double get displayPrice {
+    if (effectiveUnitPrice > 0) return effectiveUnitPrice;
+    final basePrice = productDetail?.pricePerUnit ?? 0;
+    if (packSize.contains('500')) return (basePrice * 0.55).roundToDouble();
+    if (packSize.contains('2') && (packSize.toLowerCase().contains('litre') || packSize.toLowerCase().contains('kg'))) {
+      return (basePrice * 1.95).roundToDouble();
+    }
+    return basePrice.toDouble();
+  }
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
     ProductModel? pDetail;
@@ -54,6 +66,7 @@ class SubscriptionModel {
       deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '78.4073') ?? 78.4073,
       deliveryInstructions: json['delivery_instructions'] ?? '',
       packSize: json['pack_size'] ?? '1 Litre',
+      effectiveUnitPrice: (json['effective_unit_price'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -72,6 +85,7 @@ class SubscriptionModel {
       'delivery_longitude': deliveryLongitude,
       'delivery_instructions': deliveryInstructions,
       'pack_size': packSize,
+      'effective_unit_price': effectiveUnitPrice,
     };
   }
 
@@ -85,6 +99,7 @@ class SubscriptionModel {
     double? deliveryLongitude,
     String? deliveryInstructions,
     String? packSize,
+    double? effectiveUnitPrice,
   }) {
     return SubscriptionModel(
       id: id,
@@ -101,6 +116,7 @@ class SubscriptionModel {
       deliveryLongitude: deliveryLongitude ?? this.deliveryLongitude,
       deliveryInstructions: deliveryInstructions ?? this.deliveryInstructions,
       packSize: packSize ?? this.packSize,
+      effectiveUnitPrice: effectiveUnitPrice ?? this.effectiveUnitPrice,
     );
   }
 }

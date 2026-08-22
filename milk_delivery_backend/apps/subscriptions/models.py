@@ -28,6 +28,7 @@ class Subscription(models.Model):
     delivery_longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
     delivery_instructions = models.CharField(max_length=255, blank=True, default="")
     pack_size = models.CharField(max_length=50, blank=True, default="1 Litre")
+    effective_unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

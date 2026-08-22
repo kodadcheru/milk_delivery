@@ -1266,7 +1266,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                   ),
                   Text(
-                    '₹${((product?.pricePerUnit ?? 40) * (sub?.quantity ?? 1)).toStringAsFixed(0)}',
+                    '₹${((sub?.displayPrice ?? 40) * (sub?.quantity ?? 1)).toStringAsFixed(0)}',
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: UiTone.primary),
                   ),
                 ],

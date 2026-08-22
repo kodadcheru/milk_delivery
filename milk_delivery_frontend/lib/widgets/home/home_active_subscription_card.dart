@@ -16,7 +16,7 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pName = sub.productDetail?.name ?? 'Daily Farm Fresh Milk';
-    final pPrice = sub.productDetail?.pricePerUnit ?? 72.0;
+    final pPrice = sub.displayPrice;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -84,7 +84,7 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
                         Text(pName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         const SizedBox(height: 1),
                         Text(
-                          '${sub.quantity} Unit(s) • ₹${(pPrice * sub.quantity).toStringAsFixed(0)} / day • ${sub.scheduleType}',
+                          '${sub.packSize} • ₹${(pPrice * sub.quantity).toStringAsFixed(0)} / day • ${sub.scheduleType}',
                           style: TextStyle(color: Colors.grey[600], fontSize: 11),
                         ),
                       ],

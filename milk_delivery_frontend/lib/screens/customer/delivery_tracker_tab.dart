@@ -847,7 +847,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${sub?.quantity ?? 1}x Unit • ${task.deliveryDate}',
+                              '${sub?.quantity ?? 1}x ${sub?.packSize ?? "Unit"} • ${task.deliveryDate}',
                               style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                             ),
                             const SizedBox(height: 6),

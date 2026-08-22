@@ -76,7 +76,8 @@ class DeliveryTaskCompleteView(APIView):
         # Deduct wallet balance for subscription deliveries
         if task.subscription and task.subscription.customer:
             customer = task.subscription.customer
-            total_cost = task.subscription.product.price_per_unit * task.subscription.quantity
+            unit_price = task.subscription.effective_unit_price or task.subscription.product.price_per_unit
+            total_cost = unit_price * task.subscription.quantity
 
             if customer.wallet_balance >= total_cost:
                 customer.wallet_balance -= total_cost

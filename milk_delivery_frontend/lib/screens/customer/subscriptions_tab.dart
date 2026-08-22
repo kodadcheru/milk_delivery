@@ -253,8 +253,8 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   final sub = subs[idx];
                   final isPaused = sub.status == 'PAUSED';
                   final pName = sub.productDetail?.name ?? 'Daily Farm Milk';
-                  final pPrice = sub.productDetail?.pricePerUnit ?? 72.0;
-                  final pUnitQty = sub.productDetail?.unitQuantity ?? '1 L';
+                  final pPrice = sub.displayPrice;
+                  final pUnitQty = sub.packSize;
                   final itemDailyCost = pPrice * sub.quantity;
 
                   return Card(

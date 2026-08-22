@@ -522,7 +522,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${product?.name ?? 'Milk Subscription'} • ${task.subscriptionDetail?.quantity ?? 1} Unit(s)',
+                        '${product?.name ?? 'Milk Subscription'} • ${task.subscriptionDetail?.quantity ?? 1}x ${task.subscriptionDetail?.packSize ?? "Unit"}',
                         style: const TextStyle(fontSize: 11.5, color: UiTone.softText),
                       ),
                     ],
