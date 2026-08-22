@@ -617,7 +617,7 @@ class GenerateTodayTasksView(APIView):
 
 
 class SlotAvailabilityView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
         from .models import DeliverySlot, LocationHub

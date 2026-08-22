@@ -449,6 +449,8 @@ class ApiService {
           ));
       if (res.statusCode == 201 || res.statusCode == 200) {
         return SubscriptionModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;

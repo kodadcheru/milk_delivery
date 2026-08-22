@@ -397,10 +397,13 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> initApp() async {
+    // CRITICAL: Load auth token FIRST before anything else
+    final savedToken = await ApiService.initAuthToken();
+    
     await loadCustomBannerImage();
     await initDevicePermissionsAndLocation();
     storefrontConfig = await ApiService.fetchStorefrontConfig();
-    final savedToken = await ApiService.initAuthToken();
+    
     if (savedToken != null) {
       await reloadAllData();
     } else {
@@ -955,6 +958,11 @@ class AppState extends ChangeNotifier {
     String? deliveryInstructions,
     String? packSize,
   }) async {
+    // Pre-flight auth check
+    if (ApiService.authToken == null) {
+      throw Exception('Please log in to subscribe. Your session may have expired.');
+    }
+    
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
     notifications.insert(
       0,
