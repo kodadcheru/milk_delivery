@@ -258,7 +258,7 @@ class FloatingCartBar extends StatelessWidget {
                                       children: [
                                         InkWell(
                                           onTap: () {
-                                            state.decreaseCartQty(product.id);
+                                            state.decreaseCartQty(product);
                                             setSheetState(() {});
                                             if (state.totalCartItemCount == 0) {
                                               Navigator.pop(ctx);

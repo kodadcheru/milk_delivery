@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 /// Next-Gen Design Tokens, Color Palette, and Styling Utilities for MilkDrop
 class AppTheme {
   // ── 🎨 Core Color Palette ──
-  static const Color primaryTeal = Color(0xFF0F766E); // Nordic Deep Teal
-  static const Color primaryMint = Color(0xFF10B981); // Radiant Farm Mint
+  // Kept in lockstep with UiTone (lib/theme/ui_tokens.dart) so the Material
+  // ColorScheme seed matches the teal painted on custom surfaces app-wide.
+  static const Color primaryTeal = Color(0xFF0D7C66); // == UiTone.primary
+  static const Color primaryMint = Color(0xFF10B766); // == UiTone.secondary
   static const Color primaryDark = Color(0xFF0D5C56); // Rich Forest Teal
   static const Color accentAmber = Color(0xFFF59E0B); // Solar Amber Glow
   static const Color accentCyan = Color(0xFF06B6D4);  // Pure Spring Cyan

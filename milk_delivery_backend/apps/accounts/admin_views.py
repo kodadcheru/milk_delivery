@@ -264,8 +264,12 @@ class AdminCreditWalletView(APIView):
         except (User.DoesNotExist, Exception) as e:
             return Response({"detail": f"User not found or invalid amount: {e}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user.wallet_balance += amount
-        user.save()
+        if amount <= 0:
+            return Response({"error": "Credit amount must be a positive value."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.db.models import F
+        User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") + amount)
+        user.refresh_from_db(fields=["wallet_balance"])
 
         tx = WalletTransaction.objects.create(
             user=user,
@@ -1134,8 +1138,13 @@ class AdminSubscriptionCreateView(APIView):
         if not product:
             return Response({"detail": "Product not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        from apps.deliveries.hub_resolver import resolve_hub_for_location
-        hub = customer.assigned_hub or resolve_hub_for_location(customer.latitude, customer.longitude)
+        from apps.deliveries.hub_resolver import find_hub_for_location
+        from apps.deliveries.models import LocationHub
+        hub = (
+            customer.assigned_hub
+            or find_hub_for_location(latitude=customer.latitude, longitude=customer.longitude)
+            or LocationHub.objects.first()
+        )
 
         sub = Subscription.objects.create(
             customer=customer,

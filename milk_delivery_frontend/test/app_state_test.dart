@@ -131,7 +131,7 @@ void main() {
       expect(state.totalCartItemCount, 3);
       expect(state.totalCartPrice, 340.0); // 70*2 + 200*1 = 340
 
-      state.decreaseCartQty(p1.id);
+      state.decreaseCartQty(p1);
       expect(state.totalCartItemCount, 2);
       expect(state.totalCartPrice, 270.0); // 70*1 + 200*1 = 270
 

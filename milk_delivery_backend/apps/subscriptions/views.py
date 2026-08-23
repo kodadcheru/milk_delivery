@@ -95,9 +95,9 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             from datetime import date as date_cls
             check_date = date_cls.today()
             if slot_config.is_full(check_date):
-                return Response(
-                    {"error": f"The '{deliv_slot}' slot is full. Max {slot_config.max_orders} orders per slot. Please choose another time."},
-                    status=status.HTTP_400_BAD_REQUEST
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError(
+                    {"error": f"The '{deliv_slot}' slot is full. Max {slot_config.max_orders} orders per slot. Please choose another time."}
                 )
 
         # Capacity slot enforcement check for hub & product

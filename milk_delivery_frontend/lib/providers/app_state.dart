@@ -182,60 +182,59 @@ class AppState extends ChangeNotifier {
 
   List<MapEntry<ProductModel, int>> get cartProductsList => cartItems.values.toList();
 
-  int getCartQty(int productId) {
+  /// Stable per-line cart key. Each pack size of a product is its own cart
+  /// line, so the key combines the product id with its pack size
+  /// (`unitQuantity`). All cart mutations below operate on this exact key, so a
+  /// stepper always changes the line it is showing.
+  String cartKey(ProductModel product) => '${product.id}_${product.unitQuantity}';
+
+  /// Quantity of this exact product line (specific to its pack size). This is
+  /// what a per-line stepper/badge should display so shown == changed.
+  int cartQtyOf(ProductModel product) => cartItems[cartKey(product)]?.value ?? 0;
+
+  /// Total quantity across every pack size sharing [productId]. Use only where
+  /// a combined, id-level count is genuinely wanted — not for a single stepper.
+  int getProductTotalQty(int productId) {
     int count = 0;
-    for (var entry in cartItems.values) {
-      if (entry.key.id == productId) {
-        count += entry.value;
-      }
+    for (final entry in cartItems.values) {
+      if (entry.key.id == productId) count += entry.value;
     }
     return count;
   }
 
   void addToCart(ProductModel product) {
     HapticFeedback.lightImpact();
-    final key = '${product.id}_${product.unitQuantity}';
+    final key = cartKey(product);
     final existingQty = cartItems[key]?.value ?? 0;
     cartItems[key] = MapEntry(product, existingQty + 1);
     notifyListeners();
   }
 
-  void decreaseCartQty(int productId) {
+  void decreaseCartQty(ProductModel product) {
     HapticFeedback.lightImpact();
-    String? targetKey;
-    for (var entry in cartItems.entries) {
-      if (entry.value.key.id == productId) {
-        targetKey = entry.key;
-        break;
-      }
-    }
-    if (targetKey != null && cartItems.containsKey(targetKey)) {
-      final item = cartItems[targetKey]!;
-      if (item.value > 1) {
-        cartItems[targetKey] = MapEntry(item.key, item.value - 1);
-      } else {
-        cartItems.remove(targetKey);
-      }
-      notifyListeners();
-    }
-  }
-
-  void updateCartQty(int productId, int qty) {
-    if (qty <= 0) {
-      removeFromCart(productId);
+    final key = cartKey(product);
+    final item = cartItems[key];
+    if (item == null) return;
+    if (item.value > 1) {
+      cartItems[key] = MapEntry(item.key, item.value - 1);
     } else {
-      for (var entry in cartItems.entries) {
-        if (entry.value.key.id == productId) {
-          cartItems[entry.key] = MapEntry(entry.value.key, qty);
-          break;
-        }
-      }
+      cartItems.remove(key);
     }
     notifyListeners();
   }
 
-  void removeFromCart(int productId) {
-    cartItems.removeWhere((key, entry) => entry.key.id == productId);
+  void updateCartQty(ProductModel product, int qty) {
+    final key = cartKey(product);
+    if (qty <= 0) {
+      cartItems.remove(key);
+    } else {
+      cartItems[key] = MapEntry(cartItems[key]?.key ?? product, qty);
+    }
+    notifyListeners();
+  }
+
+  void removeFromCart(ProductModel product) {
+    cartItems.remove(cartKey(product));
     notifyListeners();
   }
 

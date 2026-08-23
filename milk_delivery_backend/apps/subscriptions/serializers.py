@@ -44,7 +44,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "delivery_longitude",
             "delivery_instructions",
             "pack_size",
+            "effective_unit_price",
             "vacation_pauses",
             "created_at",
         ]
-        read_only_fields = ["id", "customer", "created_at"]
+        read_only_fields = ["id", "customer", "created_at", "effective_unit_price"]

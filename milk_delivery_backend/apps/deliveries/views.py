@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -80,8 +81,8 @@ class DeliveryTaskCompleteView(APIView):
             total_cost = unit_price * task.subscription.quantity
 
             if customer.wallet_balance >= total_cost:
-                customer.wallet_balance -= total_cost
-                customer.save(update_fields=["wallet_balance"])
+                User.objects.filter(pk=customer.pk).update(wallet_balance=F("wallet_balance") - total_cost)
+                customer.refresh_from_db(fields=["wallet_balance"])
 
                 WalletTransaction.objects.create(
                     user=customer,
@@ -295,11 +296,13 @@ class BottleReturnUpdateView(APIView):
             bottle.status = new_status
             if new_status == BottleReturn.Statuses.RETURNED:
                 bottle.returned_date = date.today()
-                # Refund deposit to customer wallet
+                # Refund deposit to customer wallet (atomic to avoid lost updates)
                 if bottle.deposit_amount > 0:
                     customer = bottle.customer
-                    customer.wallet_balance += bottle.deposit_amount
-                    customer.save(update_fields=["wallet_balance"])
+                    User.objects.filter(pk=customer.pk).update(
+                        wallet_balance=F("wallet_balance") + bottle.deposit_amount
+                    )
+                    customer.refresh_from_db(fields=["wallet_balance"])
 
                     WalletTransaction.objects.create(
                         user=customer,
@@ -668,7 +671,7 @@ class DailyMilkBatchListCreateView(APIView):
     Handles recording and querying daily milk batches submitted by the Hub Provider.
     Includes FAT %, SNF %, Water %, Litre Price, Total Volume, and temperature.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         from django.db import models
@@ -718,6 +721,15 @@ class DailyMilkBatchListCreateView(APIView):
         return Response({"count": len(data), "batches": data})
 
     def post(self, request):
+        # Certifying a batch rewrites product pricing, so restrict to
+        # drivers, hub managers/providers, and admins — never plain customers.
+        role = getattr(request.user, "role", "")
+        if not request.user.is_staff and role == User.Roles.CUSTOMER:
+            return Response(
+                {"detail": "You do not have permission to certify milk batches."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         from django.db import models
         from .models import DailyMilkBatch, LocationHub
         from apps.products.models import Product

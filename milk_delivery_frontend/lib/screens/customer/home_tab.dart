@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 
 import '../../providers/app_state.dart';
@@ -8,6 +9,7 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
+import '../../widgets/home/home_pinned_search_bar.dart';
 import '../../widgets/home/home_promo_carousel.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
 import '../../widgets/home/home_category_showcase.dart';
@@ -74,7 +76,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
     _bannerTimer?.cancel();
     _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (!mounted || !_bannerController.hasClients) return;
-      final nextIndex = (_currentBannerIndex + 1) % 4;
+      final nextIndex = (_currentBannerIndex + 1) % HomePromoCarousel.promos.length;
       _bannerController.animateToPage(
         nextIndex,
         duration: const Duration(milliseconds: 600),
@@ -111,7 +113,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
         RefreshIndicator(
           color: UiTone.primary,
           onRefresh: () async {
-            await widget.state.initDevicePermissionsAndLocation();
+            await widget.state.reloadAllData();
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
@@ -148,6 +150,16 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   ),
                 ),
               ] else ...[
+                // ── Pinned search — stays reachable after the hero scrolls off ──
+                HomePinnedSearchBar(
+                  controller: _searchController,
+                  onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                  onClearSearch: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                ),
+
                 // ── 4. Promo Carousel ──
                 SliverToBoxAdapter(
                   child: HomePromoCarousel(
@@ -174,8 +186,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                     padding: const EdgeInsets.only(top: 18),
                     child: HomeCategoryShowcase(
                       state: widget.state,
-                      selectedCategory: 'ALL',
-                      onSelectCategory: (_) {},
                     ),
                   ),
                 ),
@@ -249,33 +259,34 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
     }
 
     if (productList.isEmpty) {
-      return SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Center(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: UiTone.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.search_off_rounded, size: 40, color: UiTone.primary),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'No products match your search',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Try searching for milk, meat, eggs, or water can',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12.5),
-                ),
-              ],
-            ),
+      final error = widget.state.errorMessage;
+      if (error != null) {
+        // (a) Something failed to load — offer a retry.
+        return SliverToBoxAdapter(
+          child: _emptyState(
+            icon: Icons.cloud_off_rounded,
+            title: "Couldn't load products",
+            subtitle: error,
+            onRetry: () => widget.state.reloadAllData(),
           ),
+        );
+      }
+      if (_searchQuery.isNotEmpty) {
+        // (b) The catalog has items, just none matching this query.
+        return SliverToBoxAdapter(
+          child: _emptyState(
+            icon: Icons.search_off_rounded,
+            title: 'No results for "$_searchQuery"',
+            subtitle: 'Try milk, meat, eggs, or water can',
+          ),
+        );
+      }
+      // (c) Genuinely empty catalog.
+      return SliverToBoxAdapter(
+        child: _emptyState(
+          icon: Icons.inventory_2_outlined,
+          title: 'No products yet',
+          subtitle: 'Fresh stock is on its way — check back soon',
         ),
       );
     }
@@ -297,6 +308,51 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
             );
           },
           childCount: productList.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onRetry,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: UiTone.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 40, color: UiTone.primary),
+            ),
+            const SizedBox(height: 14),
+            Text(title, textAlign: TextAlign.center, style: UiText.title),
+            const SizedBox(height: 4),
+            Text(subtitle, textAlign: TextAlign.center, style: UiText.label),
+            if (onRetry != null) ...[
+              const SizedBox(height: 18),
+              OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: UiTone.primary,
+                  side: const BorderSide(color: UiTone.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(UiRadius.pill),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+                label: const Text('Retry'),
+              ),
+            ],
+          ],
         ),
       ),
     );

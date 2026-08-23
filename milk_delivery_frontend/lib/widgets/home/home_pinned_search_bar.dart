@@ -1,8 +1,16 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 
+/// Search field that stays reachable after the hero scrolls off.
+///
+/// Wired as a `SliverPersistentHeader(pinned: true)`. The customer shell has no
+/// `SafeArea`, so once this header pins to the very top it would underlap the
+/// status bar — the delegate bakes `MediaQuery.padding.top` into its extent and
+/// the child pads its content down by the same amount, filling the inset with
+/// the shell background so status-bar glyphs stay legible.
 class HomePinnedSearchBar extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSearchChanged;
@@ -74,27 +82,28 @@ class _HomePinnedSearchBarState extends State<HomePinnedSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
+
     return SliverPersistentHeader(
       pinned: true,
       delegate: _SearchDelegate(
-        minExtent: 66,
-        maxExtent: 66,
+        topInset: topInset,
         child: Container(
           color: UiTone.shellBackground,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, 8),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(UiRadius.md),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF10B766).withValues(alpha: 0.12),
+                  color: UiTone.primary.withValues(alpha: 0.12),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(UiRadius.md),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
@@ -102,10 +111,10 @@ class _HomePinnedSearchBarState extends State<HomePinnedSearchBar> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.90),
                     border: Border.all(
-                      color: const Color(0xFF10B766).withValues(alpha: 0.35),
+                      color: UiTone.primary.withValues(alpha: 0.35),
                       width: 1.2,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(UiRadius.md),
                   ),
                   child: Stack(
                     alignment: Alignment.centerLeft,
@@ -133,7 +142,7 @@ class _HomePinnedSearchBarState extends State<HomePinnedSearchBar> {
                                 _hints[_currentHintIndex],
                                 key: ValueKey<int>(_currentHintIndex),
                                 style: const TextStyle(
-                                  color: Color(0xFF94A3B8),
+                                  color: UiText.muted,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -156,14 +165,14 @@ class _HomePinnedSearchBarState extends State<HomePinnedSearchBar> {
                           border: InputBorder.none,
                           prefixIcon: const Icon(
                             Icons.search_rounded,
-                            color: Color(0xFF0D7C66),
+                            color: UiTone.primary,
                             size: 22,
                           ),
                           suffixIcon: widget.controller.text.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(
                                     Icons.close_rounded,
-                                    color: Color(0xFF94A3B8),
+                                    color: UiText.muted,
                                     size: 20,
                                   ),
                                   onPressed: () {
@@ -188,22 +197,23 @@ class _HomePinnedSearchBarState extends State<HomePinnedSearchBar> {
 }
 
 class _SearchDelegate extends SliverPersistentHeaderDelegate {
-  final double _minExtent;
-  final double _maxExtent;
+  final double topInset;
   final Widget child;
 
   _SearchDelegate({
-    required double minExtent,
-    required double maxExtent,
+    required this.topInset,
     required this.child,
-  })  : _minExtent = minExtent,
-        _maxExtent = maxExtent;
+  });
+
+  // 50 field + 8 top pad + 8 bottom pad = 66, plus the status-bar inset baked in
+  // so the pinned bar clears the notch once the hero scrolls away.
+  double get _extent => 66 + topInset;
 
   @override
-  double get minExtent => _minExtent;
+  double get minExtent => _extent;
 
   @override
-  double get maxExtent => _maxExtent;
+  double get maxExtent => _extent;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
@@ -212,6 +222,6 @@ class _SearchDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _SearchDelegate oldDelegate) {
-    return true;
+    return oldDelegate.topInset != topInset || oldDelegate.child != child;
   }
 }

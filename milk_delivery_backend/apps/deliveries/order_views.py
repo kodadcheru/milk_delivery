@@ -48,7 +48,18 @@ class ExpressOrderListCreateView(APIView):
         if not items_data:
             return Response({"detail": "Order must contain at least one item."}, status=status.HTTP_400_BAD_REQUEST)
 
-        delivery_date = data.get("delivery_date", "Tomorrow")
+        # Normalize delivery_date: the frontend may send an ISO date, a label
+        # like "Tomorrow", or a slot string. Only a real date can be stored in
+        # the DateField, so parse it defensively and fall back to today.
+        raw_delivery_date = data.get("delivery_date", "")
+        if isinstance(raw_delivery_date, str):
+            from datetime import datetime as _dt
+            try:
+                delivery_date = _dt.strptime(raw_delivery_date.strip(), "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                delivery_date = date.today()
+        else:
+            delivery_date = raw_delivery_date or date.today()
         delivery_slot = data.get("delivery_slot", "05:30 AM - 07:00 AM")
         delivery_address = data.get("delivery_address") or user.address or "Doorstep Delivery"
         delivery_lat = float(data.get("delivery_latitude") or user.latitude or 17.4319)
@@ -162,8 +173,8 @@ class ExpressOrderListCreateView(APIView):
                     unit_price=item["unit_price"],
                 )
 
-            user.wallet_balance -= total_amount
-            user.save()
+            User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") - total_amount)
+            user.refresh_from_db(fields=["wallet_balance"])
 
             WalletTransaction.objects.create(
                 user=user,
@@ -233,8 +244,8 @@ class ExpressOrderDetailView(APIView):
                 if proof_url:
                     order.proof_image_url = proof_url
 
-            # Refund wallet on cancellation (only if not already refunded)
-            if new_status == LiveOrder.Statuses.CANCELLED and order.payment_status == "PAID":
+            # Refund wallet on cancellation (only if paid and not already refunded)
+            if new_status == LiveOrder.Statuses.CANCELLED and order.payment_status.startswith("PAID"):
                 customer = order.customer
                 refund_amount = order.total_amount
 

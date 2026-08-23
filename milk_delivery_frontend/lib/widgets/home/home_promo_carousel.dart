@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/category_products_screen.dart';
+import '../../theme/ui_tokens.dart';
 
 class HomePromoCarousel extends StatelessWidget {
   final AppState state;
@@ -16,6 +17,9 @@ class HomePromoCarousel extends StatelessWidget {
     required this.onPageChanged,
   });
 
+  /// Two flagship staples only. The category grid is the primary browse
+  /// surface, so the carousel intentionally spotlights the daily essentials
+  /// (fresh milk + water cans) instead of mirroring every category tile.
   static const List<Map<String, dynamic>> promos = [
     {
       'title': 'A2 Desi Cow Milk',
@@ -32,22 +36,6 @@ class HomePromoCarousel extends StatelessWidget {
       'colors': [Color(0xFF0284C7), Color(0xFF0369A1)],
       'icon': Icons.water_drop_rounded,
       'cat': 'WATER_CAN',
-    },
-    {
-      'title': 'Farm Fresh Desi Eggs',
-      'subtitle': 'High protein brown & white eggs',
-      'badge': 'FREE RANGE',
-      'colors': [Color(0xFFD97706), Color(0xFFB45309)],
-      'icon': Icons.egg_rounded,
-      'cat': 'EGGS',
-    },
-    {
-      'title': 'Fresh Cut Chicken & Mutton',
-      'subtitle': 'Halal certified tender cuts',
-      'badge': 'ANTIBIOTIC FREE',
-      'colors': [Color(0xFFDC2626), Color(0xFF991B1B)],
-      'icon': Icons.restaurant_rounded,
-      'cat': 'MEAT',
     },
   ];
 
@@ -87,7 +75,7 @@ class HomePromoCarousel extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(UiRadius.md),
                       boxShadow: [
                         BoxShadow(
                           color: colors.first.withValues(alpha: 0.4),
@@ -107,7 +95,7 @@ class HomePromoCarousel extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(UiRadius.pill),
                                 ),
                                 child: Text(
                                   p['badge'] as String,
@@ -175,8 +163,8 @@ class HomePromoCarousel extends StatelessWidget {
               width: isActive ? 16 : 6,
               height: 5,
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(999),
+                color: isActive ? UiTone.primary : const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(UiRadius.pill),
               ),
             );
           }),

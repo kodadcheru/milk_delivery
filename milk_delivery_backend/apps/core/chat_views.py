@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.cache import cache
 from apps.accounts.models import SupportMessage, User
+from apps.core.permissions import IsAdminOrStaff
 
 
 def _clean_phone_digits(phone):
@@ -27,7 +28,7 @@ class SupportChatSendView(APIView):
     Send a message into the persistent PostgreSQL database and Redis chat stream.
     POST /api/support/chat/send/
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         phone = request.data.get("phone", "").strip()
@@ -134,7 +135,7 @@ class SupportChatHistoryView(APIView):
     Retrieve PostgreSQL + Redis chat history for a customer phone number.
     GET /api/support/chat/history/?phone=...
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         phone = request.query_params.get("phone", "").strip()
@@ -174,7 +175,7 @@ class AdminSupportChatThreadsView(APIView):
     Admin endpoint to view all customer support chat threads from PostgreSQL & Redis.
     GET /api/admin/support/threads/
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminOrStaff]
 
     def get(self, request):
         from django.db.models import Max

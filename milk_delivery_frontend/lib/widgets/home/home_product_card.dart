@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
-import '../../widgets/product_detail_sheet.dart';
+import '../../theme/ui_format.dart';
+import '../../theme/ui_tokens.dart';
+import '../buy_once_sheet.dart';
 
+/// Product card shared by the home grid and the category products screen.
+///
+/// Tap the body to open the lightweight [BuyOnceSheet] (pick a pack size); the
+/// trailing control adds the base pack straight to the cart and then becomes an
+/// inline −/N/+ stepper so a second delivery never requires opening a sheet.
 class HomeProductCard extends StatelessWidget {
   final AppState state;
   final ProductModel item;
+
+  /// Gold used for the rating star — a brand accent that has no `UiTone` slot.
+  static const Color _ratingGold = Color(0xFFF59E0B);
 
   const HomeProductCard({
     super.key,
@@ -15,31 +25,19 @@ class HomeProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final discountPrice = item.pricePerUnit * 1.12;
-    final inCartQty = state.getCartQty(item.id);
+    final inCartQty = state.cartQtyOf(item);
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D7C66).withValues(alpha: 0.07),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        boxShadow: UiShadow.card,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(UiRadius.lg),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => ProductDetailSheet.show(context, item, state),
+            onTap: () => BuyOnceSheet.show(context, item, state),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -82,14 +80,14 @@ class HomeProductCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: Text(
                       item.badgeText.isNotEmpty ? item.badgeText : item.category,
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0D7C66),
+                        color: UiTone.primary,
                       ),
                     ),
                   ),
@@ -102,16 +100,16 @@ class HomeProductCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(6),
+                      color: UiTone.ink.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                       border: Border.all(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                        color: _ratingGold.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star_rounded, size: 10, color: Color(0xFFF59E0B)),
+                        const Icon(Icons.star_rounded, size: 10, color: _ratingGold),
                         const SizedBox(width: 2),
                         Text(
                           '${item.rating}',
@@ -138,7 +136,7 @@ class HomeProductCard extends StatelessWidget {
                           gradient: const LinearGradient(
                             colors: [Color(0xFFEF4444), Color(0xFFF97316)],
                           ),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
                         ),
                         child: const Text(
                           'SOLD OUT',
@@ -196,12 +194,12 @@ class HomeProductCard extends StatelessWidget {
 
                         const SizedBox(height: 6),
 
-                        // Price row + ADD button
+                        // Price row + cart control
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Price
+                            // Price (kept discount look — white on the dark overlay)
                             Flexible(
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -209,69 +207,34 @@ class HomeProductCard extends StatelessWidget {
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
-                                    '₹${item.pricePerUnit.toStringAsFixed(0)}',
+                                    UiFormat.price(item.pricePerUnit),
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
                                     ),
                                   ),
-                                  if (discountPrice > item.pricePerUnit) ...[
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        '₹${discountPrice.toStringAsFixed(0)}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white.withValues(alpha: 0.6),
-                                          decoration: TextDecoration.lineThrough,
-                                          decorationColor: Colors.white.withValues(alpha: 0.5),
-                                        ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      UiFormat.strike(item.pricePerUnit),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white.withValues(alpha: 0.6),
+                                        decoration: TextDecoration.lineThrough,
+                                        decorationColor: Colors.white.withValues(alpha: 0.5),
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
                             ),
 
-                            // ADD button
-                            if (!item.isOutOfStock)
-                              GestureDetector(
-                                onTap: () {
-                                  if (inCartQty == 0) {
-                                    state.addToCart(item);
-                                  } else {
-                                    ProductDetailSheet.show(context, item, state);
-                                  }
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: inCartQty == 0 ? Colors.white : const Color(0xFF0D7C66),
-                                    borderRadius: BorderRadius.circular(999),
-                                    boxShadow: [
-                                      if (inCartQty > 0)
-                                        BoxShadow(
-                                          color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    inCartQty == 0 ? 'ADD' : '✓ ${inCartQty}',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w900,
-                                      color: inCartQty == 0 ? const Color(0xFF0D7C66) : Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            // Cart control: ADD → inline −/N/+ stepper
+                            if (!item.isOutOfStock) _buildCartControl(inCartQty),
                           ],
                         ),
                       ],
@@ -282,6 +245,66 @@ class HomeProductCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCartControl(int inCartQty) {
+    if (inCartQty == 0) {
+      return GestureDetector(
+        onTap: () => state.addToCart(item),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(UiRadius.pill),
+          ),
+          child: const Text(
+            'ADD',
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w900,
+              color: UiTone.primary,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: UiTone.primary,
+        borderRadius: BorderRadius.circular(UiRadius.pill),
+        boxShadow: UiShadow.glowPrimary,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _stepButton(Icons.remove_rounded, () => state.decreaseCartQty(item)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              '$inCartQty',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          _stepButton(Icons.add_rounded, () => state.addToCart(item)),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Icon(icon, size: 16, color: Colors.white),
       ),
     );
   }

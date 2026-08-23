@@ -99,4 +99,45 @@ class ProductModel {
       'rating': rating,
     };
   }
+
+  /// Returns a copy with selected fields overridden. Used to build a
+  /// pack-size-specific variant (price + `unitQuantity`) for the cart and
+  /// subscription flows while preserving stock, rating, imagery, etc.
+  ProductModel copyWith({
+    int? id,
+    String? name,
+    String? category,
+    String? description,
+    double? pricePerUnit,
+    String? unit,
+    String? unitQuantity,
+    String? imageUrl,
+    String? badgeText,
+    String? nutritionInfo,
+    String? farmOrigin,
+    bool? isAvailable,
+    int? availableSlots,
+    int? dailyCapacitySlots,
+    double? rating,
+    String? icon,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      description: description ?? this.description,
+      pricePerUnit: pricePerUnit ?? this.pricePerUnit,
+      unit: unit ?? this.unit,
+      unitQuantity: unitQuantity ?? this.unitQuantity,
+      imageUrl: imageUrl ?? this.imageUrl,
+      badgeText: badgeText ?? this.badgeText,
+      nutritionInfo: nutritionInfo ?? this.nutritionInfo,
+      farmOrigin: farmOrigin ?? this.farmOrigin,
+      isAvailable: isAvailable ?? this.isAvailable,
+      availableSlots: availableSlots ?? this.availableSlots,
+      dailyCapacitySlots: dailyCapacitySlots ?? this.dailyCapacitySlots,
+      rating: rating ?? this.rating,
+      icon: icon ?? this.icon,
+    );
+  }
 }

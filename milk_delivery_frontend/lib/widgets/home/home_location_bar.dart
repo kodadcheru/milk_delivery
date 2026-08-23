@@ -307,19 +307,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                   )
                 else
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.tune_rounded,
-                      size: 18,
-                      color: Color(0xFF0D7C66),
-                    ),
-                  ),
+                  const SizedBox(width: 14),
               ],
             ),
           ),

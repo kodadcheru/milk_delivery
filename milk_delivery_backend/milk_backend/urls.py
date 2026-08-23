@@ -148,7 +148,7 @@ urlpatterns = [
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/me/", UserProfileView.as_view(), name="auth_me"),
     path("api/driver/location/", DriverLocationUpdateView.as_view(), name="driver_location_update"),
-    path("api/driver/location/<int:order_id>/", DriverLocationByOrderView.as_view(), name="driver_location_by_order"),
+    path("api/driver/location/<str:order_id>/", DriverLocationByOrderView.as_view(), name="driver_location_by_order"),
     # Customer Address Book endpoints
     path("api/accounts/addresses/", CustomerAddressListCreateView.as_view(), name="address_list"),
     path("api/accounts/addresses/<int:pk>/", CustomerAddressDetailView.as_view(), name="address_detail"),
