@@ -24,6 +24,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     hub_detail = HubSimpleSerializer(source="hub", read_only=True)
     vacation_pauses = VacationPauseSerializer(many=True, read_only=True)
     start_date = serializers.DateField(required=False, default=date.today)
+    delivery_latitude = serializers.FloatField(required=False, allow_null=True)
+    delivery_longitude = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Subscription

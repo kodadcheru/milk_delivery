@@ -437,8 +437,8 @@ class ApiService {
       if (customerPhone != null) payload['customer_phone'] = customerPhone;
       if (deliveryAddress != null) payload['delivery_address'] = deliveryAddress;
       if (deliverySlot != null) payload['delivery_slot'] = deliverySlot;
-      if (deliveryLatitude != null) payload['delivery_latitude'] = deliveryLatitude;
-      if (deliveryLongitude != null) payload['delivery_longitude'] = deliveryLongitude;
+      if (deliveryLatitude != null) payload['delivery_latitude'] = double.tryParse(deliveryLatitude.toStringAsFixed(6)) ?? deliveryLatitude;
+      if (deliveryLongitude != null) payload['delivery_longitude'] = double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude;
       if (deliveryInstructions != null) payload['delivery_instructions'] = deliveryInstructions;
       if (packSize != null) payload['pack_size'] = packSize;
 
@@ -513,8 +513,8 @@ class ApiService {
       if (scheduleType != null) bodyMap['schedule_type'] = scheduleType;
       if (deliveryAddress != null) bodyMap['delivery_address'] = deliveryAddress;
       if (deliverySlot != null) bodyMap['delivery_slot'] = deliverySlot;
-      if (deliveryLatitude != null) bodyMap['delivery_latitude'] = deliveryLatitude;
-      if (deliveryLongitude != null) bodyMap['delivery_longitude'] = deliveryLongitude;
+      if (deliveryLatitude != null) bodyMap['delivery_latitude'] = double.tryParse(deliveryLatitude.toStringAsFixed(6)) ?? deliveryLatitude;
+      if (deliveryLongitude != null) bodyMap['delivery_longitude'] = double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude;
       if (deliveryInstructions != null) bodyMap['delivery_instructions'] = deliveryInstructions;
       if (packSize != null) bodyMap['pack_size'] = packSize;
 
@@ -911,8 +911,8 @@ class ApiService {
               'delivery_date': ?deliveryDate,
               'delivery_slot': ?deliverySlot,
               'delivery_address': ?deliveryAddress,
-              'delivery_latitude': ?deliveryLatitude,
-              'delivery_longitude': ?deliveryLongitude,
+              'delivery_latitude': deliveryLatitude != null ? (double.tryParse(deliveryLatitude.toStringAsFixed(6)) ?? deliveryLatitude) : null,
+              'delivery_longitude': deliveryLongitude != null ? (double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude) : null,
             }),
           ));
       if (res.statusCode == 201 || res.statusCode == 200) {

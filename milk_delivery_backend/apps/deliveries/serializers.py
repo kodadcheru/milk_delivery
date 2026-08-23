@@ -280,6 +280,8 @@ class LiveOrderSerializer(serializers.ModelSerializer):
     batch_price_per_litre = serializers.SerializerMethodField()
     batch_code = serializers.SerializerMethodField()
     temperature_celsius = serializers.SerializerMethodField()
+    delivery_latitude = serializers.FloatField(required=False, allow_null=True)
+    delivery_longitude = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         from apps.deliveries.models import LiveOrder
