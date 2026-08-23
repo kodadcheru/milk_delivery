@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
+import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
@@ -183,81 +185,103 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: UiTone.ink,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Teal hero paints under the status bar → light glyphs for contrast.
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: UiTone.shellBackground,
+        // top:false — the hero gradient paints up under the status bar for an
+        // edge-to-edge branded header; the footer still clears the bottom inset.
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Hero App Branding Icon
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          gradient: UiGradient.primary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: UiTone.primary.withValues(alpha: 0.4),
-                              blurRadius: 25,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                      _buildHeroHeader(context),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: UiTone.surface,
+                            borderRadius: BorderRadius.circular(UiRadius.xl),
+                            border: Border.all(color: UiTone.surfaceBorder),
+                            boxShadow: UiShadow.elevated,
+                          ),
+                          child: _buildCurrentStepView(),
                         ),
-                        child: const Text('🥛', style: TextStyle(fontSize: 42)),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'MilkDrop Express',
-                        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        '⚡ Farm Fresh Dairy • Guaranteed 6:00 AM Delivery',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: UiTone.secondary, fontSize: 11.5, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 22),
-
-                      // Card Shell
-                      Container(
-                        padding: const EdgeInsets.all(22),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(UiRadius.xl),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: _buildCurrentStepView(),
-                      ),
+                      const SizedBox(height: 18),
                     ],
                   ),
                 ),
               ),
-            ),
 
-            // Footer Notice
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16, left: 24, right: 24),
-              child: Text(
-                'By continuing, you agree to MilkDrop Express Terms of Service & Privacy Policy.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[500], fontSize: 9.5),
+              // Footer Notice
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 4, 32, 14),
+                child: Text(
+                  'By continuing, you agree to MilkDrop Express Terms of Service & Privacy Policy.',
+                  textAlign: TextAlign.center,
+                  style: UiText.caption,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  // ── Branded gradient header ──
+  Widget _buildHeroHeader(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(24, topInset + 44, 24, 40),
+      decoration: const BoxDecoration(
+        gradient: UiGradient.hero,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+        boxShadow: UiShadow.glowPrimary,
+      ),
+      child: Column(
+        children: [
+          // Frosted brand mark
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
+            ),
+            child: const Text('🥛', style: TextStyle(fontSize: 40)),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'MilkDrop Express',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '⚡ Farm Fresh Dairy • Guaranteed 6:00 AM Delivery',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -270,36 +294,32 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: UiTone.secondary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                ),
-                child: const Icon(Icons.phone_android_rounded, color: UiTone.secondary, size: 18),
+              _stepHeaderBadge(
+                const Icon(Icons.phone_android_rounded, color: UiTone.primary, size: 18),
+                UiTone.primarySoft,
               ),
-              const SizedBox(width: 8),
-              const Text('Enter Mobile Number', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 10),
+              const Text('Enter Mobile Number', style: UiText.h2),
             ],
           ),
-          const SizedBox(height: 4),
-          Text('We will send a 4-digit OTP to verify your account', style: TextStyle(color: Colors.grey[400], fontSize: 11.5)),
+          const SizedBox(height: 6),
+          Text('We will send a 4-digit OTP to verify your account', style: UiText.label),
           const SizedBox(height: 18),
 
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
                 decoration: BoxDecoration(
-                  color: UiTone.ink,
+                  color: UiTone.surfaceMuted,
                   borderRadius: BorderRadius.circular(UiRadius.md),
-                  border: Border.all(color: UiTone.secondary.withValues(alpha: 0.3)),
+                  border: Border.all(color: UiTone.surfaceBorder),
                 ),
                 child: const Row(
                   children: [
                     Text('🇮🇳', style: TextStyle(fontSize: 16)),
                     SizedBox(width: 6),
-                    Text('+91', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text('+91', style: TextStyle(color: UiTone.ink, fontWeight: FontWeight.bold, fontSize: 14)),
                   ],
                 ),
               ),
@@ -310,23 +330,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                   autofocus: true,
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: 'Enter 10-digit number',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13, letterSpacing: 0),
-                    filled: true,
-                    fillColor: UiTone.ink,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      borderSide: const BorderSide(color: UiTone.secondary, width: 1.5),
-                    ),
-                  ),
+                  style: const TextStyle(color: UiTone.ink, fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: 1),
+                  decoration: _fieldDecoration(hint: 'Enter 10-digit number'),
                 ),
               ),
             ],
@@ -334,36 +339,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           const SizedBox(height: 20),
 
           // Prominent Continue CTA Button
-          InkWell(
+          _primaryCta(
             key: const ValueKey('send_otp_btn'),
-            onTap: _isLoading ? null : _handleSendOTP,
-            borderRadius: BorderRadius.circular(UiRadius.md),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: double.infinity,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: UiGradient.primary,
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                boxShadow: [
-                  BoxShadow(
-                    color: UiTone.secondary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: _isLoading
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Get OTP & Continue', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
-                      ],
-                    ),
+            onTap: _handleSendOTP,
+            label: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Get OTP & Continue', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+                SizedBox(width: 8),
+                Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+              ],
             ),
           ),
         ],
@@ -378,18 +363,23 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Enter 4-Digit OTP', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text('Sent to ${_phoneController.text}', style: const TextStyle(color: UiTone.secondary, fontSize: 11.5, fontWeight: FontWeight.w600)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Enter 4-Digit OTP', style: UiText.h2),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Sent to ${_phoneController.text}',
+                      style: const TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
               TextButton.icon(
                 onPressed: () => setState(() => _step = 1),
-                icon: const Icon(Icons.edit_rounded, size: 14, color: Color(0xFF38BDF8)),
-                label: const Text('Change', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.edit_rounded, size: 14, color: UiTone.primary),
+                label: const Text('Change', style: TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -401,21 +391,21 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             keyboardType: TextInputType.number,
             maxLength: 4,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 26, letterSpacing: 14),
+            style: const TextStyle(color: UiTone.ink, fontWeight: FontWeight.w900, fontSize: 26, letterSpacing: 14),
             decoration: InputDecoration(
               counterText: '',
               hintText: '••••',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 26, letterSpacing: 14),
+              hintStyle: TextStyle(color: UiText.muted.withValues(alpha: 0.4), fontSize: 26, letterSpacing: 14),
               filled: true,
-              fillColor: UiTone.ink,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              fillColor: UiTone.surfaceMuted,
+              contentPadding: const EdgeInsets.symmetric(vertical: 16),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(UiRadius.md),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                borderSide: const BorderSide(color: UiTone.surfaceBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(UiRadius.md),
-                borderSide: const BorderSide(color: UiTone.secondary, width: 2),
+                borderSide: const BorderSide(color: UiTone.primary, width: 2),
               ),
             ),
           ),
@@ -425,17 +415,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: UiTone.secondary.withValues(alpha: 0.15),
+                  color: UiTone.primarySoft,
                   borderRadius: BorderRadius.circular(UiRadius.xs),
-                  border: Border.all(color: UiTone.secondary.withValues(alpha: 0.3)),
+                  border: Border.all(color: UiTone.primary.withValues(alpha: 0.25)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.key_rounded, size: 13, color: UiTone.secondary),
+                    Icon(Icons.key_rounded, size: 13, color: UiTone.primary),
                     SizedBox(width: 4),
-                    Text('Test OTP: 1234', style: TextStyle(color: UiTone.secondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('Test OTP: 1234', style: TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -444,7 +434,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 child: Text(
                   _canResend ? 'Resend OTP' : 'Resend in ${_resendSeconds}s',
                   style: TextStyle(
-                    color: _canResend ? const Color(0xFF38BDF8) : Colors.white54,
+                    color: _canResend ? UiTone.primary : UiText.muted,
                     fontSize: 11.5,
                     fontWeight: FontWeight.bold,
                   ),
@@ -454,36 +444,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 18),
 
-          InkWell(
+          _primaryCta(
             key: const ValueKey('verify_otp_btn'),
-            onTap: _isLoading ? null : _handleVerifyOTP,
-            borderRadius: BorderRadius.circular(UiRadius.md),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: double.infinity,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: UiGradient.primary,
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                boxShadow: [
-                  BoxShadow(
-                    color: UiTone.secondary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: _isLoading
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.lock_open_rounded, size: 18, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text('Verify OTP & Secure Login 🔒', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
-                      ],
-                    ),
+            onTap: _handleVerifyOTP,
+            label: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock_open_rounded, size: 18, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Verify OTP & Secure Login 🔒', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+              ],
             ),
           ),
         ],
@@ -496,28 +466,27 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       children: [
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: UiTone.warning.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(UiRadius.xs),
-              ),
-              child: const Text('🎁', style: TextStyle(fontSize: 18)),
+            _stepHeaderBadge(
+              const Text('🎁', style: TextStyle(fontSize: 18)),
+              UiTone.warningSoft,
             ),
-            const SizedBox(width: 8),
-            const Text('New Customer Profile', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 10),
+            const Expanded(child: Text('New Customer Profile', style: UiText.h2)),
           ],
         ),
-        const SizedBox(height: 4),
-        const Text('Complete profile to claim ₹500 welcome milk credit', style: TextStyle(color: UiTone.secondary, fontSize: 11, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        const Text(
+          'Complete profile to claim ₹500 welcome milk credit',
+          style: TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 18),
 
         _buildTextField(_nameController, 'Full Name', Icons.person_outline),
         const SizedBox(height: 12),
         _buildTextField(_emailController, 'Email Address', Icons.email_outlined),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
-        const Text('Select Gender', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+        const Text('Select Gender', style: UiText.label),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -531,30 +500,76 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         const SizedBox(height: 22),
 
         // Prominent Complete Registration Button
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _handleRegisterCustomer,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: UiTone.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-              elevation: 4,
-            ),
-            child: _isLoading
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle_rounded, size: 18),
-                      SizedBox(width: 8),
-                      Text('Complete & Claim ₹500 🥛', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900)),
-                    ],
-                  ),
+        _primaryCta(
+          onTap: _handleRegisterCustomer,
+          label: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Complete & Claim ₹500 🥛', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  // ── Shared building blocks ──
+
+  /// Rounded tint chip that leads each step's title.
+  Widget _stepHeaderBadge(Widget child, Color bg) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(UiRadius.sm),
+      ),
+      child: child,
+    );
+  }
+
+  /// Full-width gradient CTA shared by all three steps.
+  Widget _primaryCta({Key? key, required VoidCallback onTap, required Widget label}) {
+    return InkWell(
+      key: key,
+      onTap: _isLoading ? null : onTap,
+      borderRadius: BorderRadius.circular(UiRadius.md),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        height: 54,
+        decoration: BoxDecoration(
+          gradient: UiGradient.primary,
+          borderRadius: BorderRadius.circular(UiRadius.md),
+          boxShadow: UiShadow.glowPrimary,
+        ),
+        alignment: Alignment.center,
+        child: _isLoading
+            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+            : label,
+      ),
+    );
+  }
+
+  /// Light-theme input decoration shared by the phone + profile fields.
+  InputDecoration _fieldDecoration({required String hint, IconData? prefixIcon}) {
+    return InputDecoration(
+      counterText: '',
+      hintText: hint,
+      hintStyle: const TextStyle(color: UiText.muted, fontSize: 13, fontWeight: FontWeight.w500),
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: UiTone.primary, size: 18) : null,
+      filled: true,
+      fillColor: UiTone.surfaceMuted,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        borderSide: const BorderSide(color: UiTone.surfaceBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        borderSide: const BorderSide(color: UiTone.primary, width: 1.5),
+      ),
     );
   }
 
@@ -563,13 +578,15 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     return ChoiceChip(
       label: Text(labelText),
       selected: isSelected,
+      showCheckmark: false,
       selectedColor: UiTone.primary,
-      backgroundColor: UiTone.ink,
+      backgroundColor: UiTone.surfaceMuted,
       side: BorderSide(
-        color: isSelected ? UiTone.secondary : Colors.white.withValues(alpha: 0.2),
+        color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.white70,
+        color: isSelected ? Colors.white : UiTone.softText,
         fontWeight: FontWeight.bold,
         fontSize: 11.5,
       ),
@@ -582,24 +599,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   Widget _buildTextField(TextEditingController ctrl, String label, IconData icon) {
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-      decoration: InputDecoration(
-        hintText: label,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
-        prefixIcon: Icon(icon, color: UiTone.secondary, size: 18),
-        filled: true,
-        fillColor: UiTone.ink,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(UiRadius.md),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(UiRadius.md),
-          borderSide: const BorderSide(color: UiTone.secondary, width: 1.5),
-        ),
-      ),
+      style: const TextStyle(color: UiTone.ink, fontSize: 14, fontWeight: FontWeight.w600),
+      decoration: _fieldDecoration(hint: label, prefixIcon: icon),
     );
   }
 }
-
