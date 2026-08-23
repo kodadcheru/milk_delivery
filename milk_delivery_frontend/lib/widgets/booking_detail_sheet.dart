@@ -3,10 +3,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/delivery_task_model.dart';
 import '../models/live_order_model.dart';
 import '../providers/app_state.dart';
-import '../services/api_service.dart';
 import '../screens/customer/help_support_screen.dart';
 import '../screens/customer/live_driver_tracking_screen.dart';
 import '../theme/ui_tokens.dart';
+import '../theme/ui_text.dart';
+import '../theme/ui_format.dart';
 
 
 class BookingDetailSheet extends StatelessWidget {
@@ -26,7 +27,7 @@ class BookingDetailSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: UiTone.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => BookingDetailSheet(state: state, liveOrder: order),
     );
   }
@@ -36,7 +37,7 @@ class BookingDetailSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: UiTone.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => BookingDetailSheet(state: state, subscriptionTask: task),
     );
   }
@@ -57,6 +58,10 @@ class BookingDetailSheet extends StatelessWidget {
       }
     }
   }
+
+  /// Shared section label style (bold, 13, ink).
+  Widget _sectionLabel(String text) =>
+      Text(text, style: UiText.bodyStrong.copyWith(fontSize: 13));
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +94,7 @@ class BookingDetailSheet extends StatelessWidget {
             child: Container(
               width: 44,
               height: 5,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: UiTone.surfaceBorder, borderRadius: BorderRadius.circular(UiRadius.pill)),
             ),
           ),
           const SizedBox(height: 12),
@@ -98,18 +103,20 @@ class BookingDetailSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: UiTone.ink)),
-                  const SizedBox(height: 2),
-                  Text(
-                    isExpress ? '⚡ 30-Minute Priority Order' : '🥛 Daily Morning Subscription Slot',
-                    style: const TextStyle(fontSize: 11.5, color: Colors.grey),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: UiText.h2),
+                    const SizedBox(height: 2),
+                    Text(
+                      isExpress ? '⚡ 30-Minute Priority Order' : '🥛 Daily Morning Subscription Slot',
+                      style: UiText.caption,
+                    ),
+                  ],
+                ),
               ),
-              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              IconButton(icon: const Icon(Icons.close), color: UiTone.softText, onPressed: () => Navigator.pop(context)),
             ],
           ),
           const SizedBox(height: 12),
@@ -155,7 +162,7 @@ class BookingDetailSheet extends StatelessWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 13,
-                                  color: isDelivered ? UiTone.primary : const Color(0xFF0369A1),
+                                  color: isDelivered ? UiTone.primary : UiTone.accentBlue,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -163,7 +170,7 @@ class BookingDetailSheet extends StatelessWidget {
                                 isDelivered ? 'Photo proof uploaded & wallet auto-debited' : 'Estimated Arrival within $slot',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDelivered ? UiTone.primary : const Color(0xFF0369A1),
+                                  color: isDelivered ? UiTone.primary : UiTone.accentBlue,
                                 ),
                               ),
                             ],
@@ -186,7 +193,7 @@ class BookingDetailSheet extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // ── 2. Assigned Delivery Partner with 2-WAY CALLING ──
-                  const Text('Assigned Delivery Partner:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+                  _sectionLabel('Assigned Delivery Partner:'),
                   const SizedBox(height: 8),
 
                   Container(
@@ -214,7 +221,7 @@ class BookingDetailSheet extends StatelessWidget {
                                     child: Text(
                                       isDriverAssigned ? driverName : '⌛ Partner Assignment in Progress',
                                       maxLines: 2,
-                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                                      style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900),
                                     ),
                                   ),
                                   if (isDriverAssigned) ...[
@@ -226,7 +233,7 @@ class BookingDetailSheet extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(
                                 isDriverAssigned ? 'EV Scooter • TS 09 EQ 4821 • ⭐ 4.9' : 'Nearest Depot Hub assigning morning route partner',
-                                style: TextStyle(fontSize: 10.5, color: Colors.grey[600]),
+                                style: UiText.caption.copyWith(fontSize: 10.5),
                               ),
                             ],
                           ),
@@ -240,7 +247,7 @@ class BookingDetailSheet extends StatelessWidget {
                             backgroundColor: isDriverAssigned ? UiTone.secondary : UiTone.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                             elevation: 0,
                           ),
                         ),
@@ -250,14 +257,14 @@ class BookingDetailSheet extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // ── 3. Doorstep Delivery Address ──
-                  const Text('Doorstep Delivery Location:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+                  _sectionLabel('Doorstep Delivery Location:'),
                   const SizedBox(height: 8),
 
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: UiTone.shellBackground,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(UiRadius.md),
                       border: Border.all(color: UiTone.surfaceBorder),
                     ),
                     child: Row(
@@ -269,11 +276,11 @@ class BookingDetailSheet extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(displayAddress, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF1E293B))),
+                              Text(displayAddress, style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
                               const SizedBox(height: 4),
                               Text(
                                 'Timeslot: $slot',
-                                style: const TextStyle(fontSize: 11, color: UiTone.primary, fontWeight: FontWeight.w600),
+                                style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -284,7 +291,7 @@ class BookingDetailSheet extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // ── 4. Itemized Product Breakdown ──
-                  const Text('Order Items & Payment:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+                  _sectionLabel('Order Items & Payment:'),
                   const SizedBox(height: 8),
 
                   Container(
@@ -307,12 +314,12 @@ class BookingDetailSheet extends StatelessWidget {
                                   Expanded(
                                     child: Text(
                                       '${it.quantity}x ${it.product.name} (${it.product.unitQuantity})',
-                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                                      style: UiText.bodyStrong.copyWith(fontSize: 12.5),
                                     ),
                                   ),
                                   Text(
-                                    '₹${it.totalPrice.toStringAsFixed(0)}',
-                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: UiTone.ink),
+                                    UiFormat.price(it.totalPrice),
+                                    style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900),
                                   ),
                                 ],
                               ),
@@ -322,16 +329,16 @@ class BookingDetailSheet extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Payment Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: UiTone.softText)),
-                              Text(liveOrder!.paymentStatus, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary)),
+                              Text('Payment Status', style: UiText.label),
+                              Text(liveOrder!.paymentStatus, style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Total Amount Paid', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                              Text('₹${liveOrder!.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: UiTone.primary)),
+                              Text('Total Amount Paid', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                              Text(UiFormat.price(liveOrder!.totalAmount), style: UiText.price.copyWith(color: UiTone.primary, fontWeight: FontWeight.w900)),
                             ],
                           ),
                         ] else ...[
@@ -342,12 +349,12 @@ class BookingDetailSheet extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   '${subscriptionTask!.subscriptionDetail?.quantity ?? 1}x ${subscriptionTask!.subscriptionDetail?.packSize ?? "1 Litre"}',
-                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                  style: UiText.bodyStrong.copyWith(fontSize: 13),
                                 ),
                               ),
                               Text(
-                                '₹${((subscriptionTask!.subscriptionDetail?.displayPrice ?? 40) * (subscriptionTask!.subscriptionDetail?.quantity ?? 1)).toStringAsFixed(0)}',
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.primary),
+                                UiFormat.price((subscriptionTask!.subscriptionDetail?.displayPrice ?? 40) * (subscriptionTask!.subscriptionDetail?.quantity ?? 1)),
+                                style: UiText.price.copyWith(fontSize: 14, color: UiTone.primary, fontWeight: FontWeight.w900),
                               ),
                             ],
                           ),
@@ -355,13 +362,16 @@ class BookingDetailSheet extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Subscription Schedule', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                              Text(subscriptionTask!.subscriptionDetail?.scheduleType ?? 'DAILY', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary)),
+                              Text('Subscription Schedule', style: UiText.label),
+                              Text(subscriptionTask!.subscriptionDetail?.scheduleType ?? 'DAILY', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
                             ],
                           ),
                           const Divider(height: 16),
                           // ── Subscription Management Controls ──
-                          const Text('Subscription Controls ⚙️', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.ink)),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Subscription Controls ⚙️', style: UiText.label.copyWith(color: UiTone.ink, fontWeight: FontWeight.w700)),
+                          ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
@@ -370,12 +380,12 @@ class BookingDetailSheet extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: UiTone.surfaceMuted,
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(UiRadius.sm),
                                   ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text('Daily Qty:', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                      Text('Daily Qty:', style: UiText.caption.copyWith(fontWeight: FontWeight.w700)),
                                       Row(
                                         children: [
                                           IconButton(
@@ -396,7 +406,7 @@ class BookingDetailSheet extends StatelessWidget {
                                           ),
                                           Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                                            child: Text('${subscriptionTask!.subscriptionDetail?.quantity ?? 1}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                            child: Text('${subscriptionTask!.subscriptionDetail?.quantity ?? 1}', style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900)),
                                           ),
                                           IconButton(
                                             icon: const Icon(Icons.add_circle_outline, size: 18, color: UiTone.primary),
@@ -439,7 +449,7 @@ class BookingDetailSheet extends StatelessWidget {
                                    if (context.mounted) {
                                      ScaffoldMessenger.of(context).showSnackBar(
                                        SnackBar(
-                                         backgroundColor: success ? UiTone.primary : Colors.red,
+                                         backgroundColor: success ? UiTone.primary : UiTone.error,
                                          content: Text(success ? '🌴 Vacation Mode Active: Paused drops from $startStr to $endStr' : 'Failed to activate vacation mode'),
                                        ),
                                      );
@@ -451,7 +461,7 @@ class BookingDetailSheet extends StatelessWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: UiTone.primary,
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                   elevation: 0,
                                 ),
@@ -480,10 +490,10 @@ class BookingDetailSheet extends StatelessWidget {
 
                   // ── 6. Doorstep Photo Proof (If Available) ──
                   if (proofUrl.isNotEmpty) ...[
-                    const Text('Doorstep Delivery Photo Proof 📸', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+                    _sectionLabel('Doorstep Delivery Photo Proof 📸'),
                     const SizedBox(height: 8),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(UiRadius.md),
                       child: Container(
                         height: 160,
                         width: double.infinity,
@@ -491,7 +501,7 @@ class BookingDetailSheet extends StatelessWidget {
                         child: Image.network(
                           proofUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                          errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, color: UiText.muted)),
                         ),
                       ),
                     ),
@@ -519,7 +529,7 @@ class BookingDetailSheet extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.headset_mic_rounded, color: UiTone.primary, size: 16),
-                    label: const Text('Help & Chat', style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                    label: Text('Help & Chat', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: UiTone.primary),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
@@ -551,7 +561,7 @@ class BookingDetailSheet extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.satellite_alt_rounded, size: 16),
-                    label: const Text('Track Live on Map 🛰️', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    label: Text('Track Live on Map 🛰️', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12.5)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: UiTone.primary,
                       foregroundColor: Colors.white,
@@ -573,7 +583,7 @@ class BookingDetailSheet extends StatelessWidget {
     required String category,
   }) {
     final nameLower = productName.toLowerCase();
-    
+
     // 1. Check if the delivery task itself has batch parameters wired
     double directFat = subscriptionTask?.fatPercentage ?? liveOrder?.fatPercentage ?? 0.0;
     double directSnf = subscriptionTask?.snfPercentage ?? liveOrder?.snfPercentage ?? 0.0;
@@ -663,9 +673,9 @@ class BookingDetailSheet extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35), width: 1.2),
+        color: UiTone.successSoft,
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        border: Border.all(color: UiTone.secondary.withValues(alpha: 0.35), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,10 +685,10 @@ class BookingDetailSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  color: UiTone.secondary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 18),
+                child: const Icon(Icons.verified_rounded, color: UiTone.success, size: 18),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -687,13 +697,13 @@ class BookingDetailSheet extends StatelessWidget {
                   children: [
                     Text(
                       'Daily Milk Quality & Lab Report 🥛',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF065F46)),
+                      style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w800, color: UiTone.primaryDark),
                     ),
                     Text(
                       priceVal.isNotEmpty
                           ? 'Today\'s Hub Price: $priceVal • FSSAI Grade A+'
                           : 'FSSAI Certified • Passed 24 Quality Checks',
-                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w600),
+                      style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.success, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -701,8 +711,8 @@ class BookingDetailSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF059669),
-                  borderRadius: BorderRadius.circular(6),
+                  color: UiTone.success,
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
                 ),
                 child: Text(priceVal.isNotEmpty ? priceVal : 'GRADE A+', style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
               ),
@@ -718,8 +728,8 @@ class BookingDetailSheet extends StatelessWidget {
                   title: 'FAT %',
                   value: fatVal,
                   subtitle: 'Natural Cream',
-                  accentColor: const Color(0xFFD97706),
-                  bgColor: const Color(0xFFFEF3C7),
+                  accentColor: UiTone.warning,
+                  bgColor: UiTone.warningSoft,
                 ),
               ),
               const SizedBox(width: 8),
@@ -729,8 +739,8 @@ class BookingDetailSheet extends StatelessWidget {
                   title: 'SNF %',
                   value: snfVal,
                   subtitle: 'Solid-Not-Fat',
-                  accentColor: const Color(0xFF2563EB),
-                  bgColor: const Color(0xFFEFF6FF),
+                  accentColor: UiTone.accentBlue,
+                  bgColor: UiTone.infoSoft,
                 ),
               ),
               const SizedBox(width: 8),
@@ -740,8 +750,8 @@ class BookingDetailSheet extends StatelessWidget {
                   title: 'Water %',
                   value: waterVal,
                   subtitle: '0% Added Water',
-                  accentColor: const Color(0xFF059669),
-                  bgColor: const Color(0xFFDCFCE7),
+                  accentColor: UiTone.success,
+                  bgColor: UiTone.successSoft,
                 ),
               ),
             ],
@@ -750,18 +760,18 @@ class BookingDetailSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: UiTone.surface,
+              borderRadius: BorderRadius.circular(UiRadius.xs),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: Row(
               children: [
-                const Icon(Icons.ac_unit_rounded, size: 14, color: Color(0xFF0284C7)),
+                const Icon(Icons.ac_unit_rounded, size: 14, color: UiTone.accentBlue),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Zero Adulteration • $puritySub',
-                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                    style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.softText, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -784,7 +794,7 @@ class BookingDetailSheet extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(UiRadius.sm),
         border: Border.all(color: accentColor.withValues(alpha: 0.25)),
       ),
       child: Column(

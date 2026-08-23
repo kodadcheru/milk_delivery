@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
+import '../../theme/ui_format.dart';
 import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
@@ -135,10 +137,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final isListEmpty = filteredOrders.isEmpty && filteredSubscriptions.isEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: UiTone.shellBackground,
       body: SafeArea(
         child: RefreshIndicator(
-          color: const Color(0xFF0D7C66),
+          color: UiTone.primary,
           strokeWidth: 2.5,
           onRefresh: () => widget.state.reloadAllData(),
           child: ListView(
@@ -159,40 +161,23 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   _buildActiveOrderHeroCard(firstActiveOrder),
                 ],
                 if (remainingOrders.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20, bottom: 14),
-                    child: Text(
-                      _selectedFilterIndex == 2
-                          ? 'Delivered Orders'
-                          : _selectedFilterIndex == 3
-                              ? 'Cancelled Orders'
-                              : 'Recent Orders',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                    ),
+                  _buildSectionHeader(
+                    _selectedFilterIndex == 2
+                        ? 'Delivered Orders'
+                        : _selectedFilterIndex == 3
+                            ? 'Cancelled Orders'
+                            : 'Recent Orders',
                   ),
                   ...remainingOrders.map((o) => _buildOrderCard(o)),
                 ],
                 if (filteredSubscriptions.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20, bottom: 14),
-                    child: Row(
-                      children: [
-                        Text(
-                          _selectedFilterIndex == 2
-                              ? 'Delivered Morning Milk'
-                              : _selectedFilterIndex == 3
-                                  ? 'Skipped / Paused Deliveries'
-                                  : 'Morning Subscriptions',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                          decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                          child: Text('${filteredSubscriptions.length}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                        ),
-                      ],
-                    ),
+                  _buildSectionHeader(
+                    _selectedFilterIndex == 2
+                        ? 'Delivered Morning Milk'
+                        : _selectedFilterIndex == 3
+                            ? 'Skipped / Paused Deliveries'
+                            : 'Morning Subscriptions',
+                    count: filteredSubscriptions.length,
                   ),
                   ...filteredSubscriptions.map((task) => _buildSubscriptionCard(task)),
                 ],
@@ -208,30 +193,52 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'My Orders',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), letterSpacing: -0.3),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Track & manage your orders',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
-            ),
+            Text('My Orders', style: UiText.h1),
+            const SizedBox(height: 2),
+            Text('Track & manage your orders', style: UiText.label),
           ],
         ),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: const Color(0xFFE6F5F0), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: UiTone.primarySoft,
+            borderRadius: BorderRadius.circular(UiRadius.sm),
+          ),
           child: Text(
             '$totalCount',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+            style: UiText.bodyStrong.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {int? count}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 14),
+      child: Row(
+        children: [
+          Text(title, style: UiText.h2.copyWith(fontSize: 16)),
+          if (count != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: UiTone.surfaceMuted,
+                borderRadius: BorderRadius.circular(UiRadius.xs),
+              ),
+              child: Text(
+                '$count',
+                style: UiText.caption.copyWith(fontWeight: FontWeight.w700, color: UiTone.softText),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -260,22 +267,21 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               padding: const EdgeInsets.only(right: 8.0),
               child: InkWell(
                 onTap: () => setState(() => _selectedFilterIndex = index),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(UiRadius.pill),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
+                    color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
+                    borderRadius: BorderRadius.circular(UiRadius.pill),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+                      color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
                     ),
                   ),
                   child: Text(
                     chips[index],
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: UiText.label.copyWith(
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? Colors.white : const Color(0xFF475569),
+                      color: isSelected ? Colors.white : UiTone.softText,
                     ),
                   ),
                 ),
@@ -316,54 +322,54 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 40.0, bottom: 20.0),
+      padding: const EdgeInsets.only(top: 48.0, bottom: 20.0),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 76,
-              height: 76,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)]),
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: UiTone.primary.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 36, color: const Color(0xFF94A3B8)),
+              child: Icon(icon, size: 38, color: UiTone.primary),
             ),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-            ),
+            Text(title, style: UiText.title, textAlign: TextAlign.center),
             const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                 subtitle,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8), height: 1.4),
+                style: UiText.label.copyWith(height: 1.4),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
             if (filterIndex > 0)
               OutlinedButton(
                 onPressed: () => setState(() => _selectedFilterIndex = 0),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF0D7C66)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: const BorderSide(color: UiTone.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
-                child: const Text('View All Orders', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
+                child: Text('View All Orders',
+                    style: UiText.bodyStrong.copyWith(color: UiTone.primary)),
               )
             else
               ElevatedButton(
                 onPressed: () => widget.state.setTab(0),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D7C66),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  backgroundColor: UiTone.primary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
-                child: const Text('Start Shopping 🛒', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text('Start Shopping 🛒',
+                    style: UiText.bodyStrong.copyWith(color: Colors.white)),
               ),
           ],
         ),
@@ -371,15 +377,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     );
   }
 
+  // ── Live-order hero card — on-brand teal gradient focal card ──
   Widget _buildActiveOrderHeroCard(LiveOrderModel order) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0B132B),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFF10B766).withValues(alpha: 0.5), width: 1.5),
-        boxShadow: const [
-          BoxShadow(color: Color(0x5510B766), blurRadius: 24, offset: Offset(0, 10)),
-        ],
+        gradient: UiGradient.hero,
+        borderRadius: BorderRadius.circular(UiRadius.xl),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1),
+        boxShadow: UiShadow.glowPrimary,
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -388,39 +393,40 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B766),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
                     SizedBox(width: 4),
-                    Text('LIVE ORDER', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900)),
+                    Text('LIVE ORDER',
+                        style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                   ],
                 ),
               ),
               const Spacer(),
               Text(
                 order.id,
-                style: const TextStyle(color: Colors.white60, fontSize: 12, fontFamily: 'monospace'),
+                style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'monospace'),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Arriving soon',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+            style: UiText.h2.copyWith(color: Colors.white, fontSize: 20),
           ),
           const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
+            borderRadius: BorderRadius.circular(UiRadius.pill),
+            child: LinearProgressIndicator(
               minHeight: 6,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B766)),
-              backgroundColor: Colors.white12,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              backgroundColor: Colors.white.withValues(alpha: 0.24),
             ),
           ),
           const SizedBox(height: 14),
@@ -429,14 +435,15 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.key, color: Color(0xFFF59E0B), size: 16),
+                const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 16),
                 const SizedBox(width: 6),
-                const Text('Start OTP', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                const Text('Start OTP', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const Spacer(),
                 Text(
                   order.deliveryOtp,
@@ -454,10 +461,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           const SizedBox(height: 12),
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 18,
-                backgroundColor: Color(0xFF10B766),
-                child: Icon(Icons.person, color: Colors.white, size: 20),
+                backgroundColor: Colors.white.withValues(alpha: 0.22),
+                child: const Icon(Icons.person, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -470,21 +477,21 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     ),
                     const Text(
                       'Delivery Partner',
-                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                      style: TextStyle(color: Colors.white70, fontSize: 11),
                     ),
                   ],
                 ),
               ),
               IconButton(
                 onPressed: () => _callDriver(order.driverPhone),
-                icon: const Icon(Icons.phone, color: Color(0xFF10B766)),
+                icon: const Icon(Icons.phone, color: Colors.white),
               ),
             ],
           ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            height: 42,
+            height: 46,
             child: ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -503,11 +510,13 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D7C66),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                backgroundColor: Colors.white,
+                foregroundColor: UiTone.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                 elevation: 0,
               ),
-              child: const Text('Track Live Driver 🛰️', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              child: Text('Track Live Driver 🛰️',
+                  style: UiText.bodyStrong.copyWith(color: UiTone.primaryDark, fontWeight: FontWeight.w800)),
             ),
           ),
         ],
@@ -539,8 +548,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final isCurrent = activeStep == stepNumber;
     final isFuture = activeStep < stepNumber;
 
-    Color bgColor = isDone ? const Color(0xFF059669) : (isCurrent ? const Color(0xFF10B766) : Colors.white12);
-    
+    final Color bgColor =
+        isFuture ? Colors.white.withValues(alpha: 0.30) : Colors.white;
+
     return Column(
       children: [
         Container(
@@ -551,7 +561,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             shape: BoxShape.circle,
           ),
           child: isDone
-              ? const Icon(Icons.check, color: Colors.white, size: 12)
+              ? const Icon(Icons.check, color: UiTone.primary, size: 12)
               : (isCurrent
                   ? AnimatedBuilder(
                       animation: _animController,
@@ -560,8 +570,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.5 + 0.5 * _animController.value),
-                              width: 2,
+                              color: UiTone.primary.withValues(alpha: 0.4 + 0.6 * _animController.value),
+                              width: 3,
                             ),
                           ),
                         );
@@ -573,8 +583,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         Text(
           label,
           style: TextStyle(
-            color: isFuture ? Colors.white38 : Colors.white,
+            color: isFuture ? Colors.white70 : Colors.white,
             fontSize: 10,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -587,24 +598,85 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       child: Container(
         height: 3,
         margin: const EdgeInsets.only(bottom: 14),
-        color: isDone ? const Color(0xFF059669) : Colors.white12,
+        color: isDone ? Colors.white : Colors.white.withValues(alpha: 0.28),
       ),
     );
   }
 
+  /// Tokenized status → accent color, exhaustive over known order/task statuses.
   Color _getStatusColor(String status) {
-    if (status == 'PLACED' || status == 'PENDING') return const Color(0xFFD97706);
-    if (status == 'PACKED' || status == 'OUT_FOR_DELIVERY') return const Color(0xFF059669);
-    if (status == 'DELIVERED') return const Color(0xFF2563EB);
-    if (status == 'CANCELLED') return const Color(0xFFDC2626);
-    return const Color(0xFFD97706); // fallback
+    final s = status.toUpperCase();
+    if (s == 'DELIVERED' || s == 'COMPLETED') return UiTone.accentBlue;
+    if (s == 'CANCELLED' || s == 'REJECTED' || s == 'FAILED' || s == 'SKIPPED') return UiTone.error;
+    if (s == 'PAUSED') return UiTone.warning;
+    if (s == 'OUT_FOR_DELIVERY' || s == 'PACKED' || s == 'IN_TRANSIT' || s == 'ACTIVE') return UiTone.success;
+    if (s == 'PLACED' || s == 'PENDING' || s == 'CONFIRMED' || s == 'PREPARING' || s == 'PROCESSING') {
+      return UiTone.warning;
+    }
+    return UiTone.primary;
+  }
+
+  /// Shared timeline-dot + connector + white card chrome for both express
+  /// orders and morning subscriptions. The connector fills the card height via
+  /// `IntrinsicHeight`, so it tracks content instead of a fragile fixed height.
+  Widget _timelineCard({
+    required Color accent,
+    required VoidCallback onTap,
+    required Widget child,
+  }) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 24),
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+              ),
+              Expanded(
+                child: Container(width: 2, color: UiTone.surfaceBorder),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: UiTone.surface,
+                borderRadius: BorderRadius.circular(UiRadius.lg),
+                border: Border.all(color: UiTone.surfaceMuted),
+                boxShadow: UiShadow.card,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(UiRadius.lg),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(left: BorderSide(width: 4, color: accent)),
+                      borderRadius: BorderRadius.circular(UiRadius.lg),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    child: child,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildOrderCard(LiveOrderModel order) {
     final statusColor = _getStatusColor(order.status);
     final isActive = _isActive(order.status);
-    final isDelivered = order.status == 'DELIVERED';
-    
+
     String itemsSummary = '';
     if (order.items.isNotEmpty) {
       if (order.items.length <= 2) {
@@ -614,265 +686,161 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       }
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Left timeline
-        Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 24),
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: statusColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Container(
-              width: 2,
-              height: 130, // Approx height, will fill nicely
-              color: const Color(0xFFE2E8F0),
-            ),
-          ],
-        ),
-        const SizedBox(width: 12),
-        // Expanded Card
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: const [
-                BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 3)),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(width: 4, color: statusColor)),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              order.id,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B), fontFamily: 'monospace'),
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              order.status,
-                              style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w800),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        itemsSummary,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF94A3B8)),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${order.deliveryDate} • ${order.deliverySlot}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Text(
-                            '₹${order.totalAmount.toStringAsFixed(0)}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                          ),
-                          const Spacer(),
-                          if (isActive)
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (ctx) => LiveDriverTrackingScreen(
-                                      state: widget.state,
-                                      liveOrder: order,
-                                      orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                                      deliveryAddress: order.deliveryAddress,
-                                      driverName: order.driverName,
-                                      driverPhone: order.driverPhone,
-                                      deliveryOtp: order.deliveryOtp,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE6F4F1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text('Track', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 11, fontWeight: FontWeight.w700)),
-                              ),
-                            )
-                          else if (isDelivered)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F3FF),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text('Reorder', style: TextStyle(color: Color(0xFF7C3AED), fontSize: 11, fontWeight: FontWeight.w700)),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+    return _timelineCard(
+      accent: statusColor,
+      onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: UiTone.surfaceMuted,
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                ),
+                child: Text(
+                  order.id,
+                  style: UiText.caption.copyWith(fontWeight: FontWeight.w700, color: UiTone.softText, fontFamily: 'monospace'),
                 ),
               ),
-            ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                ),
+                child: Text(
+                  order.status,
+                  style: UiText.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 10),
+          Text(
+            itemsSummary,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.bodyStrong.copyWith(fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today_rounded, size: 14, color: UiText.muted),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  '${order.deliveryDate} • ${order.deliverySlot}',
+                  style: UiText.caption,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                UiFormat.price(order.totalAmount),
+                style: UiText.price,
+              ),
+              const Spacer(),
+              if (isActive)
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => LiveDriverTrackingScreen(
+                          state: widget.state,
+                          liveOrder: order,
+                          orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                          deliveryAddress: order.deliveryAddress,
+                          driverName: order.driverName,
+                          driverPhone: order.driverPhone,
+                          deliveryOtp: order.deliveryOtp,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: UiTone.primarySoft,
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
+                    ),
+                    child: Text('Track',
+                        style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSubscriptionCard(DeliveryTaskModel task) {
     final sub = task.subscriptionDetail;
     final product = sub?.productDetail;
-    final isDelivered = task.status == 'DELIVERED';
-    final statusColor = isDelivered ? const Color(0xFF2563EB) : const Color(0xFF059669);
+    final statusColor = _getStatusColor(task.status);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 24),
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: statusColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Container(
-              width: 2,
-              height: 120, // Approx height
-              color: const Color(0xFFE2E8F0),
-            ),
-          ],
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: const [
-                BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 3)),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(width: 4, color: statusColor)),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => Container(
-                            width: 50,
-                            height: 50,
-                            color: const Color(0xFFF1F5F9),
-                            child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product?.name ?? 'Fresh A2 Cow Milk',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${sub?.quantity ?? 1}x ${sub?.packSize ?? "Unit"} • ${task.deliveryDate}',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                task.status,
-                                style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    return _timelineCard(
+      accent: statusColor,
+      onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(UiRadius.xs),
+            child: Image.network(
+              product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (c, e, s) => Container(
+                width: 50,
+                height: 50,
+                color: UiTone.surfaceMuted,
+                child: const Center(child: Text('🥛', style: TextStyle(fontSize: 22))),
               ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product?.name ?? 'Fresh A2 Cow Milk',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: UiText.bodyStrong.copyWith(fontSize: 13),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${sub?.quantity ?? 1}x ${sub?.packSize ?? "Unit"} • ${task.deliveryDate}',
+                  style: UiText.caption,
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                  ),
+                  child: Text(
+                    task.status,
+                    style: UiText.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
