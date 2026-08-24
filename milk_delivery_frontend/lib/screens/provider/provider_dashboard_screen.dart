@@ -3244,7 +3244,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                     final subsFound = taskRes?['active_subscriptions_found'] ?? '?';
                                     final hubFilter = taskRes?['hub_filter'] ?? '?';
                                     final String taskMsg;
-                                    if (tasksCreated > 0) {
+                                    if (taskRes == null) {
+                                      // API returned error
+                                      final apiErr = ApiService.lastError ?? 'Unknown error';
+                                      taskMsg = '— API Error: $apiErr';
+                                    } else if (tasksCreated > 0) {
                                       taskMsg = '& generated $tasksCreated new deliveries for $dateStr!';
                                     } else if (totalTasks > 0) {
                                       taskMsg = '— $totalTasks deliveries already scheduled for $dateStr ✅';
