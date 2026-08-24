@@ -10,6 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet Map Engine (Zero-Failure Resilient Engine) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Google Maps JavaScript API with Places & Geometry libraries -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4&libraries=places,geometry"></script>
 
@@ -3244,7 +3247,10 @@
       });
 
       if (tabName === 'service-areas') {
-        setTimeout(initMap, 200);
+        setTimeout(() => {
+          initMap();
+          if (leafletMap) leafletMap.invalidateSize();
+        }, 150);
       } else if (tabName === 'support') {
         loadSupportDesk();
       } else if (tabName === 'storefront') {
@@ -4655,64 +4661,146 @@
     }
 
     let googleMap = null;
+    let leafletMap = null;
+    let activeMapEngine = 'none'; // 'google' or 'leaflet'
+    let googleAuthFailed = false;
     let hubMarkers = [];
     let hubCircles = [];
     let driverMarkers = [];
     let dropMarkers = [];
+    let leafletLayers = {
+      hubs: [],
+      circles: [],
+      fleet: [],
+      drops: []
+    };
     let activeInfoWindow = null;
+
+    // Detect Google Maps Authentication Failure (e.g. referer restrictions, billing checks)
+    window.gm_authFailure = function() {
+      console.warn('⚠️ Google Maps API Key auth failure / domain restriction. Seamlessly switching to Leaflet Map Engine...');
+      googleAuthFailed = true;
+      initLeafletMap();
+    };
 
     function initMap() {
       const mapEl = document.getElementById('mapContainer');
       if (!mapEl) return;
 
-      if (!googleMap) {
-        if (typeof google === 'undefined' || !google.maps) {
-          console.log('Waiting for Google Maps API to load...');
-          setTimeout(initMap, 300);
-          return;
-        }
-
-        // Initialize Google Map centered in Hyderabad (Jubilee Hills)
-        googleMap = new google.maps.Map(mapEl, {
-          center: { lat: 17.4320, lng: 78.4070 },
-          zoom: 12.8,
-          mapTypeId: 'roadmap',
-          zoomControl: true,
-          mapTypeControl: true,
-          streetViewControl: false,
-          fullscreenControl: true,
-          styles: [
-            { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
-            { elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
-            { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
-            { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
-            { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-            { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#064e3b" }] },
-            { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#34d399" }] },
-            { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
-            { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
-            { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
-            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#0d7c66" }] },
-            { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#042f2e" }] },
-            { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f8fafc" }] },
-            { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1e1b4b" }] },
-            { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#a5b4fc" }] },
-            { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1120" }] },
-            { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
-            { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#0b1120" }] },
-          ],
-        });
-
-        activeInfoWindow = new google.maps.InfoWindow();
+      if (googleAuthFailed) {
+        initLeafletMap();
+        return;
       }
 
-      refreshMapLayers();
+      // Check if Google Maps is available
+      if (typeof google !== 'undefined' && google.maps && !googleAuthFailed) {
+        try {
+          if (!googleMap) {
+            // Determine initial center
+            let centerLat = 17.0017;
+            let centerLng = 79.9625;
+            if (rawHubs.length > 0) {
+              centerLat = parseFloat(rawHubs[0].latitude || rawHubs[0].lat || 17.0017);
+              centerLng = parseFloat(rawHubs[0].longitude || rawHubs[0].lng || 79.9625);
+            }
+
+            googleMap = new google.maps.Map(mapEl, {
+              center: { lat: centerLat, lng: centerLng },
+              zoom: 13,
+              mapTypeId: 'roadmap',
+              zoomControl: true,
+              mapTypeControl: true,
+              streetViewControl: false,
+              fullscreenControl: true,
+              styles: [
+                { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+                { elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
+                { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+                { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
+                { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+                { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#064e3b" }] },
+                { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#34d399" }] },
+                { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+                { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+                { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
+                { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#0d7c66" }] },
+                { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#042f2e" }] },
+                { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f8fafc" }] },
+                { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1e1b4b" }] },
+                { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#a5b4fc" }] },
+                { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1120" }] },
+                { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
+                { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#0b1120" }] },
+              ],
+            });
+
+            activeInfoWindow = new google.maps.InfoWindow();
+            activeMapEngine = 'google';
+          }
+          refreshMapLayers();
+          return;
+        } catch (e) {
+          console.warn('Google Maps initialization failed, switching to Leaflet:', e);
+          initLeafletMap();
+          return;
+        }
+      }
+
+      // If Google Maps not ready within 1.5 seconds, fallback to Leaflet
+      if (!window._mapFallbackTimeout) {
+        window._mapFallbackTimeout = setTimeout(() => {
+          if (!googleMap && (typeof google === 'undefined' || !google.maps)) {
+            console.log('Google Maps unavailable. Initializing high-performance Leaflet Engine...');
+            initLeafletMap();
+          }
+        }, 1200);
+      }
+    }
+
+    function initLeafletMap() {
+      const mapEl = document.getElementById('mapContainer');
+      if (!mapEl) return;
+
+      if (leafletMap) {
+        leafletMap.invalidateSize();
+        refreshLeafletLayers();
+        return;
+      }
+
+      // Clear any Google maps iframe/canvas artifacts
+      mapEl.innerHTML = '';
+
+      let centerLat = 17.0017;
+      let centerLng = 79.9625;
+      if (rawHubs.length > 0) {
+        centerLat = parseFloat(rawHubs[0].latitude || rawHubs[0].lat || 17.0017);
+        centerLng = parseFloat(rawHubs[0].longitude || rawHubs[0].lng || 79.9625);
+      }
+
+      leafletMap = L.map('mapContainer', {
+        center: [centerLat, centerLng],
+        zoom: 13,
+        zoomControl: true,
+      });
+
+      // Ultra-clean modern CartoDB Dark Matter / Voyager Tile Layer
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(leafletMap);
+
+      activeMapEngine = 'leaflet';
+      refreshLeafletLayers();
     }
 
     function refreshMapLayers() {
-      if (!googleMap) return;
+      if (activeMapEngine === 'leaflet' || !googleMap) {
+        refreshLeafletLayers();
+        return;
+      }
 
-      // Clear existing markers & circles
+      // Clear existing Google markers & circles
       hubMarkers.forEach(m => m.setMap(null));
       hubCircles.forEach(c => c.setMap(null));
       driverMarkers.forEach(m => m.setMap(null));
@@ -4725,19 +4813,18 @@
       // Auto-center map on first hub if available
       if (rawHubs.length > 0 && googleMap) {
         const firstHub = rawHubs[0];
-        const centerLat = parseFloat(firstHub.latitude || firstHub.lat || 17.4320);
-        const centerLng = parseFloat(firstHub.longitude || firstHub.lng || 78.4070);
+        const centerLat = parseFloat(firstHub.latitude || firstHub.lat || 17.0017);
+        const centerLng = parseFloat(firstHub.longitude || firstHub.lng || 79.9625);
         googleMap.panTo({ lat: centerLat, lng: centerLng });
       }
 
-      // 1. Plot Real Location Hubs & 5km Radius Geofence Circles
+      // 1. Plot Real Location Hubs & Geofence Circles
       const defaultHubColors = ['#10B981', '#6366F1', '#0284C7', '#F59E0B', '#EC4899'];
       rawHubs.forEach((h, idx) => {
-        const lat = parseFloat(h.latitude || h.lat || 17.4320);
-        const lng = parseFloat(h.longitude || h.lng || 78.4070);
+        const lat = parseFloat(h.latitude || h.lat || 17.0017);
+        const lng = parseFloat(h.longitude || h.lng || 79.9625);
         const color = defaultHubColors[idx % defaultHubColors.length];
 
-        // Google Maps Hub Marker
         const marker = new google.maps.Marker({
           position: { lat, lng },
           map: googleMap,
@@ -4775,7 +4862,6 @@
 
         hubMarkers.push(marker);
 
-        // Radial Geofenced Circle according to hub's configured coverage_radius_km
         const radiusMeters = (parseFloat(h.coverage_radius_km) || 5.0) * 1000;
         const circle = new google.maps.Circle({
           strokeColor: color,
@@ -4791,9 +4877,9 @@
         hubCircles.push(circle);
       });
 
-      // 2. Plot Salaried Delivery Boys on Duty (Real Fleet from DB)
+      // 2. Plot Salaried Delivery Boys on Duty
       rawFleet.forEach((d, idx) => {
-        if (!d.latitude && !d.longitude) return; // Skip drivers without GPS coordinates
+        if (!d.latitude && !d.longitude) return;
         const lat = parseFloat(d.latitude);
         const lng = parseFloat(d.longitude);
 
@@ -4840,10 +4926,9 @@
         const sub = t.subscription_detail || {};
         const cust = sub.customer_detail || {};
         const isDelivered = t.status === 'DELIVERED';
-        // Use real coordinates from delivery task or customer; skip if none available
         const lat = parseFloat(t.latitude || cust.latitude || 0);
         const lng = parseFloat(t.longitude || cust.longitude || 0);
-        if (lat === 0 && lng === 0) return; // Skip deliveries without coordinates
+        if (lat === 0 && lng === 0) return;
 
         const marker = new google.maps.Marker({
           position: { lat, lng },
@@ -4878,17 +4963,148 @@
       });
     }
 
+    function refreshLeafletLayers() {
+      if (!leafletMap) return;
+
+      // Remove existing Leaflet layers
+      leafletLayers.hubs.forEach(l => leafletMap.removeLayer(l));
+      leafletLayers.circles.forEach(l => leafletMap.removeLayer(l));
+      leafletLayers.fleet.forEach(l => leafletMap.removeLayer(l));
+      leafletLayers.drops.forEach(l => leafletMap.removeLayer(l));
+      leafletLayers.hubs = [];
+      leafletLayers.circles = [];
+      leafletLayers.fleet = [];
+      leafletLayers.drops = [];
+
+      const bounds = [];
+
+      // 1. Plot Hubs & Circles in Leaflet
+      const defaultHubColors = ['#10B981', '#6366F1', '#0284C7', '#F59E0B', '#EC4899'];
+      rawHubs.forEach((h, idx) => {
+        const lat = parseFloat(h.latitude || h.lat || 17.0017);
+        const lng = parseFloat(h.longitude || h.lng || 79.9625);
+        const color = defaultHubColors[idx % defaultHubColors.length];
+        bounds.push([lat, lng]);
+
+        const hubIcon = L.divIcon({
+          className: 'custom-hub-icon',
+          html: `<div style="background:${color}; width:32px; height:32px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 4px 10px rgba(0,0,0,0.3);">🏬</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -18]
+        });
+
+        const marker = L.marker([lat, lng], { icon: hubIcon }).addTo(leafletMap);
+        marker.bindPopup(`
+          <div style="font-family:'Inter',sans-serif; min-width:220px; padding:4px; color:#0F172A;">
+            <div style="font-size:14px; font-weight:800; color:#0D7C66; margin-bottom:4px;">🏬 ${h.name}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Hub Code:</strong> ${h.hub_code || h.id}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Manager:</strong> ${h.manager_name || h.manager || 'Operations'} (${h.manager_phone || '+91 8919548905'})</div>
+            <div style="font-size:11px; color:#64748B; margin-bottom:6px;">${h.address}</div>
+            <div style="font-size:11px; background:#ECFDF5; color:#047857; padding:4px 8px; border-radius:6px; font-weight:bold; display:inline-block;">
+              ✓ 5.0 km Radial Geofenced Coverage Zone
+            </div>
+          </div>
+        `);
+        leafletLayers.hubs.push(marker);
+
+        const radiusMeters = (parseFloat(h.coverage_radius_km) || 5.0) * 1000;
+        const circle = L.circle([lat, lng], {
+          radius: radiusMeters,
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.15,
+          weight: 2
+        }).addTo(leafletMap);
+        leafletLayers.circles.push(circle);
+      });
+
+      // 2. Plot Salaried Delivery Fleet in Leaflet
+      rawFleet.forEach((d) => {
+        if (!d.latitude && !d.longitude) return;
+        const lat = parseFloat(d.latitude);
+        const lng = parseFloat(d.longitude);
+        bounds.push([lat, lng]);
+
+        const fleetIcon = L.divIcon({
+          className: 'custom-fleet-icon',
+          html: `<div style="background:#10B981; width:28px; height:28px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 3px 8px rgba(0,0,0,0.3);">🛵</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+          popupAnchor: [0, -16]
+        });
+
+        const marker = L.marker([lat, lng], { icon: fleetIcon }).addTo(leafletMap);
+        marker.bindPopup(`
+          <div style="font-family:'Inter',sans-serif; min-width:200px; padding:4px; color:#0F172A;">
+            <div style="font-size:13px; font-weight:800; color:#0D7C66; margin-bottom:4px;">🛵 ${d.name}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Phone:</strong> ${d.phone}</div>
+            <div style="font-size:11.5px; color:#475569; margin-bottom:2px;"><strong>Assigned Hub:</strong> ${d.hub}</div>
+            <div style="font-size:11px; background:#F0FDF4; color:#166534; padding:4px 8px; border-radius:6px; font-weight:bold; margin-top:4px;">
+              Fixed Monthly Salary: ${d.salary || '₹15,000 / mo'}
+            </div>
+          </div>
+        `);
+        leafletLayers.fleet.push(marker);
+      });
+
+      // 3. Plot Customer Deliveries in Leaflet
+      rawDeliveries.forEach((t) => {
+        const sub = t.subscription_detail || {};
+        const cust = sub.customer_detail || {};
+        const isDelivered = t.status === 'DELIVERED';
+        const lat = parseFloat(t.latitude || cust.latitude || 0);
+        const lng = parseFloat(t.longitude || cust.longitude || 0);
+        if (lat === 0 && lng === 0) return;
+        bounds.push([lat, lng]);
+
+        const dropIcon = L.divIcon({
+          className: 'custom-drop-icon',
+          html: `<div style="background:${isDelivered ? '#10B981' : '#0284C7'}; width:18px; height:18px; border-radius:50%; border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+          popupAnchor: [0, -10]
+        });
+
+        const marker = L.marker([lat, lng], { icon: dropIcon }).addTo(leafletMap);
+        marker.bindPopup(`
+          <div style="font-family:'Inter',sans-serif; min-width:180px; padding:4px; color:#0F172A;">
+            <div style="font-size:13px; font-weight:800; color:#1E293B; margin-bottom:4px;">Drop #${t.id}: ${t.customer_name || cust.username || 'Customer'}</div>
+            <div style="font-size:11px; color:#64748B; margin-bottom:4px;">${t.delivery_address || 'Kodad, Telangana'}</div>
+            <div style="font-size:11px; font-weight:bold; color:${isDelivered ? '#10B981' : '#0284C7'};">
+              Status: ${isDelivered ? '✓ Delivered at Doorstep' : '⏳ Scheduled for Delivery'}
+            </div>
+          </div>
+        `);
+        leafletLayers.drops.push(marker);
+      });
+
+      if (bounds.length > 0) {
+        leafletMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+      }
+    }
+
     function toggleMapLayer(layerName, checkbox) {
-      if (!googleMap) return;
       const isVisible = checkbox.checked;
 
-      if (layerName === 'hubs') {
-        hubMarkers.forEach(m => m.setVisible(isVisible));
-        hubCircles.forEach(c => c.setVisible(isVisible));
-      } else if (layerName === 'fleet') {
-        driverMarkers.forEach(m => m.setVisible(isVisible));
-      } else if (layerName === 'drops') {
-        dropMarkers.forEach(m => m.setVisible(isVisible));
+      if (activeMapEngine === 'google' && googleMap) {
+        if (layerName === 'hubs') {
+          hubMarkers.forEach(m => m.setVisible(isVisible));
+          hubCircles.forEach(c => c.setVisible(isVisible));
+        } else if (layerName === 'fleet') {
+          driverMarkers.forEach(m => m.setVisible(isVisible));
+        } else if (layerName === 'drops') {
+          dropMarkers.forEach(m => m.setVisible(isVisible));
+        }
+      } else if (leafletMap) {
+        if (layerName === 'hubs') {
+          leafletLayers.hubs.forEach(l => isVisible ? leafletMap.addLayer(l) : leafletMap.removeLayer(l));
+          leafletLayers.circles.forEach(l => isVisible ? leafletMap.addLayer(l) : leafletMap.removeLayer(l));
+        } else if (layerName === 'fleet') {
+          leafletLayers.fleet.forEach(l => isVisible ? leafletMap.addLayer(l) : leafletMap.removeLayer(l));
+        } else if (layerName === 'drops') {
+          leafletLayers.drops.forEach(l => isVisible ? leafletMap.addLayer(l) : leafletMap.removeLayer(l));
+        }
       }
     }
 
