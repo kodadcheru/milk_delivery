@@ -616,6 +616,12 @@ class GenerateTodayTasksView(APIView):
 
             # Resolve hub and driver
             hub = sub.hub or getattr(sub.customer, "assigned_hub", None)
+            if not hub and hub_obj:
+                hub = hub_obj  # Use the batch hub as fallback
+            # Auto-fix: assign hub to old subscriptions missing it
+            if hub and not sub.hub:
+                sub.hub = hub
+                sub.save(update_fields=["hub"])
             driver = self._get_next_driver(hub, hub_drivers, hub_driver_indices)
 
             DeliveryTask.objects.create(
