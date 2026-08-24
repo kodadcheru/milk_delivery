@@ -26,7 +26,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _loadDrivers() async {
     setState(() => _isLoadingDrivers = true);
-    final drivers = await ApiService.fetchDrivers();
+    final drivers = await ApiService.fetchFleet();
     if (mounted) {
       setState(() {
         _isLoadingDrivers = false;

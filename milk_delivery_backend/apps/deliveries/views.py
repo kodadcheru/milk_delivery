@@ -143,7 +143,13 @@ class DeliveryTaskSkipView(APIView):
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        task.status = DeliveryTask.Statuses.SKIPPED
+        reason = request.data.get("reason", "")
+        if reason:
+            task.status = DeliveryTask.Statuses.FAILED
+            task.failure_reason = reason
+        else:
+            task.status = DeliveryTask.Statuses.SKIPPED
+            
         task.save()
 
         try:
@@ -290,7 +296,7 @@ class BottleReturnListCreateView(APIView):
 
 
 class BottleReturnUpdateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrHubManager]
 
     def patch(self, request, pk):
         """Mark a bottle return as RETURNED or LOST."""
@@ -329,7 +335,7 @@ class BottleReturnUpdateView(APIView):
 
 
 class ProviderPayoutListCreateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrHubManager]
 
     def get(self, request):
         """List provider payouts for the user's hub."""

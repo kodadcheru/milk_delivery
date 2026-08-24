@@ -30,9 +30,9 @@ class LiveDriverTrackingScreen extends StatefulWidget {
     this.subscriptionTask,
     this.orderTitle = 'Fresh Farm Milk & Morning Essentials',
     this.deliveryAddress = 'Doorstep Delivery Location',
-    this.driverName = 'Assigned Partner',
+    this.driverName = '',
     this.driverPhone = '',
-    this.deliveryOtp = '4892',
+    this.deliveryOtp = '',
   });
 
   @override
@@ -72,9 +72,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
     );
 
-    // 1. Dynamically resolve Customer Doorstep GPS coordinates
-    double custLat = 17.4319;
-    double custLon = 78.4073;
+    // 1. Dynamically resolve Customer Doorstep    // Hardcoded to Kodad coordinates
+    double custLat = 17.001734;
+    double custLon = 79.9625;
 
     if (widget.subscriptionTask != null && widget.subscriptionTask!.customerLatitude != 0) {
       custLat = widget.subscriptionTask!.customerLatitude;
@@ -196,7 +196,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   }
 
   void _callDriver() async {
-    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : '+91 98765 43210';
+    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
+    if (phone.isEmpty) return;
     final cleanPhone = phone.replaceAll(' ', '');
     final uri = Uri.parse('tel:$cleanPhone');
     if (await canLaunchUrl(uri)) {
@@ -211,10 +212,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   }
 
   void _sendWhatsAppMessage() async {
-    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : '+91 98765 43210';
+    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
+    if (phone.isEmpty) return;
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final dName = widget.driverName.isNotEmpty ? widget.driverName : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner');
     final msg = Uri.encodeComponent(
-      'Hi ${widget.driverName.isNotEmpty ? widget.driverName : "Delivery Partner"}, I am tracking my MilkDrop order. Please deliver to: ${widget.deliveryAddress}. Thank you!',
+      'Hi $dName, I am tracking my MilkDrop order. Please deliver to: ${widget.deliveryAddress}. Thank you!',
     );
     final uri = Uri.parse('https://wa.me/$cleanPhone?text=$msg');
     if (await canLaunchUrl(uri)) {
@@ -229,11 +232,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   }
 
   void _copyOtp() {
-    Clipboard.setData(ClipboardData(text: widget.deliveryOtp));
+    final otp = widget.deliveryOtp.isNotEmpty ? widget.deliveryOtp : (widget.liveOrder?.deliveryOtp ?? '');
+    Clipboard.setData(ClipboardData(text: otp));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: UiTone.primary,
-        content: Text('🔑 OTP ${widget.deliveryOtp} copied to clipboard!'),
+        content: Text('🔑 OTP $otp copied to clipboard!'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -245,8 +249,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         (widget.liveOrder?.status == 'DELIVERED') ||
         (widget.subscriptionTask?.status == 'DELIVERED');
 
-    final driverName = widget.driverName.isNotEmpty ? widget.driverName : 'Ramesh Kumar';
+    final driverName = widget.driverName.isNotEmpty ? widget.driverName : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Assigned Partner');
     final resolvedAddress = widget.deliveryAddress.isNotEmpty ? widget.deliveryAddress : 'Doorstep Delivery Location';
+    final otp = widget.deliveryOtp.isNotEmpty ? widget.deliveryOtp : (widget.liveOrder?.deliveryOtp ?? '');
 
     return Scaffold(
       backgroundColor: UiTone.ink,
@@ -472,10 +477,10 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                               child: Column(
                                 children: [
                                   Text('DOORSTEP OTP', style: UiText.caption.copyWith(color: UiTone.primary, fontSize: 8.5, fontWeight: FontWeight.w900)),
-                                  const SizedBox(height: 1),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    widget.deliveryOtp,
-                                    style: UiText.h2.copyWith(color: UiTone.ink, fontSize: 16, letterSpacing: 1.2),
+                                    otp,
+                                    style: UiText.h1.copyWith(color: UiTone.primary, letterSpacing: 2),
                                   ),
                                 ],
                               ),

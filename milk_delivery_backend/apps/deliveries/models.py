@@ -91,6 +91,7 @@ class DeliveryTask(models.Model):
         PENDING = "PENDING", "Scheduled (Pending)"
         DELIVERED = "DELIVERED", "Delivered at Doorstep"
         SKIPPED = "SKIPPED", "Skipped / Paused"
+        FAILED = "FAILED", "FAILED"
 
     subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.SET_NULL, related_name="deliveries", null=True, blank=True)
     order = models.ForeignKey("LiveOrder", on_delete=models.SET_NULL, related_name="deliveries", null=True, blank=True)
@@ -100,6 +101,7 @@ class DeliveryTask(models.Model):
     delivery_date = models.DateField()
     slot_time = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
     status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.PENDING)
+    failure_reason = models.CharField(max_length=255, blank=True, default='')
     proof_image_url = models.URLField(blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
 

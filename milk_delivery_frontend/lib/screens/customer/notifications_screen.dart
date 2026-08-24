@@ -85,7 +85,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         color: const Color(0xFF0D7C66),
         strokeWidth: 2.5,
         onRefresh: () async {
-          await Future.delayed(const Duration(seconds: 1));
+          await widget.state.reloadAllData(silent: true);
         },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 42),
@@ -310,7 +310,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
       ),
       onDismissed: (direction) {
-        // Handle deletion logic if needed in state
+        widget.state.notifications.removeWhere((n) => n.id == item.id);
+        widget.state.notifyListeners();
       },
       child: GestureDetector(
         onTap: () {

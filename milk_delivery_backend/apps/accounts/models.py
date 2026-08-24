@@ -32,6 +32,8 @@ class User(AbstractUser):
     monthly_salary = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("15000.00"))
     driver_status = models.CharField(max_length=20, default="ACTIVE")
     last_location_updated = models.DateTimeField(null=True, blank=True)
+    vehicle_number = models.CharField(max_length=20, blank=True, default='')
+    driving_license = models.CharField(max_length=50, blank=True, default='')
 
     def __str__(self):
         hub_info = f" • {self.assigned_hub.name}" if self.assigned_hub else ""

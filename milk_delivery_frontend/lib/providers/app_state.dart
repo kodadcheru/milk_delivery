@@ -193,15 +193,6 @@ class AppState extends ChangeNotifier {
   /// what a per-line stepper/badge should display so shown == changed.
   int cartQtyOf(ProductModel product) => cartItems[cartKey(product)]?.value ?? 0;
 
-  /// Total quantity across every pack size sharing [productId]. Use only where
-  /// a combined, id-level count is genuinely wanted — not for a single stepper.
-  int getProductTotalQty(int productId) {
-    int count = 0;
-    for (final entry in cartItems.values) {
-      if (entry.key.id == productId) count += entry.value;
-    }
-    return count;
-  }
 
   void addToCart(ProductModel product) {
     HapticFeedback.lightImpact();
@@ -366,9 +357,10 @@ class AppState extends ChangeNotifier {
   }) async {
     final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : null));
     for (var entry in cartProductsList) {
-      await createNewSubscription(entry.key, entry.value, schedule, deliveryAddress: addr, deliverySlot: slot);
+      await createNewSubscription(entry.key, entry.value, schedule, deliveryAddress: addr, deliverySlot: slot, skipReload: true);
     }
     cartItems.clear();
+    await reloadAllData();
     notifyListeners();
   }
 
@@ -479,7 +471,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<String, dynamic>?> generateDailyTasks({
+  Future<Map<String, dynamic>?> generateTodayTasks({
     String? date,
     String? productName,
     double? fatPercentage,
@@ -515,13 +507,6 @@ class AppState extends ChangeNotifier {
     return success;
   }
 
-  Future<bool> bulkAssignTasksToDriver(List<int> taskIds, int? driverId) async {
-    final success = await ApiService.reassignDeliveryTasksBatch(taskIds, driverId);
-    if (success) {
-      await reloadAllData(silent: true);
-    }
-    return success;
-  }
 
   Future<Map<String, dynamic>?> autoBalanceHubDeliveries([String? hubCode]) async {
     final targetHub = hubCode ?? activeHubCode;
@@ -625,6 +610,7 @@ class AppState extends ChangeNotifier {
       if (fetchedAreas.isNotEmpty) {
         serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
         selectedServiceArea = serviceAreas.first;
+      isVacationMode = subscriptions.isNotEmpty && subscriptions.any((sub) => sub.status == 'PAUSED');
       }
 
       if (savedAddresses.isEmpty && locationHubs.isNotEmpty && currentDeliveryAddress == 'Select Delivery Location') {
@@ -669,7 +655,7 @@ class AppState extends ChangeNotifier {
     );
 
     // Resilient 3-second multi-tab heartbeat to guarantee 0ms latency sync across all tabs
-    _providerHeartbeatTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _providerHeartbeatTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (currentRole == 'PROVIDER' || currentRole == 'HUB_MANAGER') {
         reloadAllData(silent: true);
       } else {
@@ -995,6 +981,7 @@ class AppState extends ChangeNotifier {
     double? deliveryLongitude,
     String? deliveryInstructions,
     String? packSize,
+    bool skipReload = false,
   }) async {
     // Pre-flight auth check
     if (ApiService.authToken == null) {
@@ -1034,13 +1021,13 @@ class AppState extends ChangeNotifier {
     );
     if (newSub != null) {
       debugPrint('✅ [Subscription Created]: Sub #${newSub.id} for ${product.name}');
-      await reloadAllData();
+      if (!skipReload) await reloadAllData();
     } else {
       debugPrint('⚠️ [Subscription Create Error]: ${ApiService.lastError}');
       if (ApiService.lastError != null) {
         throw Exception(ApiService.lastError);
       }
-      await reloadAllData();
+      if (!skipReload) await reloadAllData();
     }
   }
 
@@ -1201,21 +1188,20 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> markDeliveryCompleted(int taskId, String proofUrl) async {
-    notifications.insert(
-      0,
-      NotificationModel(
-        id: DateTime.now().millisecondsSinceEpoch,
-        title: '🛵 Driver Drop Verified & Completed',
-        message: 'Delivery Drop #$taskId successfully completed & doorstep photo proof verified.',
-        notificationType: 'DELIVERY',
-        isRead: false,
-        createdAt: 'Just now',
-      ),
-    );
     bool ok = await ApiService.completeDelivery(taskId, proofUrl);
     if (ok) {
-      await reloadAllData();
-    } else {
+      notifications.insert(
+        0,
+        NotificationModel(
+          id: DateTime.now().millisecondsSinceEpoch,
+          title: '🛵 Driver Drop Verified & Completed',
+          message: 'Delivery Drop #$taskId successfully completed & doorstep photo proof verified.',
+          notificationType: 'DELIVERY',
+          isRead: false,
+          createdAt: 'Just now',
+        ),
+      );
+
       deliveries = deliveries.map((d) {
         if (d.id == taskId) {
           return d.copyWith(status: 'DELIVERED', proofImageUrl: proofUrl, deliveredAt: '06:25 AM');
@@ -1224,7 +1210,6 @@ class AppState extends ChangeNotifier {
       }).toList();
 
       if (currentUser != null) {
-        // Find the actual task to get real price instead of hardcoded amount
         final completedTask = deliveries.where((d) => d.id == taskId).firstOrNull;
         double debitAmount = completedTask?.subscriptionDetail?.productDetail?.pricePerUnit ?? 0.0;
         if (debitAmount > 0) {
@@ -1233,6 +1218,7 @@ class AppState extends ChangeNotifier {
         }
       }
       notifyListeners();
+      await reloadAllData();
     }
   }
 

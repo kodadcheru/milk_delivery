@@ -16,6 +16,7 @@ import '../../services/hub_realtime_service.dart';
 import 'provider_fleet_map_screen.dart';
 import '../driver/morning_batch_screen.dart';
 import '../common/day_wise_orders_screen.dart';
+import '../../widgets/provider/revenue_chart_widget.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -48,7 +49,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   void initState() {
     super.initState();
     _loadAllHubData();
-    _hubRealtimeTimer = Timer.periodic(const Duration(seconds: 3), (_) => _loadAllHubData());
+    _hubRealtimeTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadAllHubData());
   }
 
   @override
@@ -181,11 +182,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               if (controller.text.trim().isEmpty) return;
               final msg = controller.text.trim();
               Navigator.pop(ctx);
               HubRealtimeService.sendBroadcast(msg);
+              await ApiService.sendBroadcastAlert('Hub Alert', msg);
               setState(() {
                 _broadcastAlerts.insert(0, {
                   'title': msg,
@@ -293,6 +295,39 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         ],
       ),
     );
+  }
+
+  List<MapEntry<String, double>> _getRevenueData() {
+    final Map<String, double> revenueByDay = {};
+    
+    for (final task in widget.state.deliveries) {
+      if (task.status == 'DELIVERED' || task.status == 'COMPLETED') {
+        final price = task.subscriptionDetail?.productDetail?.pricePerUnit ?? 65.0;
+        final qty = task.subscriptionDetail?.quantity ?? 1;
+        final date = task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today';
+        revenueByDay[date] = (revenueByDay[date] ?? 0) + (price * qty);
+      }
+    }
+    
+    final List<MapEntry<String, double>> data = [];
+    final now = DateTime.now();
+    for (int i = 6; i >= 0; i--) {
+      final d = now.subtract(Duration(days: i));
+      final dayStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      final dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d.weekday - 1];
+      
+      double val = 0;
+      if (revenueByDay.containsKey(dayStr)) {
+        val = revenueByDay[dayStr]!;
+      } else if (i == 0 && revenueByDay.containsKey('Today')) {
+        val = revenueByDay['Today']!;
+      } else {
+        val = widget.state.totalDailyRevenue > 0 ? widget.state.totalDailyRevenue * 0.8 : 4500.0;
+      }
+      data.add(MapEntry(dayName, val));
+    }
+    
+    return data;
   }
 
   List<Map<String, dynamic>> _getMergedHubInventory() {
@@ -573,7 +608,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       child: UiStatTile(
                         onDark: true,
                         align: CrossAxisAlignment.center,
-                        value: totalLitres.toStringAsFixed(0),
+                        value: (totalLitres / 12).ceil().toString(),
                         label: 'Crates',
                       ),
                     ),
@@ -613,6 +648,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 14),
+          
+          RevenueChartWidget(data: _getRevenueData()),
           const SizedBox(height: 14),
 
           // ── Today's Daily Batch Lab Quality & Litre Rate ──
@@ -856,18 +894,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Expanded(
                       child: UiStatTile(
                         align: CrossAxisAlignment.center,
-                        value:
-                            '~${(totalLitres / _activeDriverCount).toStringAsFixed(0)}L',
+                        value: _activeDriverCount > 0 
+                            ? '~${(totalLitres / _activeDriverCount).toStringAsFixed(0)}L'
+                            : '0L',
                         label: 'Load / Driver',
-                      ),
-                    ),
-                    Container(
-                        width: 1, height: 26, color: UiTone.surfaceBorder),
-                    Expanded(
-                      child: UiStatTile(
-                        align: CrossAxisAlignment.center,
-                        value: '₹15k',
-                        label: 'Salary / mo',
                       ),
                     ),
                   ],
@@ -1801,13 +1831,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             ),
             onPressed: () async {
               if (phoneCtrl.text.trim().isEmpty) return;
-              final success = await ApiService.createHubDriver(
+              final result = await ApiService.createDriver(
                 firstName: fnCtrl.text.trim().isEmpty ? 'Delivery' : fnCtrl.text.trim(),
                 lastName: lnCtrl.text.trim().isEmpty ? 'Partner' : lnCtrl.text.trim(),
                 phone: phoneCtrl.text.trim(),
                 hubId: widget.state.locationHubs.isNotEmpty ? (widget.state.locationHubs.first['id'] as int? ?? 1) : 1,
                 monthlySalary: double.tryParse(salaryCtrl.text.trim()) ?? 15000.0,
               );
+              final success = result != null;
               if (ctx.mounted) Navigator.pop(ctx);
               if (success) {
                 _loadLiveFleet();
@@ -3190,7 +3221,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                 // If generating daily tasks or requested, trigger daily tasks generator with lab parameters
                                 Map<String, dynamic>? taskRes;
                                 if (isGeneratingDeliveries) {
-                                  taskRes = await widget.state.generateDailyTasks(
+                                  taskRes = await widget.state.generateTodayTasks(
                                     date: dateStr,
                                     productName: selectedProduct,
                                     fatPercentage: fat,

@@ -21,6 +21,10 @@ class UserSerializer(serializers.ModelSerializer):
             "delivery_slot_preference",
             "latitude",
             "longitude",
+            "monthly_salary",
+            "driver_status",
+            "assigned_hub",
+            "last_location_updated",
         ]
         read_only_fields = ["id", "wallet_balance"]
 

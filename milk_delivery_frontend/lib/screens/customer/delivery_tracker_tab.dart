@@ -7,6 +7,7 @@ import '../../providers/app_state.dart';
 import '../../models/live_order_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../widgets/booking_detail_sheet.dart';
+import '../../widgets/delivery_rating_dialog.dart';
 import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
@@ -796,6 +797,26 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     child: Text('Track',
                         style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
                   ),
+                )
+              else if (order.status == 'DELIVERED' || order.status == 'COMPLETED')
+                ElevatedButton(
+                  onPressed: () {
+                    DeliveryRatingDialog.show(
+                      context,
+                      productName: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                      driverName: order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner',
+                      deliveryDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                    minimumSize: const Size(0, 32),
+                  ),
+                  child: const Text('Rate Delivery ⭐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
@@ -912,6 +933,26 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800, fontSize: 10.5),
                           ),
                         ),
+                      )
+                    else if (task.status == 'DELIVERED' || task.status == 'COMPLETED')
+                      ElevatedButton(
+                        onPressed: () {
+                          DeliveryRatingDialog.show(
+                            context,
+                            productName: product?.name ?? 'Fresh A2 Cow Milk',
+                            driverName: task.driverDetail?.fullName.isNotEmpty == true ? task.driverDetail!.fullName : 'Assigned Partner',
+                            deliveryDate: task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today',
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D7C66),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          minimumSize: const Size(0, 28),
+                        ),
+                        child: const Text('Rate Delivery ⭐', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
                       ),
                   ],
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import 'address_book_screen.dart';
 import 'help_support_screen.dart';
@@ -202,7 +203,12 @@ class ProfileTab extends StatelessWidget {
                     iconBg: const Color(0xFFE8F2FE),
                     iconFg: const Color(0xFF2563EB),
                     label: 'Share App',
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share dialog opened'))),
+                    onTap: () async {
+                      await Clipboard.setData(const ClipboardData(text: 'https://milkdrop.com/app'));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied!')));
+                      }
+                    },
                   ),
                   _buildDivider(),
                   _buildMenuTile(
@@ -210,7 +216,7 @@ class ProfileTab extends StatelessWidget {
                     iconBg: const Color(0xFFF1F5F9),
                     iconFg: const Color(0xFF475569),
                     label: 'About us',
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('About us dialog'))),
+                    onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('About Us'), content: const Text('MilkDrop Express is a farm-to-home fresh milk delivery service.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])),
                   ),
                   _buildDivider(),
                   _buildMenuTile(
@@ -218,7 +224,7 @@ class ProfileTab extends StatelessWidget {
                     iconBg: const Color(0xFFE0F7F3),
                     iconFg: const Color(0xFF0D9488),
                     label: 'Privacy & Terms',
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Privacy & Terms dialog'))),
+                    onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('Privacy & Terms'), content: const Text('By using this app, you agree to our terms of service.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])),
                   ),
                 ]),
                 

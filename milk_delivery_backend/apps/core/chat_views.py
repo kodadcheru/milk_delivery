@@ -35,6 +35,11 @@ class SupportChatSendView(APIView):
         sender_type = request.data.get("sender_type", "user")  # 'user' or 'agent'
         sender_name = request.data.get("sender_name", "Customer")
         text = request.data.get("text", "").strip()
+        
+        if not request.user.is_staff and getattr(request.user, "role", "") not in ("ADMIN", User.Roles.ADMIN):
+            phone = request.user.phone
+            sender_type = "user"
+            
         order_id = request.data.get("order_id")
 
         if not phone or not text:
@@ -139,6 +144,9 @@ class SupportChatHistoryView(APIView):
 
     def get(self, request):
         phone = request.query_params.get("phone", "").strip()
+        if not request.user.is_staff and getattr(request.user, "role", "") not in ("ADMIN", User.Roles.ADMIN):
+            phone = request.user.phone
+            
         if not phone:
             return Response({"error": "phone query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 

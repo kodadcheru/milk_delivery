@@ -70,10 +70,13 @@ class HomeLocationSheet {
               InkWell(
                 onTap: () async {
                   setModalState(() => isSearching = true);
-                  final res = await LocationService.reverseGeocode(17.001734, 79.9625);
+                  await state.requestDeviceGPS();
+                  final lat = state.currentLat ?? 17.001734;
+                  final lon = state.currentLon ?? 79.9625;
+                  final res = await LocationService.reverseGeocode(lat, lon);
                   setModalState(() => isSearching = false);
                   final addrStr = res?['summary_address'] ?? res?['full_address'] ?? 'Kodad Central Hub, Telangana - 508206';
-                  state.updateDeliveryLocation(addrStr, 17.001734, 79.9625);
+                  state.updateDeliveryLocation(addrStr, lat, lon);
                   if (ctx.mounted) {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(

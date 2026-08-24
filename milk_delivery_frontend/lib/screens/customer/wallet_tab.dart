@@ -174,9 +174,10 @@ class _WalletTabState extends State<WalletTab> {
 
   @override
   Widget build(BuildContext context) {
-    final bal = widget.state.currentUser?.walletBalance ?? 500.00;
+    final bal = widget.state.currentUser?.walletBalance ?? 0.0;
     final allTxs = widget.state.transactions;
-    int estDays = (bal / 85.0).floor();
+    // Assuming a base price of 68.0 for 1L of milk as a fallback
+    int estDays = (bal / 68.0).floor();
 
     final filteredTxs = allTxs.where((t) {
       if (_selectedFilter == 'CREDIT') return t.transactionType == 'CREDIT';
@@ -321,47 +322,7 @@ class _WalletTabState extends State<WalletTab> {
 
             const SizedBox(height: 18),
 
-            // ── Monthly Farm Savings Metric ──
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: UiTone.surface,
-                borderRadius: BorderRadius.circular(UiRadius.lg),
-                border: Border.all(color: AppTheme.borderSubtle),
-                boxShadow: UiShadow.card,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryMint.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(UiRadius.sm),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text('💰', style: TextStyle(fontSize: 22)),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '₹640 Saved This Month',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.textPrimary),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Zero delivery fees + 5% prepaid subscription savings applied',
-                          style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // ── Monthly Farm Savings Metric (Removed) ──
 
             const SizedBox(height: 20),
 

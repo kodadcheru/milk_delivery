@@ -39,17 +39,12 @@ class ApiService {
     try {
       final body = jsonDecode(res.body);
       if (body is Map) {
-        if (body.containsKey('detail')) return body['detail'].toString();
-        if (body.containsKey('error')) return body['error'].toString();
-        if (body.containsKey('message')) return body['message'].toString();
-        if (body.isNotEmpty) {
-          final firstVal = body.values.first;
-          if (firstVal is List && firstVal.isNotEmpty) return firstVal.first.toString();
-          return firstVal.toString();
-        }
+        return (body['detail'] ?? body['error'] ?? body['message'] ?? res.body).toString();
       }
-    } catch (_) {}
-    return 'HTTP ${res.statusCode}: ${res.reasonPhrase ?? "Request failed"}';
+      return res.body;
+    } catch (_) {
+      return 'Error ${res.statusCode}: ${res.reasonPhrase}';
+    }
   }
 
   static const String _prefTokenKey = 'milkdrop_auth_token';
@@ -96,7 +91,7 @@ class ApiService {
         body: jsonEncode({'refresh': refreshToken}),
       ).timeout(AppConfig.requestTimeout);
 
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         if (data['access'] != null) {
           authToken = data['access'];
@@ -108,6 +103,8 @@ class ApiService {
           }
           return true;
         }
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return false;
@@ -164,10 +161,11 @@ class ApiService {
             body: jsonEncode({'phone': phone}),
           ));
 
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body);
       } else {
         final err = jsonDecode(res.body);
+        lastError = _extractErrorMsg(res);
         return {'success': false, 'error': err['detail'] ?? err['message'] ?? 'Failed to send OTP'};
       }
     } catch (e) {
@@ -235,19 +233,6 @@ class ApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> fetchDrivers({int? hubId}) async {
-    try {
-      final uri = hubId != null
-          ? Uri.parse('$baseUrl/admin/fleet/?hub_id=$hubId')
-          : Uri.parse('$baseUrl/admin/fleet/');
-      final res = await _executeWithRetry(() => _client.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
-        final List list = jsonDecode(res.body);
-        return list.map((e) => Map<String, dynamic>.from(e)).toList();
-      }
-    } catch (e) { lastError = e.toString(); }
-    return [];
-  }
 
   // ── 2. Standard Auth & Profile ──
   static Future<Map<String, dynamic>> login(String username, String password) async {
@@ -258,21 +243,27 @@ class ApiService {
             body: jsonEncode({'username': username, 'password': password}),
           ));
 
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         await saveAuthToken(data['access'], refresh: data['refresh']);
         return {'success': true, 'token': data['access']};
+      } else {
+        lastError = _extractErrorMsg(res);
       }
+
     } catch (e) { lastError = e.toString(); }
-    return {'success': false, 'error': 'Failed to connect to backend'};
+
+      return {'success': false, 'error': lastError ?? 'Failed to connect to backend'};
   }
 
   static Future<UserModel?> fetchUserProfile() async {
     if (authToken == null) return null;
     try {
       final res = await _executeWithRetry(() => _client.get(Uri.parse('$baseUrl/auth/me/'), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return UserModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -285,8 +276,10 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(updates),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return UserModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -312,9 +305,11 @@ class ApiService {
       );
 
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => NotificationModel.fromJson(e)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -355,9 +350,11 @@ class ApiService {
       );
 
       final res = await _executeWithRetry(() => http.get(uri));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => ProductModel.fromJson(e)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -404,9 +401,11 @@ class ApiService {
         'customer_id': ?(customerId?.toString()),
       });
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => SubscriptionModel.fromJson(e)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -447,7 +446,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(payload),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return SubscriptionModel.fromJson(jsonDecode(res.body));
       } else {
         lastError = _extractErrorMsg(res);
@@ -463,7 +462,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'start_date': startDate, 'end_date': endDate, 'reason': 'Vacation Mode'}),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -475,7 +474,7 @@ class ApiService {
   static Future<bool> resumeSubscription(int subId) async {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/subscriptions/$subId/resume/'), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -503,7 +502,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode({'status': 'ACTIVE'}),
       ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -539,7 +538,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(bodyMap),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -556,7 +555,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'amount': amount.toStringAsFixed(2), 'description': description}),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -576,7 +575,7 @@ class ApiService {
       );
 
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => WalletTransactionModel.fromJson(e)).toList();
       } else {
@@ -599,7 +598,7 @@ class ApiService {
       );
 
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((e) => DeliveryTaskModel.fromJson(e)).toList();
       } else {
@@ -616,7 +615,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'proof_image_url': proofUrl}),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -628,7 +627,7 @@ class ApiService {
   static Future<bool> skipDelivery(int taskId) async {
     try {
       final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/deliveries/$taskId/skip/'), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -645,7 +644,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'driver_id': driverId}),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -666,7 +665,7 @@ class ApiService {
               'driver_id': driverId,
             }),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
         lastError = _extractErrorMsg(res);
@@ -683,7 +682,7 @@ class ApiService {
             Uri.parse('$baseUrl/admin/hubs/$hubCode/rebalance/'),
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body) as Map<String, dynamic>;
       } else {
         lastError = _extractErrorMsg(res);
@@ -698,8 +697,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> fetchDeliverySummary() async {
     try {
       final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/deliveries/summary/'), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body) as Map<String, dynamic>;
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -709,9 +710,11 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> fetchServiceAreas() async {
     try {
       final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/service-areas/'), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -721,9 +724,11 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> fetchHubs() async {
     try {
       final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/hubs/'), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -750,36 +755,50 @@ class ApiService {
     try {
       final url = hubId != null ? '$baseUrl/admin/fleet/?hub_id=$hubId' : '$baseUrl/admin/fleet/';
       final res = await _executeWithRetry(() => http.get(Uri.parse(url), headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
   }
 
-  static Future<bool> createHubDriver({
-    required String firstName,
-    required String lastName,
+
+  static Future<Map<String, dynamic>?> createDriver({
+    String? firstName,
+    String? lastName,
+    String? name,
     required String phone,
-    required int hubId,
+    String? vehicleNumber,
+    int? hubId,
     double monthlySalary = 15000.0,
   }) async {
     try {
-      final res = await _executeWithRetry(() => http.post(
+      final nameParts = (name ?? '').trim().split(' ');
+      final fName = firstName ?? (nameParts.isNotEmpty ? nameParts.first : 'Partner');
+      final lName = lastName ?? (nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'Partner');
+
+      final res = await _executeWithRetry(() => _client.post(
             Uri.parse('$baseUrl/admin/fleet/create-driver/'),
             headers: _headers,
             body: jsonEncode({
-              'first_name': firstName,
-              'last_name': lastName,
+              'first_name': fName,
+              'last_name': lName,
               'phone': phone,
-              'hub_id': hubId,
+              if (vehicleNumber != null) 'vehicle_number': vehicleNumber,
+              'hub_id': hubId ?? 1,
               'monthly_salary': monthlySalary,
             }),
           ));
-      return res.statusCode == 201 || res.statusCode == 200;
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return jsonDecode(res.body);
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
     } catch (e) { lastError = e.toString(); }
-    return false;
+    return null;
   }
 
   static Future<bool> updateDriverStatus(int driverId, String driverStatus) async {
@@ -859,9 +878,11 @@ class ApiService {
       if (date != null) params['date'] = date;
       final uri = Uri.parse('$baseUrl/slots/availability/').replace(queryParameters: params.isNotEmpty ? params : null);
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List decoded = jsonDecode(res.body);
         return decoded.cast<Map<String, dynamic>>();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -882,12 +903,14 @@ class ApiService {
             uri,
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final dynamic decoded = jsonDecode(res.body);
         final List list = decoded is Map && decoded.containsKey('results')
             ? (decoded['results'] as List)
             : (decoded as List);
         return list.map((item) => CustomerAddressModel.fromJson(item)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -900,8 +923,10 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(address.toJson()),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return CustomerAddressModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -914,8 +939,10 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(address.toJson()),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return CustomerAddressModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -959,9 +986,11 @@ class ApiService {
             uri,
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
         return list.map((item) => LiveOrderModel.fromJson(item)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -988,7 +1017,7 @@ class ApiService {
               'delivery_longitude': deliveryLongitude != null ? (double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude) : null,
             }),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return LiveOrderModel.fromJson(jsonDecode(res.body));
       } else {
         lastError = _extractErrorMsg(res);
@@ -1007,58 +1036,17 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(body),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return LiveOrderModel.fromJson(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
   }
 
   // ── 14. Admin Operations & Driver Management ──
-  static Future<Map<String, dynamic>?> createDriver({
-    required String name,
-    required String phone,
-    required String vehicleNumber,
-    int? hubId,
-  }) async {
-    try {
-      final nameParts = name.trim().split(' ');
-      final firstName = nameParts.first;
-      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'Partner';
 
-      final res = await _executeWithRetry(() => _client.post(
-            Uri.parse('$baseUrl/admin/fleet/create-driver/'),
-            headers: _headers,
-            body: jsonEncode({
-              'first_name': firstName,
-              'last_name': lastName,
-              'phone': phone,
-              'vehicle_number': vehicleNumber,
-              'hub_id': hubId ?? 1,
-            }),
-          ));
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        return jsonDecode(res.body);
-      }
-    } catch (e) { lastError = e.toString(); }
-    return null;
-  }
-
-  static Future<Map<String, dynamic>?> generateDailyTasks({String? date}) async {
-    try {
-      final body = <String, dynamic>{};
-      if (date != null) body['date'] = date;
-      final res = await _executeWithRetry(() => http.post(
-        Uri.parse('$baseUrl/admin/generate-tasks/'),
-        headers: _headers,
-        body: jsonEncode(body),
-      ));
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        return jsonDecode(res.body) as Map<String, dynamic>;
-      }
-    } catch (e) { lastError = e.toString(); }
-    return null;
-  }
 
   static Future<Map<String, dynamic>?> generateTodayTasks({
     String? date,
@@ -1088,7 +1076,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(body),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body) as Map<String, dynamic>;
       } else {
         lastError = _extractErrorMsg(res);
@@ -1130,8 +1118,10 @@ class ApiService {
             Uri.parse('$baseUrl/hub-inventory/'),
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -1156,8 +1146,10 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(payload),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return Map<String, dynamic>.from(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -1171,9 +1163,11 @@ class ApiService {
         Uri.parse('$baseUrl/deliveries/quality-history/'),
         headers: _headers,
       ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List decoded = jsonDecode(res.body);
         return decoded.cast<Map<String, dynamic>>();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -1188,13 +1182,15 @@ class ApiService {
 
       final uri = Uri.parse('$baseUrl/deliveries/daily-batches/').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final decoded = jsonDecode(res.body);
         if (decoded is Map && decoded['batches'] is List) {
           return List<Map<String, dynamic>>.from(decoded['batches']);
         } else if (decoded is List) {
           return List<Map<String, dynamic>>.from(decoded);
         }
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) {
       lastError = e.toString();
@@ -1237,6 +1233,8 @@ class ApiService {
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return Map<String, dynamic>.from(jsonDecode(res.body));
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) {
       lastError = e.toString();
@@ -1252,9 +1250,11 @@ class ApiService {
             Uri.parse('$baseUrl/bottles/'),
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List list = jsonDecode(res.body);
         return list.map((item) => BottleReturnModel.fromJson(item)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -1281,7 +1281,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(payload),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         return BottleReturnModel(
           id: data['id'] ?? 0,
@@ -1295,6 +1295,8 @@ class ApiService {
           collectedDate: DateTime.now().toString().split(' ')[0],
           notes: notes,
         );
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -1307,8 +1309,10 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'status': status}),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return false;
@@ -1322,9 +1326,11 @@ class ApiService {
             Uri.parse('$baseUrl/payouts/'),
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final List list = jsonDecode(res.body);
         return list.map((item) => ProviderPayoutModel.fromJson(item)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return [];
@@ -1340,10 +1346,12 @@ class ApiService {
             headers: _headers,
             body: jsonEncode(payload),
           ));
-      if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         final payoutData = data['payout'] ?? data;
         return ProviderPayoutModel.fromJson(payoutData);
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) { lastError = e.toString(); }
     return null;
@@ -1357,9 +1365,11 @@ class ApiService {
             Uri.parse('$baseUrl/storefront/config/'),
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         return StorefrontConfigModel.fromJson(data);
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) {
       lastError = e.toString();
@@ -1421,8 +1431,10 @@ class ApiService {
               if (orderId != null) 'order_id': orderId,
             }),
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body) as Map<String, dynamic>;
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) {
       lastError = e.toString();
@@ -1434,11 +1446,13 @@ class ApiService {
     try {
       final uri = Uri.parse('$baseUrl/support/chat/history/').replace(queryParameters: {'phone': phone});
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         if (data is Map<String, dynamic> && data['messages'] is List) {
           return (data['messages'] as List).map((m) => m as Map<String, dynamic>).toList();
         }
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) {
       lastError = e.toString();
@@ -1452,11 +1466,13 @@ class ApiService {
             Uri.parse('$baseUrl/admin/support/threads/'),
             headers: _headers,
           ));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final data = jsonDecode(res.body);
         if (data is Map<String, dynamic> && data['threads'] is List) {
           return (data['threads'] as List).map((t) => t as Map<String, dynamic>).toList();
         }
+      } else {
+        lastError = _extractErrorMsg(res);
       }
     } catch (e) {
       lastError = e.toString();

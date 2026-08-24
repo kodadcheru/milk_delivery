@@ -604,7 +604,9 @@ class _SubscriptionAddressSelectionScreenState
                                 const SizedBox(width: 8),
                                 InkWell(
                                   onTap: () {
-                                    // Handle Top Up logic here if needed, or navigate to wallet screen
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    widget.state.currentTabIndex = 2; // Wallet tab
+                                    widget.state.notifyListeners();
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
