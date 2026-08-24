@@ -15,6 +15,36 @@ import '../../widgets/doorstep_camera_dialog.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
 
+class DoorstepGroup {
+  final String groupKey;
+  final String customerName;
+  final String customerPhone;
+  final String deliveryAddress;
+  final String deliveryInstructions;
+  final String slotTime;
+  final double customerLatitude;
+  final double customerLongitude;
+  final int? driverId;
+  final List<DeliveryTaskModel> tasks;
+
+  DoorstepGroup({
+    required this.groupKey,
+    required this.customerName,
+    required this.customerPhone,
+    required this.deliveryAddress,
+    required this.deliveryInstructions,
+    required this.slotTime,
+    required this.customerLatitude,
+    required this.customerLongitude,
+    required this.driverId,
+    required this.tasks,
+  });
+
+  bool get isAllDelivered => tasks.every((t) => t.status == 'DELIVERED');
+  bool get isAllSkipped => tasks.every((t) => t.status == 'SKIPPED');
+  bool get isPending => tasks.any((t) => t.status == 'PENDING');
+}
+
 class DriverDashboardScreen extends StatefulWidget {
   final AppState state;
 
@@ -165,19 +195,21 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     }
   }
 
-  void _handleCompleteDeliveryWithCamera(BuildContext context, DeliveryTaskModel task) {
+  void _handleCompleteDeliveryWithCamera(BuildContext context, DoorstepGroup group) {
     DoorstepCameraDialog.show(
       context,
-      customerName: task.customerName,
-      deliveryAddress: task.deliveryAddress,
-      latitude: task.customerLatitude,
-      longitude: task.customerLongitude,
+      customerName: group.customerName,
+      deliveryAddress: group.deliveryAddress,
+      latitude: group.customerLatitude,
+      longitude: group.customerLongitude,
       onConfirmProof: (proofUrl) {
-        widget.state.markDeliveryCompleted(task.id, proofUrl);
+        for (final task in group.tasks) {
+          widget.state.markDeliveryCompleted(task.id, proofUrl);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: UiTone.primary,
-            content: Text('✅ Stop #${task.id} Completed! Photo proof saved & customer notified.'),
+            content: Text('✅ Doorstep Completed (${group.tasks.length} ${group.tasks.length > 1 ? "items" : "item"})! Photo proof saved & customer notified.'),
           ),
         );
       },
@@ -365,6 +397,29 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       return true;
     }).toList();
 
+    // Group deliveries by unique doorstep customer & GPS coordinates for consolidated stop handling
+    final Map<String, List<DeliveryTaskModel>> groupedMap = {};
+    for (final t in filteredTasks) {
+      final key = '${t.customerName.toLowerCase().trim()}_${t.customerLatitude.toStringAsFixed(4)}_${t.customerLongitude.toStringAsFixed(4)}';
+      groupedMap.putIfAbsent(key, () => []).add(t);
+    }
+
+    final doorstepGroups = groupedMap.entries.map((entry) {
+      final first = entry.value.first;
+      return DoorstepGroup(
+        groupKey: entry.key,
+        customerName: first.customerName,
+        customerPhone: first.customerPhone,
+        deliveryAddress: first.deliveryAddress,
+        deliveryInstructions: first.deliveryInstructions,
+        slotTime: first.slotTime,
+        customerLatitude: first.customerLatitude,
+        customerLongitude: first.customerLongitude,
+        driverId: first.driverId,
+        tasks: entry.value,
+      );
+    }).toList();
+
     return RefreshIndicator(
       color: UiTone.primary,
       onRefresh: () => widget.state.reloadAllData(),
@@ -498,14 +553,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           height: 42,
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              final filterTag = _selectedShift == 'MORNING' ? 'am' : 'pm';
-                              final shiftTasks = widget.state.deliveries.where((t) => t.slotTime.toLowerCase().contains(filterTag)).toList();
+                              final targetTasks = filteredTasks.isNotEmpty ? filteredTasks : widget.state.deliveries;
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (ctx) => DriverRouteMapScreen(
                                     state: widget.state,
-                                    tasks: shiftTasks.isNotEmpty ? shiftTasks : widget.state.deliveries,
+                                    tasks: targetTasks,
                                   ),
                                 ),
                               );
@@ -661,11 +715,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             if (_selectedFilterIndex != 3) ...[
               UiSectionHeader(
                 title: '🥛 Route Stops & Doorsteps',
-                count: filteredTasks.length,
+                count: doorstepGroups.length,
                 padding: const EdgeInsets.only(bottom: 12),
               ),
 
-              if (filteredTasks.isEmpty)
+              if (doorstepGroups.isEmpty)
                 const UiEmptyState(
                   icon: Icons.check_circle_outline_rounded,
                   title: 'No Stops in this Filter',
@@ -676,11 +730,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredTasks.length,
+                  itemCount: doorstepGroups.length,
                   separatorBuilder: (ctx, idx) => const SizedBox(height: 14),
                   itemBuilder: (ctx, idx) {
-                    final task = filteredTasks[idx];
-                    return _buildDeliveryTaskCard(task, idx);
+                    final group = doorstepGroups[idx];
+                    return _buildDoorstepGroupCard(group, idx);
                   },
                 ),
             ],
@@ -690,19 +744,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     );
   }
 
-  // ── Delivery Task Card Builder ──
+  // ── Consolidated Doorstep Group Card Builder ──
 
-  Widget _buildDeliveryTaskCard(DeliveryTaskModel task, int idx) {
-    final isDone = task.status == 'DELIVERED';
-    final isSkipped = task.status == 'SKIPPED';
-    final custName = task.customerName;
-    final instructions = task.deliveryInstructions;
-    final custPhone = task.customerPhone;
-    final lat = task.customerLatitude;
-    final lon = task.customerLongitude;
-    final qty = task.subscriptionDetail?.quantity ?? 1;
-    final prodName = task.subscriptionDetail?.productDetail?.name ?? 'Daily Pure Milk';
-    final prodIcon = task.subscriptionDetail?.productDetail?.icon ?? '🥛';
+  Widget _buildDoorstepGroupCard(DoorstepGroup group, int idx) {
+    final isDone = group.isAllDelivered;
+    final isSkipped = group.isAllSkipped;
+    final custName = group.customerName;
+    final instructions = group.deliveryInstructions;
+    final custPhone = group.customerPhone;
+    final lat = group.customerLatitude;
+    final lon = group.customerLongitude;
+    final totalItemsCount = group.tasks.fold<int>(0, (sum, t) => sum + (t.subscriptionDetail?.quantity ?? t.quantity));
 
     return Container(
       decoration: BoxDecoration(
@@ -715,7 +767,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Stop #, Task ID, and Status
+          // Row 1: Stop #, Assignment Badge, Slot, & Multi-Item Tag
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -730,7 +782,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
                   ),
                   const SizedBox(width: 6),
-                  if (task.driverId == widget.state.currentUser?.id)
+                  if (group.driverId == widget.state.currentUser?.id)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
@@ -739,7 +791,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       ),
                       child: Text('ASSIGNED TO YOU', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.success)),
                     )
-                  else if (task.driverId == null)
+                  else if (group.driverId == null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
@@ -755,7 +807,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       color: UiTone.surfaceMuted,
                       borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
-                    child: Text(task.slotTime, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.softText)),
+                    child: Text(group.slotTime, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.softText)),
                   ),
                 ],
               ),
@@ -793,6 +845,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ],
                 ),
               ),
+              if (group.tasks.length > 1)
+                Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: UiTone.primarySoft,
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                  ),
+                  child: Text(
+                    '📦 ${group.tasks.length} ORDERS',
+                    style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.primary),
+                  ),
+                ),
               // Call Button
               IconButton(
                 style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
@@ -806,7 +871,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 style: IconButton.styleFrom(backgroundColor: UiTone.infoSoft),
                 icon: const Icon(Icons.chat_bubble_outline_rounded, color: UiTone.accentBlue, size: 16),
                 tooltip: 'WhatsApp Ping',
-                onPressed: () => _sendWhatsAppArrivalPing(context, custName, custPhone, task.deliveryAddress),
+                onPressed: () => _sendWhatsAppArrivalPing(context, custName, custPhone, group.deliveryAddress),
               ),
             ],
           ),
@@ -830,7 +895,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        task.deliveryAddress,
+                        group.deliveryAddress,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
@@ -879,35 +944,43 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Row 4: Items & Quantity Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: UiTone.surfaceMuted,
-              borderRadius: BorderRadius.circular(UiRadius.sm),
-            ),
-            child: Row(
-              children: [
-                Text(prodIcon, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '$qty x $prodName',
-                    style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w800, fontSize: 12.5),
+          // Row 4: All Ordered Items at this Doorstep
+          ...group.tasks.map((task) {
+            final qty = task.subscriptionDetail?.quantity ?? task.quantity;
+            final prodName = task.subscriptionDetail?.productDetail?.name ?? task.productName;
+            final prodIcon = task.subscriptionDetail?.productDetail?.icon ?? '🥛';
+            final packSize = task.packSize;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: UiTone.surfaceMuted,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+              ),
+              child: Row(
+                children: [
+                  Text(prodIcon, style: const TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '$qty x $prodName ($packSize)',
+                      style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: UiTone.successSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                  child: Text('CHILLED', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.success)),
-                ),
-              ],
-            ),
-          ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: UiTone.successSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                    child: Text('CHILLED', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.success)),
+                  ),
+                ],
+              ),
+            );
+          }),
 
           // Customer Delivery Instructions (if any)
           if (instructions.isNotEmpty && instructions != 'None') ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
@@ -944,9 +1017,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     height: 44,
                     child: OutlinedButton(
                       onPressed: () {
-                        widget.state.markDeliverySkipped(task.id);
+                        for (final t in group.tasks) {
+                          widget.state.markDeliverySkipped(t.id);
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Stop marked as skipped.')),
+                          const SnackBar(content: Text('Doorstep marked as skipped.')),
                         );
                       },
                       style: OutlinedButton.styleFrom(
@@ -964,9 +1039,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   child: SizedBox(
                     height: 44,
                     child: ElevatedButton.icon(
-                      onPressed: () => _handleCompleteDeliveryWithCamera(context, task),
+                      onPressed: () => _handleCompleteDeliveryWithCamera(context, group),
                       icon: const Icon(Icons.camera_alt_rounded, size: 16),
-                      label: Text('Deliver + Photo Proof 📸', style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
+                      label: Text(
+                        group.tasks.length > 1 ? 'Deliver All (${totalItemsCount} Items) 📸' : 'Deliver + Photo Proof 📸',
+                        style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: UiTone.primary,
                         foregroundColor: Colors.white,
