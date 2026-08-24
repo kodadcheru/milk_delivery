@@ -33,7 +33,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
   // Filters
   String _statusFilter = 'ALL'; // ALL, PENDING, DELIVERED, SKIPPED
   String _typeFilter = 'ALL'; // ALL, SUBSCRIPTION, EXPRESS
-  String _slotFilter = 'ALL'; // ALL, MORNING, EVENING
+  String _slotFilter = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-switches after 12:00 PM to EVENING, after 12:00 AM to MORNING
   String _searchQuery = '';
 
   @override
@@ -669,12 +669,12 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       const Icon(Icons.schedule_rounded, size: 13, color: UiTone.softText),
                       const SizedBox(width: 6),
                       Text(
-                        'Slot: ${task.slotTime}',
-                        style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.softText, fontWeight: FontWeight.bold),
+                        '📅 ${task.deliveryDate} • Slot: ${task.slotTime}',
+                        style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.ink, fontWeight: FontWeight.bold),
                       ),
                       if (driverDisplay.isNotEmpty) ...[
                         Text(' • ', style: UiText.caption.copyWith(color: UiTone.softText)),
-                        Text('🛵 Driver: $driverDisplay', style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
+                        Text('🛵 $driverDisplay', style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
                       ],
                     ],
                   ),
@@ -775,6 +775,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
 
   Widget _buildExpressCard(LiveOrderModel ord) {
     final isDelivered = ord.status == 'DELIVERED';
+    final isEvening = ord.deliverySlot.toUpperCase().contains('PM') || ord.deliverySlot.toUpperCase().contains('17:') || ord.deliverySlot.toUpperCase().contains('18:');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -802,6 +803,11 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                     children: [
                       Text(ord.customerName, style: UiText.bodyStrong.copyWith(fontSize: 13.5)),
                       Text('${ord.id} • ${UiFormat.price(ord.totalAmount)}', style: UiText.caption.copyWith(fontSize: 11, color: UiTone.error, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${isEvening ? "🌙" : "☀️"} 📅 ${ord.deliveryDate.isNotEmpty ? ord.deliveryDate : "Today"} • ${ord.deliverySlot}',
+                        style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66)),
+                      ),
                     ],
                   ),
                 ),

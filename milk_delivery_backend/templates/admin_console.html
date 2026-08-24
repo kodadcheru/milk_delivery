@@ -1108,7 +1108,7 @@
           </div>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Shift Filter:</label>
-            <select id="deliveryShiftFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDeliveriesTable()">
+            <select id="deliveryShiftFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="this.dataset.userChanged='true'; filterDeliveriesTable()">
               <option value="ALL">All Shifts (☀️/🌙)</option>
               <option value="MORNING">☀️ Morning Shift (AM)</option>
               <option value="EVENING">🌙 Evening Shift (PM)</option>
@@ -5428,7 +5428,15 @@
         if (res.ok) {
           const dData = await res.json();
           rawDeliveries = Array.isArray(dData) ? dData : (dData.results || []);
-          renderDeliveriesTable(rawDeliveries);
+
+          // Auto-select shift based on current time (After 12:00 PM -> Evening, After 12:00 AM -> Morning)
+          const shiftEl = document.getElementById('deliveryShiftFilter');
+          if (shiftEl && !shiftEl.dataset.userChanged) {
+            const currentHour = new Date().getHours();
+            shiftEl.value = currentHour >= 12 ? 'EVENING' : 'MORNING';
+          }
+
+          filterDeliveriesTable();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
     }
@@ -5437,7 +5445,7 @@
       const tbody = document.getElementById('deliveries-table-body');
       tbody.innerHTML = '';
       if (tasks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No matching delivery tasks found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding: 24px;">No matching delivery tasks found for selected filters.</td></tr>';
         return;
       }
       tasks.forEach(t => {
@@ -5447,13 +5455,25 @@
         const statusClass = t.status === 'DELIVERED' ? 'status-delivered' : (t.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
         const proofImg = t.proof_image_url || '';
 
+        const slotStr = t.slot_time || '05:30 AM - 07:00 AM';
+        const isEvening = slotStr.toUpperCase().includes('PM') || slotStr.toUpperCase().includes('17:') || slotStr.toUpperCase().includes('18:') || slotStr.toUpperCase().includes('19:');
+        const shiftIcon = isEvening ? '🌙' : '☀️';
+        const shiftColor = isEvening ? '#C084FC' : '#34D399';
+        const shiftBg = isEvening ? 'rgba(124, 58, 237, 0.15)' : 'rgba(13, 124, 102, 0.15)';
+        const deliveryDateStr = t.delivery_date ? `📅 ${t.delivery_date}` : '📅 Today';
+
         tbody.innerHTML += `
           <tr>
-            <td>#${t.id}</td>
+            <td><strong style="color: var(--primary-accent);">#${t.id}</strong></td>
             <td><strong>${t.customer_name || cust.username || 'Customer'}</strong></td>
             <td>${t.delivery_address || cust.address || 'Address'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
-            <td>${sub.quantity || 1}x ${prod.name || 'Product'}</td>
-            <td>${t.slot_time || '05:30 AM - 07:00 AM'}</td>
+            <td><strong>${sub.quantity || 1}x ${prod.name || 'Product'}</strong></td>
+            <td>
+              <span class="status-tag" style="background:${shiftBg}; color:${shiftColor}; font-size:11px; font-weight:700;">
+                ${shiftIcon} ${slotStr}
+              </span><br>
+              <small style="color:var(--text-muted); font-size:10.5px; font-weight:600;">${deliveryDateStr}</small>
+            </td>
             <td>${t.driver_detail ? (t.driver_detail.first_name + ' ' + t.driver_detail.last_name) : (t.driver_name || 'Unassigned')}</td>
             <td><span class="status-tag ${statusClass}">${t.status}</span></td>
             <td>

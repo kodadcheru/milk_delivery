@@ -15,6 +15,7 @@ import '../../services/api_service.dart';
 import '../../services/hub_realtime_service.dart';
 import 'provider_fleet_map_screen.dart';
 import '../driver/morning_batch_screen.dart';
+import '../common/day_wise_orders_screen.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -600,57 +601,75 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           _buildDailyBatchLabCard(context),
           const SizedBox(height: 14),
 
-          // ── Quick Command Shortcuts Grid (4 Hub Actions) ──
-          Row(
-            children: [
-              _quickCommand(
-                icon: Icons.inventory_rounded,
-                accent: UiTone.accentBlue,
-                title: 'Batch Packing',
-                subtitle: 'Crate manifest',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            MorningBatchScreen(state: widget.state)),
-                  );
-                },
-              ),
-              const SizedBox(width: 8),
-              _quickCommand(
-                icon: Icons.autorenew_rounded,
-                accent: UiTone.accentBlue,
-                title: 'Gen Tasks',
-                subtitle: 'Create batch',
-                onTap: () => _showBatchLabQualityDialog(context,
-                    isGeneratingDeliveries: true),
-              ),
-              const SizedBox(width: 8),
-              _quickCommand(
-                icon: Icons.tune_rounded,
-                accent: UiTone.primary,
-                title: 'Daily Slots',
-                subtitle: 'Limits & stock',
-                onTap: () => _openManageCapacitySlotsDialog(context),
-              ),
-              const SizedBox(width: 8),
-              _quickCommand(
-                icon: Icons.campaign_rounded,
-                accent: UiTone.warning,
-                title: 'Broadcast',
-                subtitle: 'Push alerts',
-                onTap: () => _showBroadcastDialog(context),
-              ),
-              const SizedBox(width: 8),
-              _quickCommand(
-                icon: Icons.account_balance_wallet_rounded,
-                accent: UiTone.primary,
-                title: '${UiFormat.price(netEarnings)} Pay',
-                subtitle: 'Settlement',
-                onTap: () => _withdrawEarnings(context, netEarnings),
-              ),
-            ],
+          // ── Quick Command Shortcuts Grid (6 Hub Actions) ──
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _quickCommand(
+                  icon: Icons.calendar_month_rounded,
+                  accent: const Color(0xFF10B981),
+                  title: 'Day Orders',
+                  subtitle: 'AM/PM shifts',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER'),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                _quickCommand(
+                  icon: Icons.inventory_rounded,
+                  accent: UiTone.accentBlue,
+                  title: 'Batch Packing',
+                  subtitle: 'Crate manifest',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              MorningBatchScreen(state: widget.state)),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                _quickCommand(
+                  icon: Icons.autorenew_rounded,
+                  accent: UiTone.accentBlue,
+                  title: 'Gen Tasks',
+                  subtitle: 'Create batch',
+                  onTap: () => _showBatchLabQualityDialog(context,
+                      isGeneratingDeliveries: true),
+                ),
+                const SizedBox(width: 8),
+                _quickCommand(
+                  icon: Icons.tune_rounded,
+                  accent: UiTone.primary,
+                  title: 'Daily Slots',
+                  subtitle: 'Limits & stock',
+                  onTap: () => _openManageCapacitySlotsDialog(context),
+                ),
+                const SizedBox(width: 8),
+                _quickCommand(
+                  icon: Icons.campaign_rounded,
+                  accent: UiTone.warning,
+                  title: 'Broadcast',
+                  subtitle: 'Push alerts',
+                  onTap: () => _showBroadcastDialog(context),
+                ),
+                const SizedBox(width: 8),
+                _quickCommand(
+                  icon: Icons.account_balance_wallet_rounded,
+                  accent: UiTone.primary,
+                  title: '${UiFormat.price(netEarnings)} Pay',
+                  subtitle: 'Settlement',
+                  onTap: () => _withdrawEarnings(context, netEarnings),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
 

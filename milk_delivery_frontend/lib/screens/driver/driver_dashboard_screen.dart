@@ -12,6 +12,7 @@ import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import '../common/day_wise_orders_screen.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
 
@@ -59,7 +60,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   bool _isGpsBroadcastActive = true;
   String _searchQuery = '';
   final _searchController = TextEditingController();
-  String _selectedShift = 'MORNING'; // MORNING or EVENING
+  String _selectedShift = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-switches to EVENING after 12:00 PM, MORNING after 12:00 AM
   Timer? _gpsSyncTimer;
 
   @override
@@ -518,7 +519,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Row(
                     children: [
                       Expanded(
-                        flex: 6,
+                        flex: 5,
                         child: SizedBox(
                           height: 42,
                           child: ElevatedButton.icon(
@@ -537,7 +538,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               );
                             },
                             icon: const Icon(Icons.inventory_2_rounded, size: 16, color: UiTone.primary),
-                            label: Text('Batch Crates 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: UiTone.primary)),
+                            label: Text('Batch Crates 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 11.5, color: UiTone.primary)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: UiTone.primary,
@@ -547,9 +548,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
-                        flex: 5,
+                        flex: 4,
                         child: SizedBox(
                           height: 42,
                           child: OutlinedButton.icon(
@@ -565,8 +566,35 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.map_rounded, size: 16, color: Colors.white),
-                            label: Text('Route Map 🗺️', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white)),
+                            icon: const Icon(Icons.map_rounded, size: 15, color: Colors.white),
+                            label: Text('Route Map 🗺️', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.white)),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                              backgroundColor: Colors.white.withValues(alpha: 0.15),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        flex: 4,
+                        child: SizedBox(
+                          height: 42,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (ctx) => DayWiseOrdersScreen(
+                                    state: widget.state,
+                                    role: 'DRIVER',
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.calendar_month_rounded, size: 15, color: Colors.white),
+                            label: Text('Calendar 📅', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.white)),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
                               backgroundColor: Colors.white.withValues(alpha: 0.15),
@@ -808,7 +836,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       color: UiTone.surfaceMuted,
                       borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
-                    child: Text(group.slotTime, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.softText)),
+                    child: Text('📅 Today • ${group.slotTime}', style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.softText)),
                   ),
                 ],
               ),

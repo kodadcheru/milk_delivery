@@ -727,17 +727,38 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             style: UiText.bodyStrong.copyWith(fontSize: 13),
           ),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_rounded, size: 14, color: UiText.muted),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  '${order.deliveryDate} • ${order.deliverySlot}',
-                  style: UiText.caption,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                  ? const Color(0xFF7C3AED).withValues(alpha: 0.10)
+                  : const Color(0xFF0D7C66).withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(UiRadius.xs),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                      ? Icons.nights_stay_rounded
+                      : Icons.wb_sunny_rounded,
+                  size: 13,
+                  color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                      ? const Color(0xFF7C3AED)
+                      : const Color(0xFF0D7C66),
                 ),
-              ),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  '📅 ${order.deliveryDate.isNotEmpty ? order.deliveryDate : "Today"} • ${order.deliverySlot}',
+                  style: UiText.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                        ? const Color(0xFF7C3AED)
+                        : const Color(0xFF0D7C66),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -787,6 +808,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final sub = task.subscriptionDetail;
     final product = sub?.productDetail;
     final statusColor = _getStatusColor(task.status);
+    final slotStr = task.slotTime.isNotEmpty ? task.slotTime : '05:30 AM - 07:00 AM';
+    final isEvening = slotStr.toUpperCase().contains('PM') || slotStr.toUpperCase().contains('17:') || slotStr.toUpperCase().contains('18:') || slotStr.toUpperCase().contains('19:');
 
     return _timelineCard(
       accent: statusColor,
@@ -819,10 +842,30 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   overflow: TextOverflow.ellipsis,
                   style: UiText.bodyStrong.copyWith(fontSize: 13),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
-                  '${sub?.quantity ?? 1}x ${sub?.packSize ?? "Unit"} • ${task.deliveryDate}',
-                  style: UiText.caption,
+                  '${sub?.quantity ?? 1}x ${sub?.packSize ?? "1 Litre"}',
+                  style: UiText.caption.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.12) : const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                      ),
+                      child: Text(
+                        '${isEvening ? "🌙" : "☀️"} 📅 ${task.deliveryDate.isNotEmpty ? task.deliveryDate : "Today"} • $slotStr',
+                        style: UiText.caption.copyWith(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Container(

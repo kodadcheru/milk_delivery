@@ -192,6 +192,79 @@ class BookingDetailSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
+                  // ── 1.5. Scheduled Date & Delivery Window ──
+                  _sectionLabel('Scheduled Date & Delivery Window:'),
+                  const SizedBox(height: 8),
+
+                  Builder(builder: (context) {
+                    final rawDate = isExpress ? liveOrder!.deliveryDate : subscriptionTask!.deliveryDate;
+                    final displayDate = rawDate.isNotEmpty ? rawDate : 'Today, ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+                    final isEvening = slot.toUpperCase().contains('PM') || slot.toUpperCase().contains('17:') || slot.toUpperCase().contains('18:') || slot.toUpperCase().contains('19:');
+                    final shiftTitle = isEvening ? '🌙 Evening Delivery Shift' : '☀️ Morning Delivery Shift';
+                    final orderPlaced = isExpress ? (liveOrder!.createdAt.isNotEmpty ? liveOrder!.createdAt : 'Today') : 'Active Daily Plan';
+
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: UiTone.shellBackground,
+                        borderRadius: BorderRadius.circular(UiRadius.md),
+                        border: Border.all(color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.3) : const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.15) : const Color(0xFF0D7C66).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                                ),
+                                child: Icon(
+                                  isEvening ? Icons.nights_stay_rounded : Icons.wb_sunny_rounded,
+                                  color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '📅 Delivery Date: $displayDate',
+                                      style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$shiftTitle • $slot',
+                                      style: UiText.caption.copyWith(
+                                        color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Order Placed / Scheduled', style: UiText.caption.copyWith(fontSize: 11)),
+                              Text(orderPlaced, style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: UiTone.ink)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
+
                   // ── 2. Assigned Delivery Partner with 2-WAY CALLING ──
                   _sectionLabel('Assigned Delivery Partner:'),
                   const SizedBox(height: 8),
