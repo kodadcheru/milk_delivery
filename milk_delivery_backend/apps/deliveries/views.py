@@ -515,7 +515,10 @@ class GenerateTodayTasksView(APIView):
             hub_code = request.data.get("hub_code") or request.data.get("hub_id")
             hub_obj = None
             if hub_code:
-                hub_obj = LocationHub.objects.filter(models.Q(hub_code=hub_code) | models.Q(id__iexact=str(hub_code))).first()
+                hub_qs = LocationHub.objects.filter(hub_code=hub_code)
+                if not hub_qs.exists() and str(hub_code).isdigit():
+                    hub_qs = LocationHub.objects.filter(pk=int(hub_code))
+                hub_obj = hub_qs.first()
             if not hub_obj:
                 hub_obj = LocationHub.objects.first()
 
@@ -557,9 +560,10 @@ class GenerateTodayTasksView(APIView):
         if hub_code_filter:
             # Use explicit hub_code from request body
             from apps.deliveries.models import LocationHub
-            filter_hub = LocationHub.objects.filter(
-                Q(hub_code=hub_code_filter) | Q(id__iexact=str(hub_code_filter))
-            ).first()
+            filter_hub_qs = LocationHub.objects.filter(hub_code=hub_code_filter)
+            if not filter_hub_qs.exists() and str(hub_code_filter).isdigit():
+                filter_hub_qs = LocationHub.objects.filter(pk=int(hub_code_filter))
+            filter_hub = filter_hub_qs.first()
             if filter_hub:
                 active_subs = active_subs.filter(
                     Q(hub=filter_hub) | Q(customer__assigned_hub=filter_hub) | Q(hub__isnull=True)
@@ -757,7 +761,10 @@ class DailyMilkBatchListCreateView(APIView):
             batches = batches.filter(product_name__icontains=product_name)
 
         if hub_code:
-            batches = batches.filter(models.Q(hub__hub_code=hub_code) | models.Q(hub__id__iexact=str(hub_code)))
+            batch_hub_qs = batches.filter(hub__hub_code=hub_code)
+            if not batch_hub_qs.exists() and str(hub_code).isdigit():
+                batch_hub_qs = batches.filter(hub__pk=int(hub_code))
+            batches = batch_hub_qs
         elif not request.user.is_superuser and getattr(request.user, 'assigned_hub', None):
             batches = batches.filter(hub=request.user.assigned_hub)
 
@@ -830,7 +837,10 @@ class DailyMilkBatchListCreateView(APIView):
         
         hub = None
         if hub_code:
-            hub = LocationHub.objects.filter(models.Q(hub_code=hub_code) | models.Q(id__iexact=str(hub_code))).first()
+            hub_qs = LocationHub.objects.filter(hub_code=hub_code)
+            if not hub_qs.exists() and str(hub_code).isdigit():
+                hub_qs = LocationHub.objects.filter(pk=int(hub_code))
+            hub = hub_qs.first()
         if not hub:
             hub = LocationHub.objects.first()
 
