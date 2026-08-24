@@ -146,13 +146,21 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             status=Subscription.Statuses.ACTIVE,
         )
 
-        # Auto-create initial DeliveryTask so customer immediately sees their morning delivery in My Orders tab
+        # Auto-create initial DeliveryTask so customer & driver immediately see morning delivery
         try:
+            hub_driver = User.objects.filter(
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                assigned_hub=hub,
+            ).first() or User.objects.filter(
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]
+            ).first()
+
             DeliveryTask.objects.get_or_create(
                 subscription=sub,
                 delivery_date=date.today(),
                 defaults={
                     "hub": hub,
+                    "driver": hub_driver,
                     "slot_time": deliv_slot,
                     "status": DeliveryTask.Statuses.PENDING,
                 }

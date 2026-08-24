@@ -35,7 +35,14 @@ class DeliveryTaskListView(generics.ListAPIView):
                 return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
             return qs
         elif user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
-            return qs.filter(driver=user)
+            if getattr(user, "assigned_hub", None):
+                return qs.filter(
+                    Q(driver=user) |
+                    Q(driver__isnull=True, hub=user.assigned_hub) |
+                    Q(driver__isnull=True, subscription__hub=user.assigned_hub) |
+                    Q(driver__isnull=True, hub__isnull=True)
+                )
+            return qs.filter(Q(driver=user) | Q(driver__isnull=True))
         elif user.role == "CUSTOMER":
             return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
         # Admin/staff see all
@@ -51,9 +58,11 @@ class DeliveryTaskCompleteView(APIView):
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Authorization: only assigned driver or staff can complete
+        # Authorization: only assigned driver or staff can complete, or auto-claim unassigned task
         if task.driver and task.driver != request.user and not request.user.is_staff:
             return Response({"detail": "Only the assigned driver can complete this delivery."}, status=status.HTTP_403_FORBIDDEN)
+        if not task.driver and request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
+            task.driver = request.user
 
         # Prevent double-completion
         if task.status == DeliveryTask.Statuses.DELIVERED:

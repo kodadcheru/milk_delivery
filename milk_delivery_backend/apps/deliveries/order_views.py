@@ -25,8 +25,16 @@ class ExpressOrderListCreateView(APIView):
         if user and user.is_authenticated:
             if user.role == User.Roles.CUSTOMER:
                 orders = orders.filter(customer=user)
-            elif user.role in [User.Roles.DRIVER, "DRIVER"]:
-                orders = orders.filter(driver=user)
+            elif user.role in [User.Roles.DRIVER, "DRIVER", User.Roles.DELIVERY_PARTNER]:
+                from django.db.models import Q
+                if getattr(user, "assigned_hub", None):
+                    orders = orders.filter(
+                        Q(driver=user) |
+                        Q(driver__isnull=True, hub=user.assigned_hub) |
+                        Q(driver__isnull=True, hub__isnull=True)
+                    )
+                else:
+                    orders = orders.filter(Q(driver=user) | Q(driver__isnull=True))
             elif user.role in [User.Roles.HUB_MANAGER, "PROVIDER"] and user.assigned_hub:
                 orders = orders.filter(hub=user.assigned_hub)
 
@@ -190,9 +198,17 @@ class ExpressOrderListCreateView(APIView):
                 notification_type=Notification.Types.DELIVERY,
             )
 
+            hub_driver = User.objects.filter(
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                assigned_hub=active_hub,
+            ).first() or User.objects.filter(
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]
+            ).first()
+
             DeliveryTask.objects.create(
                 order=order,
                 hub=active_hub,
+                driver=hub_driver,
                 delivery_date=date.today(),
                 slot_time=delivery_slot,
                 status=DeliveryTask.Statuses.PENDING,
