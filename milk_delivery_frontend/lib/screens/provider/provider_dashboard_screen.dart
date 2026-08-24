@@ -28,6 +28,7 @@ class ProviderDashboardScreen extends StatefulWidget {
 
 class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   int _selectedFilter = 0; // 0: All, 1: Active Subs, 2: Express, 3: Fleet, 4: Capacity, 5: Broadcasts, 6: Payouts, 7: Paused, 8: Bottles
+  String _selectedShift = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-selects EVENING after 12 PM, MORNING after 12 AM
   String _searchQuery = '';
   int _activeDriverCount = 4;
   List<Map<String, dynamic>> _hubInventory = [];
@@ -55,6 +56,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     _hubRealtimeTimer?.cancel();
     super.dispose();
   }
+
+
 
   void _loadAllHubData() {
     _loadLiveFleet();
@@ -433,17 +436,32 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final netEarnings = totalRevenue; // 100% money goes to Hub Owner
     final totalLitres = widget.state.totalDailyMilkVolume;
 
-    // Filter tasks & orders (only upcoming active non-paused orders appear on provider home dashboard by default)
+    // Filter tasks & orders by shift and search query
     List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
       final sub = t.subscriptionDetail;
       final isSubPaused = sub != null && sub.status == 'PAUSED';
       if (_selectedFilter == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED' || t.status == 'SKIPPED' || isSubPaused)) {
         return false;
       }
+
+      final slotStr = t.slotTime.toUpperCase();
+      final isEvening = slotStr.contains('PM') || slotStr.contains('17:') || slotStr.contains('18:') || slotStr.contains('19:') || slotStr.contains('EVENING');
+      if (_selectedShift == 'MORNING' && isEvening) return false;
+      if (_selectedShift == 'EVENING' && !isEvening) return false;
+
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         return t.customerName.toLowerCase().contains(q) || t.deliveryAddress.toLowerCase().contains(q);
       }
+      return true;
+    }).toList();
+
+    List<LiveOrderModel> filteredExpress = liveOrders.where((ord) {
+      if (_selectedFilter == 0 && ord.status == 'DELIVERED') return false;
+      final slotStr = ord.deliverySlot.toUpperCase();
+      final isEvening = slotStr.contains('PM') || slotStr.contains('17:') || slotStr.contains('18:') || slotStr.contains('19:') || slotStr.contains('EVENING');
+      if (_selectedShift == 'MORNING' && isEvening) return false;
+      if (_selectedShift == 'EVENING' && !isEvening) return false;
       return true;
     }).toList();
 
@@ -950,9 +968,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ] else if (_selectedFilter == 1) ...[
             _buildSubscriptionListSection('✅ Active Subscriptions', activeSubs, 'ACTIVE'),
           ] else if (_selectedFilter == 2) ...[
-            _buildExpressOnlySection(liveOrders),
+            _buildExpressOnlySection(filteredExpress),
           ] else ...[
-            _buildOrdersRosterSection(filteredTasks, liveOrders),
+            _buildOrdersRosterSection(filteredTasks, filteredExpress),
           ],
 
           const SizedBox(height: 24),
@@ -983,7 +1001,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     style: UiText.bodyStrong.copyWith(fontSize: 13.5),
                   ),
                   Text(
-                    '${subscriptions.length + express.length} Orders • $unassignedCount Unassigned',
+                    '${subscriptions.length + express.length} Orders (${_selectedShift == "ALL" ? "All Shifts" : (_selectedShift == "EVENING" ? "🌙 Evening" : "☀️ Morning")}) • $unassignedCount Unassigned',
                     style: UiText.label.copyWith(fontSize: 10.5, color: unassignedCount > 0 ? UiTone.warning : UiTone.primary, fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -1003,6 +1021,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         ),
         const SizedBox(height: 10),
 
+        // Shift Toggle Chips
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: UiTone.shellBackground,
+            borderRadius: BorderRadius.circular(UiRadius.sm),
+            border: Border.all(color: UiTone.surfaceBorder),
+          ),
+          child: Row(
+            children: [
+              _buildShiftChip('MORNING', '☀️ Morning (AM)'),
+              const SizedBox(width: 4),
+              _buildShiftChip('EVENING', '🌙 Evening (PM)'),
+              const SizedBox(width: 4),
+              _buildShiftChip('ALL', 'All Shifts'),
+            ],
+          ),
+        ),
+
         // Express Orders First
         if (_selectedFilter == 0 || _selectedFilter == 2)
           ...express.map((ord) => _buildExpressOrderCard(ord)),
@@ -1011,6 +1049,31 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         if (_selectedFilter == 0 || _selectedFilter == 1)
           ...subscriptions.map((task) => _buildSubscriptionCustomerCard(task)),
       ],
+    );
+  }
+
+  Widget _buildShiftChip(String shiftKey, String label) {
+    final selected = _selectedShift == shiftKey;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedShift = shiftKey),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? (shiftKey == 'EVENING' ? const Color(0xFF7C3AED) : (shiftKey == 'MORNING' ? const Color(0xFF0D7C66) : UiTone.primary)) : Colors.transparent,
+            borderRadius: BorderRadius.circular(UiRadius.xs),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: UiText.caption.copyWith(
+              color: selected ? Colors.white : UiTone.softText,
+              fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1452,6 +1515,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         '${sub?.scheduleType ?? "DAILY"} • Slot: ${task.slotTime}',
                         style: UiText.body.copyWith(fontSize: 10.5),
                       ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (task.slotTime.toUpperCase().contains('PM') || task.slotTime.toUpperCase().contains('EVENING'))
+                              ? const Color(0xFF7C3AED).withValues(alpha: 0.12)
+                              : const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '📅 ${task.deliveryDate.isNotEmpty ? task.deliveryDate : "Today"} • ${(task.slotTime.toUpperCase().contains("PM") || task.slotTime.toUpperCase().contains("EVENING")) ? "🌙 Evening Shift" : "☀️ Morning Shift"}',
+                          style: UiText.caption.copyWith(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: (task.slotTime.toUpperCase().contains('PM') || task.slotTime.toUpperCase().contains('EVENING'))
+                                ? const Color(0xFF7C3AED)
+                                : const Color(0xFF0D7C66),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1625,6 +1708,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Text(
             'Items: ${ord.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}',
             style: UiText.bodyStrong.copyWith(fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: (ord.deliverySlot.toUpperCase().contains('PM') || ord.deliverySlot.toUpperCase().contains('EVENING'))
+                  ? const Color(0xFF7C3AED).withValues(alpha: 0.12)
+                  : const Color(0xFF0D7C66).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '📅 ${ord.deliveryDate.isNotEmpty ? ord.deliveryDate : "Today"} • ${(ord.deliverySlot.toUpperCase().contains("PM") || ord.deliverySlot.toUpperCase().contains("EVENING")) ? "🌙 Evening Shift" : "☀️ Morning Shift"} • Slot: ${ord.deliverySlot}',
+              style: UiText.caption.copyWith(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+                color: (ord.deliverySlot.toUpperCase().contains('PM') || ord.deliverySlot.toUpperCase().contains('EVENING'))
+                    ? const Color(0xFF7C3AED)
+                    : const Color(0xFF0D7C66),
+              ),
+            ),
           ),
           const SizedBox(height: 4),
           Text('Delivery to: ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 11)),
