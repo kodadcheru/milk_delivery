@@ -22,6 +22,24 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+        if user.address:
+            from apps.accounts.models import CustomerAddress
+            CustomerAddress.objects.get_or_create(
+                user=user,
+                is_default=True,
+                defaults={
+                    'address_type': 'HOME',
+                    'street_address': user.address,
+                    'city': user.city or 'Kodad',
+                    'pincode': getattr(user, 'pincode', '508206'),
+                    'latitude': user.latitude or 17.001734,
+                    'longitude': user.longitude or 79.9625,
+                    'delivery_instructions': '',
+                }
+            )
+
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer

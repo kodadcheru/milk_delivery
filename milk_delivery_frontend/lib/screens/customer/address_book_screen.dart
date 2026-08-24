@@ -77,53 +77,64 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
           final addresses = widget.state.savedAddresses;
 
           if (addresses.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(28.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE0F2FE),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.location_city_rounded,
-                        size: 56,
-                        color: Color(0xFF0284C7),
+            return RefreshIndicator(
+              onRefresh: () => widget.state.fetchSavedAddresses(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(28.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE0F2FE),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.location_city_rounded,
+                                size: 56,
+                                color: Color(0xFF0284C7),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'No Saved Addresses Yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Save your home, office, and other locations for instant 1-tap morning milk delivery.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: () => _openAddEditAddressSheet(context, state),
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              label: const Text('Add Delivery Address'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'No Saved Addresses Yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Save your home, office, and other locations for instant 1-tap morning milk delivery.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => _openAddEditAddressSheet(context, state),
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text('Add Delivery Address'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           }
@@ -218,17 +229,21 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
 
               // Address Cards List
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: addresses.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final addr = addresses[index];
-                    final isActive = state.activeAddress?.id == addr.id ||
-                        (state.activeAddress == null && addr.isDefault);
+                child: RefreshIndicator(
+                  onRefresh: () => widget.state.fetchSavedAddresses(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: addresses.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final addr = addresses[index];
+                      final isActive = state.activeAddress?.id == addr.id ||
+                          (state.activeAddress == null && addr.isDefault);
 
-                    return _buildAddressCard(context, state, addr, isActive);
-                  },
+                      return _buildAddressCard(context, state, addr, isActive);
+                    },
+                  ),
                 ),
               ),
 

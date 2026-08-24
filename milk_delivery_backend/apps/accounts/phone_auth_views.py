@@ -207,6 +207,22 @@ class RegisterMobileUserView(APIView):
         user.set_password(uuid.uuid4().hex)
         user.save()
 
+        if user.address:
+            from apps.accounts.models import CustomerAddress
+            CustomerAddress.objects.get_or_create(
+                user=user,
+                is_default=True,
+                defaults={
+                    'address_type': 'HOME',
+                    'street_address': user.address,
+                    'city': user.city or 'Kodad',
+                    'pincode': getattr(user, 'pincode', '508206'),
+                    'latitude': user.latitude or 17.001734,
+                    'longitude': user.longitude or 79.9625,
+                    'delivery_instructions': '',
+                }
+            )
+
         # Initial Welcome Wallet Transaction
         WalletTransaction.objects.create(
             user=user,

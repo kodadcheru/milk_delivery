@@ -8,23 +8,45 @@ from apps.accounts.serializers import CustomerAddressSerializer
 
 def _resolve_customer_user(request):
     user = request.user
+    
+    # If staff/admin requesting specific customer, resolve that customer
+    if user and user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ('ADMIN', 'PROVIDER', 'HUB_MANAGER')):
+        customer_id = request.query_params.get('customer_id') or request.data.get('customer_id')
+        phone = request.query_params.get('phone') or request.data.get('phone') or request.data.get('customer_phone')
+        
+        if customer_id:
+            try:
+                found_user = User.objects.filter(id=int(customer_id)).first()
+                if found_user:
+                    return found_user
+            except (ValueError, TypeError):
+                pass
+                
+        if phone:
+            clean_phone = str(phone).replace("+91", "").replace(" ", "").strip()
+            found_user = User.objects.filter(phone__icontains=clean_phone).first()
+            if found_user:
+                return found_user
+    
+    # Default: return the authenticated user
     if user and user.is_authenticated:
         return user
 
+    # Fallback for unauthenticated
     phone = request.query_params.get("phone") or request.data.get("phone") or request.data.get("customer_phone")
     customer_id = request.query_params.get("customer_id") or request.data.get("customer_id")
 
     if phone:
         clean_phone = str(phone).replace("+91", "").replace(" ", "").strip()
-        user = User.objects.filter(phone__icontains=clean_phone).first()
-        if user:
-            return user
+        found_user = User.objects.filter(phone__icontains=clean_phone).first()
+        if found_user:
+            return found_user
 
     if customer_id:
         try:
-            user = User.objects.filter(id=int(customer_id)).first()
-            if user:
-                return user
+            found_user = User.objects.filter(id=int(customer_id)).first()
+            if found_user:
+                return found_user
         except (ValueError, TypeError):
             pass
 

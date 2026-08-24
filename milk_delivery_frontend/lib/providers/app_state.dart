@@ -584,25 +584,27 @@ class AppState extends ChangeNotifier {
         currentDeliveryAddress = defaultAddr.summaryAddress;
         currentLat = defaultAddr.latitude;
         currentLon = defaultAddr.longitude;
-      } else if (user != null && user.address.isNotEmpty) {
-        final profileAddr = CustomerAddressModel(
-          id: 1,
-          userId: user.id,
-          addressType: 'HOME',
-          displayType: 'Home',
-          flatHouseNo: '2X27+P3X',
-          streetAddress: user.address,
-          city: user.city.isNotEmpty ? user.city : 'Kodad',
-          pincode: '508206',
-          latitude: user.latitude,
-          longitude: user.longitude,
-          isDefault: true,
-        );
-        savedAddresses = [profileAddr];
-        activeAddress = profileAddr;
-        currentDeliveryAddress = profileAddr.summaryAddress;
-        currentLat = profileAddr.latitude;
-        currentLon = profileAddr.longitude;
+      } else if (savedAddresses.isEmpty) {
+        if (user != null && user.address.isNotEmpty) {
+          final profileAddr = CustomerAddressModel(
+            id: 0,
+            userId: user.id,
+            addressType: 'HOME',
+            displayType: 'Home',
+            flatHouseNo: '',
+            streetAddress: user.address,
+            city: user.city.isNotEmpty ? user.city : 'Kodad',
+            pincode: '508206',
+            latitude: user.latitude,
+            longitude: user.longitude,
+            isDefault: true,
+          );
+          savedAddresses = [profileAddr];
+          activeAddress = profileAddr;
+          currentDeliveryAddress = profileAddr.summaryAddress;
+          currentLat = profileAddr.latitude;
+          currentLon = profileAddr.longitude;
+        }
       }
 
       final fetchedProds = (results[2] as List<ProductModel>?) ?? [];
@@ -713,10 +715,10 @@ class AppState extends ChangeNotifier {
           currentLat = defaultAddr.latitude;
           currentLon = defaultAddr.longitude;
         }
-      } else if (currentUser != null && currentUser!.address.isNotEmpty) {
-        if (savedAddresses.isEmpty) {
+      } else if (savedAddresses.isEmpty) {
+        if (currentUser != null && currentUser!.address.isNotEmpty) {
           final profileAddr = CustomerAddressModel(
-            id: 1,
+            id: 0,
             userId: currentUser!.id,
             addressType: 'HOME',
             displayType: 'Home',
