@@ -580,6 +580,80 @@ class BookingDetailSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                   ],
+                  // ── 7. Live Mobility Service Tracking Radar Card (If Active / In Transit) ──
+                  if (!isDelivered) ...[
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (ctx) => LiveDriverTrackingScreen(
+                              state: state,
+                              liveOrder: liveOrder,
+                              subscriptionTask: subscriptionTask,
+                              orderTitle: isExpress
+                                  ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                                  : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
+                              deliveryAddress: displayAddress,
+                              driverName: driverName,
+                              driverPhone: driverPhone,
+                              deliveryOtp: otp,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: UiTone.ink,
+                          borderRadius: BorderRadius.circular(UiRadius.lg),
+                          boxShadow: UiShadow.card,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: UiTone.primary.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(UiRadius.md),
+                              ),
+                              child: const Text('🛵', style: TextStyle(fontSize: 22)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Live Radar & Partner Tracking',
+                                        style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 13.5),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Driver: $driverName • OTP: $otp',
+                                    style: UiText.caption.copyWith(color: Colors.white70, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ],
               ),
             ),
@@ -624,7 +698,10 @@ class BookingDetailSheet extends StatelessWidget {
                           builder: (ctx) => LiveDriverTrackingScreen(
                             state: state,
                             liveOrder: liveOrder,
-                            orderTitle: isExpress ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order') : 'Morning Milk Delivery',
+                            subscriptionTask: subscriptionTask,
+                            orderTitle: isExpress
+                                ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                                : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
                             deliveryAddress: displayAddress,
                             driverName: driverName,
                             driverPhone: driverPhone,
@@ -633,8 +710,8 @@ class BookingDetailSheet extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.satellite_alt_rounded, size: 16),
-                    label: Text('Track Live on Map 🛰️', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12.5)),
+                    icon: const Icon(Icons.moped_rounded, size: 18),
+                    label: Text('Track Partner Live 🛵', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: UiTone.primary,
                       foregroundColor: Colors.white,

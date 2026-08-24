@@ -1,16 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../theme/ui_tokens.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
+import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
 import 'help_support_screen.dart';
 
 class LiveDriverTrackingScreen extends StatefulWidget {
   final AppState state;
   final LiveOrderModel? liveOrder;
+  final DeliveryTaskModel? subscriptionTask;
   final String orderTitle;
   final String deliveryAddress;
   final String driverName;
@@ -21,6 +25,7 @@ class LiveDriverTrackingScreen extends StatefulWidget {
     super.key,
     required this.state,
     this.liveOrder,
+    this.subscriptionTask,
     this.orderTitle = 'Fresh Farm Milk & Morning Essentials',
     this.deliveryAddress = 'Doorstep Delivery Location',
     this.driverName = 'Assigned Partner',
@@ -34,9 +39,10 @@ class LiveDriverTrackingScreen extends StatefulWidget {
 
 class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> with TickerProviderStateMixin {
   GoogleMapController? _mapController;
-  late final AnimationController _radarAnimController;
+  late final AnimationController _pulseAnimController;
+  late final Animation<double> _pulseAnimation;
 
-  // Customer doorstep coordinates (Jubilee Hills, Hyderabad default or user profile GPS)
+  // Customer doorstep coordinates
   late LatLng _customerLocation;
 
   // Driver moving coordinates
@@ -47,31 +53,31 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   int _currentRouteIndex = 0;
   Timer? _driverMovementTimer;
 
-  int _etaMinutes = 14;
-  double _distanceKm = 2.4;
-
+  int _etaMinutes = 12;
+  double _distanceKm = 2.1;
+  bool _isTrafficEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    // GoogleMapController set via onMapCreated
 
-    _radarAnimController = AnimationController(
+    _pulseAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.15).animate(
+      CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
+    );
 
     final userLat = widget.state.currentUser?.latitude ?? 17.4319;
     final userLon = widget.state.currentUser?.longitude ?? 78.4073;
     _customerLocation = LatLng(userLat, userLon);
 
-    // Initial driver spawn location (~2.4 km away in Banjara Hills / Madhapur)
-    _driverLocation = LatLng(_customerLocation.latitude - 0.016, _customerLocation.longitude - 0.018);
+    // Initial driver spawn location (~2.1 km away from customer doorstep)
+    _driverLocation = LatLng(_customerLocation.latitude - 0.014, _customerLocation.longitude - 0.016);
 
-    // Pre-calculate realistic waypoint path to customer doorstep
     _generateRouteWaypoints();
-
-    // Start live continuous simulation of moving driver
     _startDriverTrackingSimulation();
   }
 
@@ -81,17 +87,17 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
 
     _routePoints = [
       start,
-      LatLng(start.latitude + 0.003, start.longitude + 0.002),
-      LatLng(start.latitude + 0.006, start.longitude + 0.005),
-      LatLng(start.latitude + 0.009, start.longitude + 0.009),
-      LatLng(start.latitude + 0.012, start.longitude + 0.013),
-      LatLng(start.latitude + 0.014, start.longitude + 0.016),
+      LatLng(start.latitude + 0.0025, start.longitude + 0.0018),
+      LatLng(start.latitude + 0.0055, start.longitude + 0.0042),
+      LatLng(start.latitude + 0.0080, start.longitude + 0.0075),
+      LatLng(start.latitude + 0.0105, start.longitude + 0.0110),
+      LatLng(start.latitude + 0.0125, start.longitude + 0.0138),
       end,
     ];
   }
 
   void _startDriverTrackingSimulation() {
-    _driverMovementTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _driverMovementTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (!mounted) return;
 
       if (_currentRouteIndex < _routePoints.length - 1) {
@@ -103,12 +109,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
           if (_distanceKm > 0.3) _distanceKm = (_distanceKm - 0.35).clamp(0.1, 10.0);
         });
 
-        // Smoothly adjust map view between driver & customer
         final centerLat = (_driverLocation.latitude + _customerLocation.latitude) / 2;
         final centerLon = (_driverLocation.longitude + _customerLocation.longitude) / 2;
-        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(LatLng(centerLat, centerLon), 15.0));
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(LatLng(centerLat, centerLon), 15.2),
+        );
       } else {
-        // Driver has reached doorstep
         setState(() {
           _etaMinutes = 1;
           _distanceKm = 0.1;
@@ -120,54 +126,76 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   @override
   void dispose() {
     _driverMovementTimer?.cancel();
-    _radarAnimController.dispose();
+    _pulseAnimController.dispose();
     super.dispose();
   }
 
+  void _centerMap() {
+    final centerLat = (_driverLocation.latitude + _customerLocation.latitude) / 2;
+    final centerLon = (_driverLocation.longitude + _customerLocation.longitude) / 2;
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(centerLat, centerLon), 15.2),
+    );
+  }
+
   void _callDriver() async {
-    final cleanPhone = widget.driverPhone.replaceAll(' ', '');
+    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : '+91 98765 43210';
+    final cleanPhone = phone.replaceAll(' ', '');
     final uri = Uri.parse('tel:$cleanPhone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: UiTone.primary, content: Text('📞 Dialing: $phone')),
+        );
+      }
     }
+  }
+
+  void _sendWhatsAppMessage() async {
+    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : '+91 98765 43210';
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final msg = Uri.encodeComponent(
+      'Hi ${widget.driverName.isNotEmpty ? widget.driverName : "Delivery Partner"}, I am tracking my MilkDrop order. Please deliver to: ${widget.deliveryAddress}. Thank you!',
+    );
+    final uri = Uri.parse('https://wa.me/$cleanPhone?text=$msg');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch WhatsApp.')),
+        );
+      }
+    }
+  }
+
+  void _copyOtp() {
+    Clipboard.setData(ClipboardData(text: widget.deliveryOtp));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: UiTone.primary,
+        content: Text('🔑 OTP ${widget.deliveryOtp} copied to clipboard!'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDelivered = _distanceKm <= 0.1 ||
+        (widget.liveOrder?.status == 'DELIVERED') ||
+        (widget.subscriptionTask?.status == 'DELIVERED');
+
+    final driverName = widget.driverName.isNotEmpty ? widget.driverName : 'Ramesh Kumar';
+    final resolvedAddress = widget.deliveryAddress.isNotEmpty ? widget.deliveryAddress : 'Doorstep Delivery Location';
+
     return Scaffold(
       backgroundColor: UiTone.ink,
-      appBar: AppBar(
-        backgroundColor: UiTone.ink,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: UiTone.surface, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Live GPS Delivery Radar', style: TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.bold)),
-            Text('🟢 Real-Time Driver Tracking Active', style: TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.w600)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Live Support',
-            icon: const Icon(Icons.support_agent_rounded, color: UiTone.surface),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => HelpSupportScreen(state: widget.state, initialTopic: 'I am tracking my live order delivery'),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
       body: Stack(
         children: [
-          // ── 1. Google Maps Real-Time Map ──
+          // ── 1. Full Screen Interactive Map ──
           GoogleMap(
             initialCameraPosition: CameraPosition(
               target: LatLng(
@@ -180,20 +208,19 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             myLocationEnabled: false,
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
+            trafficEnabled: _isTrafficEnabled,
             markers: {
-              // Customer Doorstep Pin
               Marker(
                 markerId: const MarkerId('customer'),
                 position: _customerLocation,
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-                infoWindow: const InfoWindow(title: 'Your Doorstep'),
+                infoWindow: const InfoWindow(title: '📍 Your Doorstep Delivery'),
               ),
-              // Moving Driver Marker
               Marker(
                 markerId: const MarkerId('driver'),
                 position: _driverLocation,
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-                infoWindow: InfoWindow(title: widget.driverName, snippet: '🛵 On the way'),
+                infoWindow: InfoWindow(title: '🛵 $driverName', snippet: 'On the way'),
               ),
             },
             polylines: {
@@ -206,60 +233,99 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             },
           ),
 
-          // ── 2. Top Floating ETA Card ──
-          Positioned(
-            top: 14,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: UiTone.ink.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: UiShadow.elevated,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-              ),
+          // ── 2. Top Floating Navigation & Radar Controls ──
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: UiTone.secondary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                        ),
-                        child: const Icon(Icons.electric_bolt_rounded, color: UiTone.secondary, size: 24),
+                  // Back Button with Glassmorphism
+                  Container(
+                    decoration: BoxDecoration(
+                      color: UiTone.ink.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
+                      boxShadow: UiShadow.card,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Live GPS Radar Status Pill
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: UiTone.ink.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        boxShadow: UiShadow.card,
                       ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            _distanceKm <= 0.1 ? 'Arrived at Doorstep!' : 'Arriving in $_etaMinutes mins',
-                            style: const TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.w900),
+                          ScaleTransition(
+                            scale: _pulseAnimation,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: UiTone.secondary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${_distanceKm.toStringAsFixed(1)} km away • Speed 32 km/h',
-                            style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              isDelivered ? '📍 Reached Doorstep' : '🟢 Live Delivery Radar',
+                              style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 12.5),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: UiTone.primary,
-                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Column(
-                      children: [
-                        const Text('OTP', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w800)),
-                        Text(widget.deliveryOtp, style: const TextStyle(color: UiTone.surface, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                      ],
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Map Re-Center Button
+                  Container(
+                    decoration: BoxDecoration(
+                      color: UiTone.ink.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
+                      boxShadow: UiShadow.card,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.my_location_rounded, color: UiTone.primary, size: 20),
+                      tooltip: 'Center on Route',
+                      onPressed: _centerMap,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+
+                  // Support Emergency Button
+                  Container(
+                    decoration: BoxDecoration(
+                      color: UiTone.ink.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
+                      boxShadow: UiShadow.card,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.headset_mic_rounded, color: Colors.white, size: 20),
+                      tooltip: 'Help Desk',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (ctx) => HelpSupportScreen(
+                              state: widget.state,
+                              initialTopic: 'Live delivery partner tracking inquiry',
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -267,122 +333,350 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             ),
           ),
 
-          // ── 3. Bottom Sliding Driver Details & Order Card ──
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
-              decoration: const BoxDecoration(
-                color: UiTone.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                boxShadow: UiShadow.floating,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Order Progress Tracker
-                  Row(
-                    children: [
-                      _buildProgressStep('Packed', true),
-                      _buildProgressLine(true),
-                      _buildProgressStep('On Way', true),
-                      _buildProgressLine(_distanceKm <= 0.1),
-                      _buildProgressStep('Doorstep', _distanceKm <= 0.1),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Driver Details Tile
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: UiTone.shellBackground,
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      border: Border.all(color: UiTone.surfaceBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: UiTone.primary.withValues(alpha: 0.15),
-                          child: const Text('👨‍🌾', style: TextStyle(fontSize: 22)),
+          // ── 3. Draggable Mobility Booking Sheet ──
+          DraggableScrollableSheet(
+            initialChildSize: 0.44,
+            minChildSize: 0.22,
+            maxChildSize: 0.88,
+            snap: true,
+            snapSizes: const [0.22, 0.44, 0.88],
+            builder: (context, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: UiTone.surface,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: UiShadow.floating,
+                ),
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                  children: [
+                    // Grab Handle
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: UiTone.surfaceBorder,
+                          borderRadius: BorderRadius.circular(UiRadius.pill),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                    ),
+
+                    // ── A. ETA & Secret Doorstep OTP Banner ──
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: UiGradient.hero,
+                        borderRadius: BorderRadius.circular(UiRadius.xl),
+                        boxShadow: UiShadow.glowPrimary,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      widget.driverName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.verified_rounded, color: UiTone.secondary, size: 14),
-                                ],
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(UiRadius.md),
+                                ),
+                                child: const Text('⚡', style: TextStyle(fontSize: 22)),
                               ),
-                              const SizedBox(height: 2),
-                              const Row(
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.star_rounded, color: Colors.amber, size: 13),
-                                  SizedBox(width: 2),
-                                  Text('4.9 Rating • TS 09 EQ 4821 (EV Scooter)', style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+                                  Text(
+                                    isDelivered ? 'Arrived at Doorstep!' : 'Arriving in $_etaMinutes Mins',
+                                    style: UiText.h2.copyWith(color: Colors.white, fontSize: 17),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${_distanceKm.toStringAsFixed(1)} km away • Farm Chilled 4°C',
+                                    style: UiText.caption.copyWith(color: Colors.white70, fontSize: 11.5),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
-                        ),
-                        InkWell(
-                          onTap: _callDriver,
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: UiTone.secondary,
-                              borderRadius: BorderRadius.circular(UiRadius.sm),
-                              boxShadow: UiShadow.glowPrimary,
+                          // Doorstep OTP Badge with Copy
+                          GestureDetector(
+                            onTap: _copyOtp,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(UiRadius.md),
+                                boxShadow: UiShadow.card,
+                              ),
+                              child: Column(
+                                children: [
+                                  Text('DOORSTEP OTP', style: UiText.caption.copyWith(color: UiTone.primary, fontSize: 8.5, fontWeight: FontWeight.w900)),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    widget.deliveryOtp,
+                                    style: UiText.h2.copyWith(color: UiTone.ink, fontSize: 16, letterSpacing: 1.2),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: const Icon(Icons.call_rounded, color: UiTone.surface, size: 18),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Delivery Location Strip
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_rounded, color: UiTone.primary, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.deliveryAddress,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── B. 5-Stage Live Order Stepper ──
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: UiTone.shellBackground,
+                        borderRadius: BorderRadius.circular(UiRadius.lg),
+                        border: Border.all(color: UiTone.surfaceBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Live Delivery Progress', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: UiTone.primarySoft,
+                                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                                ),
+                                child: Text('🧪 LAB TESTED BATCH', style: UiText.caption.copyWith(color: UiTone.primary, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              _buildStepIndicator('1. Tested', true, Icons.science_rounded),
+                              _buildStepLine(true),
+                              _buildStepIndicator('2. Packed', true, Icons.inventory_2_rounded),
+                              _buildStepLine(true),
+                              _buildStepIndicator('3. On Route', true, Icons.moped_rounded),
+                              _buildStepLine(_distanceKm <= 0.3),
+                              _buildStepIndicator('4. Doorstep', _distanceKm <= 0.3, Icons.door_front_door_rounded),
+                              _buildStepLine(isDelivered),
+                              _buildStepIndicator('5. Verified', isDelivered, Icons.verified_rounded),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── C. Delivery Partner Identity & Vehicle Card ──
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: UiTone.surface,
+                        borderRadius: BorderRadius.circular(UiRadius.xl),
+                        border: Border.all(color: UiTone.surfaceBorder),
+                        boxShadow: UiShadow.card,
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 26,
+                                    backgroundColor: UiTone.primarySoft,
+                                    child: const Text('👨‍🌾', style: TextStyle(fontSize: 26)),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
+                                      child: const Icon(Icons.check, size: 10, color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            driverName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: UiText.h2.copyWith(fontSize: 15.5),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: UiTone.successSoft,
+                                            borderRadius: BorderRadius.circular(UiRadius.xs),
+                                          ),
+                                          child: Text('VERIFIED', style: UiText.caption.copyWith(color: UiTone.success, fontSize: 9, fontWeight: FontWeight.w900)),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star_rounded, color: Colors.amber, size: 15),
+                                        const SizedBox(width: 3),
+                                        Text('4.9 (1,240 drops) • 🛵 EV Scooter', style: UiText.caption.copyWith(fontSize: 11.5, color: UiTone.softText)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text('Reg: TS 09 EQ 4821 • FSSAI Certified', style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          const Divider(height: 1, color: UiTone.surfaceBorder),
+                          const SizedBox(height: 12),
+                          // 1-Click Call & WhatsApp Action Buttons
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _callDriver,
+                                  icon: const Icon(Icons.phone_in_talk_rounded, size: 16, color: UiTone.primary),
+                                  label: Text('Call Partner', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    side: const BorderSide(color: UiTone.primary, width: 1.4),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _sendWhatsAppMessage,
+                                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Colors.white),
+                                  label: Text('WhatsApp Chat', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF25D366),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── D. Delivery Location & Instructions ──
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: UiTone.shellBackground,
+                        borderRadius: BorderRadius.circular(UiRadius.lg),
+                        border: Border.all(color: UiTone.surfaceBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_rounded, color: UiTone.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Text('Doorstep Destination', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            resolvedAddress,
+                            style: UiText.caption.copyWith(color: UiTone.ink, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: UiTone.warningSoft,
+                              borderRadius: BorderRadius.circular(UiRadius.xs),
+                              border: Border.all(color: UiTone.warning.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.notifications_active_outlined, size: 13, color: UiTone.warning),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Instruction: Ring doorbell and place in cold insulated milk bag.',
+                                    style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 10.5, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── E. Booking Summary & Lab Parameters ──
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: UiTone.surface,
+                        borderRadius: BorderRadius.circular(UiRadius.lg),
+                        border: Border.all(color: UiTone.surfaceBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Order Items', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                              Text(widget.orderTitle, style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _buildLabBadge('FAT', '4.5%'),
+                              const SizedBox(width: 8),
+                              _buildLabBadge('SNF', '8.8%'),
+                              const SizedBox(width: 8),
+                              _buildLabBadge('TEMP', '4°C ❄️'),
+                              const SizedBox(width: 8),
+                              _buildLabBadge('SEAL', 'FSSAI ✅'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProgressStep(String label, bool isCompleted) {
+  Widget _buildStepIndicator(String label, bool isCompleted, IconData icon) {
     return Column(
       children: [
         Container(
@@ -391,14 +685,14 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             color: isCompleted ? UiTone.primary : UiTone.surfaceBorder,
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.check, size: 10, color: isCompleted ? Colors.white : Colors.grey),
+          child: Icon(icon, size: 11, color: isCompleted ? Colors.white : Colors.grey),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.bold,
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
             color: isCompleted ? UiTone.primary : Colors.grey,
           ),
         ),
@@ -406,13 +700,33 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     );
   }
 
-  Widget _buildProgressLine(bool isCompleted) {
+  Widget _buildStepLine(bool isCompleted) {
     return Expanded(
       child: Container(
-        height: 3,
+        height: 2.5,
         color: isCompleted ? UiTone.primary : UiTone.surfaceBorder,
         margin: const EdgeInsets.only(bottom: 14),
       ),
     );
   }
+
+  Widget _buildLabBadge(String title, String val) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: UiTone.surfaceMuted,
+          borderRadius: BorderRadius.circular(UiRadius.xs),
+          border: Border.all(color: UiTone.surfaceBorder),
+        ),
+        child: Column(
+          children: [
+            Text(title, style: UiText.caption.copyWith(fontSize: 8.5, color: UiTone.softText, fontWeight: FontWeight.w800)),
+            Text(val, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w900, color: UiTone.ink)),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
