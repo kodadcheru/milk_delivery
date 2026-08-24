@@ -453,6 +453,7 @@
     .status-pending { background: rgba(2, 132, 199, 0.15); color: #38BDF8; }
     .status-delivered { background: rgba(16, 185, 129, 0.2); color: #10B981; }
     .status-skipped { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+    .status-cancelled { background: rgba(239, 68, 68, 0.18); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
     .status-hub { background: rgba(99, 102, 241, 0.15); color: #A5B4FC; }
 
     /* Modals & Forms */
@@ -1153,18 +1154,57 @@
           </div>
         </div>
 
-        <!-- Search & Filter Toolbar -->
-        <div class="table-toolbar">
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
-            <input type="text" id="subSearchInput" placeholder="Search subscriber, phone, address, or product..." oninput="filterSubscriptionsTable()">
+        <!-- KPI Summary Strip -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+          <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total:</span>
+            <span id="subKpiTotal" style="font-size: 14px; font-weight: 800; color: var(--text-main);">0</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status Filter:</label>
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; color: #34D399; font-weight: 700; text-transform: uppercase;">🟢 Active:</span>
+            <span id="subKpiActive" style="font-size: 14px; font-weight: 800; color: #34D399;">0</span>
+          </div>
+          <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; color: #FBBF24; font-weight: 700; text-transform: uppercase;">⏸️ Paused:</span>
+            <span id="subKpiPaused" style="font-size: 14px; font-weight: 800; color: #FBBF24;">0</span>
+          </div>
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; color: #F87171; font-weight: 700; text-transform: uppercase;">🛑 Cancelled:</span>
+            <span id="subKpiCancelled" style="font-size: 14px; font-weight: 800; color: #F87171;">0</span>
+          </div>
+          <div style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.2); padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin-left: auto;">
+            <span style="font-size: 11px; color: #38BDF8; font-weight: 700; text-transform: uppercase;">Est. Monthly Run Rate:</span>
+            <span id="subKpiValue" style="font-size: 14px; font-weight: 800; color: #38BDF8;">₹0</span>
+          </div>
+        </div>
+
+        <!-- Search & Filter Toolbar -->
+        <div class="table-toolbar" style="flex-wrap: wrap; gap: 12px;">
+          <div class="search-box" style="flex: 1; min-width: 240px;">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+            <input type="text" id="subSearchInput" placeholder="Search customer, phone, address, product, ID, hub..." oninput="filterSubscriptionsTable()">
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status:</label>
             <select id="subStatusFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterSubscriptionsTable()">
-              <option value="ALL">All Subscriptions</option>
-              <option value="ACTIVE">ACTIVE Only</option>
-              <option value="PAUSED">PAUSED Only</option>
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">🟢 ACTIVE Only</option>
+              <option value="PAUSED">⏸️ PAUSED Only</option>
+              <option value="CANCELLED">🛑 CANCELLED Only</option>
+            </select>
+
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold; margin-left: 6px;">Schedule:</label>
+            <select id="subScheduleFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterSubscriptionsTable()">
+              <option value="ALL">All Schedules</option>
+              <option value="DAILY">Daily ☀️</option>
+              <option value="ALTERNATE">Alternate Days 🔄</option>
+              <option value="WEEKDAYS">Weekdays 📅</option>
+              <option value="CUSTOM">Custom 🗓️</option>
+            </select>
+
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold; margin-left: 6px;">Depot Hub:</label>
+            <select id="subHubFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterSubscriptionsTable()">
+              <option value="ALL">All Hubs 🏬</option>
             </select>
           </div>
         </div>
@@ -5340,35 +5380,105 @@
         const res = await fetch(`${baseUrl}/admin/subscriptions/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           rawSubscriptions = await res.json();
-          renderSubscriptionsTable(rawSubscriptions);
+          populateSubHubFilter();
+          updateSubscriptionKpis(rawSubscriptions);
+          filterSubscriptionsTable();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    function populateSubHubFilter() {
+      const hubSelect = document.getElementById('subHubFilter');
+      if (!hubSelect) return;
+      const currentVal = hubSelect.value;
+      hubSelect.innerHTML = '<option value="ALL">All Hubs 🏬</option>';
+      if (typeof rawHubs !== 'undefined' && rawHubs.length > 0) {
+        rawHubs.forEach(h => {
+          hubSelect.innerHTML += `<option value="${h.name}">🏢 ${h.name}</option>`;
+        });
+      }
+      hubSelect.value = currentVal || 'ALL';
+    }
+
+    function updateSubscriptionKpis(subs) {
+      const total = subs.length;
+      const active = subs.filter(s => s.status === 'ACTIVE').length;
+      const paused = subs.filter(s => s.status === 'PAUSED').length;
+      const cancelled = subs.filter(s => s.status === 'CANCELLED').length;
+      const totalMonthlyVal = subs
+        .filter(s => s.status === 'ACTIVE')
+        .reduce((sum, s) => sum + (s.estimated_monthly_value || 0), 0);
+
+      const elTotal = document.getElementById('subKpiTotal');
+      const elActive = document.getElementById('subKpiActive');
+      const elPaused = document.getElementById('subKpiPaused');
+      const elCancelled = document.getElementById('subKpiCancelled');
+      const elVal = document.getElementById('subKpiValue');
+
+      if (elTotal) elTotal.innerText = total;
+      if (elActive) elActive.innerText = active;
+      if (elPaused) elPaused.innerText = paused;
+      if (elCancelled) elCancelled.innerText = cancelled;
+      if (elVal) elVal.innerText = '₹' + Math.round(totalMonthlyVal).toLocaleString('en-IN');
     }
 
     function renderSubscriptionsTable(subs) {
       const tbody = document.getElementById('subscriptions-table-body');
       tbody.innerHTML = '';
       if (subs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No matching subscriptions found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:24px;">No matching subscriptions found for selected filters.</td></tr>';
         return;
       }
       subs.forEach(s => {
-        const statusClass = s.status === 'ACTIVE' ? 'status-active' : 'status-paused';
-        const hubBadge = s.hub_name ? `🏢 ${s.hub_name}` : '🏢 Jubilee Hills Depot #1';
+        let statusTag = '';
+        let actionButtons = '';
+
+        if (s.status === 'ACTIVE') {
+          statusTag = '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> ACTIVE</span>';
+          actionButtons = `
+            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'pause')">
+              <i class="fa-solid fa-pause"></i> Pause
+            </button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'cancel')">
+              <i class="fa-solid fa-ban"></i> Cancel
+            </button>
+          `;
+        } else if (s.status === 'PAUSED') {
+          statusTag = '<span class="status-tag status-paused"><i class="fa-solid fa-circle-pause"></i> PAUSED</span>';
+          actionButtons = `
+            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'resume')">
+              <i class="fa-solid fa-play"></i> Resume
+            </button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'cancel')">
+              <i class="fa-solid fa-ban"></i> Cancel
+            </button>
+          `;
+        } else {
+          statusTag = '<span class="status-tag status-cancelled"><i class="fa-solid fa-circle-xmark"></i> CANCELLED</span>';
+          actionButtons = `
+            <button class="btn btn-primary" style="background:#0D7C66; border-color:#0D7C66; padding: 4px 10px; font-size: 11px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'reactivate')">
+              <i class="fa-solid fa-rotate-right"></i> Restart
+            </button>
+          `;
+        }
+
+        const hubBadge = s.hub_name ? `🏢 ${s.hub_name}` : '🏢 Kodad Hub Depot';
+        const schedLabel = s.schedule_type === 'DAILY' ? 'Daily ☀️' : (s.schedule_type === 'ALTERNATE' ? 'Alternate Days 🔄' : (s.schedule_type === 'WEEKDAYS' ? 'Weekdays 📅' : (s.schedule_type || 'Daily')));
+
         tbody.innerHTML += `
-          <tr>
+          <tr style="${s.status === 'CANCELLED' ? 'opacity: 0.75;' : ''}">
             <td>#${s.id}</td>
             <td><strong>${s.customer_name}</strong></td>
             <td>${s.customer_phone}<br><small style="color:var(--text-muted);">${s.customer_address}</small></td>
-            <td><strong>${s.quantity}x ${s.product_name}</strong></td>
+            <td><strong>${s.quantity}x ${s.pack_size || ''} ${s.product_name}</strong></td>
             <td><span class="status-tag status-active" style="font-size: 10px; background: rgba(13, 124, 102, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">${hubBadge}</span></td>
-            <td>${s.schedule_type || s.frequency}</td>
-            <td><span class="status-tag ${statusClass}">${s.status}</span></td>
-            <td><strong>₹${s.estimated_monthly_value.toFixed(2)}</strong></td>
+            <td><span style="font-size: 11.5px; font-weight: 600;">${schedLabel}</span></td>
+            <td>${statusTag}</td>
+            <td><strong>₹${s.estimated_monthly_value.toFixed(0)}</strong></td>
             <td>
-              <button class="btn ${s.status === 'ACTIVE' ? 'btn-secondary' : 'btn-primary'}" style="padding: 4px 10px; font-size: 11px;" onclick="toggleSubscription(${s.id})">
-                ${s.status === 'ACTIVE' ? '<i class="fa-solid fa-pause"></i> Pause' : '<i class="fa-solid fa-play"></i> Resume'}
-              </button>
+              <div style="display:flex; align-items:center;">
+                ${actionButtons}
+              </div>
             </td>
           </tr>
         `;
@@ -5376,8 +5486,15 @@
     }
 
     function filterSubscriptionsTable() {
-      const q = document.getElementById('subSearchInput').value.toLowerCase().trim();
-      const statusFilter = document.getElementById('subStatusFilter').value;
+      const qEl = document.getElementById('subSearchInput');
+      const statusEl = document.getElementById('subStatusFilter');
+      const schedEl = document.getElementById('subScheduleFilter');
+      const hubEl = document.getElementById('subHubFilter');
+
+      const q = qEl ? qEl.value.toLowerCase().trim() : '';
+      const statusFilter = statusEl ? statusEl.value : 'ALL';
+      const schedFilter = schedEl ? schedEl.value : 'ALL';
+      const hubFilter = hubEl ? hubEl.value : 'ALL';
 
       const filtered = rawSubscriptions.filter(s => {
         const textMatch = !q || 
@@ -5385,13 +5502,40 @@
           (s.customer_name && s.customer_name.toLowerCase().includes(q)) ||
           (s.customer_phone && s.customer_phone.includes(q)) ||
           (s.customer_address && s.customer_address.toLowerCase().includes(q)) ||
-          (s.product_name && s.product_name.toLowerCase().includes(q));
+          (s.product_name && s.product_name.toLowerCase().includes(q)) ||
+          (s.hub_name && s.hub_name.toLowerCase().includes(q)) ||
+          (s.schedule_type && s.schedule_type.toLowerCase().includes(q));
 
         const statusMatch = (statusFilter === 'ALL') || (s.status === statusFilter);
-        return textMatch && statusMatch;
+        const schedMatch = (schedFilter === 'ALL') || (s.schedule_type === schedFilter);
+        const hubMatch = (hubFilter === 'ALL') || (s.hub_name && s.hub_name.includes(hubFilter));
+
+        return textMatch && statusMatch && schedMatch && hubMatch;
       });
 
       renderSubscriptionsTable(filtered);
+    }
+
+    async function updateAdminSubscriptionStatus(id, action) {
+      if (action === 'cancel' && !confirm(`Are you sure you want to cancel subscription #${id}? Future deliveries will be stopped.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`${baseUrl}/admin/subscriptions/${id}/toggle/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          body: JSON.stringify({ action: action })
+        });
+        if (res.ok) {
+          loadSubscriptions();
+          loadDeliveries();
+          loadDashboard();
+        } else {
+          alert('Could not update subscription status.');
+        }
+      } catch (e) {
+        console.error('Error updating subscription status:', e);
+      }
     }
 
     function openCreateSubModal() {

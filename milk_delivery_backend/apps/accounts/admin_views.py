@@ -800,9 +800,11 @@ class AdminSubscriptionsListView(APIView):
             assigned_hub = s.hub or s.customer.assigned_hub
             data.append({
                 "id": s.id,
+                "customer_id": s.customer_id,
                 "customer_name": f"{s.customer.first_name or s.customer.username} {s.customer.last_name or ''}".strip(),
                 "customer_phone": s.customer.phone or "+91 9876543210",
-                "customer_address": s.customer.address or "Jubilee Hills, Hyderabad",
+                "customer_address": s.delivery_address or (s.customer.address if s.customer else "") or "Kodad, Telangana",
+                "product_id": s.product_id,
                 "product_name": s.product.name,
                 "quantity": s.quantity,
                 "pack_size": s.pack_size or (s.product.unit_quantity if s.product else "1 Litre"),
@@ -810,8 +812,9 @@ class AdminSubscriptionsListView(APIView):
                 "schedule_type": s.schedule_type,
                 "frequency": s.schedule_type,
                 "status": s.status,
-                "hub_name": assigned_hub.name if assigned_hub else "Jubilee Hills Depot #1",
-                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-HYD-01",
+                "hub_id": assigned_hub.id if assigned_hub else None,
+                "hub_name": assigned_hub.name if assigned_hub else "Kodad Hub Depot",
+                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-KOD-01",
                 "start_date": str(s.start_date),
                 "created_at": s.created_at.strftime("%d %b %Y"),
                 "estimated_monthly_value": float(s.product.price_per_unit * s.quantity * 30),
@@ -823,21 +826,47 @@ class AdminSubscriptionToggleView(APIView):
     permission_classes = [IsAdminOrStaff]
 
     def post(self, request, pk):
+        from apps.deliveries.models import DeliveryTask
+        from datetime import date, timedelta
+
         try:
             sub = Subscription.objects.get(pk=pk)
         except Subscription.DoesNotExist:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
         action = request.data.get("action", "toggle")
+        prev_status = sub.status
+
         if action == "pause":
             sub.status = Subscription.Statuses.PAUSED
-        elif action == "resume":
+        elif action in ("resume", "reactivate"):
             sub.status = Subscription.Statuses.ACTIVE
         elif action == "cancel":
             sub.status = Subscription.Statuses.CANCELLED
         else:
             sub.status = Subscription.Statuses.PAUSED if sub.status == Subscription.Statuses.ACTIVE else Subscription.Statuses.ACTIVE
         sub.save()
+
+        if sub.status == Subscription.Statuses.CANCELLED:
+            DeliveryTask.objects.filter(
+                subscription=sub,
+                status=DeliveryTask.Statuses.PENDING,
+            ).update(status=DeliveryTask.Statuses.SKIPPED)
+        elif prev_status == Subscription.Statuses.CANCELLED and sub.status == Subscription.Statuses.ACTIVE:
+            tomorrow = date.today() + timedelta(days=1)
+            if not DeliveryTask.objects.filter(subscription=sub, delivery_date=tomorrow).exists():
+                DeliveryTask.objects.create(
+                    subscription=sub,
+                    hub=sub.hub,
+                    delivery_date=tomorrow,
+                    delivery_slot=sub.delivery_slot or "06:00 AM",
+                    delivery_address=sub.delivery_address or (sub.customer.address if sub.customer else ""),
+                    latitude=sub.delivery_latitude,
+                    longitude=sub.delivery_longitude,
+                    customer_name=sub.customer.get_full_name() or sub.customer.phone if sub.customer else "Customer",
+                    customer_phone=sub.customer.phone if sub.customer else "",
+                    status=DeliveryTask.Statuses.PENDING,
+                )
 
         return Response({
             "message": f"Subscription #{sub.id} status updated to {sub.status}",
