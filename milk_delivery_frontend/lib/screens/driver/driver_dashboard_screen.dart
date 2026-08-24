@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
+import '../../services/route_optimizer.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
@@ -248,6 +250,89 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     );
   }
 
+  void _startDeliveriesWithGoogleMapsTSP(BuildContext context) async {
+    final filterTag = _selectedShift == 'MORNING' ? 'am' : 'pm';
+    final shiftTasks = widget.state.deliveries.where((t) => t.slotTime.toLowerCase().contains(filterTag)).toList();
+    final tasksToRoute = (shiftTasks.isNotEmpty ? shiftTasks : widget.state.deliveries).where((t) {
+      final sub = t.subscriptionDetail;
+      return t.status == 'PENDING' && sub?.status != 'PAUSED';
+    }).toList();
+
+    final allShiftTasks = shiftTasks.isNotEmpty ? shiftTasks : widget.state.deliveries;
+
+    if (tasksToRoute.isEmpty && allShiftTasks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: UiTone.warning,
+          content: Text('⚠️ No delivery stops found for this shift!'),
+        ),
+      );
+      return;
+    }
+
+    final targetTasks = tasksToRoute.isNotEmpty ? tasksToRoute : allShiftTasks;
+
+    // 1. Get driver live GPS position
+    double driverLat = widget.state.currentUser?.latitude ?? 17.001734;
+    double driverLng = widget.state.currentUser?.longitude ?? 79.9625;
+    if (driverLat == 0.0) driverLat = 17.001734;
+    if (driverLng == 0.0) driverLng = 79.9625;
+
+    try {
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+          .timeout(const Duration(seconds: 3));
+      driverLat = pos.latitude;
+      driverLng = pos.longitude;
+    } catch (_) {}
+
+    // 2. Solve TSP shortest path
+    final hub = widget.state.nearestCoveringHub;
+    final hubModel = HubLocationModel(
+      id: hub?['hub_code']?.toString() ?? 'HUB-KDD-01',
+      name: hub?['name']?.toString() ?? 'Depot Hub',
+      address: hub?['address']?.toString() ?? 'Kodad',
+      latitude: driverLat,
+      longitude: driverLng,
+      managerName: hub?['manager_name']?.toString() ?? 'Dispatcher',
+      managerPhone: hub?['manager_phone']?.toString() ?? '',
+    );
+    final tspResult = RouteOptimizer.optimizeBatchRoute(hub: hubModel, tasks: targetTasks);
+    final orderedStops = tspResult.orderedStops;
+
+    // 3. Drop all pins in external Google Maps
+    if (orderedStops.isNotEmpty) {
+      final origin = '$driverLat,$driverLng';
+      final destination = '${orderedStops.last.customerLatitude},${orderedStops.last.customerLongitude}';
+      String waypointsParam = '';
+      if (orderedStops.length > 1) {
+        final intermediate = orderedStops.sublist(0, orderedStops.length - 1);
+        waypointsParam = '&waypoints=${intermediate.map((t) => '${t.customerLatitude},${t.customerLongitude}').join('|')}';
+      }
+      final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination$waypointsParam&travelmode=driving';
+      final uri = Uri.parse(googleMapsUrl);
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+        }
+      } catch (_) {}
+    }
+
+    // 4. Open in-app Route Map screen with sequenced stops
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => DriverRouteMapScreen(
+            state: widget.state,
+            tasks: orderedStops.isNotEmpty ? orderedStops : allShiftTasks,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasks = widget.state.deliveries;
@@ -436,6 +521,25 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _startDeliveriesWithGoogleMapsTSP(context),
+                      icon: const Icon(Icons.navigation_rounded, size: 18, color: Colors.white),
+                      label: Text(
+                        '🚀 Start Deliveries & Drop TSP Pins in Google Maps',
+                        style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.accentBlue,
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                      ),
+                    ),
                   ),
                 ],
               ),
