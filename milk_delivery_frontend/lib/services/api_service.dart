@@ -621,7 +621,64 @@ class ApiService {
     return false;
   }
 
-  // ── 8. Admin Analytics Summary ──
+  // ── 8. Delivery Reassignment & Hub Fleet Balancing ──
+  static Future<bool> reassignDeliveryTask(int taskId, int? driverId) async {
+    try {
+      final res = await _executeWithRetry(() => http.patch(
+            Uri.parse('$baseUrl/admin/deliveries/$taskId/reassign/'),
+            headers: _headers,
+            body: jsonEncode({'driver_id': driverId}),
+          ));
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return false;
+  }
+
+  static Future<bool> reassignDeliveryTasksBatch(List<int> taskIds, int? driverId) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/admin/deliveries/reassign/'),
+            headers: _headers,
+            body: jsonEncode({
+              'task_ids': taskIds,
+              'driver_id': driverId,
+            }),
+          ));
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return false;
+  }
+
+  static Future<Map<String, dynamic>?> rebalanceHubDeliveries(String hubCode) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/admin/hubs/$hubCode/rebalance/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
+
+  // ── 9. Admin Analytics Summary ──
   static Future<Map<String, dynamic>?> fetchDeliverySummary() async {
     try {
       final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/deliveries/summary/'), headers: _headers));

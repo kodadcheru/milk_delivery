@@ -946,21 +946,40 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // WHO ORDERED ROSTER SECTION
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildOrdersRosterSection(List<DeliveryTaskModel> subscriptions, List<LiveOrderModel> express) {
+    final unassignedCount = subscriptions.where((t) => t.driverId == null).length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Expanded(
-              child: Text(
-                '📋 Customer Orders in Hub Zone:',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '📋 Customer Orders in Hub Zone:',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                  ),
+                  Text(
+                    '${subscriptions.length + express.length} Orders • $unassignedCount Unassigned',
+                    style: UiText.label.copyWith(fontSize: 10.5, color: unassignedCount > 0 ? UiTone.warning : UiTone.primary, fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 6),
-            Text('${subscriptions.length + express.length} Active Orders', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
+            ElevatedButton.icon(
+              onPressed: () => _handleAutoBalanceFleet(),
+              icon: const Icon(Icons.auto_fix_high_rounded, size: 13),
+              label: Text('⚡ Auto-Balance', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: UiTone.accentBlue,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -973,6 +992,182 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         if (_selectedFilter == 0 || _selectedFilter == 1)
           ...subscriptions.map((task) => _buildSubscriptionCustomerCard(task)),
       ],
+    );
+  }
+
+  void _handleAutoBalanceFleet() async {
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+    final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-KDD-01') : 'HUB-KDD-01';
+
+    final res = await widget.state.autoBalanceHubDeliveries(hubCode);
+    if (mounted) {
+      if (res != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: UiTone.accentBlue,
+            content: Text(res['message'] ?? '⚡ Fleet automatically balanced across active delivery boys!'),
+          ),
+        );
+        setState(() {});
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: UiTone.warning,
+            content: Text(ApiService.lastError ?? 'Could not balance fleet'),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAssignDriverModal(DeliveryTaskModel task) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final drivers = _liveFleet.isNotEmpty ? _liveFleet : widget.state.hubDrivers;
+        return Container(
+          decoration: const BoxDecoration(
+            color: UiTone.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.lg)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: UiTone.surfaceBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Assign Delivery Boy',
+                    style: UiText.h2.copyWith(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: UiTone.infoSoft,
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
+                    ),
+                    child: Text(
+                      'Stop #${task.id}',
+                      style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Customer: ${task.customerName} • ${task.deliveryAddress}',
+                style: UiText.body.copyWith(fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Divider(height: 24),
+              Text(
+                'Select Delivery Partner for this stop:',
+                style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              if (drivers.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: Text('No delivery boys linked to this hub yet.'),
+                  ),
+                )
+              else
+                ...drivers.map((drv) {
+                  final drvId = drv['id'] as int?;
+                  final drvName = drv['name'] ?? drv['username'] ?? 'Delivery Boy';
+                  final drvPhone = drv['phone'] ?? '';
+                  final isAssigned = task.driverId == drvId;
+                  final stopsCount = widget.state.deliveries.where((d) => d.driverId == drvId).length;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isAssigned ? UiTone.infoSoft : UiTone.shellBackground,
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
+                      border: Border.all(
+                        color: isAssigned ? UiTone.accentBlue : UiTone.surfaceBorder,
+                        width: isAssigned ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isAssigned ? UiTone.accentBlue : UiTone.primarySoft,
+                        foregroundColor: isAssigned ? Colors.white : UiTone.primary,
+                        child: const Text('🛵', style: TextStyle(fontSize: 16)),
+                      ),
+                      title: Text(drvName, style: UiText.bodyStrong.copyWith(fontSize: 13.5)),
+                      subtitle: Text('$drvPhone • $stopsCount Stops Assigned', style: UiText.body.copyWith(fontSize: 11)),
+                      trailing: isAssigned
+                          ? const Icon(Icons.check_circle_rounded, color: UiTone.accentBlue)
+                          : OutlinedButton(
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                final ok = await widget.state.assignTaskToDriver(task.id, drvId);
+                                if (ok && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: UiTone.success,
+                                      content: Text('✅ Stop #${task.id} assigned to $drvName!'),
+                                    ),
+                                  );
+                                  setState(() {});
+                                }
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: UiTone.primary,
+                                side: const BorderSide(color: UiTone.primary),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              ),
+                              child: const Text('Assign'),
+                            ),
+                    ),
+                  );
+                }),
+              const SizedBox(height: 10),
+              if (task.driverId != null)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final ok = await widget.state.assignTaskToDriver(task.id, null);
+                      if (ok && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: UiTone.warning,
+                            content: Text('⚠️ Stop moved back to Unassigned / Open Pool.'),
+                          ),
+                        );
+                        setState(() {});
+                      }
+                    },
+                    icon: const Icon(Icons.remove_circle_outline, color: UiTone.error, size: 16),
+                    label: Text(
+                      'Unassign (Move to Open Pool)',
+                      style: UiText.label.copyWith(color: UiTone.error, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1267,24 +1462,55 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 4),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.two_wheeler_rounded, size: 14, color: UiTone.primary),
-              const SizedBox(width: 4),
-              Text(
-                _liveFleet.isNotEmpty
-                    ? 'Driver: ${_liveFleet[task.id % _liveFleet.length]['name']} (Route #${task.id % 5 + 1})'
-                    : 'Driver Partner (Route #${task.id % 5 + 1})',
-                style: UiText.label.copyWith(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.primary),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Prepaid Wallet (Auto)',
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body.copyWith(fontSize: 10),
+              // Interactive Assigned Driver Badge / Selector
+              InkWell(
+                onTap: () => _showAssignDriverModal(task),
+                borderRadius: BorderRadius.circular(UiRadius.xs),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: task.driverId != null ? UiTone.infoSoft : UiTone.warningSoft,
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                    border: Border.all(
+                      color: task.driverId != null
+                          ? UiTone.accentBlue.withValues(alpha: 0.4)
+                          : UiTone.warning.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.two_wheeler_rounded,
+                        size: 14,
+                        color: task.driverId != null ? UiTone.accentBlue : UiTone.warning,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        task.driverDetail != null
+                            ? '🛵 ${task.driverDetail!.name}'
+                            : (task.driverId != null ? '🛵 Driver #${task.driverId}' : '⚠️ Unassigned (Tap to Assign)'),
+                        style: UiText.caption.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: task.driverId != null ? UiTone.accentBlue : UiTone.warning,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 16,
+                        color: task.driverId != null ? UiTone.accentBlue : UiTone.warning,
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              Text(
+                'Prepaid Wallet (Auto)',
+                style: UiText.body.copyWith(fontSize: 10.5),
               ),
             ],
           ),

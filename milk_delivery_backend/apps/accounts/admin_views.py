@@ -1214,14 +1214,36 @@ class AdminHubRebalanceView(APIView):
             return Response({"message": f"No pending delivery tasks found for hub {hub.name}."}, status=status.HTTP_200_OK)
 
         if active_drivers and tasks:
+            driver_counts = {d.id: 0 for d in active_drivers}
             for idx, task in enumerate(tasks):
                 assigned_driver = active_drivers[idx % len(active_drivers)]
                 task.driver = assigned_driver
                 task.hub = hub
                 task.save()
+                driver_counts[assigned_driver.id] += 1
+
+            # Send in-app notification to each driver
+            for driver in active_drivers:
+                count = driver_counts.get(driver.id, 0)
+                if count > 0:
+                    Notification.objects.create(
+                        user=driver,
+                        title="🥛 Morning Route Balanced & Assigned",
+                        message=f"You have been assigned {count} morning delivery stops by {hub.name} dispatch.",
+                        notification_type=Notification.Types.DELIVERY,
+                    )
+
+            try:
+                from apps.core.consumers import broadcast_hub_event
+                broadcast_hub_event(hub.hub_code, "route_rebalanced", {
+                    "hub_code": hub.hub_code,
+                    "tasks_count": len(tasks),
+                })
+            except Exception:
+                pass
 
         return Response({
-            "message": f"Successfully rebalanced {len(tasks)} delivery tasks across {len(active_drivers)} active salaried delivery boys at {hub.name}.",
+            "message": f"Successfully rebalanced {len(tasks)} delivery tasks across {len(active_drivers)} active delivery boys at {hub.name}.",
             "hub_code": hub_code,
             "drivers_count": len(active_drivers),
             "rebalanced_tasks": len(tasks),
@@ -1401,31 +1423,72 @@ class AdminCustomerExportView(APIView):
 
 
 class AdminDeliveryReassignView(APIView):
-    """Reassign a delivery task to a different driver."""
+    """Reassign single or multiple delivery tasks to a specific driver."""
     permission_classes = [IsAdminOrHubManager]
 
-    def patch(self, request, pk):
+    def post(self, request):
+        """Batch reassign tasks: { "task_ids": [1, 2, 3], "driver_id": 4 }"""
+        task_ids = request.data.get("task_ids", [])
         driver_id = request.data.get("driver_id")
-        if not driver_id:
-            return Response({"error": "driver_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not task_ids or not isinstance(task_ids, list):
+            return Response({"error": "task_ids list is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        driver = None
+        if driver_id:
+            driver = User.objects.filter(pk=driver_id, role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]).first()
+            if not driver:
+                return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        updated_count = DeliveryTask.objects.filter(id__in=task_ids).update(driver=driver)
+
+        if driver and updated_count > 0:
+            driver_name = f"{driver.first_name} {driver.last_name}".strip() or driver.username
+            Notification.objects.create(
+                user=driver,
+                title="🚚 New Stops Assigned to Your Route",
+                message=f"{updated_count} delivery stop(s) have been assigned to your route.",
+                notification_type=Notification.Types.DELIVERY,
+            )
+
+        return Response({
+            "message": f"Successfully updated {updated_count} delivery task(s).",
+            "updated_count": updated_count,
+            "driver_id": driver.id if driver else None,
+            "driver_name": f"{driver.first_name} {driver.last_name}".strip() if driver else "Unassigned",
+        })
+
+    def patch(self, request, pk=None):
+        driver_id = request.data.get("driver_id")
 
         task = DeliveryTask.objects.filter(pk=pk).first()
         if not task:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        driver = User.objects.filter(pk=driver_id, role=User.Roles.DELIVERY_PARTNER).first()
-        if not driver:
-            return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+        driver = None
+        if driver_id:
+            driver = User.objects.filter(pk=driver_id, role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]).first()
+            if not driver:
+                return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
 
         old_driver = f"{task.driver.first_name} {task.driver.last_name}".strip() if task.driver else "Unassigned"
         task.driver = driver
-        task.save()
+        task.save(update_fields=["driver"])
 
-        new_driver = f"{driver.first_name} {driver.last_name}".strip() or driver.username
+        new_driver = f"{driver.first_name} {driver.last_name}".strip() if driver else "Unassigned"
+
+        if driver:
+            Notification.objects.create(
+                user=driver,
+                title="🚚 Stop Assigned to Your Route",
+                message=f"Delivery task #{task.id} for {task.customerName if hasattr(task, 'customerName') else 'customer'} has been assigned to you.",
+                notification_type=Notification.Types.DELIVERY,
+            )
+
         return Response({
             "message": f"Task #{task.id} reassigned from '{old_driver}' to '{new_driver}'",
             "task_id": task.id,
-            "new_driver_id": driver.id,
+            "new_driver_id": driver.id if driver else None,
             "new_driver_name": new_driver,
         })
 

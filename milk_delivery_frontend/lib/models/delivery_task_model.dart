@@ -118,7 +118,7 @@ class DeliveryTaskModel {
       id: json['id'] ?? 0,
       subscriptionId: json['subscription'] ?? 0,
       subscriptionDetail: subDetail,
-      driverId: json['driver'],
+      driverId: int.tryParse(json['driver']?.toString() ?? '') ?? drvDetail?.id,
       driverDetail: drvDetail,
       customerName: json['customer_name'] ?? 'Customer',
       customerPhone: json['customer_phone'] ?? '',

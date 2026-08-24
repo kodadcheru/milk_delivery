@@ -50,6 +50,7 @@ class AppState extends ChangeNotifier {
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
   List<Map<String, dynamic>> dailyMilkBatches = [];
   List<Map<String, dynamic>> qualityHistory = [];
+  List<Map<String, dynamic>> hubDrivers = [];
 
   List<Map<String, dynamic>> locationHubs = [
     {
@@ -503,6 +504,31 @@ class AppState extends ChangeNotifier {
     return result;
   }
 
+  Future<bool> assignTaskToDriver(int taskId, int? driverId) async {
+    final success = await ApiService.reassignDeliveryTask(taskId, driverId);
+    if (success) {
+      await reloadAllData(silent: true);
+    }
+    return success;
+  }
+
+  Future<bool> bulkAssignTasksToDriver(List<int> taskIds, int? driverId) async {
+    final success = await ApiService.reassignDeliveryTasksBatch(taskIds, driverId);
+    if (success) {
+      await reloadAllData(silent: true);
+    }
+    return success;
+  }
+
+  Future<Map<String, dynamic>?> autoBalanceHubDeliveries([String? hubCode]) async {
+    final targetHub = hubCode ?? activeHubCode;
+    final res = await ApiService.rebalanceHubDeliveries(targetHub);
+    if (res != null) {
+      await reloadAllData(silent: true);
+    }
+    return res;
+  }
+
   Future<void> loadQualityHistory() async {
     qualityHistory = await ApiService.fetchQualityHistory();
     notifyListeners();
@@ -605,6 +631,7 @@ class AppState extends ChangeNotifier {
 
       if (currentRole == 'ADMIN' || currentRole == 'PROVIDER' || currentRole == 'HUB_MANAGER') {
         adminSummary = await ApiService.fetchDeliverySummary();
+        hubDrivers = await ApiService.fetchFleet();
         if (_providerHeartbeatTimer == null) {
           startProviderRealtimeSync();
         }

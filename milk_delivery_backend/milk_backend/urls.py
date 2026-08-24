@@ -110,6 +110,7 @@ urlpatterns = [
     path("api/admin/vacation-pauses/", AdminVacationPausesView.as_view(), name="admin_vacation_pauses"),
     path("api/admin/customers/export/", AdminCustomerExportView.as_view(), name="admin_customer_export"),
     path("api/admin/deliveries/<int:pk>/reassign/", AdminDeliveryReassignView.as_view(), name="admin_delivery_reassign"),
+    path("api/admin/deliveries/reassign/", AdminDeliveryReassignView.as_view(), name="admin_delivery_reassign_batch"),
     path("api/admin/broadcast-notification/", AdminBroadcastNotificationView.as_view(), name="admin_broadcast"),
     path("api/admin/hubs/", AdminHubsView.as_view(), name="admin_hubs"),
     path("api/admin/hubs/cleanup/", AdminHubCleanupView.as_view(), name="admin_hubs_cleanup"),

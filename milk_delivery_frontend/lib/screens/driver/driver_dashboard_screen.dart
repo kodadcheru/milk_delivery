@@ -625,7 +625,26 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     ),
                     child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
+                  if (task.driverId == widget.state.currentUser?.id)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: UiTone.successSoft,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                      ),
+                      child: Text('ASSIGNED TO YOU', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.success)),
+                    )
+                  else if (task.driverId == null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: UiTone.warningSoft,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                      ),
+                      child: Text('OPEN POOL', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.warning)),
+                    ),
+                  const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                     decoration: BoxDecoration(

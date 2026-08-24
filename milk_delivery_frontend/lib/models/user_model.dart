@@ -39,6 +39,7 @@ class UserModel {
   });
 
   String get fullName => '$firstName $lastName'.trim().isEmpty ? (username.isNotEmpty ? username : 'Customer') : '$firstName $lastName'.trim();
+  String get name => fullName;
 
   bool get isCustomer => role.toUpperCase() == 'CUSTOMER';
   bool get isDriver => role.toUpperCase() == 'DRIVER';
