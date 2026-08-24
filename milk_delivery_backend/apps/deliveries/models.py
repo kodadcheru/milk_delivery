@@ -92,8 +92,8 @@ class DeliveryTask(models.Model):
         DELIVERED = "DELIVERED", "Delivered at Doorstep"
         SKIPPED = "SKIPPED", "Skipped / Paused"
 
-    subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.CASCADE, related_name="deliveries", null=True, blank=True)
-    order = models.ForeignKey("LiveOrder", on_delete=models.CASCADE, related_name="deliveries", null=True, blank=True)
+    subscription = models.ForeignKey(sub_models.Subscription, on_delete=models.SET_NULL, related_name="deliveries", null=True, blank=True)
+    order = models.ForeignKey("LiveOrder", on_delete=models.SET_NULL, related_name="deliveries", null=True, blank=True)
     batch = models.ForeignKey('DailyMilkBatch', null=True, blank=True, on_delete=models.SET_NULL, related_name='delivery_tasks')
     hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_deliveries")

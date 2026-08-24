@@ -197,6 +197,19 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Subscription.objects.filter(hub=user.assigned_hub)
         return Subscription.objects.filter(customer=user)
 
+    def perform_destroy(self, instance):
+        from apps.deliveries.models import DeliveryTask
+
+        # Soft-cancel the subscription to preserve past delivery and financial audit history
+        instance.status = Subscription.Statuses.CANCELLED
+        instance.save(update_fields=["status"])
+
+        # Only cancel future PENDING delivery tasks; keep all past DELIVERED tasks intact
+        DeliveryTask.objects.filter(
+            subscription=instance,
+            status=DeliveryTask.Statuses.PENDING,
+        ).update(status=DeliveryTask.Statuses.SKIPPED)
+
 
 class SubscriptionPauseView(APIView):
     permission_classes = [permissions.IsAuthenticated]
