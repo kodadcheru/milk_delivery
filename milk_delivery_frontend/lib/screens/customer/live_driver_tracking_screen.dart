@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/route_optimizer.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
 import 'help_support_screen.dart';
@@ -70,13 +72,56 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
     );
 
-    final userLat = widget.state.currentUser?.latitude ?? 17.4319;
-    final userLon = widget.state.currentUser?.longitude ?? 78.4073;
-    _customerLocation = LatLng(userLat, userLon);
+    // 1. Dynamically resolve Customer Doorstep GPS coordinates
+    double custLat = 17.4319;
+    double custLon = 78.4073;
 
-    // Initial driver spawn location (~2.1 km away from customer doorstep)
-    _driverLocation = LatLng(_customerLocation.latitude - 0.014, _customerLocation.longitude - 0.016);
+    if (widget.subscriptionTask != null && widget.subscriptionTask!.customerLatitude != 0) {
+      custLat = widget.subscriptionTask!.customerLatitude;
+      custLon = widget.subscriptionTask!.customerLongitude;
+    } else if (widget.liveOrder != null && widget.liveOrder!.deliveryLatitude != 0) {
+      custLat = widget.liveOrder!.deliveryLatitude;
+      custLon = widget.liveOrder!.deliveryLongitude;
+    } else if (widget.state.activeAddress != null && widget.state.activeAddress!.latitude != 0) {
+      custLat = widget.state.activeAddress!.latitude;
+      custLon = widget.state.activeAddress!.longitude;
+    } else if (widget.state.currentUser?.latitude != null && widget.state.currentUser!.latitude != 0) {
+      custLat = widget.state.currentUser!.latitude!;
+      custLon = widget.state.currentUser!.longitude!;
+    } else if (widget.state.currentLat != 0) {
+      custLat = widget.state.currentLat;
+      custLon = widget.state.currentLon;
+    }
+    _customerLocation = LatLng(custLat, custLon);
 
+    // 2. Dynamically resolve Location Hub / Driver Starting GPS Coordinates
+    double originLat = custLat - 0.015;
+    double originLon = custLon - 0.018;
+
+    if (widget.subscriptionTask?.driverDetail?.latitude != null && widget.subscriptionTask!.driverDetail!.latitude != 0) {
+      originLat = widget.subscriptionTask!.driverDetail!.latitude;
+      originLon = widget.subscriptionTask!.driverDetail!.longitude;
+    } else if (widget.state.locationHubs.isNotEmpty) {
+      final hub = widget.state.locationHubs.first;
+      final hLat = hub['latitude'];
+      final hLon = hub['longitude'];
+      if (hLat != null && hLon != null) {
+        originLat = (hLat is num) ? hLat.toDouble() : (double.tryParse(hLat.toString()) ?? originLat);
+        originLon = (hLon is num) ? hLon.toDouble() : (double.tryParse(hLon.toString()) ?? originLon);
+      }
+    }
+    _driverLocation = LatLng(originLat, originLon);
+
+    // 3. Compute real-time Haversine distance and dynamic ETA
+    _distanceKm = RouteOptimizer.calculateDistanceKm(
+      _driverLocation.latitude,
+      _driverLocation.longitude,
+      _customerLocation.latitude,
+      _customerLocation.longitude,
+    );
+    _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
+
+    // 4. Generate dynamic road-interpolated waypoints
     _generateRouteWaypoints();
     _startDriverTrackingSimulation();
   }
@@ -84,16 +129,24 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   void _generateRouteWaypoints() {
     final start = _driverLocation;
     final end = _customerLocation;
+    const steps = 12;
+    final points = <LatLng>[start];
 
-    _routePoints = [
-      start,
-      LatLng(start.latitude + 0.0025, start.longitude + 0.0018),
-      LatLng(start.latitude + 0.0055, start.longitude + 0.0042),
-      LatLng(start.latitude + 0.0080, start.longitude + 0.0075),
-      LatLng(start.latitude + 0.0105, start.longitude + 0.0110),
-      LatLng(start.latitude + 0.0125, start.longitude + 0.0138),
-      end,
-    ];
+    final deltaLat = (end.latitude - start.latitude) / steps;
+    final deltaLon = (end.longitude - start.longitude) / steps;
+
+    for (int i = 1; i < steps; i++) {
+      // Introduce subtle curvature mimicking urban road grid
+      final curve = sin(i * pi / steps) * 0.0015;
+      points.add(
+        LatLng(
+          start.latitude + (deltaLat * i) + curve,
+          start.longitude + (deltaLon * i) - (curve * 0.4),
+        ),
+      );
+    }
+    points.add(end);
+    _routePoints = points;
   }
 
   void _startDriverTrackingSimulation() {
@@ -104,9 +157,13 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         setState(() {
           _currentRouteIndex++;
           _driverLocation = _routePoints[_currentRouteIndex];
-
-          if (_etaMinutes > 2) _etaMinutes -= 2;
-          if (_distanceKm > 0.3) _distanceKm = (_distanceKm - 0.35).clamp(0.1, 10.0);
+          _distanceKm = RouteOptimizer.calculateDistanceKm(
+            _driverLocation.latitude,
+            _driverLocation.longitude,
+            _customerLocation.latitude,
+            _customerLocation.longitude,
+          );
+          _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
         });
 
         final centerLat = (_driverLocation.latitude + _customerLocation.latitude) / 2;
@@ -116,8 +173,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         );
       } else {
         setState(() {
+          _distanceKm = 0.0;
           _etaMinutes = 1;
-          _distanceKm = 0.1;
         });
       }
     });

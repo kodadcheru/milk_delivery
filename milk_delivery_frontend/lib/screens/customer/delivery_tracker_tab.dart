@@ -868,16 +868,52 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   ],
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(UiRadius.xs),
-                  ),
-                  child: Text(
-                    task.status,
-                    style: UiText.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                      ),
+                      child: Text(
+                        task.status,
+                        style: UiText.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (task.status != 'DELIVERED' && task.status != 'SKIPPED')
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (ctx) => LiveDriverTrackingScreen(
+                                state: widget.state,
+                                subscriptionTask: task,
+                                orderTitle: product?.name ?? 'Fresh A2 Cow Milk',
+                                deliveryAddress: task.deliveryAddress,
+                                driverName: task.driverDetail?.fullName.isNotEmpty == true ? task.driverDetail!.fullName : 'Assigned Partner',
+                                driverPhone: task.driverDetail?.phone ?? '',
+                                deliveryOtp: '06AM',
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: UiTone.primarySoft,
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
+                          ),
+                          child: Text(
+                            'Track Partner 🛵',
+                            style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800, fontSize: 10.5),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
