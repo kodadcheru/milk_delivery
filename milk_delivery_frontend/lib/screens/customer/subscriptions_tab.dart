@@ -53,7 +53,8 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
   @override
   Widget build(BuildContext context) {
     final subs = widget.state.subscriptions;
-    final activeSubs = subs.where((s) => s.status == 'ACTIVE').toList();
+    final visibleSubs = subs.where((s) => s.status != 'CANCELLED').toList();
+    final activeSubs = visibleSubs.where((s) => s.status == 'ACTIVE').toList();
 
     double totalDailyCost = 0.0;
     int totalDailyUnits = 0;
@@ -216,17 +217,25 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               ],
             ),
             const SizedBox(height: 8),
-
-            if (subs.isEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Center(
+            if (visibleSubs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: UiTone.surface,
+                      borderRadius: BorderRadius.circular(UiRadius.lg),
+                      border: Border.all(color: UiTone.surfaceBorder),
+                    ),
                     child: Column(
                       children: [
-                        const Text('🥛', style: TextStyle(fontSize: 48)),
+                        const Text('🥛', style: TextStyle(fontSize: 44)),
                         const SizedBox(height: 12),
-                        const Text('No Active Subscriptions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text(
+                          'No Active Subscriptions',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                         const SizedBox(height: 6),
                         const Text(
                           'Set up daily deliveries for Milk, Meat, Eggs, or Water Cans.',
@@ -247,10 +256,10 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: subs.length,
+                itemCount: visibleSubs.length,
                 separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
                 itemBuilder: (ctx, idx) {
-                  final sub = subs[idx];
+                  final sub = visibleSubs[idx];
                   final isPaused = sub.status == 'PAUSED';
                   final pName = sub.productDetail?.name ?? 'Daily Farm Milk';
                   final pPrice = sub.displayPrice;
@@ -629,15 +638,23 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.lg)),
         title: const Text('Cancel Subscription?'),
-        content: const Text('Are you sure you want to stop daily morning deliveries for this item?'),
+        content: Text('Are you sure you want to cancel daily morning deliveries for ${sub.productDetail?.name ?? "this subscription"}?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Keep Active')),
           ElevatedButton(
-            onPressed: () {
-              widget.state.cancelSubscription(sub.id);
+            onPressed: () async {
               Navigator.pop(ctx);
+              await widget.state.cancelSubscription(sub.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🛑 Subscription for ${sub.productDetail?.name ?? "item"} cancelled'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
             child: const Text('Cancel Subscription'),
           ),
         ],
