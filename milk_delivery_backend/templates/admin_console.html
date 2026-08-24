@@ -1800,29 +1800,39 @@
 
     <!-- ── Tab: Express Orders ── -->
     <div id="tab-express-orders" style="display: none;">
-      <div class="section-header">
+      <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
         <div>
-          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;">⚡ Express / Live Orders</h2>
-          <p style="color: var(--text-muted); font-size: 13px;">One-time on-demand orders placed via the app</p>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> ⚡ Express / Live Orders</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">On-demand live orders placed via the mobile app with real-time dispatch management</p>
         </div>
-        <button class="btn btn-primary" onclick="loadExpressOrders()" style="padding: 8px 16px;">
-          <i class="fa-solid fa-rotate"></i> Refresh
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="loadExpressOrders()" style="padding: 8px 16px;">
+            <i class="fa-solid fa-rotate"></i> Refresh Orders
+          </button>
+        </div>
       </div>
 
-      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+      <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 20px;">
         <div class="stat-card"><div class="stat-value" id="eo-total">0</div><div class="stat-label">Total Orders</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-preparing" style="color: #F59E0B;">0</div><div class="stat-label">Preparing</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-dispatched" style="color: #0284C7;">0</div><div class="stat-label">Dispatched</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-delivered" style="color: var(--primary-accent);">0</div><div class="stat-label">Delivered</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-preparing" style="color: #F59E0B;">0</div><div class="stat-label">🟡 Preparing</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-dispatched" style="color: #0284C7;">0</div><div class="stat-label">🔵 Out for Delivery</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-delivered" style="color: var(--primary-accent);">0</div><div class="stat-label">🟢 Delivered</div></div>
+        <div class="stat-card"><div class="stat-value" id="eo-revenue" style="color: #38BDF8;">₹0</div><div class="stat-label">💰 Express GMV</div></div>
       </div>
 
-      <div style="margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
-        <button class="filter-pill active" onclick="filterExpressOrders('ALL', this)">All</button>
-        <button class="filter-pill" onclick="filterExpressOrders('PREPARING', this)">🟡 Preparing</button>
-        <button class="filter-pill" onclick="filterExpressOrders('DISPATCHED', this)">🔵 Dispatched</button>
-        <button class="filter-pill" onclick="filterExpressOrders('DELIVERED', this)">🟢 Delivered</button>
-        <button class="filter-pill" onclick="filterExpressOrders('CANCELLED', this)">🔴 Cancelled</button>
+      <!-- Toolbar & Search -->
+      <div class="table-toolbar" style="margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+        <div class="search-box" style="flex: 1; min-width: 240px;">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+          <input type="text" id="expressOrderSearch" placeholder="Search order ID, customer name, phone, address, or item..." oninput="filterExpressOrdersList()">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="filter-pill active" onclick="filterExpressOrdersByStatus('ALL', this)">All</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByStatus('PREPARING', this)">🟡 Preparing</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByStatus('OUT_FOR_DELIVERY', this)">🔵 Out for Delivery</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByStatus('DELIVERED', this)">🟢 Delivered</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByStatus('CANCELLED', this)">🔴 Cancelled</button>
+        </div>
       </div>
 
       <div class="table-container">
@@ -1831,16 +1841,17 @@
             <tr>
               <th>Order ID</th>
               <th>Customer</th>
-              <th>Items</th>
-              <th>Total (₹)</th>
+              <th>Phone & Address</th>
+              <th>Items & Qty</th>
+              <th>Total Amount</th>
               <th>Status</th>
               <th>Payment</th>
-              <th>Date</th>
+              <th>Order Date</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody id="expressOrdersTableBody">
-            <tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading express orders...</td></tr>
+            <tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading express orders...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1886,37 +1897,62 @@
 
     <!-- ── Tab: Provider Payouts ── -->
     <div id="tab-payouts" style="display: none;">
-      <div class="section-header">
+      <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
         <div>
-          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;">💰 Provider & Hub Operator Payouts</h2>
-          <p style="color: var(--text-muted); font-size: 13px;">Compute, approve, and track hub operator settlement payments</p>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-wallet" style="color: #10B981;"></i> 💰 Provider & Hub Operator Payouts</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Compute, approve, and settle hub operator commission settlements</p>
         </div>
-        <button class="btn btn-primary" onclick="loadPayouts()" style="padding: 8px 16px;">
-          <i class="fa-solid fa-rotate"></i> Refresh
-        </button>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="autoGenerateMonthlyPayouts()" style="background: linear-gradient(135deg, #0D7C66, #10B981); border: none; padding: 8px 16px;">
+            <i class="fa-solid fa-calculator"></i> ⚡ Auto-Generate Settlements
+          </button>
+          <button class="btn btn-secondary" onclick="loadPayouts()" style="padding: 8px 16px;">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
       </div>
 
-      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
-        <div class="stat-card"><div class="stat-value" id="po-total">₹0</div><div class="stat-label">Total Payouts</div></div>
-        <div class="stat-card"><div class="stat-value" id="po-pending" style="color: #F59E0B;">0</div><div class="stat-label">Pending</div></div>
-        <div class="stat-card"><div class="stat-value" id="po-settled" style="color: var(--primary-accent);">0</div><div class="stat-label">Settled</div></div>
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+        <div class="stat-card"><div class="stat-value" id="po-total">₹0</div><div class="stat-label">Total Settlements</div></div>
+        <div class="stat-card"><div class="stat-value" id="po-pending" style="color: #F59E0B;">0</div><div class="stat-label">⏳ Pending Approval</div></div>
+        <div class="stat-card"><div class="stat-value" id="po-settled" style="color: var(--primary-accent);">0</div><div class="stat-label">✅ Settled & Transferred</div></div>
+        <div class="stat-card"><div class="stat-value" id="po-settled-amount" style="color: #38BDF8;">₹0</div><div class="stat-label">💰 Settled Amount</div></div>
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="table-toolbar" style="margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+        <div class="search-box" style="flex: 1; min-width: 240px;">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+          <input type="text" id="payoutSearch" placeholder="Search hub, provider, reference code, or notes..." oninput="filterPayoutsTable()">
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status:</label>
+          <select id="payoutStatusFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterPayoutsTable()">
+            <option value="ALL">All Payouts</option>
+            <option value="PENDING">⏳ PENDING Only</option>
+            <option value="SETTLED">✅ SETTLED Only</option>
+          </select>
+        </div>
       </div>
 
       <div class="table-container">
         <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Hub</th>
-              <th>Provider</th>
+              <th>Payout Ref #</th>
+              <th>Hub Depot</th>
+              <th>Provider / Operator</th>
               <th>Period</th>
-              <th>Amount (₹)</th>
+              <th>Deliveries</th>
+              <th>Breakdown (Gross - Salaries - Comm)</th>
+              <th>Net Payout</th>
               <th>Status</th>
-              <th>Settled On</th>
+              <th>Settled Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="payoutsTableBody">
-            <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No payouts recorded yet. Run the payout generation command to create settlement records.</td></tr>
+            <tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading payout settlements...</td></tr>
           </tbody>
         </table>
       </div>
@@ -6380,58 +6416,134 @@
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
-          rawExpressOrders = await res.json();
-          if (Array.isArray(rawExpressOrders)) {
-            renderExpressOrders(rawExpressOrders);
-          } else {
-            rawExpressOrders = rawExpressOrders.results || [];
-            renderExpressOrders(rawExpressOrders);
-          }
+          const data = await res.json();
+          rawExpressOrders = Array.isArray(data) ? data : (data.results || []);
+          filterExpressOrdersList();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
     }
 
-    function filterExpressOrders(status, btn) {
+    function filterExpressOrdersByStatus(status, btn) {
       expressOrderFilter = status;
       document.querySelectorAll('#tab-express-orders .filter-pill').forEach(p => p.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      const filtered = status === 'ALL' ? rawExpressOrders : rawExpressOrders.filter(o => o.status === status);
+      filterExpressOrdersList();
+    }
+
+    function filterExpressOrdersList() {
+      const q = (document.getElementById('expressOrderSearch')?.value || '').toLowerCase().trim();
+
+      const filtered = rawExpressOrders.filter(o => {
+        const status = (o.status || '').toUpperCase();
+        const normStatus = (status === 'DISPATCHED') ? 'OUT_FOR_DELIVERY' : status;
+
+        const statusMatch = (expressOrderFilter === 'ALL') ||
+                            (expressOrderFilter === 'OUT_FOR_DELIVERY' && (normStatus === 'OUT_FOR_DELIVERY' || normStatus === 'DISPATCHED')) ||
+                            (normStatus === expressOrderFilter);
+
+        const itemsStr = (o.items || []).map(i => (i.product_name || '') + ' ' + (i.quantity || '')).join(' ').toLowerCase();
+        const custName = (o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}` : '')).toLowerCase();
+        const address = (o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || '').toLowerCase();
+        const phone = (o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '');
+
+        const textMatch = !q ||
+          o.id.toLowerCase().includes(q) ||
+          custName.includes(q) ||
+          phone.includes(q) ||
+          address.includes(q) ||
+          itemsStr.includes(q);
+
+        return statusMatch && textMatch;
+      });
+
       renderExpressOrders(filtered);
     }
 
     function renderExpressOrders(orders) {
-      // Update stats
+      const totalRev = rawExpressOrders
+        .filter(o => o.status === 'DELIVERED' || o.payment_status === 'PAID')
+        .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+
       document.getElementById('eo-total').innerText = rawExpressOrders.length;
-      document.getElementById('eo-preparing').innerText = rawExpressOrders.filter(o => o.status === 'PREPARING').length;
-      document.getElementById('eo-dispatched').innerText = rawExpressOrders.filter(o => o.status === 'DISPATCHED').length;
+      document.getElementById('eo-preparing').innerText = rawExpressOrders.filter(o => o.status === 'PREPARING' || o.status === 'PLACED').length;
+      document.getElementById('eo-dispatched').innerText = rawExpressOrders.filter(o => o.status === 'OUT_FOR_DELIVERY' || o.status === 'DISPATCHED').length;
       document.getElementById('eo-delivered').innerText = rawExpressOrders.filter(o => o.status === 'DELIVERED').length;
+      const elRev = document.getElementById('eo-revenue');
+      if (elRev) elRev.innerText = '₹' + Math.round(totalRev).toLocaleString('en-IN');
 
       const tbody = document.getElementById('expressOrdersTableBody');
       if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders match the selected filters.</td></tr>';
         return;
       }
       tbody.innerHTML = orders.map(o => {
-        const items = (o.items || []).map(i => `${i.product_name || 'Item'} x${i.quantity}`).join(', ');
-        const statusColor = o.status === 'DELIVERED' ? 'var(--primary-accent)' :
-                           o.status === 'CANCELLED' ? 'var(--danger)' :
-                           o.status === 'DISPATCHED' ? 'var(--accent-blue)' : 'var(--warning)';
-        const payColor = o.payment_status === 'PAID' ? 'var(--primary-accent)' : 'var(--warning)';
-        const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        const items = (o.items || []).map(i => `<span style="display:inline-block; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; margin:2px 0;">${i.quantity}x ${i.product_name || 'Milk / Dairy'}</span>`).join('<br>');
+        const normStatus = (o.status === 'DISPATCHED') ? 'OUT_FOR_DELIVERY' : o.status;
+
+        let statusBadge = '';
+        if (normStatus === 'DELIVERED') {
+          statusBadge = '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> DELIVERED</span>';
+        } else if (normStatus === 'OUT_FOR_DELIVERY') {
+          statusBadge = '<span class="status-tag status-pending"><i class="fa-solid fa-motorcycle"></i> OUT FOR DELIVERY</span>';
+        } else if (normStatus === 'CANCELLED') {
+          statusBadge = '<span class="status-tag status-cancelled"><i class="fa-solid fa-ban"></i> CANCELLED</span>';
+        } else {
+          statusBadge = '<span class="status-tag status-paused"><i class="fa-solid fa-box-open"></i> PREPARING</span>';
+        }
+
+        const isPaid = (o.payment_status || '').toUpperCase().includes('PAID');
+        const payBadge = isPaid
+          ? '<span style="color:#10B981; font-weight:700; font-size:11px;">PAID ✅</span>'
+          : '<span style="color:#F59E0B; font-weight:600; font-size:11px;">PENDING ⏳</span>';
+
+        const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
         const custName = o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}`.trim() : 'Customer');
+        const custPhone = o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '—';
+        const custAddress = o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || 'Kodad, Telangana';
+
+        let actionBtns = '';
+        if (normStatus === 'PREPARING' || normStatus === 'PLACED') {
+          actionBtns = `
+            <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'OUT_FOR_DELIVERY')" style="padding:4px 8px; font-size:11px;">
+              <i class="fa-solid fa-motorcycle"></i> Dispatch
+            </button>
+            <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
+              <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+          `;
+        } else if (normStatus === 'OUT_FOR_DELIVERY') {
+          actionBtns = `
+            <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DELIVERED')" style="background:#0D7C66; border-color:#0D7C66; padding:4px 8px; font-size:11px;">
+              <i class="fa-solid fa-circle-check"></i> Deliver
+            </button>
+            <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
+              <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+          `;
+        } else if (normStatus === 'DELIVERED') {
+          actionBtns = `
+            <span style="font-size:11px; color:#10B981; font-weight:700;">Fulfilled ✅</span>
+          `;
+        } else {
+          actionBtns = `
+            <span style="font-size:11px; color:#F87171; font-weight:600;">Refunded 💳</span>
+          `;
+        }
+
         return `
-          <tr>
-            <td><span style="font-weight:700; color: var(--accent-blue);">${o.id}</span></td>
-            <td>${custName}</td>
-            <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${items || '—'}</td>
-            <td style="font-weight:700;">₹${parseFloat(o.total_amount || 0).toFixed(2)}</td>
-            <td><span style="color: ${statusColor}; font-weight: 700;">${o.status}</span></td>
-            <td><span style="color: ${payColor}; font-weight: 600;">${o.payment_status || '—'}</span></td>
-            <td style="font-size: 12px; color: var(--text-muted);">${date}</td>
+          <tr style="${normStatus === 'CANCELLED' ? 'opacity: 0.7;' : ''}">
+            <td><strong style="color: var(--accent-blue);">#${o.id}</strong></td>
+            <td><strong>${custName}</strong></td>
+            <td>${custPhone}<br><small style="color:var(--text-muted);">${custAddress}</small></td>
+            <td style="font-size:12px;">${items || '—'}</td>
+            <td><strong style="font-size:13px; color:var(--text-main);">₹${parseFloat(o.total_amount || 0).toFixed(2)}</strong></td>
+            <td>${statusBadge}</td>
+            <td>${payBadge}</td>
+            <td style="font-size: 11.5px; color: var(--text-muted);">${date}</td>
             <td>
-              ${o.status === 'PREPARING' ? `<button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DISPATCHED')" style="padding:4px 10px; font-size:11px;">Dispatch</button>` : ''}
-              ${o.status === 'DISPATCHED' ? `<button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DELIVERED')" style="padding:4px 10px; font-size:11px;">Deliver</button>` : ''}
-              ${(o.status === 'PREPARING' || o.status === 'DISPATCHED') ? `<button class="btn" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 10px; font-size:11px; background:var(--danger); color:white; border:none; border-radius:8px; cursor:pointer;">Cancel</button>` : ''}
+              <div style="display:flex; align-items:center;">
+                ${actionBtns}
+              </div>
             </td>
           </tr>
         `;
@@ -6439,6 +6551,9 @@
     }
 
     async function updateExpressOrderStatus(orderId, newStatus) {
+      if (newStatus === 'CANCELLED' && !confirm(`Are you sure you want to cancel order #${orderId}? Customer wallet will be refunded immediately.`)) {
+        return;
+      }
       try {
         const token = localStorage.getItem('milkdrop_admin_token');
         const res = await fetch(`${baseUrl}/orders/express/${orderId}/`, {
@@ -6448,6 +6563,7 @@
         });
         if (res.ok) {
           loadExpressOrders();
+          loadDashboard();
         } else {
           const err = await res.json().catch(() => ({}));
           alert(err.detail || 'Failed to update order status.');
@@ -6510,38 +6626,139 @@
         });
         if (res.ok) {
           rawPayouts = await res.json();
-          renderPayouts(rawPayouts);
+          filterPayoutsTable();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
     }
 
+    function filterPayoutsTable() {
+      const q = (document.getElementById('payoutSearch')?.value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('payoutStatusFilter')?.value || 'ALL';
+
+      const filtered = rawPayouts.filter(p => {
+        const isSettled = p.status === 'SETTLED' || p.status === 'COMPLETED';
+        const statusMatch = (statusFilter === 'ALL') ||
+                            (statusFilter === 'PENDING' && !isSettled) ||
+                            (statusFilter === 'SETTLED' && isSettled);
+
+        const textMatch = !q ||
+          (p.hub_name && p.hub_name.toLowerCase().includes(q)) ||
+          (p.provider_name && p.provider_name.toLowerCase().includes(q)) ||
+          (p.payment_reference && p.payment_reference.toLowerCase().includes(q)) ||
+          (p.notes && p.notes.toLowerCase().includes(q));
+
+        return statusMatch && textMatch;
+      });
+
+      renderPayouts(filtered);
+    }
+
     function renderPayouts(payouts) {
-      const totalAmount = payouts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-      document.getElementById('po-total').innerText = `₹${totalAmount.toFixed(0)}`;
-      document.getElementById('po-pending').innerText = payouts.filter(p => p.status === 'PENDING').length;
-      document.getElementById('po-settled').innerText = payouts.filter(p => p.status === 'SETTLED' || p.status === 'COMPLETED').length;
+      const totalAmount = rawPayouts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+      const settledAmount = rawPayouts
+        .filter(p => p.status === 'SETTLED' || p.status === 'COMPLETED')
+        .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+      document.getElementById('po-total').innerText = `₹${Math.round(totalAmount).toLocaleString('en-IN')}`;
+      document.getElementById('po-pending').innerText = rawPayouts.filter(p => p.status === 'PENDING').length;
+      document.getElementById('po-settled').innerText = rawPayouts.filter(p => p.status === 'SETTLED' || p.status === 'COMPLETED').length;
+      const elSetAmt = document.getElementById('po-settled-amount');
+      if (elSetAmt) elSetAmt.innerText = `₹${Math.round(settledAmount).toLocaleString('en-IN')}`;
 
       const tbody = document.getElementById('payoutsTableBody');
       if (!payouts.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">No payouts recorded yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 30px;">No payout settlements found. Click "Auto-Generate Settlements" to compute monthly batch.</td></tr>';
         return;
       }
       tbody.innerHTML = payouts.map((p, idx) => {
         const isSettled = p.status === 'SETTLED' || p.status === 'COMPLETED';
-        const statusColor = isSettled ? 'var(--primary-accent)' : 'var(--warning)';
+        const statusTag = isSettled
+          ? '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> SETTLED</span>'
+          : '<span class="status-tag status-paused"><i class="fa-solid fa-clock"></i> PENDING</span>';
+
         const settledDate = p.settled_at ? new Date(p.settled_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        const gross = parseFloat(p.total_revenue || 0).toFixed(0);
+        const salaries = parseFloat(p.driver_salaries || 0).toFixed(0);
+        const comm = parseFloat(p.platform_commission || 0).toFixed(0);
+        const netAmt = parseFloat(p.amount || 0).toFixed(2);
+
+        let actionBtn = '';
+        if (!isSettled) {
+          actionBtn = `
+            <button class="btn btn-primary" onclick="settlePayoutRecord(${p.id}, '${p.hub_name}', ${netAmt})" style="background:#0D7C66; border-color:#0D7C66; padding: 4px 10px; font-size: 11px;">
+              <i class="fa-solid fa-money-bill-transfer"></i> Settle 💳
+            </button>
+          `;
+        } else {
+          actionBtn = `
+            <span style="font-size:11px; color:#10B981; font-weight:700;">Ref #${p.payment_reference || 'PAID'}</span>
+          `;
+        }
+
         return `
           <tr>
-            <td>${idx + 1}</td>
-            <td>${p.hub_name || '—'}</td>
-            <td>${p.provider_name || '—'}</td>
-            <td style="font-size: 12px;">${p.period_start || '—'} to ${p.period_end || '—'}</td>
-            <td style="font-weight: 700;">₹${parseFloat(p.amount || 0).toFixed(2)}</td>
-            <td><span style="color: ${statusColor}; font-weight: 700;">${isSettled ? 'SETTLED ✅' : p.status}</span></td>
-            <td style="font-size: 12px; color: var(--text-muted);">${settledDate}</td>
+            <td><strong>#${p.payment_reference || ('PAY-' + p.id)}</strong></td>
+            <td><strong>🏢 ${p.hub_name || 'Kodad Hub'}</strong></td>
+            <td>${p.provider_name || 'Hub Operator'}</td>
+            <td style="font-size: 11.5px; color:var(--text-muted);">${p.period_start || '—'} to ${p.period_end || '—'}</td>
+            <td><strong>${p.total_deliveries || 0}</strong></td>
+            <td style="font-size: 11.5px;">
+              Gross: ₹${gross} <br>
+              <small style="color:var(--text-muted);">- ₹${salaries} (Salary) - ₹${comm} (5% Comm)</small>
+            </td>
+            <td><strong style="font-size: 14px; color: #38BDF8;">₹${netAmt}</strong></td>
+            <td>${statusTag}</td>
+            <td style="font-size: 11.5px; color: var(--text-muted);">${settledDate}</td>
+            <td>
+              <div style="display:flex; align-items:center;">
+                ${actionBtn}
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
+    }
+
+    async function settlePayoutRecord(payoutId, hubName, amount) {
+      if (!confirm(`Confirm bank settlement transfer of ₹${amount} to ${hubName} operator?`)) return;
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/payouts/`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'settle', payout_id: payoutId })
+        });
+        if (res.ok) {
+          alert('🎉 Payout settlement transferred and marked as SETTLED!');
+          loadPayouts();
+          loadDashboard();
+        } else {
+          alert('Failed to settle payout.');
+        }
+      } catch (e) {
+        console.error('[AdminConsole]', e);
+      }
+    }
+
+    async function autoGenerateMonthlyPayouts() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/admin/payouts/`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          alert(`⚡ ${data.message}`);
+          loadPayouts();
+          loadDashboard();
+        } else {
+          alert('Failed to generate payouts.');
+        }
+      } catch (e) {
+        console.error('[AdminConsole]', e);
+      }
     }
 
     // ── Customer Block/Unblock ──

@@ -252,6 +252,9 @@ class ExpressOrderDetailView(APIView):
             return Response({"detail": "You can only modify your own orders."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = request.data.get("status")
+        if new_status == "DISPATCHED":
+            new_status = LiveOrder.Statuses.OUT_FOR_DELIVERY
+
         if new_status and new_status in dict(LiveOrder.Statuses.choices):
             order.status = new_status
             proof_url = request.data.get("proof_image_url", "")
