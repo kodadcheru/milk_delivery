@@ -242,8 +242,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildMenuTile(
                     icon: Icons.map_rounded,
                     accent: UiTone.accentBlue,
-                    label: 'Morning Route #1 • $hubName',
-                    subtitle: 'Assigned Urban Zone & GPS Navigation',
+                    label: 'Live Route Map • $hubName',
+                    subtitle: 'Turn-by-turn doorstep navigation & GPS route',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -255,16 +255,16 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildMenuTile(
                     icon: Icons.schedule_rounded,
                     accent: UiTone.primary,
-                    label: 'Shift: 05:00 AM – 08:30 AM Daily',
-                    subtitle: 'Morning delivery window & attendance',
+                    label: 'Shift: ☀️ Morning & 🌙 Evening Drops',
+                    subtitle: '05:00 AM – 08:30 AM & 05:00 PM – 08:30 PM',
                     onTap: () => _showShiftTimingDialog(context),
                   ),
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.two_wheeler_rounded,
                     accent: UiTone.warning,
-                    label: 'Vehicle: $vehicleText',
-                    subtitle: 'License: $licenseText',
+                    label: 'Vehicle & License KYC',
+                    subtitle: '$vehicleText • $licenseText',
                     onTap: () => _showVehicleKycDialog(context, vehicleText, licenseText, widget.state),
                   ),
                 ]),
@@ -279,18 +279,41 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     icon: Icons.warehouse_rounded,
                     accent: UiTone.primary,
                     label: 'Dispatch Depot: $hubName',
-                    subtitle: 'Crate pickup bay & cold storage facility',
+                    subtitle: 'Cold storage loading bay & operations desk',
                     onTap: () => _showDepotDetailsDialog(context, hubName, activeHub),
                   ),
                   _buildDivider(),
                   _buildMenuTile(
-                    icon: Icons.inventory_2_rounded,
-                    accent: UiTone.accentPurple,
-                    label: 'Morning Batch Packing Crates',
-                    subtitle: 'View crate breakdown & pack counts',
+                    icon: Icons.wb_sunny_rounded,
+                    accent: const Color(0xFFF59E0B),
+                    label: '☀️ Morning Batch Packing Crates',
+                    subtitle: '05:30 AM morning drop crate checklist',
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => MorningBatchScreen(state: widget.state)),
+                      MaterialPageRoute(
+                        builder: (_) => MorningBatchScreen(
+                          state: widget.state,
+                          shiftName: 'Morning Batch ☀️',
+                          slotFilter: 'MORNING',
+                        ),
+                      ),
+                    ),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.nights_stay_rounded,
+                    accent: const Color(0xFF7C3AED),
+                    label: '🌙 Evening Batch Packing Crates',
+                    subtitle: '05:00 PM evening drop crate checklist',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MorningBatchScreen(
+                          state: widget.state,
+                          shiftName: 'Evening Batch 🌙',
+                          slotFilter: 'EVENING',
+                        ),
+                      ),
                     ),
                   ),
                   _buildDivider(),
@@ -726,23 +749,68 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           children: [
             const Icon(Icons.schedule_rounded, color: UiTone.primary),
             const SizedBox(width: 8),
-            Text('Shift Hours & Schedule', style: UiText.h2.copyWith(fontSize: 17)),
+            Text('Daily Shift Windows', style: UiText.h2.copyWith(fontSize: 17)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('⏰ Standard Morning Shift: 05:00 AM – 08:30 AM', style: UiText.bodyStrong.copyWith(fontSize: 13.5)),
-            const SizedBox(height: 8),
-            Text('• 04:45 AM: Report to Hub Cold Storage Bay for crate pickup.', style: UiText.body.copyWith(fontSize: 12.5)),
-            const SizedBox(height: 4),
-            Text('• 05:00 AM: Start doorstep deliveries along optimized route.', style: UiText.body.copyWith(fontSize: 12.5)),
-            const SizedBox(height: 4),
-            Text('• 07:30 AM: Standard deliveries complete.', style: UiText.body.copyWith(fontSize: 12.5)),
-            const SizedBox(height: 4),
-            Text('• 08:30 AM: Final handover of empty crates at Hub Depot.', style: UiText.body.copyWith(fontSize: 12.5)),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Morning Shift
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                  border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.wb_sunny_rounded, color: Color(0xFFF59E0B), size: 16),
+                        const SizedBox(width: 6),
+                        Text('☀️ Morning Dispatch (05:00 AM – 08:30 AM)', style: UiText.bodyStrong.copyWith(fontSize: 13, color: const Color(0xFFD97706))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text('• 04:45 AM: Cold storage crate loading at Hub Depot.', style: UiText.body.copyWith(fontSize: 12)),
+                    Text('• 05:00 AM: Start morning doorstep run (Slots: 05:30 AM & 07:00 AM).', style: UiText.body.copyWith(fontSize: 12)),
+                    Text('• 08:30 AM: Morning run completed & empty crates handover.', style: UiText.body.copyWith(fontSize: 12)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Evening Shift
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                  border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.nights_stay_rounded, color: Color(0xFF7C3AED), size: 16),
+                        const SizedBox(width: 6),
+                        Text('🌙 Evening Dispatch (05:00 PM – 08:30 PM)', style: UiText.bodyStrong.copyWith(fontSize: 13, color: const Color(0xFF7C3AED))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text('• 04:45 PM: Evening batch crate loading at Hub Depot.', style: UiText.body.copyWith(fontSize: 12)),
+                    Text('• 05:00 PM: Start evening doorstep run (Slots: 05:00 PM & 06:30 PM).', style: UiText.body.copyWith(fontSize: 12)),
+                    Text('• 08:30 PM: Evening run completed & return to Hub.', style: UiText.body.copyWith(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Understood')),
@@ -999,7 +1067,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
         try {
           await launchUrl(uri);
         } catch (_) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connecting to $title: $phone')));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connecting to $title: $phone')));
+          }
         }
       },
     );
