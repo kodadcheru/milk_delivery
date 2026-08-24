@@ -394,12 +394,16 @@ class ApiService {
   }
 
   // ── 5. Subscriptions ──
-  static Future<List<SubscriptionModel>> fetchSubscriptions({String? phone, int? customerId}) async {
+  static Future<List<SubscriptionModel>> fetchSubscriptions({String? phone, int? customerId, String? hubCode}) async {
     try {
-      final uri = Uri.parse('$baseUrl/subscriptions/').replace(queryParameters: {
-        'phone': ?phone,
-        'customer_id': ?(customerId?.toString()),
-      });
+      final queryParams = <String, String>{};
+      if (phone != null) queryParams['phone'] = phone;
+      if (customerId != null) queryParams['customer_id'] = customerId.toString();
+      if (hubCode != null) queryParams['hub_code'] = hubCode;
+      
+      final uri = Uri.parse('$baseUrl/subscriptions/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
       final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
       if (res.statusCode == 200 || res.statusCode == 201) {
         final list = _extractList(jsonDecode(res.body));
@@ -586,13 +590,14 @@ class ApiService {
   }
 
   // ── 7. Delivery Tasks ──
-  static Future<List<DeliveryTaskModel>> fetchDeliveries({int? page, int? pageSize, String? date}) async {
+  static Future<List<DeliveryTaskModel>> fetchDeliveries({int? page, int? pageSize, String? date, String? hubCode}) async {
     try {
       final queryParams = <String, String>{};
       if (page != null) queryParams['page'] = page.toString();
       if (pageSize != null) queryParams['page_size'] = pageSize.toString();
       final dateParam = date ?? '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}';
       queryParams['date'] = dateParam;
+      if (hubCode != null) queryParams['hub_code'] = hubCode;
 
       final uri = Uri.parse('$baseUrl/deliveries/').replace(
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
@@ -972,12 +977,13 @@ class ApiService {
   }
 
   // ── 13. Express / Live Orders APIs ──
-  static Future<List<LiveOrderModel>> fetchLiveOrders({int? page, int? pageSize, String? status}) async {
+  static Future<List<LiveOrderModel>> fetchLiveOrders({int? page, int? pageSize, String? status, String? hubCode}) async {
     try {
       final queryParams = <String, String>{};
       if (page != null) queryParams['page'] = page.toString();
       if (pageSize != null) queryParams['page_size'] = pageSize.toString();
       if (status != null) queryParams['status'] = status;
+      if (hubCode != null) queryParams['hub_code'] = hubCode;
 
       final uri = Uri.parse('$baseUrl/orders/express/').replace(
         queryParameters: queryParams.isNotEmpty ? queryParams : null,

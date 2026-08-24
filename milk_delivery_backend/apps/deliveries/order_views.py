@@ -22,6 +22,12 @@ class ExpressOrderListCreateView(APIView):
     def get(self, request):
         user = request.user
         orders = LiveOrder.objects.all().prefetch_related("items__product__category_ref").select_related("customer", "hub", "driver").order_by("-created_at")
+
+        hub_code = request.query_params.get("hub_code") or request.query_params.get("hub")
+        if hub_code:
+            from django.db.models import Q
+            orders = orders.filter(Q(hub__hub_code=hub_code) | Q(hub__id=hub_code))
+
         if user and user.is_authenticated:
             if user.role == User.Roles.CUSTOMER:
                 orders = orders.filter(customer=user)
@@ -35,7 +41,7 @@ class ExpressOrderListCreateView(APIView):
                     )
                 else:
                     orders = orders.filter(Q(driver=user) | Q(driver__isnull=True))
-            elif not user.is_superuser and user.assigned_hub:
+            elif not user.is_superuser and getattr(user, 'assigned_hub', None):
                 orders = orders.filter(hub=user.assigned_hub)
 
         paginator = StandardResultsSetPagination()

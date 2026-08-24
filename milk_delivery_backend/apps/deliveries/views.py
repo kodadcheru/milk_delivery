@@ -25,6 +25,12 @@ class DeliveryTaskListView(generics.ListAPIView):
         req_date = self.request.query_params.get("date", None)
 
         qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("-delivery_date", "-id")
+        
+        hub_code = self.request.query_params.get("hub_code") or self.request.query_params.get("hub")
+        if hub_code:
+            from django.db.models import Q
+            qs = qs.filter(Q(hub__hub_code=hub_code) | Q(hub__id=hub_code))
+
         if req_date:
             try:
                 from datetime import datetime as _dt
@@ -51,6 +57,8 @@ class DeliveryTaskListView(generics.ListAPIView):
         elif user.role == "CUSTOMER":
             return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
         # Admin/staff see all
+        if not user.is_superuser and getattr(user, 'assigned_hub', None):
+            return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
         return qs
 
 
@@ -188,14 +196,20 @@ class DeliverySummaryView(APIView):
     def get(self, request):
         """Admin / Operations summary of today's total milk demand computed live from database."""
         today = date.today().isoformat()
+        user = request.user
         tasks = DeliveryTask.objects.all().select_related("subscription__product", "subscription__customer")
+        active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE).select_related("product", "customer")
+
+        # Scope to user's hub
+        from django.db.models import Q
+        if not user.is_superuser and getattr(user, 'assigned_hub', None):
+            tasks = tasks.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub))
+            active_subs = active_subs.filter(Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub))
 
         total_deliveries = tasks.count()
         completed = tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count()
         pending = tasks.filter(status=DeliveryTask.Statuses.PENDING).count()
 
-        active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE).select_related("product", "customer")
-        
         # Real calculation of daily milk volume
         daily_volume_liters = sum(s.quantity for s in active_subs)
         if daily_volume_liters == 0 and total_deliveries > 0:

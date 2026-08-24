@@ -29,6 +29,8 @@ class AdminCustomerListView(APIView):
     def get(self, request):
         from apps.subscriptions.models import Subscription
         customers = User.objects.filter(role=User.Roles.CUSTOMER).select_related("assigned_hub").order_by("-date_joined")
+        if not request.user.is_superuser and getattr(request.user, 'assigned_hub', None):
+            customers = customers.filter(assigned_hub=request.user.assigned_hub)
         data = []
         for c in customers:
             active_subs_count = Subscription.objects.filter(customer=c, status=Subscription.Statuses.ACTIVE).count()
@@ -450,13 +452,14 @@ class AdminHubsView(APIView):
             from django.db.models import Q
             active_subs = active_subs.filter(Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub))
 
-        total_sub_count = active_subs.count() or 0
-        total_vol = sum(s.quantity for s in active_subs) or 0
-
         hubs_data = []
         for idx, h in enumerate(hubs_qs, 1):
             service_areas_count = h.service_areas.count()
             real_boys = h.delivery_partners.filter(role=User.Roles.DELIVERY_PARTNER).count()
+
+            hub_subs = active_subs.filter(hub=h)
+            hub_sub_count = hub_subs.count()
+            hub_vol = sum(s.quantity for s in hub_subs)
 
             hubs_data.append({
                 "id": h.hub_code,
@@ -467,8 +470,8 @@ class AdminHubsView(APIView):
                 "manager_name": h.manager_name,
                 "manager_phone": h.manager_phone,
                 "manager": f"{h.manager_name} ({h.manager_phone})",
-                "subscribers_count": total_sub_count,
-                "daily_volume_liters": total_vol,
+                "subscribers_count": hub_sub_count,
+                "daily_volume_liters": hub_vol,
                 "active_delivery_boys": real_boys,
                 "salary_per_boy": 15000,
                 "status": "OPERATIONAL",

@@ -17,19 +17,23 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
 
         qs = Subscription.objects.all().select_related("customer", "product", "hub", "product__category_ref").order_by("-created_at")
 
+        hub_code = self.request.query_params.get('hub_code') or self.request.query_params.get('hub')
+        if hub_code:
+            from django.db.models import Q
+            qs = qs.filter(Q(hub__hub_code=hub_code) | Q(hub__id=hub_code))
+
         if user and user.is_authenticated:
             if getattr(user, "role", "") == User.Roles.CUSTOMER:
                 return qs.filter(customer=user)
-            elif getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
+            if not user.is_superuser and getattr(user, 'assigned_hub', None):
+                qs = qs.filter(hub=user.assigned_hub)
+                
+            if getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
                 return qs
             elif getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER"):
-                if getattr(user, "assigned_hub", None):
-                    return qs.filter(hub=user.assigned_hub)
                 return qs
             elif getattr(user, "role", "") in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
-                if getattr(user, "assigned_hub", None):
-                    return qs.filter(hub=user.assigned_hub)
-                return qs.none()
+                return qs
 
         if customer_id:
             return qs.filter(customer_id=customer_id)
