@@ -55,6 +55,9 @@ class LiveOrderModel {
   final double waterPercentage;
   final double batchPricePerLitre;
   final String batchCode;
+  final String deliveryType;
+  final int etaMinutes;
+  final String? estimatedDeliveryTime;
 
   LiveOrderModel({
     required this.id,
@@ -81,6 +84,9 @@ class LiveOrderModel {
     this.waterPercentage = 0.0,
     this.batchPricePerLitre = 0.0,
     this.batchCode = '',
+    this.deliveryType = 'SCHEDULED',
+    this.etaMinutes = 0,
+    this.estimatedDeliveryTime,
   });
 
   int get totalItemCount => items.fold(0, (sum, i) => sum + i.quantity);
@@ -96,6 +102,9 @@ class LiveOrderModel {
     double? waterPercentage,
     double? batchPricePerLitre,
     String? batchCode,
+    String? deliveryType,
+    int? etaMinutes,
+    String? estimatedDeliveryTime,
   }) {
     return LiveOrderModel(
       id: id,
@@ -122,6 +131,9 @@ class LiveOrderModel {
       waterPercentage: waterPercentage ?? this.waterPercentage,
       batchPricePerLitre: batchPricePerLitre ?? this.batchPricePerLitre,
       batchCode: batchCode ?? this.batchCode,
+      deliveryType: deliveryType ?? this.deliveryType,
+      etaMinutes: etaMinutes ?? this.etaMinutes,
+      estimatedDeliveryTime: estimatedDeliveryTime ?? this.estimatedDeliveryTime,
     );
   }
 
@@ -156,6 +168,9 @@ class LiveOrderModel {
       waterPercentage: double.tryParse(json['water_percentage']?.toString() ?? '0') ?? 0.0,
       batchPricePerLitre: double.tryParse(json['batch_price_per_litre']?.toString() ?? '0') ?? 0.0,
       batchCode: json['batch_code']?.toString() ?? '',
+      deliveryType: json['delivery_type'] ?? 'SCHEDULED',
+      etaMinutes: json['eta_minutes'] ?? 0,
+      estimatedDeliveryTime: json['estimated_delivery_time']?.toString(),
     );
   }
 }

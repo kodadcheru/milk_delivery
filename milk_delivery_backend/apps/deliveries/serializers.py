@@ -317,6 +317,9 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "batch_price_per_litre",
             "batch_code",
             "temperature_celsius",
+            "delivery_type",
+            "eta_minutes",
+            "estimated_delivery_time",
         ]
         read_only_fields = ["created_at", "updated_at"]
 

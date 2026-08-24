@@ -118,6 +118,10 @@ class DeliveryTask(models.Model):
 
 
 class LiveOrder(models.Model):
+    class DeliveryTypes(models.TextChoices):
+        INSTANT = 'INSTANT', 'Instant Delivery'
+        SCHEDULED = 'SCHEDULED', 'Scheduled Delivery'
+
     class OrderTypes(models.TextChoices):
         ONE_TIME = "ONE_TIME", "One-Time Order"
         EXPRESS = "EXPRESS", "Express Delivery"
@@ -135,6 +139,13 @@ class LiveOrder(models.Model):
     hub = models.ForeignKey(LocationHub, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_orders")
     batch = models.ForeignKey('DailyMilkBatch', null=True, blank=True, on_delete=models.SET_NULL, related_name='live_orders')
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_orders")
+    delivery_type = models.CharField(
+        max_length=20,
+        choices=DeliveryTypes.choices,
+        default=DeliveryTypes.SCHEDULED,
+    )
+    eta_minutes = models.IntegerField(default=0, help_text='Estimated delivery time in minutes')
+    estimated_delivery_time = models.DateTimeField(null=True, blank=True)
     order_type = models.CharField(max_length=30, choices=OrderTypes.choices, default=OrderTypes.ONE_TIME)
     status = models.CharField(max_length=30, choices=Statuses.choices, default=Statuses.PREPARING)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)

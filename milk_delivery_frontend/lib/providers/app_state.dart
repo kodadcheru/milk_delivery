@@ -239,6 +239,7 @@ class AppState extends ChangeNotifier {
     String? deliveryDate,
     String? deliverySlot,
     String? deliveryAddress,
+    String deliveryType = 'SCHEDULED',
   }) async {
     HapticFeedback.mediumImpact();
     final orderItems = cartProductsList.map((entry) {
@@ -270,6 +271,7 @@ class AppState extends ChangeNotifier {
       deliveryAddress: addr,
       deliveryLatitude: targetLat,
       deliveryLongitude: targetLon,
+      deliveryType: deliveryType,
     );
 
     if (serverOrder != null) {
@@ -300,6 +302,7 @@ class AppState extends ChangeNotifier {
       driverPhone: '',
       paymentStatus: 'PAID (Prepaid Wallet)',
       createdAt: 'Just now',
+      deliveryType: deliveryType,
     );
 
     liveOrders.insert(0, fallbackOrder);

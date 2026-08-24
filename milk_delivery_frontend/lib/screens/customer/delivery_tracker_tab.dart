@@ -707,6 +707,19 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 ),
               ),
               const Spacer(),
+              if (order.deliveryType == 'INSTANT')
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF0D7C66), Color(0xFF10A37F)]),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                  ),
+                  child: const Text(
+                    '⚡ INSTANT',
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -728,39 +741,59 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             style: UiText.bodyStrong.copyWith(fontSize: 13),
           ),
           const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
-                  ? const Color(0xFF7C3AED).withValues(alpha: 0.10)
-                  : const Color(0xFF0D7C66).withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(UiRadius.xs),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
-                      ? Icons.nights_stay_rounded
-                      : Icons.wb_sunny_rounded,
-                  size: 13,
-                  color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
-                      ? const Color(0xFF7C3AED)
-                      : const Color(0xFF0D7C66),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '📅 ${order.deliveryDate.isNotEmpty ? order.deliveryDate : "Today"} • ${order.deliverySlot}',
-                  style: UiText.caption.copyWith(
-                    fontWeight: FontWeight.w700,
+          if (order.deliveryType == 'INSTANT')
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D7C66).withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(UiRadius.xs),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.timer_outlined, size: 13, color: Color(0xFF0D7C66)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isActive ? 'Arriving in ~${order.etaMinutes > 0 ? order.etaMinutes : 25} min' : 'Instant Delivery',
+                    style: UiText.caption.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFF0D7C66)),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                    ? const Color(0xFF7C3AED).withValues(alpha: 0.10)
+                    : const Color(0xFF0D7C66).withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(UiRadius.xs),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                        ? Icons.nights_stay_rounded
+                        : Icons.wb_sunny_rounded,
+                    size: 13,
                     color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
                         ? const Color(0xFF7C3AED)
                         : const Color(0xFF0D7C66),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    '📅 ${order.deliveryDate.isNotEmpty ? order.deliveryDate : "Today"} • ${order.deliverySlot}',
+                    style: UiText.caption.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: (order.deliverySlot.toUpperCase().contains('PM') || order.deliverySlot.toUpperCase().contains('17:') || order.deliverySlot.toUpperCase().contains('18:'))
+                          ? const Color(0xFF7C3AED)
+                          : const Color(0xFF0D7C66),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 10),
           Row(
             children: [

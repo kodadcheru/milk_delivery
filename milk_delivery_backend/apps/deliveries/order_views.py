@@ -101,29 +101,45 @@ class ExpressOrderListCreateView(APIView):
         if not active_hub:
             return Response({"detail": "Delivery location is outside our operational service area."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate slot capacity
-        from .models import DeliverySlot
-        slot_config = DeliverySlot.objects.filter(hub=active_hub, name=delivery_slot, is_active=True).first()
-        if slot_config:
-            delivery_date_for_check = delivery_date
-            if isinstance(delivery_date_for_check, str):
-                from datetime import datetime as dt
-                try:
-                    delivery_date_for_check = dt.strptime(delivery_date_for_check, '%Y-%m-%d').date()
-                except ValueError:
-                    from django.utils import timezone
-                    delivery_date_for_check = timezone.now().date()
-            
-            if slot_config.is_full(delivery_date_for_check):
-                return Response(
-                    {"error": f"The '{delivery_slot}' slot is full for this date. Only {slot_config.max_orders} orders allowed. Please choose another time slot."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if slot_config.is_cutoff_passed():
-                return Response(
-                    {"error": f"The '{delivery_slot}' slot has passed its cutoff time. Please choose a later slot or order for tomorrow."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        delivery_type = data.get('delivery_type', 'SCHEDULED')
+        from datetime import timedelta
+        
+        if delivery_type == 'INSTANT':
+            delivery_date = date.today()
+            eta_minutes = 25
+            estimated_delivery_time = timezone.now() + timedelta(minutes=25)
+            delivery_slot = 'Instant Delivery'
+            order_type = LiveOrder.OrderTypes.EXPRESS
+            order_status = LiveOrder.Statuses.PREPARING
+        else:
+            eta_minutes = 0
+            estimated_delivery_time = None
+            order_type = LiveOrder.OrderTypes.ONE_TIME
+            order_status = LiveOrder.Statuses.PREPARING
+
+            # Validate slot capacity
+            from .models import DeliverySlot
+            slot_config = DeliverySlot.objects.filter(hub=active_hub, name=delivery_slot, is_active=True).first()
+            if slot_config:
+                delivery_date_for_check = delivery_date
+                if isinstance(delivery_date_for_check, str):
+                    from datetime import datetime as dt
+                    try:
+                        delivery_date_for_check = dt.strptime(delivery_date_for_check, '%Y-%m-%d').date()
+                    except ValueError:
+                        from django.utils import timezone
+                        delivery_date_for_check = timezone.now().date()
+                
+                if slot_config.is_full(delivery_date_for_check):
+                    return Response(
+                        {"error": f"The '{delivery_slot}' slot is full for this date. Only {slot_config.max_orders} orders allowed. Please choose another time slot."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if slot_config.is_cutoff_passed():
+                    return Response(
+                        {"error": f"The '{delivery_slot}' slot has passed its cutoff time. Please choose a later slot or order for tomorrow."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
         order_id = f"MD-{uuid.uuid4().hex[:6].upper()}"
         while LiveOrder.objects.filter(id=order_id).exists():
@@ -161,8 +177,11 @@ class ExpressOrderListCreateView(APIView):
                 id=order_id,
                 customer=user,
                 hub=active_hub,
-                order_type=LiveOrder.OrderTypes.ONE_TIME,
-                status=LiveOrder.Statuses.PREPARING,
+                order_type=order_type,
+                status=order_status,
+                delivery_type=delivery_type,
+                eta_minutes=eta_minutes,
+                estimated_delivery_time=estimated_delivery_time,
                 total_amount=total_amount,
                 delivery_date=delivery_date,
                 delivery_slot=delivery_slot,
@@ -209,7 +228,7 @@ class ExpressOrderListCreateView(APIView):
                 order=order,
                 hub=active_hub,
                 driver=hub_driver,
-                delivery_date=date.today(),
+                delivery_date=delivery_date,
                 slot_time=delivery_slot,
                 status=DeliveryTask.Statuses.PENDING,
             )
