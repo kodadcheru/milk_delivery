@@ -109,15 +109,10 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
           : MainAppShell(
               state: _appState,
               onLogout: () async {
-                await ApiService.clearAuthToken();
-                _appState.currentUser = null;
-                _appState.currentRole = 'CUSTOMER';
-                _appState.savedAddresses = [];
-                _appState.subscriptions = [];
-                _appState.deliveries = [];
-                _appState.transactions = [];
-                _appState.activeAddress = null;
-                setState(() => _isLoggedIn = false);
+                await _appState.logout();
+                if (mounted) {
+                  setState(() => _isLoggedIn = false);
+                }
               },
             ),
     );

@@ -505,7 +505,7 @@ void _confirmLogout(BuildContext context, VoidCallback onLogout) {
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
           onPressed: () {
-            Navigator.pop(ctx);
+            Navigator.of(context, rootNavigator: true).pop();
             onLogout();
           },
           child: const Text('Yes, Log Out'),

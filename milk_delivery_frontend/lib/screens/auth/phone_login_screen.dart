@@ -34,17 +34,35 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   // Controllers
   final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+
+  // 4 Square OTP Box Controllers & Focus Nodes
+  final List<TextEditingController> _otpControllers = List.generate(4, (_) => TextEditingController());
+  final List<FocusNode> _otpFocusNodes = List.generate(4, (_) => FocusNode());
+
+  @override
+  void initState() {
+    super.initState();
+    for (int i = 0; i < 4; i++) {
+      _otpFocusNodes[i].addListener(() {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   @override
   void dispose() {
     _resendTimer?.cancel();
     _phoneController.dispose();
-    _otpController.dispose();
     _nameController.dispose();
     _emailController.dispose();
+    for (final c in _otpControllers) {
+      c.dispose();
+    }
+    for (final f in _otpFocusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -64,6 +82,42 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     });
   }
 
+  String _getOtpValue() => _otpControllers.map((c) => c.text.trim()).join();
+
+  void _onOtpDigitChanged(int index, String value) {
+    if (value.length > 1) {
+      // User pasted multi-digit OTP e.g. "1234"
+      final digits = value.replaceAll(RegExp(r'\D'), '');
+      for (int i = 0; i < 4; i++) {
+        if (i < digits.length) {
+          _otpControllers[i].text = digits[i];
+        } else {
+          _otpControllers[i].clear();
+        }
+      }
+      if (digits.length >= 4) {
+        _otpFocusNodes[3].unfocus();
+        _handleVerifyOTP();
+      } else if (digits.isNotEmpty) {
+        _otpFocusNodes[digits.length.clamp(0, 3)].requestFocus();
+      }
+      setState(() {});
+      return;
+    }
+
+    if (value.isNotEmpty) {
+      if (index < 3) {
+        _otpFocusNodes[index + 1].requestFocus();
+      } else {
+        _otpFocusNodes[index].unfocus();
+        if (_getOtpValue().length == 4) {
+          _handleVerifyOTP();
+        }
+      }
+    }
+    setState(() {});
+  }
+
   // Step 1: Send OTP
   void _handleSendOTP() async {
     final phoneText = _phoneController.text.trim();
@@ -81,8 +135,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     setState(() => _isLoading = false);
 
     if (res['success'] == true) {
+      for (final c in _otpControllers) {
+        c.clear();
+      }
       setState(() => _step = 2); // Move to OTP verification
       _startResendTimer();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_otpFocusNodes[0].canRequestFocus) {
+          _otpFocusNodes[0].requestFocus();
+        }
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -102,7 +164,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   // Step 2: Verify OTP
   void _handleVerifyOTP() async {
-    final otpText = _otpController.text.trim();
+    final otpText = _getOtpValue();
     if (otpText.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter 4-digit OTP code')),
@@ -385,30 +447,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 14),
 
-          TextField(
-            controller: _otpController,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            maxLength: 4,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: UiTone.ink, fontWeight: FontWeight.w900, fontSize: 26, letterSpacing: 14),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: '••••',
-              hintStyle: TextStyle(color: UiText.muted.withValues(alpha: 0.4), fontSize: 26, letterSpacing: 14),
-              filled: true,
-              fillColor: UiTone.surfaceMuted,
-              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                borderSide: const BorderSide(color: UiTone.surfaceBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(UiRadius.md),
-                borderSide: const BorderSide(color: UiTone.primary, width: 2),
-              ),
-            ),
-          ),
+          _buildOtpSquareBoxes(),
           const SizedBox(height: 14),
 
           Row(
@@ -601,6 +640,72 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       controller: ctrl,
       style: const TextStyle(color: UiTone.ink, fontSize: 14, fontWeight: FontWeight.w600),
       decoration: _fieldDecoration(hint: label, prefixIcon: icon),
+    );
+  }
+
+  Widget _buildOtpSquareBoxes() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(4, (index) => _buildOtpSquareBox(index)),
+    );
+  }
+
+  Widget _buildOtpSquareBox(int index) {
+    final controller = _otpControllers[index];
+    final focusNode = _otpFocusNodes[index];
+    final isFilled = controller.text.isNotEmpty;
+    final isFocused = focusNode.hasFocus;
+
+    return Container(
+      width: 58,
+      height: 62,
+      decoration: BoxDecoration(
+        color: isFocused ? Colors.white : (isFilled ? UiTone.primarySoft : UiTone.surfaceMuted),
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        border: Border.all(
+          color: isFocused ? UiTone.primary : (isFilled ? UiTone.primary : UiTone.surfaceBorder),
+          width: isFocused ? 2.2 : (isFilled ? 1.6 : 1.0),
+        ),
+        boxShadow: isFocused ? UiShadow.glowPrimary : null,
+      ),
+      child: Center(
+        child: Focus(
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+              if (controller.text.isEmpty && index > 0) {
+                _otpControllers[index - 1].clear();
+                _otpFocusNodes[index - 1].requestFocus();
+                setState(() {});
+                return KeyEventResult.handled;
+              }
+            }
+            return KeyEventResult.ignored;
+          },
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            textInputAction: index == 3 ? TextInputAction.done : TextInputAction.next,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(4),
+            ],
+            style: const TextStyle(
+              color: UiTone.ink,
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
+            ),
+            decoration: const InputDecoration(
+              counterText: '',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+              isDense: true,
+            ),
+            onChanged: (val) => _onOtpDigitChanged(index, val),
+          ),
+        ),
+      ),
     );
   }
 }

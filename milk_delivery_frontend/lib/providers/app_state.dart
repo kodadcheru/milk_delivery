@@ -838,6 +838,20 @@ class AppState extends ChangeNotifier {
     await reloadAllData();
   }
 
+  Future<void> logout() async {
+    await ApiService.clearAuthToken();
+    currentUser = null;
+    currentRole = 'CUSTOMER';
+    savedAddresses = [];
+    subscriptions = [];
+    deliveries = [];
+    transactions = [];
+    activeAddress = null;
+    cartItems.clear();
+    currentTabIndex = 0;
+    notifyListeners();
+  }
+
   Future<void> updateUserProfile({
     String? firstName,
     String? lastName,
