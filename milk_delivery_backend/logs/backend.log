@@ -342,3 +342,11 @@ Traceback (most recent call last):
     ...<2 lines>...
     )
 TypeError: Notification() got unexpected keyword arguments: 'notif_type'
+[2026-08-24 17:28:49,376] ERROR [django.request:61] Unhandled Exception in <apps.accounts.admin_views.AdminSubscriptionDetailView object at 0x10aee23c0>: 'Subscription' object has no attribute 'end_date'
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/accounts/admin_views.py", line 877, in get
+    "end_date": str(s.end_date) if s.end_date else None,
+                                   ^^^^^^^^^^
+AttributeError: 'Subscription' object has no attribute 'end_date'

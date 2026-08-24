@@ -1220,11 +1220,11 @@
             <thead>
               <tr>
                 <th>Sub ID</th>
-                <th>Customer Name</th>
-                <th>Phone & Address</th>
+                <th>Customer Details</th>
                 <th>Product & Qty</th>
-                <th>Assigned Hub</th>
-                <th>Frequency</th>
+                <th>Delivery Slot (⏰)</th>
+                <th>Created & Start Date (📅)</th>
+                <th>Hub & Schedule</th>
                 <th>Status</th>
                 <th>Est. Monthly Value</th>
                 <th>Actions</th>
@@ -2420,6 +2420,143 @@
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('createSubModal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitCreateSubscription()"><i class="fa-solid fa-check"></i> Book Subscription</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dedicated Subscription Inspection & Detail Modal ── -->
+  <div class="modal-overlay" id="subscriptionDetailModal">
+    <div class="modal-card" style="max-width: 920px; max-height: 92vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="modal-title" style="margin: 0;" id="subDetailTitle">Subscription #0</div>
+            <span id="subDetailStatusBadge" class="status-tag status-active">ACTIVE</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="subDetailMetaHeader">
+            Loading subscription metadata...
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <div id="subDetailActionBtns"></div>
+          <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="closeModal('subscriptionDetailModal')">
+            <i class="fa-solid fa-xmark"></i> Close
+          </button>
+        </div>
+      </div>
+
+      <!-- 4-Card Live KPI Strip -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px 14px; border-radius: 12px;">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">🥛 Product & Daily Qty</div>
+          <div id="subDetailKpiProduct" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-top: 4px;">-</div>
+          <div id="subDetailKpiUnitRate" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">-</div>
+        </div>
+        <div style="background: rgba(13, 124, 102, 0.08); border: 1px solid rgba(13, 124, 102, 0.25); padding: 12px 14px; border-radius: 12px;">
+          <div style="font-size: 11px; color: #34D399; text-transform: uppercase; font-weight: 700;">⏰ Delivery Slot & Shift</div>
+          <div id="subDetailKpiSlot" style="font-size: 14px; font-weight: 800; color: #34D399; margin-top: 4px;">-</div>
+          <div id="subDetailKpiShiftTag" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">-</div>
+        </div>
+        <div style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); padding: 12px 14px; border-radius: 12px;">
+          <div style="font-size: 11px; color: #38BDF8; text-transform: uppercase; font-weight: 700;">📅 Created & Start Date</div>
+          <div id="subDetailKpiStartDate" style="font-size: 14px; font-weight: 800; color: #38BDF8; margin-top: 4px;">-</div>
+          <div id="subDetailKpiCreatedDate" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">-</div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); padding: 12px 14px; border-radius: 12px;">
+          <div style="font-size: 11px; color: #FBBF24; text-transform: uppercase; font-weight: 700;">💰 Daily & Monthly Value</div>
+          <div id="subDetailKpiMonthly" style="font-size: 15px; font-weight: 800; color: #FBBF24; margin-top: 4px;">-</div>
+          <div id="subDetailKpiDaily" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">-</div>
+        </div>
+      </div>
+
+      <!-- Main Two Columns: Customer Info & Subscription Editor -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <!-- Left: Customer & Address Profile -->
+        <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;">
+          <div style="font-weight: 800; font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-user" style="color: #38BDF8;"></i> Customer & Delivery Profile
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+            <div><strong style="color: var(--text-muted);">Name:</strong> <span id="subDetailCustName" style="font-weight: 700;">-</span></div>
+            <div><strong style="color: var(--text-muted);">Phone:</strong> <span id="subDetailCustPhone">-</span></div>
+            <div><strong style="color: var(--text-muted);">Email:</strong> <span id="subDetailCustEmail">-</span></div>
+            <div><strong style="color: var(--text-muted);">Wallet Balance:</strong> <span id="subDetailCustWallet" style="color: #10B981; font-weight: 800;">₹0</span></div>
+            <div><strong style="color: var(--text-muted);">Assigned Hub:</strong> <span id="subDetailHubName" style="color: #38BDF8; font-weight: 700;">-</span></div>
+            <div><strong style="color: var(--text-muted);">Delivery Address:</strong> <span id="subDetailCustAddress">-</span></div>
+            <div><strong style="color: var(--text-muted);">Special Notes:</strong> <span id="subDetailCustNotes" style="font-style: italic; color: #FBBF24;">None</span></div>
+          </div>
+        </div>
+
+        <!-- Right: Edit Subscription Configuration -->
+        <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;">
+          <div style="font-weight: 800; font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-sliders" style="color: #10B981;"></i> Update Subscription Settings
+          </div>
+          <input type="hidden" id="editSubId">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label style="font-size: 11.5px;">Preferred Delivery Slot (☀️ Morning / 🌙 Evening)</label>
+            <select id="editSubSlot" class="form-control" style="font-size: 12px; padding: 7px 10px;">
+              <optgroup label="☀️ Morning Shift">
+                <option value="05:30 AM - 07:00 AM">⚡ 05:30 AM - 07:00 AM (Early Morning)</option>
+                <option value="07:00 AM - 08:30 AM">🌅 07:00 AM - 08:30 AM (Standard Morning)</option>
+              </optgroup>
+              <optgroup label="🌙 Evening Shift">
+                <option value="05:00 PM - 07:00 PM">🌇 05:00 PM - 07:00 PM (Early Evening)</option>
+                <option value="06:30 PM - 08:30 PM">🌙 06:30 PM - 08:30 PM (Standard Evening)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 11.5px;">Daily Quantity</label>
+              <input type="number" id="editSubQty" class="form-control" min="1" style="font-size: 12px; padding: 7px 10px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 11.5px;">Delivery Schedule</label>
+              <select id="editSubSchedule" class="form-control" style="font-size: 12px; padding: 7px 10px;">
+                <option value="DAILY">Daily (Everyday ☀️)</option>
+                <option value="ALTERNATE">Alternate Days 🔄</option>
+                <option value="WEEKDAYS">Weekdays 📅</option>
+                <option value="CUSTOM">Custom Days 🗓️</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size: 11.5px;">Delivery Address / Instructions</label>
+            <input type="text" id="editSubAddress" class="form-control" style="font-size: 12px; padding: 7px 10px;">
+          </div>
+          <button class="btn btn-primary" style="width: 100%; font-size: 12px; padding: 8px;" onclick="saveSubscriptionSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save & Sync Pending Tasks
+          </button>
+        </div>
+      </div>
+
+      <!-- Delivery Tasks Execution History (Doorstep Log) -->
+      <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-truck-ramp-box" style="color: #FBBF24;"></i> Delivery Tasks & Doorstep Proof Log
+          </div>
+          <span style="font-size: 11px; color: var(--text-muted);">Real-time doorstep dispatch execution</span>
+        </div>
+        <div class="data-table-wrapper" style="max-height: 280px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Task ID</th>
+                <th>Delivery Date</th>
+                <th>Slot Time</th>
+                <th>Status</th>
+                <th>Assigned Delivery Boy</th>
+                <th>Delivered Time</th>
+                <th>Proof Photo</th>
+              </tr>
+            </thead>
+            <tbody id="subDetailTasksTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -5497,27 +5634,27 @@
         if (s.status === 'ACTIVE') {
           statusTag = '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> ACTIVE</span>';
           actionButtons = `
-            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'pause')">
+            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="event.stopPropagation(); updateAdminSubscriptionStatus(${s.id}, 'pause')">
               <i class="fa-solid fa-pause"></i> Pause
             </button>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'cancel')">
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="event.stopPropagation(); updateAdminSubscriptionStatus(${s.id}, 'cancel')">
               <i class="fa-solid fa-ban"></i> Cancel
             </button>
           `;
         } else if (s.status === 'PAUSED') {
           statusTag = '<span class="status-tag status-paused"><i class="fa-solid fa-circle-pause"></i> PAUSED</span>';
           actionButtons = `
-            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'resume')">
+            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="event.stopPropagation(); updateAdminSubscriptionStatus(${s.id}, 'resume')">
               <i class="fa-solid fa-play"></i> Resume
             </button>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'cancel')">
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="event.stopPropagation(); updateAdminSubscriptionStatus(${s.id}, 'cancel')">
               <i class="fa-solid fa-ban"></i> Cancel
             </button>
           `;
         } else {
           statusTag = '<span class="status-tag status-cancelled"><i class="fa-solid fa-circle-xmark"></i> CANCELLED</span>';
           actionButtons = `
-            <button class="btn btn-primary" style="background:#0D7C66; border-color:#0D7C66; padding: 4px 10px; font-size: 11px;" onclick="updateAdminSubscriptionStatus(${s.id}, 'reactivate')">
+            <button class="btn btn-primary" style="background:#0D7C66; border-color:#0D7C66; padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); updateAdminSubscriptionStatus(${s.id}, 'reactivate')">
               <i class="fa-solid fa-rotate-right"></i> Restart
             </button>
           `;
@@ -5526,24 +5663,217 @@
         const hubBadge = s.hub_name ? `🏢 ${s.hub_name}` : '🏢 Kodad Hub Depot';
         const schedLabel = s.schedule_type === 'DAILY' ? 'Daily ☀️' : (s.schedule_type === 'ALTERNATE' ? 'Alternate Days 🔄' : (s.schedule_type === 'WEEKDAYS' ? 'Weekdays 📅' : (s.schedule_type || 'Daily')));
 
+        const slotStr = s.delivery_slot || '05:30 AM - 07:00 AM';
+        const isEvening = slotStr.toUpperCase().includes('PM') || slotStr.toUpperCase().includes('17:') || slotStr.toUpperCase().includes('18:') || slotStr.toUpperCase().includes('19:');
+        const slotIcon = isEvening ? '🌙' : '☀️';
+        const slotBg = isEvening ? 'rgba(124, 58, 237, 0.15)' : 'rgba(13, 124, 102, 0.15)';
+        const slotColor = isEvening ? '#C084FC' : '#34D399';
+        const slotBorder = isEvening ? 'rgba(124, 58, 237, 0.3)' : 'rgba(16, 185, 129, 0.3)';
+
         tbody.innerHTML += `
-          <tr style="${s.status === 'CANCELLED' ? 'opacity: 0.75;' : ''}">
-            <td>#${s.id}</td>
-            <td><strong>${s.customer_name}</strong></td>
-            <td>${s.customer_phone}<br><small style="color:var(--text-muted);">${s.customer_address}</small></td>
-            <td><strong>${s.quantity}x ${s.pack_size || ''} ${s.product_name}</strong></td>
-            <td><span class="status-tag status-active" style="font-size: 10px; background: rgba(13, 124, 102, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">${hubBadge}</span></td>
-            <td><span style="font-size: 11.5px; font-weight: 600;">${schedLabel}</span></td>
-            <td>${statusTag}</td>
-            <td><strong>₹${s.estimated_monthly_value.toFixed(0)}</strong></td>
+          <tr style="cursor: pointer; ${s.status === 'CANCELLED' ? 'opacity: 0.75;' : ''}" onclick="inspectSubscription(${s.id})" title="Click to view full subscription details & doorstep logs">
+            <td><strong style="color: var(--primary-accent);">#${s.id}</strong></td>
             <td>
-              <div style="display:flex; align-items:center;">
+              <strong>${s.customer_name}</strong><br>
+              <small style="color:var(--text-muted);">${s.customer_phone}</small>
+            </td>
+            <td>
+              <strong>${s.quantity}x ${s.pack_size || ''} ${s.product_name}</strong>
+            </td>
+            <td>
+              <span class="status-tag" style="font-size: 11px; font-weight: 700; background: ${slotBg}; color: ${slotColor}; border: 1px solid ${slotBorder};">
+                ${slotIcon} ${slotStr}
+              </span>
+            </td>
+            <td>
+              <div style="font-size: 11.5px; font-weight: 700; color: var(--text-main);">${s.created_at || 'Recently'}</div>
+              <small style="font-size: 10.5px; color: var(--text-muted);">Starts: ${s.start_date || '-'}</small>
+            </td>
+            <td>
+              <div style="font-size: 11.5px; font-weight: 600;">${schedLabel}</div>
+              <small style="color: var(--text-muted); font-size: 10.5px;">${hubBadge}</small>
+            </td>
+            <td>${statusTag}</td>
+            <td><strong style="color: #38BDF8;">₹${s.estimated_monthly_value.toFixed(0)}</strong></td>
+            <td>
+              <div style="display:flex; align-items:center; gap: 4px;">
+                <button class="btn btn-primary" style="padding: 4px 9px; font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3);" onclick="event.stopPropagation(); inspectSubscription(${s.id})">
+                  <i class="fa-solid fa-magnifying-glass"></i> Inspect
+                </button>
                 ${actionButtons}
               </div>
             </td>
           </tr>
         `;
       });
+    }
+
+    async function inspectSubscription(subId) {
+      try {
+        const res = await fetch(`${baseUrl}/admin/subscriptions/${subId}/`, {
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') }
+        });
+        if (!res.ok) {
+          alert('Could not load subscription details.');
+          return;
+        }
+
+        const sub = await res.json();
+        const cust = sub.customer || {};
+        const prod = sub.product || {};
+        const hub = sub.hub || {};
+        const tasks = sub.tasks || [];
+
+        document.getElementById('subDetailTitle').innerHTML = `<i class="fa-solid fa-repeat" style="color: var(--primary-accent); margin-right: 8px;"></i>Subscription #${sub.id}`;
+        
+        const badgeEl = document.getElementById('subDetailStatusBadge');
+        if (sub.status === 'ACTIVE') {
+          badgeEl.className = 'status-tag status-active';
+          badgeEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> ACTIVE';
+        } else if (sub.status === 'PAUSED') {
+          badgeEl.className = 'status-tag status-paused';
+          badgeEl.innerHTML = '<i class="fa-solid fa-circle-pause"></i> PAUSED';
+        } else {
+          badgeEl.className = 'status-tag status-cancelled';
+          badgeEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CANCELLED';
+        }
+
+        document.getElementById('subDetailMetaHeader').innerText = `Created on ${sub.created_at || 'N/A'} • Customer: ${cust.name || cust.username} (${cust.phone || 'No phone'})`;
+
+        // Action buttons inside modal
+        let modalBtns = '';
+        if (sub.status === 'ACTIVE') {
+          modalBtns = `
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="updateAdminSubscriptionStatus(${sub.id}, 'pause'); inspectSubscription(${sub.id});">
+              <i class="fa-solid fa-pause"></i> Pause Deliveries
+            </button>
+            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="updateAdminSubscriptionStatus(${sub.id}, 'cancel'); inspectSubscription(${sub.id});">
+              <i class="fa-solid fa-ban"></i> Cancel Subscription
+            </button>
+          `;
+        } else if (sub.status === 'PAUSED') {
+          modalBtns = `
+            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="updateAdminSubscriptionStatus(${sub.id}, 'resume'); inspectSubscription(${sub.id});">
+              <i class="fa-solid fa-play"></i> Resume Deliveries
+            </button>
+            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="updateAdminSubscriptionStatus(${sub.id}, 'cancel'); inspectSubscription(${sub.id});">
+              <i class="fa-solid fa-ban"></i> Cancel Subscription
+            </button>
+          `;
+        } else {
+          modalBtns = `
+            <button class="btn btn-primary" style="background:#0D7C66; border-color:#0D7C66; padding: 6px 14px; font-size: 12px;" onclick="updateAdminSubscriptionStatus(${sub.id}, 'reactivate'); inspectSubscription(${sub.id});">
+              <i class="fa-solid fa-rotate-right"></i> Restart Subscription
+            </button>
+          `;
+        }
+        document.getElementById('subDetailActionBtns').innerHTML = modalBtns;
+
+        // KPI Strip
+        document.getElementById('subDetailKpiProduct').innerText = `${sub.quantity}x ${sub.pack_size || ''} ${prod.name || 'Milk'}`;
+        document.getElementById('subDetailKpiUnitRate').innerText = `₹${prod.price_per_unit || 0} / unit • Cat: ${prod.category || 'Dairy'}`;
+
+        const slotStr = sub.delivery_slot || '05:30 AM - 07:00 AM';
+        const isEvening = slotStr.toUpperCase().includes('PM') || slotStr.toUpperCase().includes('17:') || slotStr.toUpperCase().includes('18:') || slotStr.toUpperCase().includes('19:');
+        document.getElementById('subDetailKpiSlot').innerText = `${isEvening ? '🌙' : '☀️'} ${slotStr}`;
+        document.getElementById('subDetailKpiShiftTag').innerText = isEvening ? 'Evening Doorstep Shift' : 'Morning Doorstep Shift';
+
+        document.getElementById('subDetailKpiStartDate').innerText = `Starts: ${sub.start_date || 'Immediate'}`;
+        document.getElementById('subDetailKpiCreatedDate').innerText = `Booked: ${sub.created_at || '-'}`;
+
+        document.getElementById('subDetailKpiMonthly').innerText = `₹${Math.round(sub.estimated_monthly_value || 0).toLocaleString('en-IN')}`;
+        document.getElementById('subDetailKpiDaily').innerText = `Daily Run: ₹${sub.daily_cost || 0} / delivery`;
+
+        // Customer Details
+        document.getElementById('subDetailCustName').innerText = cust.name || cust.username || 'Customer';
+        document.getElementById('subDetailCustPhone').innerText = cust.phone || 'N/A';
+        document.getElementById('subDetailCustEmail').innerText = cust.email || 'N/A';
+        document.getElementById('subDetailCustWallet').innerText = `₹${(cust.wallet_balance || 0).toFixed(2)}`;
+        document.getElementById('subDetailHubName').innerText = `${hub.name || 'Kodad Depot'} (${hub.hub_code || 'HUB-KDD-01'})`;
+        document.getElementById('subDetailCustAddress').innerText = sub.delivery_address || cust.address || 'Address Not Provided';
+        document.getElementById('subDetailCustNotes').innerText = sub.delivery_instructions || 'None';
+
+        // Edit form fields
+        document.getElementById('editSubId').value = sub.id;
+        document.getElementById('editSubSlot').value = sub.delivery_slot || '05:30 AM - 07:00 AM';
+        document.getElementById('editSubQty').value = sub.quantity || 1;
+        document.getElementById('editSubSchedule').value = sub.schedule_type || 'DAILY';
+        document.getElementById('editSubAddress').value = sub.delivery_address || '';
+
+        // Delivery Tasks Table
+        const taskTbody = document.getElementById('subDetailTasksTableBody');
+        taskTbody.innerHTML = '';
+        if (tasks.length === 0) {
+          taskTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 18px;">No doorstep delivery tasks recorded yet.</td></tr>';
+        } else {
+          tasks.forEach(t => {
+            const isDelivered = t.status === 'DELIVERED';
+            const isSkipped = t.status === 'SKIPPED';
+            const statusBadge = isDelivered 
+              ? '<span class="status-tag status-delivered">✓ DELIVERED</span>' 
+              : (isSkipped ? '<span class="status-tag status-skipped">SKIPPED</span>' : '<span class="status-tag status-pending">⏳ PENDING</span>');
+
+            taskTbody.innerHTML += `
+              <tr>
+                <td>#${t.id}</td>
+                <td><strong>${t.delivery_date}</strong></td>
+                <td>${t.slot_time || '05:30 AM - 07:00 AM'}</td>
+                <td>${statusBadge}</td>
+                <td>${t.driver_name} ${t.driver_phone ? `<br><small style="color:var(--text-muted);">${t.driver_phone}</small>` : ''}</td>
+                <td>${t.delivered_at || (isDelivered ? 'Delivered' : '<span style="color:var(--text-muted);">-</span>')}</td>
+                <td>
+                  ${t.proof_image_url ? `
+                    <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 10.5px;" onclick="viewProof('${t.proof_image_url}', 'Task #${t.id} - ${t.delivery_date}')">
+                      <i class="fa-solid fa-camera"></i> Proof
+                    </button>
+                  ` : `<span style="color:var(--text-muted); font-size:11px;">None</span>`}
+                </td>
+              </tr>
+            `;
+          });
+        }
+
+        document.getElementById('subscriptionDetailModal').style.display = 'flex';
+      } catch (err) {
+        console.error('Error fetching subscription details:', err);
+        alert('Network error loading subscription inspection.');
+      }
+    }
+
+    async function saveSubscriptionSettings() {
+      const subId = document.getElementById('editSubId').value;
+      const slot = document.getElementById('editSubSlot').value;
+      const qty = document.getElementById('editSubQty').value;
+      const sched = document.getElementById('editSubSchedule').value;
+      const addr = document.getElementById('editSubAddress').value;
+
+      try {
+        const res = await fetch(`${baseUrl}/admin/subscriptions/${subId}/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
+          },
+          body: JSON.stringify({
+            delivery_slot: slot,
+            quantity: qty,
+            schedule_type: sched,
+            delivery_address: addr
+          })
+        });
+
+        if (res.ok) {
+          showToast('⚡ Subscription details & pending delivery tasks updated!', 'success');
+          inspectSubscription(subId);
+          loadSubscriptions();
+          loadDeliveries();
+        } else {
+          alert('Could not update subscription settings.');
+        }
+      } catch (e) {
+        console.error('Error updating subscription:', e);
+        alert('Network error saving subscription.');
+      }
     }
 
     function filterSubscriptionsTable() {
@@ -5565,7 +5895,9 @@
           (s.customer_address && s.customer_address.toLowerCase().includes(q)) ||
           (s.product_name && s.product_name.toLowerCase().includes(q)) ||
           (s.hub_name && s.hub_name.toLowerCase().includes(q)) ||
-          (s.schedule_type && s.schedule_type.toLowerCase().includes(q));
+          (s.schedule_type && s.schedule_type.toLowerCase().includes(q)) ||
+          (s.delivery_slot && s.delivery_slot.toLowerCase().includes(q)) ||
+          (s.created_at && s.created_at.toLowerCase().includes(q));
 
         const statusMatch = (statusFilter === 'ALL') || (s.status === statusFilter);
         const schedMatch = (schedFilter === 'ALL') || (s.schedule_type === schedFilter);

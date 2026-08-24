@@ -822,6 +822,124 @@ class AdminSubscriptionsListView(APIView):
         return Response(data)
 
 
+class AdminSubscriptionDetailView(APIView):
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request, pk):
+        from apps.deliveries.models import DeliveryTask
+        from apps.subscriptions.models import VacationPause
+
+        try:
+            s = Subscription.objects.select_related("customer", "product", "hub", "customer__assigned_hub").get(pk=pk)
+        except Subscription.DoesNotExist:
+            return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        assigned_hub = s.hub or s.customer.assigned_hub
+        tasks = DeliveryTask.objects.filter(subscription=s).select_related("driver").order_by("-delivery_date", "-id")[:40]
+        vacations = VacationPause.objects.filter(subscription=s).order_by("-start_date")
+
+        tasks_data = []
+        for t in tasks:
+            driver_name = f"{t.driver.first_name or t.driver.username} {t.driver.last_name or ''}".strip() if t.driver else "Unassigned"
+            tasks_data.append({
+                "id": t.id,
+                "delivery_date": str(t.delivery_date),
+                "slot_time": t.slot_time,
+                "status": t.status,
+                "driver_id": t.driver_id,
+                "driver_name": driver_name,
+                "driver_phone": t.driver.phone if t.driver else "",
+                "proof_image_url": t.proof_image_url or "",
+                "delivered_at": t.delivered_at.strftime("%d %b %Y, %I:%M %p") if t.delivered_at else None,
+            })
+
+        vacations_data = []
+        for v in vacations:
+            vacations_data.append({
+                "id": v.id,
+                "start_date": str(v.start_date),
+                "end_date": str(v.end_date),
+                "reason": getattr(v, "reason", "Vacation Mode"),
+                "created_at": v.created_at.strftime("%d %b %Y") if hasattr(v, "created_at") else "",
+            })
+
+        daily_cost = float(s.product.price_per_unit * s.quantity)
+        data = {
+            "id": s.id,
+            "status": s.status,
+            "schedule_type": s.schedule_type,
+            "quantity": s.quantity,
+            "pack_size": s.pack_size or (s.product.unit_quantity if s.product else "1 Litre"),
+            "delivery_slot": s.delivery_slot or "05:30 AM - 07:00 AM",
+            "delivery_address": s.delivery_address or (s.customer.address if s.customer else "") or "Doorstep Delivery Address",
+            "delivery_instructions": s.delivery_instructions or "",
+            "start_date": str(s.start_date),
+            "end_date": str(getattr(s, "end_date", "")) if getattr(s, "end_date", None) else None,
+            "created_at": s.created_at.strftime("%d %b %Y, %I:%M %p") if s.created_at else "",
+            "daily_cost": daily_cost,
+            "estimated_monthly_value": float(daily_cost * 30),
+            "customer": {
+                "id": s.customer.id,
+                "username": s.customer.username,
+                "name": f"{s.customer.first_name or s.customer.username} {s.customer.last_name or ''}".strip(),
+                "phone": s.customer.phone or "+91 9876543210",
+                "email": s.customer.email or "customer@milkdrop.in",
+                "wallet_balance": float(getattr(s.customer, "wallet_balance", 0.0) or 0.0),
+                "address": s.customer.address or "Doorstep Delivery Address",
+                "slot_preference": s.customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
+            },
+            "product": {
+                "id": s.product.id,
+                "name": s.product.name,
+                "category": getattr(s.product.category, "name", "Dairy") if getattr(s.product, "category", None) else "Dairy",
+                "price_per_unit": float(s.product.price_per_unit),
+                "unit_quantity": s.product.unit_quantity,
+                "image_url": getattr(s.product, "image_url", ""),
+            },
+            "hub": {
+                "id": assigned_hub.id if assigned_hub else None,
+                "name": assigned_hub.name if assigned_hub else "Kodad Hub Depot",
+                "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-KOD-01",
+                "manager_name": getattr(assigned_hub, "manager_name", "Operations Manager"),
+                "manager_phone": getattr(assigned_hub, "manager_phone", ""),
+            },
+            "tasks": tasks_data,
+            "vacation_pauses": vacations_data,
+        }
+        return Response(data)
+
+    def patch(self, request, pk):
+        from apps.deliveries.models import DeliveryTask
+
+        try:
+            s = Subscription.objects.get(pk=pk)
+        except Subscription.DoesNotExist:
+            return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if "delivery_slot" in request.data:
+            s.delivery_slot = request.data["delivery_slot"]
+            # Sync pending tasks
+            DeliveryTask.objects.filter(subscription=s, status=DeliveryTask.Statuses.PENDING).update(slot_time=s.delivery_slot)
+
+        if "quantity" in request.data:
+            try:
+                s.quantity = int(request.data["quantity"])
+            except ValueError:
+                pass
+
+        if "delivery_address" in request.data:
+            s.delivery_address = request.data["delivery_address"]
+
+        if "delivery_instructions" in request.data:
+            s.delivery_instructions = request.data["delivery_instructions"]
+
+        if "schedule_type" in request.data:
+            s.schedule_type = request.data["schedule_type"]
+
+        s.save()
+        return Response({"detail": "Subscription updated successfully", "id": s.id, "delivery_slot": s.delivery_slot})
+
+
 class AdminSubscriptionToggleView(APIView):
     permission_classes = [IsAdminOrStaff]
 
