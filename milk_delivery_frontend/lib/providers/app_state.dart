@@ -75,10 +75,10 @@ class AppState extends ChangeNotifier {
     if (locationHubs.isEmpty) return null;
 
     final hub = locationHubs.first;
-    final hLat = (hub['latitude'] as num?)?.toDouble() ?? 17.001734;
-    final hLon = (hub['longitude'] as num?)?.toDouble() ?? 79.9625;
+    final hLat = double.tryParse(hub['latitude']?.toString() ?? '17.001734') ?? 17.001734;
+    final hLon = double.tryParse(hub['longitude']?.toString() ?? '79.9625') ?? 79.9625;
     // Dynamic radius as configured in the Admin Web Console / Railway DB
-    final radius = (hub['coverage_radius_km'] as num?)?.toDouble() ?? 8.5;
+    final radius = double.tryParse(hub['coverage_radius_km']?.toString() ?? '8.5') ?? 8.5;
 
     final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
     if (dist <= radius) {
@@ -598,8 +598,8 @@ class AppState extends ChangeNotifier {
 
       if (savedAddresses.isEmpty && locationHubs.isNotEmpty && currentDeliveryAddress == 'Select Delivery Location') {
         final h = locationHubs.first;
-        currentLat = (h['latitude'] as num?)?.toDouble() ?? 16.9947;
-        currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9750;
+        currentLat = double.tryParse(h['latitude']?.toString() ?? '16.9947') ?? 16.9947;
+        currentLon = double.tryParse(h['longitude']?.toString() ?? '79.9750') ?? 79.9750;
         currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
       }
 
@@ -762,8 +762,8 @@ class AppState extends ChangeNotifier {
         activeAddress = null;
         if (locationHubs.isNotEmpty) {
           final h = locationHubs.first;
-          currentLat = (h['latitude'] as num?)?.toDouble() ?? 17.001734;
-          currentLon = (h['longitude'] as num?)?.toDouble() ?? 79.9625;
+          currentLat = double.tryParse(h['latitude']?.toString() ?? '17.001734') ?? 17.001734;
+          currentLon = double.tryParse(h['longitude']?.toString() ?? '79.9625') ?? 79.9625;
           currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
         } else {
           currentDeliveryAddress = 'Select Delivery Location';

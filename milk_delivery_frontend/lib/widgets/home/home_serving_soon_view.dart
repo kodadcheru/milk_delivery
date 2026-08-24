@@ -80,7 +80,7 @@ class HomeServingSoonView extends StatelessWidget {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              '${h['name']} (${(h['coverage_radius_km'] as num?)?.toDouble() ?? 5.0} km Radius)',
+                              '${h['name']} (${double.tryParse(h['coverage_radius_km']?.toString() ?? '5.0') ?? 5.0} km Radius)',
                               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
                             ),
                           ),

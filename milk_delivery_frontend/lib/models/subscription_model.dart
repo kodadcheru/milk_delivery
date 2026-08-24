@@ -47,26 +47,26 @@ class SubscriptionModel {
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
     ProductModel? pDetail;
-    if (json['product_detail'] != null) {
+    if (json['product_detail'] != null && json['product_detail'] is Map<String, dynamic>) {
       pDetail = ProductModel.fromJson(json['product_detail']);
     }
 
     return SubscriptionModel(
-      id: json['id'] ?? 0,
-      customerId: json['customer'] ?? 0,
-      productId: json['product'] ?? 0,
+      id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
+      customerId: json['customer'] is int ? json['customer'] : (int.tryParse(json['customer']?.toString() ?? '0') ?? 0),
+      productId: json['product'] is int ? json['product'] : (int.tryParse(json['product']?.toString() ?? '0') ?? 0),
       productDetail: pDetail,
-      quantity: json['quantity'] ?? 1,
-      scheduleType: json['schedule_type'] ?? 'DAILY',
-      startDate: json['start_date'] ?? '',
-      status: json['status'] ?? 'ACTIVE',
-      deliveryAddress: json['delivery_address'] ?? 'Doorstep Drop',
-      deliverySlot: json['delivery_slot'] ?? '05:30 AM - 07:00 AM',
+      quantity: json['quantity'] is int ? json['quantity'] : (int.tryParse(json['quantity']?.toString() ?? '1') ?? 1),
+      scheduleType: json['schedule_type']?.toString() ?? 'DAILY',
+      startDate: json['start_date']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'ACTIVE',
+      deliveryAddress: json['delivery_address']?.toString() ?? 'Doorstep Drop',
+      deliverySlot: json['delivery_slot']?.toString() ?? '05:30 AM - 07:00 AM',
       deliveryLatitude: double.tryParse(json['delivery_latitude']?.toString() ?? '17.4319') ?? 17.4319,
       deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '78.4073') ?? 78.4073,
-      deliveryInstructions: json['delivery_instructions'] ?? '',
-      packSize: json['pack_size'] ?? '1 Litre',
-      effectiveUnitPrice: (json['effective_unit_price'] as num?)?.toDouble() ?? 0.0,
+      deliveryInstructions: json['delivery_instructions']?.toString() ?? '',
+      packSize: json['pack_size']?.toString() ?? '1 Litre',
+      effectiveUnitPrice: double.tryParse(json['effective_unit_price']?.toString() ?? '0') ?? 0.0,
     );
   }
 

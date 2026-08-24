@@ -631,7 +631,8 @@ class BookingDetailSheet extends StatelessWidget {
         fatVal = '${activeBatch['fat_percentage']}%';
         snfVal = '${activeBatch['snf_percentage']}%';
         waterVal = '${activeBatch['water_percentage']}%';
-        priceVal = '₹${(activeBatch['price_per_litre'] as num).toStringAsFixed(0)}/L';
+        final parsedP = double.tryParse(activeBatch['price_per_litre']?.toString() ?? '68') ?? 68.0;
+        priceVal = '₹${parsedP.toStringAsFixed(0)}/L';
         batchCode = activeBatch['batch_code']?.toString() ?? 'BATCH-KDD-01';
         tempVal = '${activeBatch['temperature_celsius']}°C';
       } else {

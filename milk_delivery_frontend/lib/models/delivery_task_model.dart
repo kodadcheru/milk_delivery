@@ -133,7 +133,7 @@ class DeliveryTaskModel {
       customerLongitude: parsedLon,
       productName: json['product_name'] ?? (subDetail?.productDetail?.name ?? 'Farm Fresh Cow Milk'),
       productImage: json['product_image'] ?? (subDetail?.productDetail?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80'),
-      quantity: (json['quantity'] as num?)?.toInt() ?? (subDetail?.quantity ?? 1),
+      quantity: json['quantity'] is int ? json['quantity'] : (int.tryParse(json['quantity']?.toString() ?? '1') ?? (subDetail?.quantity ?? 1)),
       packSize: json['pack_size'] ?? (subDetail?.packSize ?? '1 Litre'),
       pricePerUnit: parsedPrice,
       fatPercentage: parsedFat,

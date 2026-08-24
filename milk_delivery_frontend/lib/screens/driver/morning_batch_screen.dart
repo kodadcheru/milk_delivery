@@ -45,8 +45,8 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
       final address = h['address']?.toString() ?? '$name, Telangana';
       final mgrName = h['manager_name']?.toString() ?? 'Hub Dispatch Lead';
       final mgrPhone = h['manager_phone']?.toString() ?? '8885199878';
-      final lat = (h['latitude'] as num?)?.toDouble() ?? 17.001734;
-      final lng = (h['longitude'] as num?)?.toDouble() ?? 79.9625;
+      final lat = double.tryParse(h['latitude']?.toString() ?? '17.001734') ?? 17.001734;
+      final lng = double.tryParse(h['longitude']?.toString() ?? '79.9625') ?? 79.9625;
 
       return HubLocationModel(
         id: '${h['hub_code'] ?? h['id'] ?? 'HUB-KDD-01'}',
@@ -1035,7 +1035,8 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
     final fat = latestBatch?['fat_percentage'] != null ? '${latestBatch!['fat_percentage']}%' : '6.8%';
     final snf = latestBatch?['snf_percentage'] != null ? '${latestBatch!['snf_percentage']}%' : '9.0%';
     final water = latestBatch?['water_percentage'] != null ? '${latestBatch!['water_percentage']}%' : '0.0%';
-    final price = latestBatch?['price_per_litre'] != null ? '${UiFormat.price(latestBatch!['price_per_litre'] as num)}/L' : '₹68/L';
+    final parsedP = latestBatch?['price_per_litre'] != null ? (double.tryParse(latestBatch!['price_per_litre'].toString()) ?? 68.0) : 68.0;
+    final price = '${UiFormat.price(parsedP)}/L';
     final product = latestBatch?['product_name']?.toString() ?? 'Pure Buffalo Milk';
     final batchCode = latestBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
 

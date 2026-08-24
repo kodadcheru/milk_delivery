@@ -39,7 +39,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
         : '8885199878';
 
     final coverageRadius = (activeHub != null && activeHub['coverage_radius_km'] != null)
-        ? (activeHub['coverage_radius_km'] as num).toDouble()
+        ? (double.tryParse(activeHub['coverage_radius_km'].toString()) ?? 8.5)
         : 8.5;
 
     final bankName = activeHub != null ? (activeHub['bank_name']?.toString() ?? 'State Bank of India') : 'State Bank of India';

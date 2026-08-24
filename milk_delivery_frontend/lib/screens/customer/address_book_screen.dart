@@ -692,8 +692,8 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
 
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
-        _lat = (result['lat'] as num?)?.toDouble() ?? _lat;
-        _lon = (result['lon'] as num?)?.toDouble() ?? _lon;
+        _lat = double.tryParse(result['lat']?.toString() ?? '$_lat') ?? _lat;
+        _lon = double.tryParse(result['lon']?.toString() ?? '$_lon') ?? _lon;
         if (result['full_address'] != null && result['full_address'].toString().isNotEmpty) {
           _streetController.text = result['full_address'];
         } else if (result['short_address'] != null && result['short_address'].toString().isNotEmpty) {

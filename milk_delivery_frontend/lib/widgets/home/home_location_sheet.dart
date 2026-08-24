@@ -363,8 +363,8 @@ class HomeLocationSheet {
                           style: const TextStyle(fontSize: 11, color: Colors.grey),
                         ),
                         onTap: () {
-                          final lat = (item['lat'] as num?)?.toDouble() ?? 17.001734;
-                          final lon = (item['lon'] as num?)?.toDouble() ?? 79.9625;
+                          final lat = double.tryParse(item['lat']?.toString() ?? '17.001734') ?? 17.001734;
+                          final lon = double.tryParse(item['lon']?.toString() ?? '79.9625') ?? 79.9625;
                           final chosenAddr = item['display_name'] ?? item['short_title'] ?? 'Custom Address';
                           state.updateDeliveryLocation(chosenAddr, lat, lon);
                           Navigator.pop(ctx);

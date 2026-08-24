@@ -31,8 +31,8 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
   List<Map<String, dynamic>> get _hubs {
     if (widget.state.locationHubs.isNotEmpty) {
       return widget.state.locationHubs.map((h) {
-        final double rawLat = (h['latitude'] as num?)?.toDouble() ?? 17.001734;
-        final double rawLng = (h['longitude'] as num?)?.toDouble() ?? 79.9625;
+        final double rawLat = double.tryParse(h['latitude']?.toString() ?? '17.001734') ?? 17.001734;
+        final double rawLng = double.tryParse(h['longitude']?.toString() ?? '79.9625') ?? 79.9625;
         // Ensure coordinates point to actual hub location instead of default Hyderabad
         final double lat = (rawLat >= 17.40 && rawLat <= 17.46 && rawLng >= 78.35 && rawLng <= 78.48)
             ? 17.001734
@@ -47,7 +47,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
           'lat': lat,
           'lng': lng,
           'color': UiTone.secondary,
-          'radiusKm': (h['coverage_radius_km'] as num?)?.toDouble() ?? 8.5,
+          'radiusKm': double.tryParse(h['coverage_radius_km']?.toString() ?? '8.5') ?? 8.5,
         };
       }).toList();
     }
@@ -142,9 +142,11 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
       final d = Map<String, dynamic>.from(drivers[i]);
       final latVal = d['latitude'] ?? d['lat'];
       final lngVal = d['longitude'] ?? d['lng'];
+      final parsedLat = double.tryParse(latVal?.toString() ?? '0') ?? 0.0;
+      final parsedLng = double.tryParse(lngVal?.toString() ?? '0') ?? 0.0;
       // Use REAL coordinates from backend — only offset if truly missing
-      if (latVal != null && lngVal != null && (latVal as num).toDouble() != 0.0 && (lngVal as num).toDouble() != 0.0) {
-        d['coord'] = LatLng(latVal.toDouble(), lngVal.toDouble());
+      if (parsedLat != 0.0 && parsedLng != 0.0) {
+        d['coord'] = LatLng(parsedLat, parsedLng);
         d['is_live'] = true;
       } else {
         // Fallback offset for drivers with no GPS data

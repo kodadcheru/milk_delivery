@@ -2425,7 +2425,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final fat = latestBatch?['fat_percentage'] != null ? '${latestBatch!['fat_percentage']}%' : '6.8%';
     final snf = latestBatch?['snf_percentage'] != null ? '${latestBatch!['snf_percentage']}%' : '9.0%';
     final water = latestBatch?['water_percentage'] != null ? '${latestBatch!['water_percentage']}%' : '0.0%';
-    final price = latestBatch?['price_per_litre'] != null ? '${UiFormat.price(latestBatch!['price_per_litre'] as num)}/L' : '${UiFormat.price(68)}/L';
+    final parsedP = latestBatch?['price_per_litre'] != null ? (double.tryParse(latestBatch!['price_per_litre'].toString()) ?? 68.0) : 68.0;
+    final price = '${UiFormat.price(parsedP)}/L';
     final product = latestBatch?['product_name']?.toString() ?? 'Pure Buffalo Milk';
     final batchCode = latestBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
 

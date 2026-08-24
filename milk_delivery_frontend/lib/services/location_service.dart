@@ -135,10 +135,10 @@ class LocationService {
             final list = <Map<String, dynamic>>[];
 
             for (var r in results.take(6)) {
-              final loc = r['geometry']['location'];
-              final lat = (loc['lat'] as num).toDouble();
-              final lon = (loc['lng'] as num).toDouble();
-              final formatted = r['formatted_address'] as String;
+              final loc = r['geometry']?['location'] ?? {};
+              final lat = double.tryParse(loc['lat']?.toString() ?? '0') ?? 0.0;
+              final lon = double.tryParse(loc['lng']?.toString() ?? '0') ?? 0.0;
+              final formatted = r['formatted_address']?.toString() ?? '';
               final components = r['address_components'] as List? ?? [];
 
               String road = '';
