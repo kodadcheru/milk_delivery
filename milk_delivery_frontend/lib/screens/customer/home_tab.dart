@@ -9,7 +9,6 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
-import '../../widgets/home/home_pinned_search_bar.dart';
 import '../../widgets/home/home_promo_carousel.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
 import '../../widgets/home/home_category_showcase.dart';
@@ -140,9 +139,8 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 14)),
-
               if (!widget.state.isLocationCovered) ...[
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 SliverToBoxAdapter(
                   child: HomeServingSoonView(
                     state: widget.state,
@@ -150,17 +148,8 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   ),
                 ),
               ] else ...[
-                // ── Pinned search — stays reachable after the hero scrolls off ──
-                HomePinnedSearchBar(
-                  controller: _searchController,
-                  onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-                  onClearSearch: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = '');
-                  },
-                ),
-
-                // ── 4. Promo Carousel ──
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                // ── Promo Carousel ──
                 SliverToBoxAdapter(
                   child: HomePromoCarousel(
                     state: widget.state,

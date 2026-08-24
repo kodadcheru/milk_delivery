@@ -102,7 +102,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, topInset + 18, 16, 36),
+      padding: EdgeInsets.fromLTRB(16, topInset + 6, 16, 18),
       decoration: BoxDecoration(
         color: const Color(0xFF0E784D),
         gradient: !hasCustomBanner
