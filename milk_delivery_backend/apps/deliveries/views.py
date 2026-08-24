@@ -780,24 +780,58 @@ class DailyMilkBatchListCreateView(APIView):
         if not hub:
             hub = LocationHub.objects.first()
 
-        batch_code = payload.get("batch_code") or f"BATCH-{date_cls.today().strftime('%Y%m%d')}-{random.randint(100, 999)}"
+        batch_date_val = date_cls.today()
+        if payload.get("batch_date"):
+            try:
+                from datetime import datetime
+                batch_date_val = datetime.strptime(str(payload.get("batch_date")).strip(), "%Y-%m-%d").date()
+            except Exception:
+                batch_date_val = date_cls.today()
+
+        batch_code = payload.get("batch_code") or f"BATCH-{batch_date_val.strftime('%Y%m%d')}-{random.randint(100, 999)}"
 
         batch, created = DailyMilkBatch.objects.update_or_create(
             batch_code=batch_code,
             defaults={
                 "hub": hub,
                 "product_name": product_name,
-                "batch_date": date_cls.today(),
+                "batch_date": batch_date_val,
                 "fat_percentage": fat,
                 "snf_percentage": snf,
                 "water_percentage": water,
                 "price_per_litre": litre_price,
                 "total_litres": total_litres,
                 "temperature_celsius": temperature,
-                "status": "DISPATCHED",
+                "status": payload.get("status", "DISPATCHED"),
                 "quality_certificate_note": payload.get("quality_certificate_note", "FSSAI Certified • Passed 24 Purity Checks"),
             }
         )
+
+        # ── Cascade and link to matching DeliveryTasks & LiveOrders for this date ──
+        try:
+            from .models import DeliveryTask, LiveOrder
+            task_qs = DeliveryTask.objects.filter(delivery_date=batch.batch_date)
+            if batch.hub:
+                task_qs = task_qs.filter(models.Q(hub=batch.hub) | models.Q(hub__isnull=True))
+            first_word = product_name.split()[0] if product_name.split() else ""
+            if first_word:
+                matching_tasks = task_qs.filter(
+                    models.Q(subscription__product__name__icontains=first_word) |
+                    models.Q(order__items__product__name__icontains=first_word)
+                )
+                if matching_tasks.exists():
+                    matching_tasks.update(batch=batch)
+                else:
+                    task_qs.update(batch=batch)
+            else:
+                task_qs.update(batch=batch)
+
+            order_qs = LiveOrder.objects.filter(delivery_date=batch.batch_date)
+            if batch.hub:
+                order_qs = order_qs.filter(models.Q(hub=batch.hub) | models.Q(hub__isnull=True))
+            order_qs.update(batch=batch)
+        except Exception as e:
+            pass
 
         # Sync/Update matching product's unit price in database
         try:
@@ -824,8 +858,106 @@ class DailyMilkBatchListCreateView(APIView):
                 "total_litres": float(batch.total_litres),
                 "temperature_celsius": float(batch.temperature_celsius),
                 "status": batch.status,
+                "quality_certificate_note": batch.quality_certificate_note,
+                "hub_name": batch.hub.name if batch.hub else "",
             }
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class DailyMilkBatchDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        from .models import DailyMilkBatch
+        try:
+            b = DailyMilkBatch.objects.get(pk=pk)
+        except DailyMilkBatch.DoesNotExist:
+            return Response({"detail": "Batch not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            "id": b.id,
+            "batch_code": b.batch_code,
+            "product_name": b.product_name,
+            "batch_date": str(b.batch_date),
+            "fat_percentage": float(b.fat_percentage),
+            "snf_percentage": float(b.snf_percentage),
+            "water_percentage": float(b.water_percentage),
+            "price_per_litre": float(b.price_per_litre),
+            "total_litres": float(b.total_litres),
+            "temperature_celsius": float(b.temperature_celsius),
+            "status": b.status,
+            "quality_certificate_note": b.quality_certificate_note,
+            "hub_id": b.hub_id,
+            "hub_name": b.hub.name if b.hub else "",
+            "created_at": b.created_at.isoformat(),
+        })
+
+    def patch(self, request, pk):
+        from .models import DailyMilkBatch, LocationHub
+        from apps.products.models import Product
+        try:
+            b = DailyMilkBatch.objects.get(pk=pk)
+        except DailyMilkBatch.DoesNotExist:
+            return Response({"detail": "Batch not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        if "fat_percentage" in data:
+            b.fat_percentage = float(data["fat_percentage"])
+        if "snf_percentage" in data:
+            b.snf_percentage = float(data["snf_percentage"])
+        if "water_percentage" in data:
+            b.water_percentage = float(data["water_percentage"])
+        if "price_per_litre" in data:
+            b.price_per_litre = float(data["price_per_litre"])
+        if "total_litres" in data:
+            b.total_litres = float(data["total_litres"])
+        if "temperature_celsius" in data:
+            b.temperature_celsius = float(data["temperature_celsius"])
+        if "status" in data:
+            b.status = data["status"]
+        if "quality_certificate_note" in data:
+            b.quality_certificate_note = data["quality_certificate_note"]
+        if "product_name" in data:
+            b.product_name = data["product_name"]
+
+        b.save()
+
+        # Update product price
+        try:
+            first_word = b.product_name.split()[0] if b.product_name.split() else "Milk"
+            Product.objects.filter(name__icontains=first_word).update(price_per_unit=b.price_per_litre)
+        except Exception:
+            pass
+
+        return Response({
+            "status": "success",
+            "message": f"Daily milk batch {b.batch_code} updated successfully.",
+            "batch": {
+                "id": b.id,
+                "batch_code": b.batch_code,
+                "product_name": b.product_name,
+                "batch_date": str(b.batch_date),
+                "fat_percentage": float(b.fat_percentage),
+                "snf_percentage": float(b.snf_percentage),
+                "water_percentage": float(b.water_percentage),
+                "price_per_litre": float(b.price_per_litre),
+                "total_litres": float(b.total_litres),
+                "temperature_celsius": float(b.temperature_celsius),
+                "status": b.status,
+                "quality_certificate_note": b.quality_certificate_note,
+                "hub_name": b.hub.name if b.hub else "",
+            }
+        })
+
+    def delete(self, request, pk):
+        from .models import DailyMilkBatch
+        try:
+            b = DailyMilkBatch.objects.get(pk=pk)
+            code = b.batch_code
+            b.delete()
+            return Response({"status": "success", "message": f"Batch {code} deleted successfully."})
+        except DailyMilkBatch.DoesNotExist:
+            return Response({"detail": "Batch not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class QualityHistoryView(APIView):

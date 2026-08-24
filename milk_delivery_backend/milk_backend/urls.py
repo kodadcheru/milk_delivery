@@ -69,6 +69,7 @@ from apps.deliveries.views import (
     BottleReturnListCreateView,
     BottleReturnUpdateView,
     DailyMilkBatchListCreateView,
+    DailyMilkBatchDetailView,
     DeliverySummaryView,
     DeliveryTaskCompleteView,
     DeliveryTaskListView,
@@ -189,6 +190,7 @@ urlpatterns = [
     path("api/payouts/", ProviderPayoutListCreateView.as_view(), name="provider_payouts"),
     # Hub Provider Daily Milk Batch certification & quality metrics
     path("api/deliveries/daily-batches/", DailyMilkBatchListCreateView.as_view(), name="daily_milk_batches"),
+    path("api/deliveries/daily-batches/<int:pk>/", DailyMilkBatchDetailView.as_view(), name="daily_milk_batch_detail"),
     path("api/deliveries/quality-history/", QualityHistoryView.as_view(), name="quality_history"),
     # Express / Live Orders endpoints
     path("api/orders/express/", ExpressOrderListCreateView.as_view(), name="express_order_list_create"),

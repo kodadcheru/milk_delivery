@@ -558,40 +558,102 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
       );
 
   Widget _trustBadge() {
+    final nameLower = widget.product.name.toLowerCase();
+    Map<String, dynamic>? activeBatch;
+    final batches = widget.state.dailyMilkBatches;
+    if (batches.isNotEmpty) {
+      activeBatch = batches.firstWhere(
+        (b) {
+          final bName = b['product_name']?.toString().toLowerCase() ?? '';
+          return bName.contains(nameLower.split(' ').first);
+        },
+        orElse: () => batches.first,
+      );
+    }
+
+    final fatVal = activeBatch != null ? '${activeBatch['fat_percentage']}%' : (nameLower.contains('buffalo') ? '6.8%' : '4.2%');
+    final snfVal = activeBatch != null ? '${activeBatch['snf_percentage']}%' : (nameLower.contains('buffalo') ? '9.0%' : '8.5%');
+    final waterVal = activeBatch != null ? '${activeBatch['water_percentage']}%' : '0.0%';
+    final tempVal = activeBatch != null ? '${activeBatch['temperature_celsius']}°C' : '3.8°C';
+    final batchCode = activeBatch != null ? (activeBatch['batch_code'] ?? 'BATCH-CERT-01') : 'BATCH-CERT-01';
+    final certNote = activeBatch != null ? (activeBatch['quality_certificate_note'] ?? 'FSSAI Certified • Passed 24 Purity Checks') : 'FSSAI Certified • Passed 24 Purity Checks';
+
     return GestureDetector(
       onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: UiTone.primarySoft,
           borderRadius: BorderRadius.circular(UiRadius.xs),
-          border: Border.all(color: UiTone.primary.withValues(alpha: 0.2)),
+          border: Border.all(color: UiTone.primary.withValues(alpha: 0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('✅ ', style: TextStyle(fontSize: 10)),
+                const Text('🔬 ', style: TextStyle(fontSize: 12)),
                 Expanded(
                   child: Text(
-                    '6.8% Fat • 0% Water • FSSAI Grade A+',
-                    style: UiText.caption.copyWith(color: UiTone.primaryDark, fontWeight: FontWeight.bold),
+                    'Today\'s Certified Lab Batch • $fatVal Fat • $waterVal Water',
+                    style: UiText.caption.copyWith(color: UiTone.primaryDark, fontWeight: FontWeight.w900, fontSize: 11),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 14, color: UiTone.success),
+                Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 16, color: UiTone.primary),
               ],
             ),
             if (_isBadgeExpanded) ...[
               const SizedBox(height: 8),
               const Divider(height: 1),
               const SizedBox(height: 8),
-              Text('🔬 9.0% SNF', style: UiText.caption.copyWith(color: UiTone.primaryDark)),
-              Text('❄️ Chilled at 3.8°C', style: UiText.caption.copyWith(color: UiTone.primaryDark)),
-              Text('🧪 24 Purity Checks Passed', style: UiText.caption.copyWith(color: UiTone.primaryDark)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('🥛 Solid Not Fat (SNF):', style: UiText.caption.copyWith(color: UiTone.softText)),
+                  Text(snfVal, style: UiText.caption.copyWith(color: UiTone.ink, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('❄️ Chilling Temperature:', style: UiText.caption.copyWith(color: UiTone.softText)),
+                  Text(tempVal, style: UiText.caption.copyWith(color: UiTone.ink, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('🏷️ Batch ID:', style: UiText.caption.copyWith(color: UiTone.softText)),
+                  Text(batchCode, style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                  border: Border.all(color: UiTone.primary.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_rounded, size: 12, color: UiTone.primary),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        certNote,
+                        style: UiText.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: UiTone.primary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ],
         ),

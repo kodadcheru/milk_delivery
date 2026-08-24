@@ -726,6 +726,7 @@
       <button class="tab-btn" onclick="switchTab('express-orders', this)"><i class="fa-solid fa-bolt"></i> Express Orders</button>
       <button class="tab-btn" onclick="switchTab('bottle-returns', this)"><i class="fa-solid fa-wine-bottle"></i> Bottle Returns</button>
       <button class="tab-btn" onclick="switchTab('payouts', this)"><i class="fa-solid fa-money-bill-transfer"></i> Provider Payouts</button>
+      <button class="tab-btn" onclick="switchTab('lab-batches', this)"><i class="fa-solid fa-flask-vial"></i> Daily Lab Batches</button>
       <button class="tab-btn" onclick="switchTab('storefront', this)"><i class="fa-solid fa-paintbrush"></i> Storefront & App Banner</button>
       <button class="tab-btn" onclick="switchTab('support', this)"><i class="fa-solid fa-headset"></i> Support Desk & Live Chat</button>
       <button class="tab-btn" id="tabBtnProfile" onclick="switchTab('profile', this)"><i class="fa-solid fa-user-shield"></i> Admin Profile & Security</button>
@@ -1964,6 +1965,85 @@
       </div>
     </div>
 
+    <!-- ── Tab: Daily Milk Batches & Lab Purity Reports ── -->
+    <div id="tab-lab-batches" style="display: none;">
+      <div class="section-header">
+        <div>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-flask-vial" style="color: #10B981;"></i> Daily Milk Batches & Certified Lab Reports</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Manage daily milk testing certifications (FAT%, SNF%, Added Water, Temperature) and audit farm purity records per depot</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="openCreateBatchModal()" style="padding: 8px 16px; background: linear-gradient(135deg, #10B981, #0D7C66); border: none;">
+            <i class="fa-solid fa-plus"></i> + Certify New Daily Batch
+          </button>
+          <button class="btn btn-secondary" onclick="loadDailyBatches()" style="padding: 8px 16px;">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Batch KPIs -->
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="stat-value" id="batch-kpi-total" style="color: #10B981;">0</div>
+          <div class="stat-label">Certified Batches</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="batch-kpi-fat" style="color: #38BDF8;">6.8%</div>
+          <div class="stat-label">Avg Tested FAT %</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="batch-kpi-snf" style="color: #F59E0B;">9.0%</div>
+          <div class="stat-label">Avg Tested SNF %</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="batch-kpi-temp" style="color: #A855F7;">3.8°C</div>
+          <div class="stat-label">Depot Chilling Temp ❄️</div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="table-toolbar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+          <input type="text" id="batchSearchInput" placeholder="Search batch code, product name, hub, or notes..." oninput="filterDailyBatchesTable()">
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Date Filter:</label>
+          <input type="date" id="batchDateFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDailyBatchesTable()">
+          <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Hub:</label>
+          <select id="batchHubFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDailyBatchesTable()">
+            <option value="ALL">All Hubs</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Batches Table -->
+      <div class="data-table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Batch Code</th>
+              <th>Date</th>
+              <th>Hub / Depot</th>
+              <th>Product</th>
+              <th>FAT %</th>
+              <th>SNF %</th>
+              <th>Water %</th>
+              <th>Litre Price</th>
+              <th>Chilling Temp</th>
+              <th>Status</th>
+              <th>Quality Certification</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="dailyBatchesTableBody">
+            <tr><td colspan="12" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading daily lab batch certifications...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ── Tab: Support Desk & Executives ── -->
     <div id="tab-support" style="display: none;">
       <div class="section-header">
@@ -2557,6 +2637,99 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Create / Edit Daily Lab Milk Batch ── -->
+  <div class="modal-overlay" id="batchModal">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-title"><i class="fa-solid fa-flask-vial" style="color: #10B981;"></i> <span id="batchModalTitle">Certify Daily Milk Batch</span></div>
+      <input type="hidden" id="batchId">
+      
+      <div class="form-group">
+        <label>Location Hub / Depot</label>
+        <select id="batchHubSelect" class="form-control"></select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Product Name</label>
+          <select id="batchProductSelect" class="form-control">
+            <option value="Pure Buffalo Milk">Pure Buffalo Milk (Default)</option>
+            <option value="Farm Fresh A2 Desi Cow Milk">Farm Fresh A2 Desi Cow Milk</option>
+            <option value="Fresh Cow Milk">Fresh Cow Milk</option>
+            <option value="Organic Whole Milk">Organic Whole Milk</option>
+            <option value="Fresh Malai Paneer">Fresh Malai Paneer</option>
+            <option value="Farm Fresh Curd">Farm Fresh Curd</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Batch Date</label>
+          <input type="date" id="batchDateInput" class="form-control">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Batch Code (Auto-generated if empty)</label>
+          <input type="text" id="batchCodeInput" class="form-control" placeholder="e.g. BATCH-20260824-01">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="batchStatusSelect" class="form-control">
+            <option value="DISPATCHED">Dispatched to Drivers</option>
+            <option value="TESTED">Lab Tested & Verified</option>
+            <option value="COMPLETED">Fully Delivered</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Lab Quality Purity Parameters Grid -->
+      <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 800; color: #10B981; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-microscope"></i> Certified Lab Purity Metrics (24-Parameter Test)
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">FAT % (e.g. 6.8)</label>
+            <input type="number" step="0.01" id="batchFatInput" class="form-control" value="6.80">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">SNF % (e.g. 9.0)</label>
+            <input type="number" step="0.01" id="batchSnfInput" class="form-control" value="9.00">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Added Water %</label>
+            <input type="number" step="0.01" id="batchWaterInput" class="form-control" value="0.00">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Litre Price (₹)</label>
+            <input type="number" step="0.01" id="batchPriceInput" class="form-control" value="68.00">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Total Litres</label>
+            <input type="number" step="0.1" id="batchLitresInput" class="form-control" value="450.0">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Chilling Temp (°C)</label>
+            <input type="number" step="0.1" id="batchTempInput" class="form-control" value="3.8">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Quality Certificate Note / Certification Stamp</label>
+        <input type="text" id="batchCertNoteInput" class="form-control" value="FSSAI Certified • Passed 24 Purity Checks">
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('batchModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitSaveBatch()" style="background: linear-gradient(135deg, #10B981, #0D7C66); border: none;">
+          <i class="fa-solid fa-stamp"></i> Save & Certify Batch
+        </button>
       </div>
     </div>
   </div>
@@ -3473,7 +3646,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'storefront', 'support', 'profile'].forEach(t => {
+      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'lab-batches', 'storefront', 'support', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -3487,6 +3660,8 @@
         loadSupportDesk();
       } else if (tabName === 'storefront') {
         loadStorefrontConfig();
+      } else if (tabName === 'lab-batches') {
+        loadDailyBatches();
       }
     }
 
@@ -3504,6 +3679,7 @@
         loadExpressOrders(),
         loadBottleReturns(),
         loadPayouts(),
+        loadDailyBatches(),
         loadStorefrontConfig(),
         loadSupportDesk(),
         loadVacationPauses()
@@ -7138,6 +7314,234 @@
         }
       } catch (e) {
         console.error('[AdminConsole]', e);
+      }
+    }
+
+    // ── Daily Milk Batch Lab Quality Certifications ──
+    let rawDailyBatches = [];
+
+    async function loadDailyBatches() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/deliveries/daily-batches/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          rawDailyBatches = data.batches || [];
+          
+          // Populate Hub filter dropdown if not already populated
+          const hubSelect = document.getElementById('batchHubFilter');
+          const modalHubSelect = document.getElementById('batchHubSelect');
+          if (hubSelect && (hubSelect.options.length <= 1) && window.rawHubs) {
+            window.rawHubs.forEach(h => {
+              const opt = document.createElement('option');
+              opt.value = h.id || h.hub_code;
+              opt.innerText = `${h.name} (${h.hub_code})`;
+              hubSelect.appendChild(opt);
+              if (modalHubSelect) {
+                const opt2 = document.createElement('option');
+                opt2.value = h.id || h.hub_code;
+                opt2.innerText = `${h.name} (${h.hub_code})`;
+                modalHubSelect.appendChild(opt2);
+              }
+            });
+          }
+
+          // Update KPI strip
+          document.getElementById('batch-kpi-total').innerText = rawDailyBatches.length;
+          if (rawDailyBatches.length > 0) {
+            const avgFat = rawDailyBatches.reduce((acc, b) => acc + (parseFloat(b.fat_percentage) || 0), 0) / rawDailyBatches.length;
+            const avgSnf = rawDailyBatches.reduce((acc, b) => acc + (parseFloat(b.snf_percentage) || 0), 0) / rawDailyBatches.length;
+            document.getElementById('batch-kpi-fat').innerText = `${avgFat.toFixed(1)}%`;
+            document.getElementById('batch-kpi-snf').innerText = `${avgSnf.toFixed(1)}%`;
+          }
+
+          filterDailyBatchesTable();
+        }
+      } catch (e) {
+        console.error('[AdminConsole Batches]', e);
+      }
+    }
+
+    function renderDailyBatchesTable(batches) {
+      const tbody = document.getElementById('dailyBatchesTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (batches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:24px;">No certified daily lab batches found.</td></tr>';
+        return;
+      }
+
+      batches.forEach(b => {
+        const statusClass = b.status === 'COMPLETED' ? 'status-active' : (b.status === 'TESTED' ? 'status-delivered' : 'status-pending');
+        const fatColor = parseFloat(b.fat_percentage) >= 6.0 ? '#10B981' : '#38BDF8';
+        
+        tbody.innerHTML += `
+          <tr>
+            <td><strong style="color: var(--primary-accent); font-size:12.5px;">${b.batch_code}</strong></td>
+            <td style="font-size:12px; color:var(--text-muted); font-weight:600;">📅 ${b.batch_date}</td>
+            <td><strong>🏢 ${b.hub_name || 'Central Depot'}</strong></td>
+            <td><strong>${b.product_name}</strong></td>
+            <td><span class="status-tag" style="background: rgba(16,185,129,0.15); color: ${fatColor}; font-weight:900; font-size:11.5px;">🔬 ${b.fat_percentage}%</span></td>
+            <td><strong style="font-size:11.5px;">${b.snf_percentage}%</strong></td>
+            <td><span style="color: #10B981; font-weight:700;">${b.water_percentage}%</span></td>
+            <td><strong style="color: #38BDF8;">₹${parseFloat(b.price_per_litre).toFixed(2)}/L</strong></td>
+            <td><span style="color:#A855F7; font-weight:700;">❄️ ${b.temperature_celsius}°C</span></td>
+            <td><span class="status-tag ${statusClass}">${b.status}</span></td>
+            <td style="font-size:11px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${b.quality_certificate_note || ''}">
+              <i class="fa-solid fa-certificate" style="color:#10B981;"></i> ${b.quality_certificate_note || 'FSSAI Certified'}
+            </td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="openEditBatchModal(${b.id})">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteBatch(${b.id}, '${b.batch_code}')">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterDailyBatchesTable() {
+      const q = (document.getElementById('batchSearchInput')?.value || '').toLowerCase().trim();
+      const dateVal = document.getElementById('batchDateFilter')?.value || '';
+      const hubVal = document.getElementById('batchHubFilter')?.value || 'ALL';
+
+      const filtered = rawDailyBatches.filter(b => {
+        const matchQ = !q || (b.batch_code && b.batch_code.toLowerCase().includes(q)) ||
+                             (b.product_name && b.product_name.toLowerCase().includes(q)) ||
+                             (b.hub_name && b.hub_name.toLowerCase().includes(q)) ||
+                             (b.quality_certificate_note && b.quality_certificate_note.toLowerCase().includes(q));
+        const matchDate = !dateVal || (b.batch_date === dateVal);
+        const matchHub = (hubVal === 'ALL') || (b.hub_id && b.hub_id.toString() === hubVal) || (b.hub_code === hubVal);
+        return matchQ && matchDate && matchHub;
+      });
+
+      renderDailyBatchesTable(filtered);
+    }
+
+    function openCreateBatchModal() {
+      document.getElementById('batchModalTitle').innerText = 'Certify New Daily Milk Batch';
+      document.getElementById('batchId').value = '';
+      document.getElementById('batchDateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('batchCodeInput').value = '';
+      document.getElementById('batchFatInput').value = '6.80';
+      document.getElementById('batchSnfInput').value = '9.00';
+      document.getElementById('batchWaterInput').value = '0.00';
+      document.getElementById('batchPriceInput').value = '68.00';
+      document.getElementById('batchLitresInput').value = '450.0';
+      document.getElementById('batchTempInput').value = '3.8';
+      document.getElementById('batchStatusSelect').value = 'DISPATCHED';
+      document.getElementById('batchCertNoteInput').value = 'FSSAI Certified • Passed 24 Purity Checks';
+      document.getElementById('batchModal').style.display = 'flex';
+    }
+
+    function openEditBatchModal(batchId) {
+      const b = rawDailyBatches.find(item => item.id === batchId);
+      if (!b) return;
+
+      document.getElementById('batchModalTitle').innerText = `Edit Batch ${b.batch_code}`;
+      document.getElementById('batchId').value = b.id;
+      document.getElementById('batchDateInput').value = b.batch_date;
+      document.getElementById('batchCodeInput').value = b.batch_code;
+      document.getElementById('batchProductSelect').value = b.product_name;
+      if (document.getElementById('batchHubSelect') && b.hub_id) {
+        document.getElementById('batchHubSelect').value = b.hub_id;
+      }
+      document.getElementById('batchFatInput').value = b.fat_percentage;
+      document.getElementById('batchSnfInput').value = b.snf_percentage;
+      document.getElementById('batchWaterInput').value = b.water_percentage;
+      document.getElementById('batchPriceInput').value = b.price_per_litre;
+      document.getElementById('batchLitresInput').value = b.total_litres;
+      document.getElementById('batchTempInput').value = b.temperature_celsius;
+      document.getElementById('batchStatusSelect').value = b.status || 'DISPATCHED';
+      document.getElementById('batchCertNoteInput').value = b.quality_certificate_note || 'FSSAI Certified • Passed 24 Purity Checks';
+      document.getElementById('batchModal').style.display = 'flex';
+    }
+
+    async function submitSaveBatch() {
+      const batchId = document.getElementById('batchId').value;
+      const hubId = document.getElementById('batchHubSelect').value;
+      const productName = document.getElementById('batchProductSelect').value;
+      const batchDate = document.getElementById('batchDateInput').value;
+      const batchCode = document.getElementById('batchCodeInput').value.trim();
+      const fat = parseFloat(document.getElementById('batchFatInput').value) || 6.8;
+      const snf = parseFloat(document.getElementById('batchSnfInput').value) || 9.0;
+      const water = parseFloat(document.getElementById('batchWaterInput').value) || 0.0;
+      const price = parseFloat(document.getElementById('batchPriceInput').value) || 68.0;
+      const litres = parseFloat(document.getElementById('batchLitresInput').value) || 450.0;
+      const temp = parseFloat(document.getElementById('batchTempInput').value) || 3.8;
+      const statusVal = document.getElementById('batchStatusSelect').value;
+      const certNote = document.getElementById('batchCertNoteInput').value.trim();
+
+      const payload = {
+        hub_id: hubId,
+        product_name: productName,
+        batch_date: batchDate,
+        batch_code: batchCode || undefined,
+        fat_percentage: fat,
+        snf_percentage: snf,
+        water_percentage: water,
+        price_per_litre: price,
+        total_litres: litres,
+        temperature_celsius: temp,
+        status: statusVal,
+        quality_certificate_note: certNote
+      };
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        let res;
+        if (batchId) {
+          res = await fetch(`${baseUrl}/deliveries/daily-batches/${batchId}/`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          res = await fetch(`${baseUrl}/deliveries/daily-batches/`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        if (res.ok) {
+          alert('✅ Daily milk batch certification saved and synchronized with all active delivery tasks!');
+          closeModal('batchModal');
+          loadDailyBatches();
+          loadDeliveries();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(err.detail || 'Failed to save batch certification.');
+        }
+      } catch (e) {
+        console.error('[AdminConsole Batch Save]', e);
+        alert('Network error while saving batch.');
+      }
+    }
+
+    async function deleteBatch(batchId, batchCode) {
+      if (!confirm(`Are you sure you want to delete certified batch ${batchCode}?`)) return;
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/deliveries/daily-batches/${batchId}/`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          alert(`Batch ${batchCode} deleted.`);
+          loadDailyBatches();
+        } else {
+          alert('Failed to delete batch.');
+        }
+      } catch (e) {
+        console.error('[AdminConsole Batch Delete]', e);
       }
     }
 
