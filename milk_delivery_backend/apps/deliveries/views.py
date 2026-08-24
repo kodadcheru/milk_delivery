@@ -252,7 +252,7 @@ class BottleReturnListCreateView(APIView):
             qs = qs.filter(customer=user)
         elif user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
             qs = qs.filter(driver=user)
-        elif user.role in (User.Roles.HUB_MANAGER, "PROVIDER") and user.assigned_hub:
+        elif not user.is_superuser and user.assigned_hub:
             qs = qs.filter(hub=user.assigned_hub)
 
         data = []
@@ -539,7 +539,7 @@ class GenerateTodayTasksView(APIView):
         )
         
         user = request.user
-        if getattr(user, 'role', '') in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(user, 'assigned_hub', None):
+        if not user.is_superuser and getattr(user, 'assigned_hub', None):
             active_subs = active_subs.filter(
                 Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub)
             )
@@ -731,7 +731,7 @@ class DailyMilkBatchListCreateView(APIView):
 
         if hub_code:
             batches = batches.filter(models.Q(hub__hub_code=hub_code) | models.Q(hub__id__iexact=str(hub_code)))
-        elif getattr(request.user, 'role', '') in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(request.user, 'assigned_hub', None):
+        elif not request.user.is_superuser and getattr(request.user, 'assigned_hub', None):
             batches = batches.filter(hub=request.user.assigned_hub)
 
         data = []

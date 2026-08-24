@@ -35,7 +35,7 @@ class ExpressOrderListCreateView(APIView):
                     )
                 else:
                     orders = orders.filter(Q(driver=user) | Q(driver__isnull=True))
-            elif user.role in [User.Roles.HUB_MANAGER, "PROVIDER"] and user.assigned_hub:
+            elif not user.is_superuser and user.assigned_hub:
                 orders = orders.filter(hub=user.assigned_hub)
 
         paginator = StandardResultsSetPagination()

@@ -441,12 +441,12 @@ class AdminHubsView(APIView):
         user = request.user
         hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
         
-        # Scope to provider's assigned hub
-        if user.role in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(user, 'assigned_hub', None):
+        # Scope to assigned hub for non-superusers
+        if not user.is_superuser and getattr(user, 'assigned_hub', None):
             hubs_qs = hubs_qs.filter(id=user.assigned_hub_id)
 
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)
-        if user.role in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(user, 'assigned_hub', None):
+        if not user.is_superuser and getattr(user, 'assigned_hub', None):
             from django.db.models import Q
             active_subs = active_subs.filter(Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub))
 
@@ -1013,7 +1013,7 @@ class AdminFleetListView(APIView):
         # Hub managers can only see drivers at their own hub
         if hub_id:
             drivers = drivers.filter(assigned_hub_id=hub_id)
-        elif hasattr(request.user, 'role') and request.user.role in (User.Roles.HUB_MANAGER, 'PROVIDER') and request.user.assigned_hub:
+        elif not request.user.is_superuser and getattr(request.user, 'assigned_hub', None):
             drivers = drivers.filter(assigned_hub=request.user.assigned_hub)
 
         fleet_data = []

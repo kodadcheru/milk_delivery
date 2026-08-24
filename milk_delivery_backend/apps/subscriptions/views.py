@@ -195,10 +195,12 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         if not user or not user.is_authenticated:
             return Subscription.objects.none()
+        if user.is_superuser:
+            return Subscription.objects.all()
+        if getattr(user, "assigned_hub", None):
+            return Subscription.objects.filter(hub=user.assigned_hub)
         if user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
             return Subscription.objects.all()
-        if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
-            return Subscription.objects.filter(hub=user.assigned_hub)
         return Subscription.objects.filter(customer=user)
 
     def perform_update(self, serializer):
