@@ -553,9 +553,20 @@ class GenerateTodayTasksView(APIView):
         )
         
         user = request.user
-        if not user.is_superuser and getattr(user, 'assigned_hub', None):
+        hub_code_filter = request.data.get("hub_code") or request.data.get("hub_id")
+        if hub_code_filter:
+            # Use explicit hub_code from request body
+            from apps.deliveries.models import LocationHub
+            filter_hub = LocationHub.objects.filter(
+                Q(hub_code=hub_code_filter) | Q(id__iexact=str(hub_code_filter))
+            ).first()
+            if filter_hub:
+                active_subs = active_subs.filter(
+                    Q(hub=filter_hub) | Q(customer__assigned_hub=filter_hub) | Q(hub__isnull=True)
+                )
+        elif not user.is_superuser and getattr(user, 'assigned_hub', None):
             active_subs = active_subs.filter(
-                Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub)
+                Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub) | Q(hub__isnull=True)
             )
 
         created_count = 0
@@ -632,6 +643,8 @@ class GenerateTodayTasksView(APIView):
             "total_tasks": total_tasks,
             "subscriptions_skipped": skipped_count,
             "vacations_resumed": resumed_count,
+            "active_subscriptions_found": active_subs.count() if hasattr(active_subs, 'count') else len(list(active_subs)),
+            "hub_filter": hub_code_filter or (str(getattr(user, 'assigned_hub_id', None)) if getattr(user, 'assigned_hub', None) else 'none'),
         })
 
     def _get_next_driver(self, hub, hub_drivers, hub_driver_indices):

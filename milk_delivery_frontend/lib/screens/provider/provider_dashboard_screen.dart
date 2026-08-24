@@ -3241,13 +3241,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   if (context.mounted) {
                                     final tasksCreated = taskRes?['tasks_created'] ?? 0;
                                     final totalTasks = taskRes?['total_tasks'] ?? tasksCreated;
+                                    final subsFound = taskRes?['active_subscriptions_found'] ?? '?';
+                                    final hubFilter = taskRes?['hub_filter'] ?? '?';
                                     final String taskMsg;
                                     if (tasksCreated > 0) {
                                       taskMsg = '& generated $tasksCreated new deliveries for $dateStr!';
                                     } else if (totalTasks > 0) {
                                       taskMsg = '— $totalTasks deliveries already scheduled for $dateStr ✅';
                                     } else {
-                                      taskMsg = '— no active subscriptions found for $dateStr';
+                                      taskMsg = '— no active subscriptions found for $dateStr (subs: $subsFound, hub: $hubFilter)';
                                     }
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
