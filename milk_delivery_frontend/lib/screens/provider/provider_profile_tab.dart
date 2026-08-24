@@ -4,6 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../driver/morning_batch_screen.dart';
+import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 
 class ProviderProfileTab extends StatefulWidget {
   final AppState state;
@@ -49,162 +52,140 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     final topInset = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: UiTone.shellBackground,
       body: Column(
         children: [
           // ── Part 1: Hero Header ──
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0D7C66)],
-              ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(color: Color(0x250D7C66), blurRadius: 20, offset: Offset(0, 10)),
-              ],
-            ),
-            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row
-                Row(
-                  children: [
-                    const Text(
-                      'Hub Depot Profile',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
-                    ),
-                    const Spacer(),
-                    // Depot Active Toggle
-                    GestureDetector(
-                      onTap: () => _toggleDepotStatus(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: _isDepotActive
-                              ? const Color(0xFF10B981).withValues(alpha: 0.25)
-                              : Colors.amber.withValues(alpha: 0.25),
-                          border: Border.all(
-                            color: _isDepotActive ? const Color(0xFF34D399) : Colors.amberAccent,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isDepotActive ? Icons.storefront_rounded : Icons.store_mall_directory_outlined,
-                              size: 13,
-                              color: _isDepotActive ? const Color(0xFF34D399) : Colors.amberAccent,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _isDepotActive ? 'Depot Active' : 'Depot Paused',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
-                            ),
-                          ],
-                        ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 0),
+            child: UiHeroCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row
+                  Row(
+                    children: [
+                      Text(
+                        'Hub Depot Profile',
+                        style: UiText.h1.copyWith(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Edit Hub Info Action
-                    GestureDetector(
-                      onTap: () => _showEditHubDialog(context, hubCode, hubName, hubAddress, managerPhone),
-                      child: Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Avatar stack
-                Center(
-                  child: GestureDetector(
-                    onTap: () => _showEditHubDialog(context, hubCode, hubName, hubAddress, managerPhone),
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          width: 84,
-                          height: 84,
+                      const Spacer(),
+                      // Depot Active Toggle
+                      GestureDetector(
+                        onTap: () => _toggleDepotStatus(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.40)],
-                            ),
-                            boxShadow: const [
-                              BoxShadow(color: Color(0x30000000), blurRadius: 16, offset: Offset(0, 6)),
+                            color: Colors.white.withValues(alpha: 0.20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isDepotActive ? Icons.storefront_rounded : Icons.store_mall_directory_outlined,
+                                size: 13,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                _isDepotActive ? 'Depot Active' : 'Depot Paused',
+                                style: UiText.caption.copyWith(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+                              ),
                             ],
                           ),
-                          child: const Center(
-                            child: CircleAvatar(
-                              radius: 38,
-                              backgroundColor: Color(0xFF0F172A),
-                              child: Text('🏬', style: TextStyle(fontSize: 36)),
-                            ),
-                          ),
                         ),
-                        Container(
-                          width: 22,
-                          height: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      // Edit Hub Info Action
+                      GestureDetector(
+                        onTap: () => _showEditHubDialog(context, hubCode, hubName, hubAddress, managerPhone),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981),
+                            color: Colors.white.withValues(alpha: 0.18),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: const Icon(Icons.check, size: 12, color: Colors.white),
+                          child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Avatar stack
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => _showEditHubDialog(context, hubCode, hubName, hubAddress, managerPhone),
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 84,
+                            height: 84,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.18),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 2),
+                            ),
+                            child: const Center(child: Text('🏬', style: TextStyle(fontSize: 40))),
+                          ),
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: UiTone.primary, width: 2),
+                            ),
+                            child: const Icon(Icons.check, size: 12, color: UiTone.primary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                // Hub Name row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      hubName,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.verified, size: 20, color: Color(0xFF38BDF8)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-
-                // FSSAI & ID pill
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.security_rounded, size: 14, color: Color(0xFF34D399)),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Verified FSSAI License #$fssai',
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                  // Hub Name row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          hubName,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.h1.copyWith(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.verified, size: 20, color: Colors.white),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // FSSAI & ID pill
+                  Center(
+                    child: UiHeroGlass(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.security_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Verified FSSAI License #$fssai',
+                            style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -220,8 +201,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                       '100%',
                       'Dispatch Rate',
                       Icons.check_circle_rounded,
-                      const Color(0xFF10B981),
-                      const Color(0xFFD1FAE5),
+                      UiTone.success,
                       () => _showDispatchPerformanceSheet(context, widget.state),
                     ),
                     const SizedBox(width: 10),
@@ -229,8 +209,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                       '${coverageRadius.toStringAsFixed(1)} km',
                       'Coverage Area',
                       Icons.radar_rounded,
-                      const Color(0xFF2563EB),
-                      const Color(0xFFDBEAFE),
+                      UiTone.accentBlue,
                       () => _showCoverageAreaSheet(context, hubCode, hubName, coverageRadius),
                     ),
                     const SizedBox(width: 10),
@@ -238,8 +217,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                       'Daily',
                       'Auto Payouts',
                       Icons.account_balance_rounded,
-                      const Color(0xFF0D7C66),
-                      const Color(0xFFE6F5F0),
+                      UiTone.primary,
                       () => _showPayoutSettlementSheet(context, bankAcc),
                     ),
                   ],
@@ -252,8 +230,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 _buildCardGroup([
                   _buildMenuTile(
                     icon: Icons.place_rounded,
-                    iconBg: const Color(0xFFE8F2FE),
-                    iconFg: const Color(0xFF2563EB),
+                    accent: UiTone.accentBlue,
                     label: 'Depot Address',
                     subtitle: hubAddress,
                     onTap: () => _showDepotAddressDialog(context, hubName, hubAddress),
@@ -261,8 +238,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.radar_rounded,
-                    iconBg: const Color(0xFFEFF6FF),
-                    iconFg: const Color(0xFF2563EB),
+                    accent: UiTone.accentBlue,
                     label: 'Delivery Coverage Area',
                     subtitle: '${coverageRadius.toStringAsFixed(1)} km Municipal Geofenced Radius',
                     onTap: () => _showCoverageAreaSheet(context, hubCode, hubName, coverageRadius),
@@ -270,8 +246,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.schedule_rounded,
-                    iconBg: const Color(0xFFE0F7F3),
-                    iconFg: const Color(0xFF0D9488),
+                    accent: UiTone.primary,
                     label: 'Morning Dispatch Window',
                     subtitle: _dispatchWindow,
                     onTap: () => _showDispatchWindowConfigDialog(context),
@@ -279,8 +254,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.account_balance_rounded,
-                    iconBg: const Color(0xFFFFF3E6),
-                    iconFg: const Color(0xFFE67E22),
+                    accent: UiTone.warning,
                     label: 'Settlement Bank Account',
                     subtitle: bankAcc,
                     onTap: () => _showBankDetailsDialog(
@@ -304,8 +278,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 _buildCardGroup([
                   _buildMenuTile(
                     icon: Icons.inventory_2_rounded,
-                    iconBg: const Color(0xFFEEF2FF),
-                    iconFg: const Color(0xFF4F46E5),
+                    accent: UiTone.accentPurple,
                     label: 'Morning Batch Packing Crates',
                     subtitle: 'Manage crate breakdowns & packet counts',
                     onTap: () => Navigator.push(
@@ -316,8 +289,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.sanitizer_rounded,
-                    iconBg: const Color(0xFFE6F5F0),
-                    iconFg: const Color(0xFF0D7C66),
+                    accent: UiTone.primary,
                     label: 'Cold Storage & FSSAI Standards',
                     subtitle: 'Grade-A chillers & dairy freshness audit (3.8°C avg)',
                     onTap: () => _showQualityAuditDialog(context, fssai),
@@ -325,8 +297,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.support_agent_rounded,
-                    iconBg: const Color(0xFFFEF2F2),
-                    iconFg: const Color(0xFFEF4444),
+                    accent: UiTone.error,
                     label: 'Central Operations Desk',
                     subtitle: managerPhone,
                     onTap: () => _showCentralOpsContactSheet(context, managerPhone),
@@ -341,8 +312,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 _buildCardGroup([
                   _buildMenuTile(
                     icon: Icons.description_outlined,
-                    iconBg: const Color(0xFFF1F5F9),
-                    iconFg: const Color(0xFF475569),
+                    accent: UiTone.softText,
                     label: 'Provider Merchant Agreement',
                     subtitle: 'Fulfillment terms & commission structure',
                     onTap: () => _showMerchantAgreementSheet(context),
@@ -350,8 +320,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.headset_mic_rounded,
-                    iconBg: const Color(0xFFFFF3E6),
-                    iconFg: const Color(0xFFE67E22),
+                    accent: UiTone.warning,
                     label: 'Hub Partner Support',
                     subtitle: 'Milk supply replacement & packaging desk',
                     onTap: () => _showHubSupportSheet(context),
@@ -366,16 +335,16 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   child: Container(
                     height: 52,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFF43F5E), Color(0xFFE11D48)]),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [BoxShadow(color: Color(0x28E11D48), blurRadius: 16, offset: Offset(0, 6))],
+                      color: UiTone.error,
+                      borderRadius: BorderRadius.circular(UiRadius.lg),
+                      boxShadow: UiShadow.elevated,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text('Log out of Provider Portal', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+                        const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text('Log out of Provider Portal', style: UiText.bodyStrong.copyWith(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
                       ],
                     ),
                   ),
@@ -384,10 +353,10 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 const SizedBox(height: 18),
 
                 // Version Footer
-                const Center(
+                Center(
                   child: Text(
                     'MilkDrop Hub Portal v1.0.0 • Powering Fresh Milk Logistics 🏬',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+                    style: UiText.caption.copyWith(fontSize: 12),
                   ),
                 ),
               ],
@@ -400,35 +369,14 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
 
   // ── Helper Widgets ──
 
-  Widget _buildQuickStatCard(String value, String label, IconData icon, Color fg, Color bg, VoidCallback onTap) {
+  Widget _buildQuickStatCard(String value, String label, IconData icon, Color accent, VoidCallback onTap) {
     return Expanded(
-      child: InkWell(
+      child: UiStatCard(
+        value: value,
+        label: label,
+        icon: icon,
+        accent: accent,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: const [
-              BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3)),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-                child: Icon(icon, color: fg, size: 18),
-              ),
-              const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF0F172A))),
-              const SizedBox(height: 2),
-              Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10.5, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -436,20 +384,17 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF334155), letterSpacing: -0.2),
+      style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: -0.2),
     );
   }
 
   Widget _buildCardGroup(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5ECE8), width: 1),
-        boxShadow: const [
-          BoxShadow(color: Color(0x081A2B23), blurRadius: 12, offset: Offset(0, 4)),
-          BoxShadow(color: Color(0x051A2B23), blurRadius: 24, offset: Offset(0, 8)),
-        ],
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        border: Border.all(color: UiTone.surfaceBorder, width: 1),
+        boxShadow: UiShadow.card,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(children: children),
@@ -457,13 +402,12 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9), indent: 68);
+    return const Divider(height: 1, thickness: 1, color: UiTone.surfaceMuted, indent: 68);
   }
 
   Widget _buildMenuTile({
     required IconData icon,
-    required Color iconBg,
-    required Color iconFg,
+    required Color accent,
     required String label,
     String? subtitle,
     required VoidCallback onTap,
@@ -480,25 +424,25 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(12),
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                 ),
-                child: Icon(icon, size: 20, color: iconFg),
+                child: Icon(icon, size: 20, color: accent),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Color(0xFF1A2B23))),
+                    Text(label, style: UiText.bodyStrong.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      Text(subtitle, style: UiText.body.copyWith(fontSize: 12)),
                     ],
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 20, color: Color(0xFFC0C8C4)),
+              const Icon(Icons.chevron_right, size: 20, color: UiText.muted),
             ],
           ),
         ),
@@ -514,7 +458,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: _isDepotActive ? const Color(0xFF0D7C66) : const Color(0xFFF59E0B),
+        backgroundColor: _isDepotActive ? UiTone.primary : UiTone.warning,
         content: Text(
           _isDepotActive
               ? '🟢 Location Hub is ACTIVE and receiving morning orders!'
@@ -532,12 +476,12 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.store_rounded, color: Color(0xFF0D7C66)),
-            SizedBox(width: 8),
-            Text('Edit Hub Depot Details', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Icon(Icons.store_rounded, color: UiTone.primary),
+            const SizedBox(width: 8),
+            Text('Edit Hub Depot Details', style: UiText.h2.copyWith(fontSize: 17)),
           ],
         ),
         content: SingleChildScrollView(
@@ -565,7 +509,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () async {
               final newName = nameCtrl.text.trim();
               final newAddr = addrCtrl.text.trim();
@@ -589,7 +533,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.orange,
+                    backgroundColor: ok ? UiTone.primary : UiTone.warning,
                     content: Text(ok
                         ? '✅ Hub Depot operational details updated & synced!'
                         : '⚠️ Saved locally. Network sync pending.'),
@@ -610,18 +554,18 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 28),
-                SizedBox(width: 8),
-                Text('100% On-Time Dispatch SLA', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.check_circle_rounded, color: UiTone.success, size: 28),
+                const SizedBox(width: 8),
+                Text('100% On-Time Dispatch SLA', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 14),
@@ -634,7 +578,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Close Performance Stats'),
               ),
@@ -651,7 +595,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
@@ -661,30 +605,30 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.radar_rounded, color: Color(0xFF2563EB), size: 28),
+                  const Icon(Icons.radar_rounded, color: UiTone.accentBlue, size: 28),
                   const SizedBox(width: 8),
-                  Text('${radius.toStringAsFixed(1)} km Geofence Coverage', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  Text('${radius.toStringAsFixed(1)} km Geofence Coverage', style: UiText.h2.copyWith(fontSize: 17)),
                 ],
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+                  color: UiTone.infoSoft,
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                  border: Border.all(color: UiTone.accentBlue.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   '📍 $hubName accepts orders and dispatches morning delivery routes within a ${radius.toStringAsFixed(1)} km operating radius.',
-                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF1E3A8A), height: 1.4),
+                  style: UiText.body.copyWith(fontSize: 12.5, color: UiTone.accentBlue, height: 1.4),
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Adjust Operating Radius:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text('${radius.toStringAsFixed(1)} km', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF2563EB), fontSize: 15)),
+                  Text('Adjust Operating Radius:', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                  Text('${radius.toStringAsFixed(1)} km', style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w900, color: UiTone.accentBlue, fontSize: 15)),
                 ],
               ),
               Slider(
@@ -692,7 +636,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 min: 1.0,
                 max: 30.0,
                 divisions: 58,
-                activeColor: const Color(0xFF2563EB),
+                activeColor: UiTone.accentBlue,
                 onChanged: (val) {
                   setModalState(() => radius = val);
                 },
@@ -706,9 +650,9 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                   return ChoiceChip(
                     label: Text('${r.toStringAsFixed(r % 1 == 0 ? 0 : 1)} km'),
                     selected: isSelected,
-                    selectedColor: const Color(0xFF2563EB),
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                    selectedColor: UiTone.accentBlue,
+                    labelStyle: UiText.label.copyWith(
+                      color: isSelected ? Colors.white : UiTone.ink,
                       fontWeight: FontWeight.bold,
                       fontSize: 11.5,
                     ),
@@ -721,10 +665,10 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D7C66),
+                    backgroundColor: UiTone.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                   ),
                   onPressed: () async {
                     Navigator.pop(ctx);
@@ -740,7 +684,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.orange,
+                          backgroundColor: ok ? UiTone.primary : UiTone.warning,
                           content: Text(ok
                               ? '✅ Coverage radius updated to ${radius.toStringAsFixed(1)} km! Synced with Admin Console.'
                               : '⚠️ Saved locally. Network sync pending.'),
@@ -748,7 +692,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                       );
                     }
                   },
-                  child: const Text('Save Coverage Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  child: Text('Save Coverage Area', style: UiText.bodyStrong.copyWith(fontSize: 14, color: Colors.white)),
                 ),
               ),
             ],
@@ -761,18 +705,18 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
   void _showPayoutSettlementSheet(BuildContext context, String bankAcc) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.account_balance_rounded, color: Color(0xFF0D7C66), size: 28),
-                SizedBox(width: 8),
-                Text('Daily Automated Bank Payouts', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.account_balance_rounded, color: UiTone.primary, size: 28),
+                const SizedBox(width: 8),
+                Text('Daily Automated Bank Payouts', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 14),
@@ -784,7 +728,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Close Settlement Info'),
               ),
@@ -799,24 +743,24 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
         title: Row(
           children: [
-            const Icon(Icons.place_rounded, color: Color(0xFF2563EB)),
+            const Icon(Icons.place_rounded, color: UiTone.accentBlue),
             const SizedBox(width: 8),
-            Flexible(child: Text(hubName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+            Flexible(child: Text(hubName, overflow: TextOverflow.ellipsis, style: UiText.h2.copyWith(fontSize: 17))),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Fulfillment Depot Address:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text('Fulfillment Depot Address:', style: UiText.bodyStrong.copyWith(fontSize: 13)),
             const SizedBox(height: 4),
-            Text(address, style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
+            Text(address, style: UiText.body.copyWith(fontSize: 12.5)),
             const SizedBox(height: 12),
-            const Text('Operating Hub Hours:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const Text('04:00 AM – 11:00 AM & 04:00 PM – 08:00 PM', style: TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
+            Text('Operating Hub Hours:', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+            Text('04:00 AM – 11:00 AM & 04:00 PM – 08:00 PM', style: UiText.body.copyWith(fontSize: 12.5)),
           ],
         ),
         actions: [
@@ -829,7 +773,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             child: const Text('Copy Address'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK'),
           ),
@@ -846,19 +790,19 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+          title: Row(
             children: [
-              Icon(Icons.schedule_rounded, color: Color(0xFF0D9488)),
-              SizedBox(width: 8),
-              Text('Dispatch Window Hours', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold)),
+              const Icon(Icons.schedule_rounded, color: UiTone.primary),
+              const SizedBox(width: 8),
+              Text('Dispatch Window Hours', style: UiText.h2.copyWith(fontSize: 16.5)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Select Standard Slot or Set Custom Window:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('Select Standard Slot or Set Custom Window:', style: UiText.body.copyWith(fontSize: 12)),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 6,
@@ -870,10 +814,10 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 ].map((s) {
                   final isSel = selected.contains(s);
                   return ChoiceChip(
-                    label: Text(s, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: isSel ? Colors.white : const Color(0xFF0F172A))),
+                    label: Text(s, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.bold, color: isSel ? Colors.white : UiTone.ink)),
                     selected: isSel,
-                    selectedColor: const Color(0xFF0D7C66),
-                    backgroundColor: const Color(0xFFF1F5F9),
+                    selectedColor: UiTone.primary,
+                    backgroundColor: UiTone.surfaceMuted,
                     showCheckmark: false,
                     onSelected: (sel) {
                       if (sel) {
@@ -899,14 +843,14 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
               onPressed: () {
                 setState(() {
                   _dispatchWindow = customCtrl.text.trim().isNotEmpty ? customCtrl.text.trim() : selected;
                 });
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⏱️ Dispatch window saved: $_dispatchWindow')),
+                  SnackBar(backgroundColor: UiTone.primary, content: Text('⏱️ Dispatch window saved: $_dispatchWindow')),
                 );
               },
               child: const Text('Save Window'),
@@ -936,12 +880,12 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.account_balance_rounded, color: Color(0xFFE67E22)),
-            SizedBox(width: 8),
-            Text('Settlement Bank Account', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold)),
+            const Icon(Icons.account_balance_rounded, color: UiTone.warning),
+            const SizedBox(width: 8),
+            Text('Settlement Bank Account', style: UiText.h2.copyWith(fontSize: 16.5)),
           ],
         ),
         content: SingleChildScrollView(
@@ -980,7 +924,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () async {
               final newBank = bankNameCtrl.text.trim();
               final newAcc = accountNumCtrl.text.trim();
@@ -990,7 +934,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
 
               if (newBank.isEmpty || newAcc.isEmpty || newIfsc.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(backgroundColor: Colors.red, content: Text('Please enter Bank Name, Account Number, and IFSC Code.')),
+                  const SnackBar(backgroundColor: UiTone.error, content: Text('Please enter Bank Name, Account Number, and IFSC Code.')),
                 );
                 return;
               }
@@ -1019,7 +963,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: ok ? const Color(0xFF0D7C66) : Colors.orange,
+                    backgroundColor: ok ? UiTone.primary : UiTone.warning,
                     content: Text(ok
                         ? '✅ Settlement bank account saved! Synced with Admin Console.'
                         : '⚠️ Saved locally. Network sync pending.'),
@@ -1038,12 +982,12 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.sanitizer_rounded, color: Color(0xFF0D7C66)),
-            SizedBox(width: 8),
-            Text('Cold Chain & FSSAI Audit', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold)),
+            const Icon(Icons.sanitizer_rounded, color: UiTone.primary),
+            const SizedBox(width: 8),
+            Text('Cold Chain & FSSAI Audit', style: UiText.h2.copyWith(fontSize: 16.5)),
           ],
         ),
         content: Column(
@@ -1059,7 +1003,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK'),
           ),
@@ -1071,7 +1015,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
   void _showCentralOpsContactSheet(BuildContext context, String managerPhone) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1079,14 +1023,14 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
           children: [
             Row(
               children: [
-                const Icon(Icons.support_agent_rounded, color: Color(0xFFEF4444), size: 28),
+                const Icon(Icons.support_agent_rounded, color: UiTone.error, size: 28),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Central Operations Desk', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(managerPhone, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      Text('Central Operations Desk', style: UiText.h2.copyWith(fontSize: 16)),
+                      Text(managerPhone, style: UiText.body.copyWith(fontSize: 13)),
                     ],
                   ),
                 ),
@@ -1096,10 +1040,10 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: Color(0xFFE6F5F0), shape: BoxShape.circle),
-                child: const Icon(Icons.phone, color: Color(0xFF0D7C66)),
+                decoration: const BoxDecoration(color: UiTone.primarySoft, shape: BoxShape.circle),
+                child: const Icon(Icons.phone, color: UiTone.primary),
               ),
-              title: const Text('Call Central Operations Directly', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              title: Text('Call Central Operations Directly', style: UiText.bodyStrong.copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
               subtitle: Text(managerPhone),
               onTap: () async {
                 Navigator.pop(ctx);
@@ -1114,10 +1058,10 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: Color(0xFFE8F2FE), shape: BoxShape.circle),
-                child: const Icon(Icons.copy_rounded, color: Color(0xFF2563EB)),
+                decoration: const BoxDecoration(color: UiTone.infoSoft, shape: BoxShape.circle),
+                child: const Icon(Icons.copy_rounded, color: UiTone.accentBlue),
               ),
-              title: const Text('Copy Contact Number', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              title: Text('Copy Contact Number', style: UiText.bodyStrong.copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: managerPhone));
                 Navigator.pop(ctx);
@@ -1135,7 +1079,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.85,
@@ -1145,11 +1089,11 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
           controller: scrollCtrl,
           padding: const EdgeInsets.all(20),
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.description_outlined, color: Color(0xFF0D7C66), size: 28),
-                SizedBox(width: 8),
-                Text('Provider Merchant Agreement', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.description_outlined, color: UiTone.primary, size: 28),
+                const SizedBox(width: 8),
+                Text('Provider Merchant Agreement', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 14),
@@ -1159,7 +1103,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             _buildAgreementItem('4. Quality & Milk Freshness Guarantee', 'Only certified A2 / Pure Farm fresh milk tested for purity shall be packaged and dispatched.'),
             const SizedBox(height: 16),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Close Agreement'),
             ),
@@ -1172,22 +1116,22 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
   void _showHubSupportSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.headset_mic_rounded, color: Color(0xFFE67E22), size: 28),
-                SizedBox(width: 8),
-                Text('Hub Partner Escalation Desk', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.headset_mic_rounded, color: UiTone.warning, size: 28),
+                const SizedBox(width: 8),
+                Text('Hub Partner Escalation Desk', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 12),
-            const Text('Dedicated supply chain & operations desk for Location Hubs:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            Text('Dedicated supply chain & operations desk for Location Hubs:', style: UiText.body.copyWith(fontSize: 13)),
             const SizedBox(height: 14),
             _buildSupportTile(context, Icons.local_shipping_rounded, 'Milk Supply Shortfall / Excess Request', '+91 8919548905'),
             _buildSupportTile(context, Icons.shopping_bag_outlined, 'Packaging Pouches & Crates Reorder', '+91 8885199878'),
@@ -1204,11 +1148,11 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
       contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(color: Color(0xFFFFF3E6), shape: BoxShape.circle),
-        child: Icon(icon, color: const Color(0xFFE67E22), size: 20),
+        decoration: BoxDecoration(color: UiTone.warning.withValues(alpha: 0.12), shape: BoxShape.circle),
+        child: Icon(icon, color: UiTone.warning, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
-      trailing: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF0D7C66), size: 20),
+      title: Text(title, style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w600)),
+      trailing: const Icon(Icons.phone_in_talk_rounded, color: UiTone.primary, size: 20),
       onTap: () async {
         Navigator.pop(context);
         final uri = Uri.parse('tel:$phone');
@@ -1227,9 +1171,9 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+          Text(title, style: UiText.bodyStrong.copyWith(fontSize: 13)),
           const SizedBox(height: 2),
-          Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.3)),
+          Text(desc, style: UiText.body.copyWith(fontSize: 12, height: 1.3)),
         ],
       ),
     );
@@ -1241,8 +1185,8 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Text(label, style: UiText.body.copyWith(fontSize: 13)),
+          Text(value, style: UiText.bodyStrong.copyWith(fontSize: 13)),
         ],
       ),
     );
@@ -1252,19 +1196,19 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.logout_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Log Out Provider', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.logout_rounded, color: UiTone.error),
+            const SizedBox(width: 8),
+            Text('Log Out Provider', style: UiText.h2.copyWith(fontSize: 16)),
           ],
         ),
         content: const Text('Are you sure you want to log out of the Location Hub provider portal?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.error, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(ctx);
               onLogout();

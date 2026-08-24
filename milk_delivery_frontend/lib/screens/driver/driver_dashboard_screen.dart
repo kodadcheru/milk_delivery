@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../theme/ui_tokens.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
+import '../../theme/ui_text.dart';
+import '../../theme/ui_tokens.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
@@ -172,7 +174,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         widget.state.markDeliveryCompleted(task.id, proofUrl);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('✅ Stop #${task.id} Completed! Photo proof saved & customer notified.'),
           ),
         );
@@ -186,23 +188,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
         title: Row(
           children: [
-            const Icon(Icons.flash_on_rounded, color: Color(0xFFE11D48)),
+            const Icon(Icons.flash_on_rounded, color: UiTone.error),
             const SizedBox(width: 8),
-            Text('Complete ${order.id}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Complete ${order.id}', style: UiText.h2.copyWith(fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Customer: ${order.customerName.isNotEmpty ? order.customerName : "Customer"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text('Customer: ${order.customerName.isNotEmpty ? order.customerName : "Customer"}', style: UiText.bodyStrong.copyWith(fontSize: 13)),
             const SizedBox(height: 4),
-            Text('Address: ${order.deliveryAddress}', style: const TextStyle(color: Color(0xFF475569), fontSize: 12)),
+            Text('Address: ${order.deliveryAddress}', style: UiText.body.copyWith(fontSize: 12)),
             const SizedBox(height: 14),
-            const Text('Enter 4-Digit Customer OTP:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Text('Enter 4-Digit Customer OTP:', style: UiText.bodyStrong.copyWith(fontSize: 12)),
             const SizedBox(height: 6),
             TextField(
               controller: otpController,
@@ -210,7 +212,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               maxLength: 4,
               decoration: InputDecoration(
                 hintText: 'e.g. ${order.deliveryOtp}',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
@@ -225,20 +227,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 widget.state.updateOrderStatus(order.id, 'DELIVERED');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: const Color(0xFF0D7C66),
+                    backgroundColor: UiTone.primary,
                     content: Text('🎉 Express Order ${order.id} Delivered Successfully!'),
                   ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    backgroundColor: Color(0xFFE11D48),
+                    backgroundColor: UiTone.error,
                     content: Text('❌ Invalid OTP. Please ask the customer for the correct 4-digit OTP.'),
                   ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             child: const Text('Verify & Complete'),
           ),
         ],
@@ -279,7 +281,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     }).toList();
 
     return RefreshIndicator(
-      color: const Color(0xFF0D7C66),
+      color: UiTone.primary,
       onRefresh: () => widget.state.reloadAllData(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -288,80 +290,70 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── 1. Hero Dispatch & Shift Command Card ──
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0D7C66)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x250D7C66), blurRadius: 20, offset: Offset(0, 8)),
-                ],
-              ),
+            UiHeroCard(
               child: Column(
                 children: [
-                  // Top Row: Live GPS Broadcast switch + speed telemetry
+                  // Top Row: Live GPS Broadcast switch + telemetry
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _isGpsBroadcastActive ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            UiHeroGlass(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                _isGpsBroadcastActive ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
-                            child: Icon(
-                              _isGpsBroadcastActive ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
-                              color: _isGpsBroadcastActive ? const Color(0xFF34D399) : Colors.grey,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    _isGpsBroadcastActive ? 'GPS Live Broadcast' : 'GPS Broadcast Paused',
-                                    style: TextStyle(
-                                      color: _isGpsBroadcastActive ? const Color(0xFF34D399) : Colors.white70,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          _isGpsBroadcastActive ? 'GPS Live Broadcast' : 'GPS Broadcast Paused',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      if (_isGpsBroadcastActive)
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                        ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  if (_isGpsBroadcastActive)
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      decoration: const BoxDecoration(color: Color(0xFF34D399), shape: BoxShape.circle),
-                                    ),
+                                  Text(
+                                    'Broadcasting real-time stops to customers',
+                                    style: UiText.caption.copyWith(color: Colors.white.withValues(alpha: 0.78), fontSize: 10.5),
+                                  ),
                                 ],
                               ),
-                              const Text(
-                                'Broadcasting real-time stops to customers',
-                                style: TextStyle(color: Colors.white60, fontSize: 10.5),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                       Switch(
                         value: _isGpsBroadcastActive,
-                        activeThumbColor: const Color(0xFF34D399),
-                        activeTrackColor: const Color(0xFF0D7C66),
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: Colors.white.withValues(alpha: 0.45),
+                        inactiveThumbColor: Colors.white.withValues(alpha: 0.75),
+                        inactiveTrackColor: Colors.white.withValues(alpha: 0.18),
                         onChanged: (val) {
                           setState(() => _isGpsBroadcastActive = val);
                           _syncDriverLocation();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              backgroundColor: val ? const Color(0xFF0D7C66) : Colors.grey[800],
+                              backgroundColor: val ? UiTone.primary : UiTone.softText,
                               content: Text(val ? '🟢 Live GPS Broadcasting enabled.' : '🔴 GPS Broadcast paused.'),
                             ),
                           );
@@ -369,60 +361,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       ),
                     ],
                   ),
-                  const Divider(color: Colors.white24, height: 20),
+                  Divider(color: Colors.white.withValues(alpha: 0.24), height: 20),
 
                   // Shift Selector Pills
                   Row(
                     children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _selectedShift = 'MORNING'),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _selectedShift == 'MORNING' ? const Color(0xFF0D7C66) : Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _selectedShift == 'MORNING' ? const Color(0xFF34D399) : Colors.transparent,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('🌅 ', style: TextStyle(fontSize: 14)),
-                                Text('Morning (05:00 AM)', style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      Expanded(child: _buildShiftPill('MORNING', '🌅', 'Morning (05:00 AM)')),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _selectedShift = 'EVENING'),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _selectedShift == 'EVENING' ? const Color(0xFF2563EB) : Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _selectedShift == 'EVENING' ? const Color(0xFF38BDF8) : Colors.transparent,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('🌇 ', style: TextStyle(fontSize: 14)),
-                                Text('Evening (05:00 PM)', style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      Expanded(child: _buildShiftPill('EVENING', '🌇', 'Evening (05:00 PM)')),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -449,13 +395,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.inventory_2_rounded, size: 16),
-                            label: const Text('Batch Crates 📦', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5)),
+                            icon: const Icon(Icons.inventory_2_rounded, size: 16, color: UiTone.primary),
+                            label: Text('Batch Crates 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: UiTone.primary)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.white,
+                              foregroundColor: UiTone.primary,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                             ),
                           ),
                         ),
@@ -479,12 +425,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.map_rounded, size: 16, color: Color(0xFF38BDF8)),
-                            label: const Text('Route Map 🗺️', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white)),
+                            icon: const Icon(Icons.map_rounded, size: 16, color: Colors.white),
+                            label: Text('Route Map 🗺️', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white)),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
-                              backgroundColor: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                              backgroundColor: Colors.white.withValues(alpha: 0.15),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                             ),
                           ),
                         ),
@@ -500,22 +446,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x060F172A), blurRadius: 12, offset: Offset(0, 4)),
-                ],
+                color: UiTone.surface,
+                borderRadius: BorderRadius.circular(UiRadius.lg),
+                border: Border.all(color: UiTone.surfaceBorder),
+                boxShadow: UiShadow.card,
               ),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMetricItem('Total Stops', '$totalStops', Icons.local_shipping_outlined, const Color(0xFF2563EB), const Color(0xFFDBEAFE)),
-                      _buildMetricItem('Pending', '$pendingCount', Icons.pending_actions_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
-                      _buildMetricItem('Delivered', '$completedCount', Icons.check_circle_outline_rounded, const Color(0xFF10B981), const Color(0xFFD1FAE5)),
-                      _buildMetricItem('Shift Zone', hubName.split(' ').first, Icons.warehouse_rounded, const Color(0xFF0D7C66), const Color(0xFFE6F5F0)),
+                      _buildMetricItem('Total Stops', '$totalStops', Icons.local_shipping_outlined, UiTone.accentBlue, UiTone.infoSoft),
+                      _buildMetricItem('Pending', '$pendingCount', Icons.pending_actions_rounded, UiTone.warning, UiTone.warningSoft),
+                      _buildMetricItem('Delivered', '$completedCount', Icons.check_circle_outline_rounded, UiTone.success, UiTone.successSoft),
+                      _buildMetricItem('Shift Zone', hubName.split(' ').first, Icons.warehouse_rounded, UiTone.primary, UiTone.primarySoft),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -528,22 +472,22 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         children: [
                           Text(
                             'Morning Route Completion: $completedCount of $totalStops Stops',
-                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                            style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.w700, color: UiTone.softText),
                           ),
                           Text(
                             '${(progressPct * 100).toStringAsFixed(0)}%',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF0D7C66)),
+                            style: UiText.bodyStrong.copyWith(fontSize: 12, fontWeight: FontWeight.w900, color: UiTone.primary),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                         child: LinearProgressIndicator(
                           value: progressPct,
                           minHeight: 7,
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D7C66)),
+                          backgroundColor: UiTone.surfaceMuted,
+                          valueColor: const AlwaysStoppedAnimation<Color>(UiTone.primary),
                         ),
                       ),
                     ],
@@ -556,24 +500,22 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             // ── 3. Integrated Search Bar ──
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3)),
-                ],
+                color: UiTone.surface,
+                borderRadius: BorderRadius.circular(UiRadius.md),
+                border: Border.all(color: UiTone.surfaceBorder),
+                boxShadow: UiShadow.card,
               ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   hintText: 'Search customer name, flat or doorstep address...',
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0D7C66), size: 20),
+                  hintStyle: UiText.body.copyWith(color: UiText.muted, fontSize: 12.5),
+                  prefixIcon: const Icon(Icons.search_rounded, color: UiTone.primary, size: 20),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 18, color: Colors.grey),
+                          icon: const Icon(Icons.clear_rounded, size: 18, color: UiTone.softText),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _searchQuery = '');
@@ -588,86 +530,43 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             const SizedBox(height: 14),
 
             // ── 4. Filter Chips Carousel ──
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  _buildFilterChip(0, '⚡ Upcoming', pendingCount),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(1, '⏳ Pending', pendingCount),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(2, '✅ Delivered', completedCount),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(3, '⚡ Express Orders', expressOrders.length),
-                ],
-              ),
+            UiFilterChipBar(
+              labels: const ['⚡ Upcoming', '⏳ Pending', '✅ Delivered', '⚡ Express Orders'],
+              counts: [pendingCount, pendingCount, completedCount, expressOrders.length],
+              selectedIndex: _selectedFilterIndex,
+              onSelected: (i) => setState(() => _selectedFilterIndex = i),
             ),
             const SizedBox(height: 18),
 
             // ── 5. Express Instant Orders (when filter 0 or 3) ──
             if ((_selectedFilterIndex == 0 || _selectedFilterIndex == 3) && expressOrders.isNotEmpty) ...[
-              Row(
-                children: [
-                  const Text(
-                    '⚡ Priority Express Orders (30-Min SLA)',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A), letterSpacing: -0.3),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10)),
-                    child: const Text('HIGH PRIORITY', style: TextStyle(color: Color(0xFFDC2626), fontSize: 9.5, fontWeight: FontWeight.w900)),
-                  ),
-                ],
+              UiSectionHeader(
+                title: '⚡ Priority Express Orders (30-Min SLA)',
+                padding: const EdgeInsets.only(bottom: 12),
+                action: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                  child: Text('HIGH PRIORITY', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                ),
               ),
-              const SizedBox(height: 10),
               ...expressOrders.map((order) => _buildExpressOrderCard(order)),
               const SizedBox(height: 16),
             ],
 
             // ── 6. Daily Subscriptions Route Stops List ──
             if (_selectedFilterIndex != 3) ...[
-              Row(
-                children: [
-                  const Text(
-                    '🥛 Route Stops & Doorsteps',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.3),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6F5F0),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${filteredTasks.length} STOPS',
-                      style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 11, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ],
+              UiSectionHeader(
+                title: '🥛 Route Stops & Doorsteps',
+                count: filteredTasks.length,
+                padding: const EdgeInsets.only(bottom: 12),
               ),
-              const SizedBox(height: 12),
 
               if (filteredTasks.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.check_circle_outline_rounded, size: 44, color: Color(0xFF10B981)),
-                      SizedBox(height: 10),
-                      Text('No Stops in this Filter', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A))),
-                      SizedBox(height: 4),
-                      Text('All assigned deliveries in this category are clear or completed!', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                    ],
-                  ),
+                const UiEmptyState(
+                  icon: Icons.check_circle_outline_rounded,
+                  title: 'No Stops in this Filter',
+                  message: 'All assigned deliveries in this category are clear or completed!',
+                  accent: UiTone.success,
                 )
               else
                 ListView.separated(
@@ -703,12 +602,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDone ? const Color(0xFFD1FAE5) : const Color(0xFFE5ECE8), width: 1.2),
-        boxShadow: const [
-          BoxShadow(color: Color(0x060F172A), blurRadius: 14, offset: Offset(0, 4)),
-        ],
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        border: Border.all(color: isDone ? UiTone.successSoft : UiTone.surfaceBorder, width: 1.2),
+        boxShadow: UiShadow.card,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -723,49 +620,25 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
-                      borderRadius: BorderRadius.circular(10),
+                      color: UiTone.ink,
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
-                    child: Text('STOP #${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
+                    child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
+                      color: UiTone.surfaceMuted,
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
-                    child: Text(task.slotTime, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                    child: Text(task.slotTime, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.softText)),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isDone
-                      ? const Color(0xFFD1FAE5)
-                      : (isSkipped ? const Color(0xFFF1F5F9) : const Color(0xFFFEF3C7)),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isDone ? Icons.check_circle_rounded : (isSkipped ? Icons.cancel_outlined : Icons.schedule_rounded),
-                      size: 12,
-                      color: isDone ? const Color(0xFF059669) : (isSkipped ? Colors.grey : const Color(0xFFD97706)),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isDone ? 'DELIVERED' : (isSkipped ? 'SKIPPED' : 'PENDING'),
-                      style: TextStyle(
-                        color: isDone ? const Color(0xFF059669) : (isSkipped ? Colors.grey[700] : const Color(0xFFD97706)),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
+              UiStatusPill(
+                status: isDone ? 'DELIVERED' : (isSkipped ? 'SKIPPED' : 'PENDING'),
+                dense: true,
               ),
             ],
           ),
@@ -776,10 +649,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: const Color(0xFFE6F5F0),
+                backgroundColor: UiTone.primarySoft,
                 child: Text(
                   custName.isNotEmpty ? custName[0].toUpperCase() : 'C',
-                  style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0D7C66), fontSize: 14),
+                  style: UiText.bodyStrong.copyWith(color: UiTone.primary, fontSize: 14, fontWeight: FontWeight.w900),
                 ),
               ),
               const SizedBox(width: 10),
@@ -791,24 +664,24 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       custName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A)),
+                      style: UiText.bodyStrong.copyWith(fontSize: 14, fontWeight: FontWeight.w900),
                     ),
-                    Text(custPhone, style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                    Text(custPhone, style: UiText.caption.copyWith(fontSize: 11.5, color: UiTone.softText)),
                   ],
                 ),
               ),
               // Call Button
               IconButton(
-                style: IconButton.styleFrom(backgroundColor: const Color(0xFFE6F5F0)),
-                icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66), size: 16),
+                style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
+                icon: const Icon(Icons.phone_rounded, color: UiTone.primary, size: 16),
                 tooltip: 'Call Customer',
                 onPressed: () => _callCustomer(context, custPhone),
               ),
               const SizedBox(width: 6),
               // WhatsApp Arrival Ping Button
               IconButton(
-                style: IconButton.styleFrom(backgroundColor: const Color(0xFFE8F2FE)),
-                icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF2563EB), size: 16),
+                style: IconButton.styleFrom(backgroundColor: UiTone.infoSoft),
+                icon: const Icon(Icons.chat_bubble_outline_rounded, color: UiTone.accentBlue, size: 16),
                 tooltip: 'WhatsApp Ping',
                 onPressed: () => _sendWhatsAppArrivalPing(context, custName, custPhone, task.deliveryAddress),
               ),
@@ -820,9 +693,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: UiTone.shellBackground,
+              borderRadius: BorderRadius.circular(UiRadius.md),
+              border: Border.all(color: UiTone.surfaceBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -830,14 +703,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.place_rounded, color: Color(0xFF0D7C66), size: 16),
+                    const Icon(Icons.place_rounded, color: UiTone.primary, size: 16),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         task.deliveryAddress,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF1E293B)),
+                        style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w700, fontSize: 12.5),
                       ),
                     ),
                   ],
@@ -848,17 +721,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(8),
+                        color: UiTone.infoSoft,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.gps_fixed_rounded, size: 10, color: Color(0xFF2563EB)),
+                          const Icon(Icons.gps_fixed_rounded, size: 10, color: UiTone.accentBlue),
                           const SizedBox(width: 4),
                           Text(
                             '${lat.toStringAsFixed(4)}° N, ${lon.toStringAsFixed(4)}° E',
-                            style: const TextStyle(color: Color(0xFF2563EB), fontSize: 10, fontWeight: FontWeight.bold),
+                            style: UiText.caption.copyWith(color: UiTone.accentBlue, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -867,12 +740,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     // 1-Click Google Maps Link
                     GestureDetector(
                       onTap: () => _launchGoogleMapsNavigation(context, lat, lon, custName),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.navigation_rounded, size: 12, color: Color(0xFF2563EB)),
-                          SizedBox(width: 4),
-                          Text('Navigate Map', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                          const Icon(Icons.navigation_rounded, size: 12, color: UiTone.accentBlue),
+                          const SizedBox(width: 4),
+                          Text('Navigate Map', style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.accentBlue)),
                         ],
                       ),
                     ),
@@ -887,8 +760,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
+              color: UiTone.surfaceMuted,
+              borderRadius: BorderRadius.circular(UiRadius.sm),
             ),
             child: Row(
               children: [
@@ -897,13 +770,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 Expanded(
                   child: Text(
                     '$qty x $prodName',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF0F172A)),
+                    style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w800, fontSize: 12.5),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(8)),
-                  child: const Text('CHILLED', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                  decoration: BoxDecoration(color: UiTone.successSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                  child: Text('CHILLED', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.success)),
                 ),
               ],
             ),
@@ -915,20 +788,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                color: UiTone.warningSoft,
+                borderRadius: BorderRadius.circular(UiRadius.xs),
+                border: Border.all(color: UiTone.warning.withValues(alpha: 0.35)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.notifications_active_outlined, size: 14, color: Color(0xFFD97706)),
+                  const Icon(Icons.notifications_active_outlined, size: 14, color: UiTone.warning),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Note: $instructions',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                      style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.warning),
                     ),
                   ),
                 ],
@@ -954,11 +827,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         );
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFDC2626),
-                        side: const BorderSide(color: Color(0xFFFECDD3)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        foregroundColor: UiTone.error,
+                        side: BorderSide(color: UiTone.error.withValues(alpha: 0.35)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                       ),
-                      child: const Text('Skip Stop ⏭️', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      child: Text('Skip Stop ⏭️', style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.bold, color: UiTone.error)),
                     ),
                   ),
                 ),
@@ -970,12 +843,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _handleCompleteDeliveryWithCamera(context, task),
                       icon: const Icon(Icons.camera_alt_rounded, size: 16),
-                      label: const Text('Deliver + Photo Proof 📸', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                      label: Text('Deliver + Photo Proof 📸', style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D7C66),
+                        backgroundColor: UiTone.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                       ),
                     ),
                   ),
@@ -986,17 +859,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
+                color: UiTone.shellBackground,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 16),
+                  const Icon(Icons.verified_rounded, color: UiTone.success, size: 16),
                   const SizedBox(width: 6),
                   Text(
                     isDone ? 'Delivered & Doorstep Photo Proof Verified 📸' : 'Skipped by Delivery Partner',
-                    style: TextStyle(
-                      color: isDone ? const Color(0xFF059669) : Colors.grey,
+                    style: UiText.caption.copyWith(
+                      color: isDone ? UiTone.success : UiTone.softText,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -1015,12 +888,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFECDD3), width: 1.2),
-        boxShadow: const [
-          BoxShadow(color: Color(0x060F172A), blurRadius: 12, offset: Offset(0, 4)),
-        ],
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        border: Border.all(color: UiTone.error.withValues(alpha: 0.3), width: 1.2),
+        boxShadow: UiShadow.card,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1033,27 +904,27 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(10)),
-                    child: Text(order.id, style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w900, fontSize: 11.5)),
+                    decoration: BoxDecoration(color: UiTone.infoSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                    child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
                   ),
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(8)),
-                    child: const Text('30-MIN EXPRESS', style: TextStyle(color: Color(0xFFDC2626), fontSize: 9.5, fontWeight: FontWeight.w900)),
+                    decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                    child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
                   ),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: isDelivered ? const Color(0xFFD1FAE5) : const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(10),
+                  color: isDelivered ? UiTone.successSoft : UiTone.warningSoft,
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
                 ),
                 child: Text(
                   isDelivered ? 'DELIVERED ✅' : 'PICKUP READY 🛵',
-                  style: TextStyle(
-                    color: isDelivered ? const Color(0xFF059669) : const Color(0xFFD97706),
+                  style: UiText.caption.copyWith(
+                    color: isDelivered ? UiTone.success : UiTone.warning,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1062,9 +933,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Text('📍 ${order.deliveryAddress}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+          Text('📍 ${order.deliveryAddress}', maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w700, fontSize: 12.5)),
           const SizedBox(height: 4),
-          Text('Items: ${order.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5)),
+          Text('Items: ${order.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5)),
           const SizedBox(height: 12),
 
           if (!isDelivered)
@@ -1074,11 +945,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _callCustomer(context, order.customerPhone),
                     icon: const Icon(Icons.phone, size: 14),
-                    label: const Text('Call Customer', style: TextStyle(fontSize: 11.5)),
+                    label: Text('Call Customer', style: UiText.label.copyWith(fontSize: 11.5, color: UiTone.primary)),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0D7C66),
-                      side: const BorderSide(color: Color(0xFF0D7C66)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      foregroundColor: UiTone.primary,
+                      side: const BorderSide(color: UiTone.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                     ),
                   ),
                 ),
@@ -1087,12 +958,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _handleCompleteExpressOrder(context, order),
                     icon: const Icon(Icons.pin_rounded, size: 14),
-                    label: const Text('Verify OTP & Deliver', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                    label: Text('Verify OTP & Deliver', style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                     ),
                   ),
                 ),
@@ -1112,55 +983,39 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           child: Icon(icon, color: fg, size: 16),
         ),
         const SizedBox(height: 6),
-        Text(val, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A))),
+        Text(val, style: UiText.h2.copyWith(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 1),
-        Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w500)),
+        Text(label, style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 10, fontWeight: FontWeight.w500)),
       ],
     );
   }
 
-  Widget _buildFilterChip(int index, String label, int count) {
-    final isSelected = _selectedFilterIndex == index;
+  Widget _buildShiftPill(String shift, String emoji, String label) {
+    final isSel = _selectedShift == shift;
     return InkWell(
-      onTap: () => setState(() => _selectedFilterIndex = index),
-      borderRadius: BorderRadius.circular(20),
+      onTap: () => setState(() => _selectedShift = shift),
+      borderRadius: BorderRadius.circular(UiRadius.sm),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D7C66) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
-          ),
-          boxShadow: [
-            if (isSelected)
-              const BoxShadow(color: Color(0x200D7C66), blurRadius: 8, offset: Offset(0, 3)),
-          ],
+          color: isSel ? Colors.white : Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(UiRadius.sm),
+          border: Border.all(color: isSel ? Colors.white : Colors.white.withValues(alpha: 0.3)),
         ),
+        alignment: Alignment.center,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-                color: isSelected ? Colors.white : const Color(0xFF334155),
-              ),
-            ),
-            const SizedBox(width: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
+            Text('$emoji ', style: const TextStyle(fontSize: 14)),
+            Flexible(
               child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.label.copyWith(
+                  color: isSel ? UiTone.primary : Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),

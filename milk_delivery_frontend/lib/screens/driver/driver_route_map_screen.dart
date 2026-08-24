@@ -6,6 +6,9 @@ import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/route_optimizer.dart';
+import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 
 class DriverRouteMapScreen extends StatefulWidget {
   final AppState state;
@@ -71,7 +74,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0284C7),
+            backgroundColor: UiTone.accentBlue,
             content: Text('🗺️ Launching Google Maps turn-by-turn navigation to $customerName'),
           ),
         );
@@ -109,7 +112,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: const Color(0xFF0D7C66),
+            backgroundColor: UiTone.primary,
             content: Text('🗺️ Launching Full Multi-Stop Google Maps Route (${tasks.length} Drops)'),
           ),
         );
@@ -139,9 +142,9 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1120),
+      backgroundColor: UiTone.ink,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
@@ -150,24 +153,24 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Morning Route Map Navigation',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+              style: UiText.h2.copyWith(fontSize: 16, color: Colors.white),
             ),
             Text(
               '${tasks.length} Drops • $hubName Sector',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+              style: UiText.label.copyWith(fontSize: 11, color: UiTone.secondary, fontWeight: FontWeight.w600),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.map_outlined, color: Color(0xFF38BDF8)),
+            icon: const Icon(Icons.map_outlined, color: UiTone.accentBlue),
             tooltip: 'Open Full Multi-Stop Google Maps Route',
             onPressed: () => _launchFullMultiStopGoogleMapsRoute(tasks),
           ),
           IconButton(
-            icon: const Icon(Icons.my_location, color: Color(0xFF10B981)),
+            icon: const Icon(Icons.my_location, color: UiTone.secondary),
             onPressed: () {
               _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 14.5));
             },
@@ -191,7 +194,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                 polylineId: const PolylineId('driver_route'),
                 points: routePoints,
                 width: 4,
-                color: const Color(0xFF0D7C66),
+                color: UiTone.primary,
               ),
             },
             markers: {
@@ -247,52 +250,42 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             top: 14,
             left: 16,
             right: 16,
-            child: InkWell(
+            child: UiInsetCard(
               onTap: () => _launchFullMultiStopGoogleMapsRoute(tasks),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.94),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.5)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 10),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.map_rounded, color: Color(0xFF38BDF8), size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'TSP Shortest Path Navigation 🚀',
-                            style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Saved ${_tspResult.distanceSavedKm.toStringAsFixed(1)} km & ${_tspResult.fuelSavedLiters.toStringAsFixed(2)}L fuel (${tasks.length} Drops)',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shadow: UiShadow.floating,
+              child: Row(
+                children: [
+                  const Icon(Icons.map_rounded, color: UiTone.accentBlue, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'TSP Shortest Path Navigation 🚀',
+                          style: UiText.bodyStrong.copyWith(fontSize: 11, color: UiTone.accentBlue),
+                        ),
+                        Text(
+                          'Saved ${_tspResult.distanceSavedKm.toStringAsFixed(1)} km & ${_tspResult.fuelSavedLiters.toStringAsFixed(2)}L fuel (${tasks.length} Drops)',
+                          style: UiText.body.copyWith(fontSize: 10.5),
+                        ),
+                      ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${tasks.where((t) => t.isDelivered).length}/${tasks.length} Done',
-                        style: const TextStyle(color: Color(0xFF34D399), fontSize: 11, fontWeight: FontWeight.w800),
-                      ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: UiTone.successSoft,
+                      borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
-                  ],
-                ),
+                    child: Text(
+                      '${tasks.where((t) => t.isDelivered).length}/${tasks.length} Done',
+                      style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.success),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -303,16 +296,11 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
               bottom: 20,
               left: 16,
               right: 16,
-              child: Container(
+              child: UiInsetCard(
                 padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF131E32),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.4)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 16, offset: const Offset(0, 4)),
-                  ],
-                ),
+                radius: UiRadius.lg,
+                borderColor: UiTone.accentBlue.withValues(alpha: 0.3),
+                shadow: UiShadow.floating,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,32 +310,32 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            color: UiTone.infoSoft,
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           child: Text(
                             'STOP #${_selectedTaskIndex + 1}',
-                            style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.w900, fontSize: 11.5),
+                            style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             selectedTask.customerName,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+                            style: UiText.bodyStrong.copyWith(fontSize: 15),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Text(
                           selectedTask.slotTime,
-                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w600),
+                          style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Text(
                       selectedTask.deliveryAddress,
-                      style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5),
+                      style: UiText.body.copyWith(fontSize: 12.5),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -357,13 +345,13 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
+                              backgroundColor: UiTone.accentBlue,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                             ),
                             icon: const Icon(Icons.navigation, size: 18),
-                            label: const Text('Navigate with Google Maps', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                            label: Text('Navigate with Google Maps', style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white)),
                             onPressed: () {
                               _launchGoogleMapsNavigation(
                                 selectedTask.customerLatitude,

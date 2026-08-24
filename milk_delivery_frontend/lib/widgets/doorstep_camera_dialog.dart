@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/image_upload_service.dart';
 import '../theme/ui_tokens.dart';
+import '../theme/ui_text.dart';
 
 
 class DoorstepProofPreset {
@@ -50,7 +51,7 @@ class DoorstepCameraDialog extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: UiTone.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => DoorstepCameraDialog(
         customerName: customerName,
         deliveryAddress: deliveryAddress,
@@ -124,7 +125,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
             child: Container(
               width: 44,
               height: 5,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: UiTone.surfaceBorder, borderRadius: BorderRadius.circular(UiRadius.pill)),
             ),
           ),
           const SizedBox(height: 12),
@@ -136,8 +137,8 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Doorstep Camera Proof 📸', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: UiTone.ink)),
-                  Text('Deliver to: ${widget.customerName}', style: const TextStyle(fontSize: 12, color: UiTone.primary, fontWeight: FontWeight.w700)),
+                  Text('Doorstep Camera Proof 📸', style: UiText.h2.copyWith(fontSize: 17)),
+                  Text('Deliver to: ${widget.customerName}', style: UiText.bodyStrong.copyWith(fontSize: 12, color: UiTone.primary)),
                 ],
               ),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
@@ -147,7 +148,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
 
           // ── Live Camera Viewfinder with GPS & Time Watermark ──
           ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(UiRadius.lg),
             child: Container(
               height: 220,
               width: double.infinity,
@@ -198,7 +199,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                               const SizedBox(width: 4),
                               Text(
                                 '${widget.latitude.toStringAsFixed(4)}° N, ${widget.longitude.toStringAsFixed(4)}° E',
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                style: UiText.caption.copyWith(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -209,11 +210,11 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                             color: UiTone.error,
                             borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.circle, color: Colors.white, size: 6),
-                              SizedBox(width: 4),
-                              Text('GEO-TAGGED', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                              const Icon(Icons.circle, color: Colors.white, size: 6),
+                              const SizedBox(width: 4),
+                              Text('GEO-TAGGED', style: UiText.caption.copyWith(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
                             ],
                           ),
                         ),
@@ -243,13 +244,13 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                               '📍 ${widget.deliveryAddress}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                              style: UiText.body.copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             '$dateStr • $timeStr',
-                            style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
+                            style: UiText.caption.copyWith(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -262,7 +263,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
           const SizedBox(height: 16),
 
           // ── Select Proof Scenario Preset ──
-          const Text('Select Doorstep Drop Placement:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
+          Text('Select Doorstep Drop Placement:', style: UiText.bodyStrong.copyWith(fontSize: 13)),
           const SizedBox(height: 8),
 
           Expanded(
@@ -296,9 +297,9 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                             children: [
                               Text(
                                 preset.title,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: isSelected ? UiTone.primary : UiTone.ink),
+                                style: UiText.bodyStrong.copyWith(fontSize: 12.5, color: isSelected ? UiTone.primary : UiTone.ink),
                               ),
-                              Text(preset.description, style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+                              Text(preset.description, style: UiText.caption.copyWith(fontSize: 10.5)),
                             ],
                           ),
                         ),
@@ -352,7 +353,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                         setState(() => _isCapturing = false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            backgroundColor: Colors.red,
+                            backgroundColor: UiTone.error,
                             content: Text('📷 Photo capture failed. Please try again.'),
                           ),
                         );
@@ -366,7 +367,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                   : const Icon(Icons.verified_rounded, size: 18),
               label: Text(
                 _isCapturing ? 'Uploading Proof to Server...' : 'Confirm Photo Proof & Complete Delivery',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: UiTone.primary,

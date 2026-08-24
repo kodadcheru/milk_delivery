@@ -5,6 +5,7 @@ import 'providers/app_state.dart';
 import 'services/api_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/ui_tokens.dart';
+import 'theme/ui_text.dart';
 import 'widgets/next_gen_nav_bar.dart';
 import 'screens/auth/phone_login_screen.dart';
 import 'screens/customer/home_tab.dart';
@@ -188,7 +189,7 @@ class _MainAppShellState extends State<MainAppShell> {
                             child: Text(
                               '📍 $hubName',
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w800),
+                              style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w800),
                             ),
                           ),
                           const Icon(Icons.keyboard_arrow_down_rounded, color: UiTone.secondary, size: 18),
@@ -197,7 +198,7 @@ class _MainAppShellState extends State<MainAppShell> {
                       Text(
                         'Operating Zone • $pendingCount Pending Drops',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: UiTone.secondary, fontSize: 10, fontWeight: FontWeight.w600),
+                        style: UiText.label.copyWith(color: UiTone.secondary, fontSize: 10),
                       ),
                     ],
                   ),
@@ -222,7 +223,7 @@ class _MainAppShellState extends State<MainAppShell> {
                         child: Text(
                           '${widget.state.unreadNotificationCount}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                          style: UiText.caption.copyWith(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -319,14 +320,14 @@ class _MainAppShellState extends State<MainAppShell> {
                   children: [
                     Row(
                       children: [
-                        const Text('Location Hub Portal', style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w800)),
+                        Text('Location Hub Portal', style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w800)),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: (widget.state.isRedisConnected ? const Color(0xFF10B981) : Colors.amber).withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: (widget.state.isRedisConnected ? const Color(0xFF34D399) : Colors.amberAccent).withValues(alpha: 0.4)),
+                            color: (widget.state.isRedisConnected ? UiTone.secondary : UiTone.warning).withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
+                            border: Border.all(color: (widget.state.isRedisConnected ? UiTone.secondary : UiTone.warning).withValues(alpha: 0.4)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -335,15 +336,15 @@ class _MainAppShellState extends State<MainAppShell> {
                                 width: 6,
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: widget.state.isRedisConnected ? const Color(0xFF10B981) : Colors.amber,
+                                  color: widget.state.isRedisConnected ? UiTone.secondary : UiTone.warning,
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 widget.state.isRedisConnected ? 'Live Redis' : 'Auto-Sync',
-                                style: TextStyle(
-                                  color: widget.state.isRedisConnected ? const Color(0xFF34D399) : Colors.amberAccent,
+                                style: UiText.caption.copyWith(
+                                  color: widget.state.isRedisConnected ? UiTone.secondary : UiTone.warning,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -356,7 +357,7 @@ class _MainAppShellState extends State<MainAppShell> {
                     Text(
                       '$hubTitle • $activeDeliveriesCount Active Deliveries',
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w600),
+                      style: UiText.label.copyWith(color: UiTone.accentBlue, fontSize: 11),
                     ),
                   ],
                 ),
@@ -380,7 +381,7 @@ class _MainAppShellState extends State<MainAppShell> {
                         child: Text(
                           '${widget.state.unreadNotificationCount}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                          style: UiText.caption.copyWith(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -403,7 +404,7 @@ class _MainAppShellState extends State<MainAppShell> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      backgroundColor: Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       content: Text('⚡ Hub Redis Stream & Data Refreshed!'),
                     ),
                   );
@@ -505,7 +506,7 @@ class _MainAppShellState extends State<MainAppShell> {
                         child: Text(
                           '${widget.state.unreadNotificationCount}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                          style: UiText.caption.copyWith(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -635,7 +636,7 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
             children: [
               const Icon(Icons.location_on_rounded, color: UiTone.secondary, size: 22),
               const SizedBox(width: 8),
-              const Text('Driver Operating Zone & Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text('Driver Operating Zone & Hub', style: UiText.title),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ],
@@ -662,8 +663,8 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(hubName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                      Text('Assigned Hub • $hubCode', style: const TextStyle(color: UiTone.secondary, fontSize: 11)),
+                      Text(hubName, style: UiText.bodyStrong.copyWith(color: Colors.white)),
+                      Text('Assigned Hub • $hubCode', style: UiText.caption.copyWith(color: UiTone.secondary)),
                     ],
                   ),
                 ),
@@ -686,7 +687,7 @@ void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
                 );
               },
               icon: const Icon(Icons.gps_fixed_rounded, size: 18),
-              label: const Text('Detect & Sync Device GPS Location 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              label: Text('Detect & Sync Device GPS Location 📍', style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: UiTone.primary,
                 foregroundColor: Colors.white,

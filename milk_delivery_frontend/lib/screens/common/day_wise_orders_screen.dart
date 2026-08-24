@@ -5,6 +5,8 @@ import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
+import '../../theme/ui_format.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 
 class DayWiseOrdersScreen extends StatefulWidget {
@@ -233,11 +235,11 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                               children: [
                                 Text(
                                   _isToday ? 'Today\'s Roster 📅' : 'Day-wise Delivery Roster',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: UiText.label.copyWith(color: Colors.white70, fontSize: 11),
                                 ),
                                 Text(
                                   '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                                  style: UiText.h2.copyWith(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
                                 ),
                               ],
                             ),
@@ -246,7 +248,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                         ElevatedButton.icon(
                           onPressed: _pickCustomDate,
                           icon: const Icon(Icons.edit_calendar_rounded, size: 14),
-                          label: const Text('Pick Date', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          label: Text('Pick Date', style: UiText.label.copyWith(fontSize: 11, color: UiTone.primary)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: UiTone.primary,
@@ -293,7 +295,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
                   hintText: 'Search by customer, address, or order ID...',
-                  hintStyle: const TextStyle(fontSize: 12, color: UiTone.softText),
+                  hintStyle: UiText.body.copyWith(fontSize: 12),
                   prefixIcon: const Icon(Icons.search_rounded, color: UiTone.softText, size: 18),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -370,10 +372,10 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'No deliveries found for $_formattedDateStr',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink),
+                        style: UiText.bodyStrong.copyWith(fontSize: 14),
                       ),
                       const SizedBox(height: 4),
-                      const Text('Try selecting a different date or clearing filters.', style: TextStyle(fontSize: 11, color: UiTone.softText)),
+                      Text('Try selecting a different date or clearing filters.', style: UiText.body.copyWith(fontSize: 11)),
                     ],
                   ),
                 )
@@ -409,9 +411,8 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: TextStyle(
+            style: UiText.label.copyWith(
               fontSize: 11,
-              fontWeight: FontWeight.bold,
               color: isSelected ? UiTone.surface : UiTone.softText,
             ),
           ),
@@ -431,9 +432,9 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
         ),
         child: Column(
           children: [
-            Text(count, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+            Text(count, style: UiText.h2.copyWith(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(fontSize: 10, color: UiTone.softText), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(label, style: UiText.caption.copyWith(fontSize: 10, color: UiTone.softText), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
@@ -453,9 +454,8 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: UiText.label.copyWith(
             fontSize: 11,
-            fontWeight: FontWeight.bold,
             color: isSelected ? UiTone.surface : UiTone.softText,
           ),
         ),
@@ -518,12 +518,12 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                     children: [
                       Text(
                         task.customerName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink),
+                        style: UiText.bodyStrong.copyWith(fontSize: 13.5),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${product?.name ?? 'Milk Subscription'} • ${task.subscriptionDetail?.quantity ?? 1}x ${task.subscriptionDetail?.packSize ?? "Unit"}',
-                        style: const TextStyle(fontSize: 11.5, color: UiTone.softText),
+                        style: UiText.body.copyWith(fontSize: 11.5),
                       ),
                     ],
                   ),
@@ -538,7 +538,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                   ),
                   child: Text(
                     task.status,
-                    style: TextStyle(
+                    style: UiText.caption.copyWith(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w800,
                       color: isDelivered
@@ -568,7 +568,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       Expanded(
                         child: Text(
                           task.deliveryAddress,
-                          style: const TextStyle(fontSize: 11, color: UiTone.ink, fontWeight: FontWeight.w500),
+                          style: UiText.body.copyWith(fontSize: 11, color: UiTone.ink),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -582,11 +582,11 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       const SizedBox(width: 6),
                       Text(
                         'Slot: ${task.slotTime}',
-                        style: const TextStyle(fontSize: 10.5, color: UiTone.softText, fontWeight: FontWeight.bold),
+                        style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.softText, fontWeight: FontWeight.bold),
                       ),
                       if (driverDisplay.isNotEmpty) ...[
-                        const Text(' • ', style: TextStyle(color: UiTone.softText)),
-                        Text('🛵 Driver: $driverDisplay', style: const TextStyle(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
+                        Text(' • ', style: UiText.caption.copyWith(color: UiTone.softText)),
+                        Text('🛵 Driver: $driverDisplay', style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
                       ],
                     ],
                   ),
@@ -632,7 +632,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       foregroundColor: UiTone.warning,
                       side: const BorderSide(color: UiTone.warning),
                     ),
-                    child: const Text('Skip ⏭️', style: TextStyle(fontSize: 10.5)),
+                    child: Text('Skip ⏭️', style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.warning)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
@@ -660,7 +660,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                       );
                     },
                     icon: const Icon(Icons.camera_alt_rounded, size: 14),
-                    label: const Text('Deliver 📸', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                    label: Text('Deliver 📸', style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.surface)),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       minimumSize: Size.zero,
@@ -669,11 +669,11 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                     ),
                   ),
                 ] else if (isDelivered) ...[
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.check_circle, color: UiTone.success, size: 16),
-                      SizedBox(width: 4),
-                      Text('Delivered', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.success)),
+                      const Icon(Icons.check_circle, color: UiTone.success, size: 16),
+                      const SizedBox(width: 4),
+                      Text('Delivered', style: UiText.bodyStrong.copyWith(fontSize: 11, color: UiTone.success)),
                     ],
                   ),
                 ],
@@ -712,20 +712,20 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: UiTone.ink)),
-                      Text('${ord.id} • ₹${ord.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11, color: UiTone.error, fontWeight: FontWeight.bold)),
+                      Text(ord.customerName, style: UiText.bodyStrong.copyWith(fontSize: 13.5)),
+                      Text('${ord.id} • ${UiFormat.price(ord.totalAmount)}', style: UiText.caption.copyWith(fontSize: 11, color: UiTone.error, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: isDelivered ? UiTone.successSoft : UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                  child: Text(ord.status, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: isDelivered ? UiTone.success : UiTone.error)),
+                  child: Text(ord.status, style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w800, color: isDelivered ? UiTone.success : UiTone.error)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text('📍 ${ord.deliveryAddress}', style: const TextStyle(fontSize: 11, color: UiTone.ink)),
+            Text('📍 ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 11, color: UiTone.ink)),
           ],
         ),
       ),

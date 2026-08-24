@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
+import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
+import '../../theme/ui_format.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
 
@@ -42,7 +46,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
         : '8885199878';
 
     final salaryText = (driverUser != null && driverUser.monthlySalary > 0)
-        ? '₹${driverUser.monthlySalary.toStringAsFixed(0)}'
+        ? UiFormat.price(driverUser.monthlySalary)
         : '₹15,000';
 
     final vehicleText = (driverUser != null && driverUser.vehicleNumber.isNotEmpty)
@@ -59,162 +63,140 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     final topInset = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: UiTone.shellBackground,
       body: Column(
         children: [
           // ── Part 1: Hero Header ──
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0F172A), Color(0xFF0D7C66), Color(0xFF044E3A)],
-              ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(color: Color(0x250D7C66), blurRadius: 20, offset: Offset(0, 10)),
-              ],
-            ),
-            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row
-                Row(
-                  children: [
-                    const Text(
-                      'Driver Profile',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
-                    ),
-                    const Spacer(),
-                    // Interactive Duty Status Toggle
-                    GestureDetector(
-                      onTap: () => _toggleDutyStatus(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: _isOnDuty
-                              ? const Color(0xFF10B981).withValues(alpha: 0.25)
-                              : Colors.red.withValues(alpha: 0.25),
-                          border: Border.all(
-                            color: _isOnDuty ? const Color(0xFF34D399) : Colors.redAccent,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isOnDuty ? Icons.check_circle_rounded : Icons.pause_circle_rounded,
-                              size: 13,
-                              color: _isOnDuty ? const Color(0xFF34D399) : Colors.redAccent,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _isOnDuty ? 'On Duty' : 'Off Duty',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
-                            ),
-                          ],
-                        ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 0),
+            child: UiHeroCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row
+                  Row(
+                    children: [
+                      Text(
+                        'Driver Profile',
+                        style: UiText.h1.copyWith(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Edit Profile Action
-                    GestureDetector(
-                      onTap: () => _showEditDriverProfileDialog(context, widget.state, driverName, driverPhone, vehicleText, licenseText),
-                      child: Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Avatar stack
-                Center(
-                  child: GestureDetector(
-                    onTap: () => _showEditDriverProfileDialog(context, widget.state, driverName, driverPhone, vehicleText, licenseText),
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          width: 84,
-                          height: 84,
+                      const Spacer(),
+                      // Interactive Duty Status Toggle
+                      GestureDetector(
+                        onTap: () => _toggleDutyStatus(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Colors.white.withValues(alpha: 0.95), Colors.white.withValues(alpha: 0.40)],
-                            ),
-                            boxShadow: const [
-                              BoxShadow(color: Color(0x30000000), blurRadius: 16, offset: Offset(0, 6)),
+                            color: Colors.white.withValues(alpha: 0.20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isOnDuty ? Icons.check_circle_rounded : Icons.pause_circle_rounded,
+                                size: 13,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                _isOnDuty ? 'On Duty' : 'Off Duty',
+                                style: UiText.caption.copyWith(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+                              ),
                             ],
                           ),
-                          child: const Center(
-                            child: CircleAvatar(
-                              radius: 38,
-                              backgroundColor: Color(0xFF0D7C66),
-                              child: Text('🛵', style: TextStyle(fontSize: 36)),
-                            ),
-                          ),
                         ),
-                        Container(
-                          width: 22,
-                          height: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      // Edit Profile Action
+                      GestureDetector(
+                        onTap: () => _showEditDriverProfileDialog(context, widget.state, driverName, driverPhone, vehicleText, licenseText),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF38BDF8),
+                            color: Colors.white.withValues(alpha: 0.18),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: const Icon(Icons.edit, size: 12, color: Colors.white),
+                          child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Avatar stack
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => _showEditDriverProfileDialog(context, widget.state, driverName, driverPhone, vehicleText, licenseText),
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 84,
+                            height: 84,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.18),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 2),
+                            ),
+                            child: const Center(child: Text('🛵', style: TextStyle(fontSize: 40))),
+                          ),
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: UiTone.primary, width: 2),
+                            ),
+                            child: const Icon(Icons.edit, size: 12, color: UiTone.primary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                // Name row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      driverName,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.verified, size: 20, color: Color(0xFF38BDF8)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-
-                // Phone & ID pill
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF38BDF8)),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Verified Delivery Partner • ID #$driverId',
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                  // Name row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          driverName,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.h1.copyWith(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.verified, size: 20, color: Colors.white),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Phone & ID pill
+                  Center(
+                    child: UiHeroGlass(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.badge_outlined, size: 14, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Verified Delivery Partner • ID #$driverId',
+                            style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -230,8 +212,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       '4.9 ★',
                       'Driver Rating',
                       Icons.star_rounded,
-                      const Color(0xFFF59E0B),
-                      const Color(0xFFFEF3C7),
+                      UiTone.warning,
                       () => _showRatingBreakdownSheet(context),
                     ),
                     const SizedBox(width: 10),
@@ -239,8 +220,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       '$onTimePct%',
                       'On-Time Drops',
                       Icons.timer_rounded,
-                      const Color(0xFF10B981),
-                      const Color(0xFFD1FAE5),
+                      UiTone.success,
                       () => _showOnTimePerformanceSheet(context, widget.state),
                     ),
                     const SizedBox(width: 10),
@@ -248,8 +228,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       salaryText,
                       'Monthly Salary',
                       Icons.payments_rounded,
-                      const Color(0xFF0D7C66),
-                      const Color(0xFFE6F5F0),
+                      UiTone.primary,
                       () => _showSalaryDetailsSheet(context, salaryText, hubName),
                     ),
                   ],
@@ -262,8 +241,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 _buildCardGroup([
                   _buildMenuTile(
                     icon: Icons.map_rounded,
-                    iconBg: const Color(0xFFE8F2FE),
-                    iconFg: const Color(0xFF2563EB),
+                    accent: UiTone.accentBlue,
                     label: 'Morning Route #1 • $hubName',
                     subtitle: 'Assigned Urban Zone & GPS Navigation',
                     onTap: () => Navigator.push(
@@ -276,8 +254,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.schedule_rounded,
-                    iconBg: const Color(0xFFE0F7F3),
-                    iconFg: const Color(0xFF0D9488),
+                    accent: UiTone.primary,
                     label: 'Shift: 05:00 AM – 08:30 AM Daily',
                     subtitle: 'Morning delivery window & attendance',
                     onTap: () => _showShiftTimingDialog(context),
@@ -285,8 +262,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.two_wheeler_rounded,
-                    iconBg: const Color(0xFFFFF3E6),
-                    iconFg: const Color(0xFFE67E22),
+                    accent: UiTone.warning,
                     label: 'Vehicle: $vehicleText',
                     subtitle: 'License: $licenseText',
                     onTap: () => _showVehicleKycDialog(context, vehicleText, licenseText, widget.state),
@@ -301,8 +277,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 _buildCardGroup([
                   _buildMenuTile(
                     icon: Icons.warehouse_rounded,
-                    iconBg: const Color(0xFFE6F5F0),
-                    iconFg: const Color(0xFF0D7C66),
+                    accent: UiTone.primary,
                     label: 'Dispatch Depot: $hubName',
                     subtitle: 'Crate pickup bay & cold storage facility',
                     onTap: () => _showDepotDetailsDialog(context, hubName, activeHub),
@@ -310,8 +285,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.inventory_2_rounded,
-                    iconBg: const Color(0xFFEEF2FF),
-                    iconFg: const Color(0xFF4F46E5),
+                    accent: UiTone.accentPurple,
                     label: 'Morning Batch Packing Crates',
                     subtitle: 'View crate breakdown & pack counts',
                     onTap: () => Navigator.push(
@@ -322,8 +296,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.support_agent_rounded,
-                    iconBg: const Color(0xFFFEF2F2),
-                    iconFg: const Color(0xFFEF4444),
+                    accent: UiTone.error,
                     label: 'Hub Manager Contact',
                     subtitle: '$managerName • $managerPhone',
                     onTap: () => _showManagerContactSheet(context, hubName, managerName, managerPhone),
@@ -338,8 +311,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 _buildCardGroup([
                   _buildMenuTile(
                     icon: Icons.headset_mic_rounded,
-                    iconBg: const Color(0xFFFFF3E6),
-                    iconFg: const Color(0xFFE67E22),
+                    accent: UiTone.warning,
                     label: 'Emergency Delivery Support',
                     subtitle: '24x7 Driver SOS & road breakdown hotline',
                     onTap: () => _showEmergencySupportSheet(context),
@@ -347,8 +319,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.shield_outlined,
-                    iconBg: const Color(0xFFF1F5F9),
-                    iconFg: const Color(0xFF475569),
+                    accent: UiTone.softText,
                     label: 'Driver Safety Guidelines & Terms',
                     subtitle: 'Zero spillage & cold chain standards',
                     onTap: () => _showSafetyGuidelinesSheet(context),
@@ -363,16 +334,16 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                   child: Container(
                     height: 52,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFF43F5E), Color(0xFFE11D48)]),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [BoxShadow(color: Color(0x28E11D48), blurRadius: 16, offset: Offset(0, 6))],
+                      color: UiTone.error,
+                      borderRadius: BorderRadius.circular(UiRadius.lg),
+                      boxShadow: UiShadow.elevated,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text('Log out of Partner Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+                        const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text('Log out of Partner Account', style: UiText.bodyStrong.copyWith(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
                       ],
                     ),
                   ),
@@ -381,10 +352,10 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 const SizedBox(height: 18),
 
                 // Version Footer
-                const Center(
+                Center(
                   child: Text(
                     'MilkDrop Express Partner v1.0.0 • Dedicated Delivery Heroes 🛵',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+                    style: UiText.caption.copyWith(fontSize: 12),
                   ),
                 ),
               ],
@@ -397,35 +368,14 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
   // ── Helper Widgets ──
 
-  Widget _buildQuickStatCard(String value, String label, IconData icon, Color fg, Color bg, VoidCallback onTap) {
+  Widget _buildQuickStatCard(String value, String label, IconData icon, Color accent, VoidCallback onTap) {
     return Expanded(
-      child: InkWell(
+      child: UiStatCard(
+        value: value,
+        label: label,
+        icon: icon,
+        accent: accent,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: const [
-              BoxShadow(color: Color(0x060F172A), blurRadius: 10, offset: Offset(0, 3)),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-                child: Icon(icon, color: fg, size: 18),
-              ),
-              const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF0F172A))),
-              const SizedBox(height: 2),
-              Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10.5, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -433,20 +383,17 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF334155), letterSpacing: -0.2),
+      style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: -0.2),
     );
   }
 
   Widget _buildCardGroup(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5ECE8), width: 1),
-        boxShadow: const [
-          BoxShadow(color: Color(0x081A2B23), blurRadius: 12, offset: Offset(0, 4)),
-          BoxShadow(color: Color(0x051A2B23), blurRadius: 24, offset: Offset(0, 8)),
-        ],
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        border: Border.all(color: UiTone.surfaceBorder, width: 1),
+        boxShadow: UiShadow.card,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(children: children),
@@ -454,13 +401,12 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9), indent: 68);
+    return const Divider(height: 1, thickness: 1, color: UiTone.surfaceMuted, indent: 68);
   }
 
   Widget _buildMenuTile({
     required IconData icon,
-    required Color iconBg,
-    required Color iconFg,
+    required Color accent,
     required String label,
     String? subtitle,
     required VoidCallback onTap,
@@ -477,25 +423,25 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(12),
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
                 ),
-                child: Icon(icon, size: 20, color: iconFg),
+                child: Icon(icon, size: 20, color: accent),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Color(0xFF1A2B23))),
+                    Text(label, style: UiText.bodyStrong.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      Text(subtitle, style: UiText.body.copyWith(fontSize: 12)),
                     ],
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 20, color: Color(0xFFC0C8C4)),
+              const Icon(Icons.chevron_right, size: 20, color: UiText.muted),
             ],
           ),
         ),
@@ -533,7 +479,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: _isOnDuty ? const Color(0xFF0D7C66) : const Color(0xFFEF4444),
+          backgroundColor: _isOnDuty ? UiTone.primary : UiTone.error,
           content: Text(
             _isOnDuty ? '🟢 Status set to ON DUTY. GPS Broadcast live on Hub map!' : '⏸️ Status set to OFF DUTY. Break mode active.',
           ),
@@ -558,12 +504,12 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.edit_note_rounded, color: Color(0xFF0D7C66)),
-            SizedBox(width: 8),
-            Text('Edit Partner Profile', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Icon(Icons.edit_note_rounded, color: UiTone.primary),
+            const SizedBox(width: 8),
+            Text('Edit Partner Profile', style: UiText.h2.copyWith(fontSize: 17)),
           ],
         ),
         content: SingleChildScrollView(
@@ -608,7 +554,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () {
               final parts = nameCtrl.text.trim().split(' ');
               final first = parts.first;
@@ -624,7 +570,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  backgroundColor: Color(0xFF0D7C66),
+                  backgroundColor: UiTone.primary,
                   content: Text('✅ Driver partner details updated successfully!'),
                 ),
               );
@@ -639,7 +585,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   void _showRatingBreakdownSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -648,19 +594,19 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           children: [
             Row(
               children: [
-                const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 28),
+                const Icon(Icons.star_rounded, color: UiTone.warning, size: 28),
                 const SizedBox(width: 8),
-                const Text('4.9 / 5.0 Rating Score', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('4.9 / 5.0 Rating Score', style: UiText.h2.copyWith(fontSize: 18)),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(12)),
-                  child: const Text('TOP 1% RIDER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                  decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.sm)),
+                  child: Text('TOP 1% RIDER', style: UiText.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w800, color: UiTone.warning)),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            const Text('Customer Feedback Highlights (Last 30 Days):', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            Text('Customer Feedback Highlights (Last 30 Days):', style: UiText.body.copyWith(fontSize: 13)),
             const SizedBox(height: 12),
             _buildScoreRow('⚡ On-Time Doorstep Delivery', '99.8% (Excellent)'),
             _buildScoreRow('🥛 Milk Pouch Handling & Hygiene', '100% Zero Leakage'),
@@ -670,7 +616,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Close Insights'),
               ),
@@ -687,18 +633,18 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.timer_rounded, color: Color(0xFF10B981), size: 28),
-                SizedBox(width: 8),
-                Text('On-Time Delivery Performance', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.timer_rounded, color: UiTone.success, size: 28),
+                const SizedBox(width: 8),
+                Text('On-Time Delivery Performance', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 16),
@@ -710,7 +656,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Great! Continue Route'),
               ),
@@ -724,7 +670,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   void _showSalaryDetailsSheet(BuildContext context, String salaryText, String hubName) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -733,22 +679,22 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           children: [
             Row(
               children: [
-                const Icon(Icons.payments_rounded, color: Color(0xFF0D7C66), size: 28),
+                const Icon(Icons.payments_rounded, color: UiTone.primary, size: 28),
                 const SizedBox(width: 8),
-                Text('$salaryText / Month Fixed Pay', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                Text('$salaryText / Month Fixed Pay', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE6F5F0),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                color: UiTone.primarySoft,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+                border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
               ),
               child: Text(
                 '💰 Monthly driver compensation is paid directly by your assigned Hub ($hubName) on the 1st - 5th of every month.',
-                style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A), height: 1.4),
+                style: UiText.body.copyWith(fontSize: 12.5, color: UiTone.ink, height: 1.4),
               ),
             ),
             const SizedBox(height: 14),
@@ -760,7 +706,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Close Salary Details'),
               ),
@@ -775,27 +721,27 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.schedule_rounded, color: Color(0xFF0D7C66)),
-            SizedBox(width: 8),
-            Text('Shift Hours & Schedule', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Icon(Icons.schedule_rounded, color: UiTone.primary),
+            const SizedBox(width: 8),
+            Text('Shift Hours & Schedule', style: UiText.h2.copyWith(fontSize: 17)),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('⏰ Standard Morning Shift: 05:00 AM – 08:30 AM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-            SizedBox(height: 8),
-            Text('• 04:45 AM: Report to Hub Cold Storage Bay for crate pickup.', style: TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
-            SizedBox(height: 4),
-            Text('• 05:00 AM: Start doorstep deliveries along optimized route.', style: TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
-            SizedBox(height: 4),
-            Text('• 07:30 AM: Standard deliveries complete.', style: TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
-            SizedBox(height: 4),
-            Text('• 08:30 AM: Final handover of empty crates at Hub Depot.', style: TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
+            Text('⏰ Standard Morning Shift: 05:00 AM – 08:30 AM', style: UiText.bodyStrong.copyWith(fontSize: 13.5)),
+            const SizedBox(height: 8),
+            Text('• 04:45 AM: Report to Hub Cold Storage Bay for crate pickup.', style: UiText.body.copyWith(fontSize: 12.5)),
+            const SizedBox(height: 4),
+            Text('• 05:00 AM: Start doorstep deliveries along optimized route.', style: UiText.body.copyWith(fontSize: 12.5)),
+            const SizedBox(height: 4),
+            Text('• 07:30 AM: Standard deliveries complete.', style: UiText.body.copyWith(fontSize: 12.5)),
+            const SizedBox(height: 4),
+            Text('• 08:30 AM: Final handover of empty crates at Hub Depot.', style: UiText.body.copyWith(fontSize: 12.5)),
           ],
         ),
         actions: [
@@ -809,12 +755,12 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.two_wheeler_rounded, color: Color(0xFF0D7C66)),
-            SizedBox(width: 8),
-            Text('Vehicle & License KYC', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Icon(Icons.two_wheeler_rounded, color: UiTone.primary),
+            const SizedBox(width: 8),
+            Text('Vehicle & License KYC', style: UiText.h2.copyWith(fontSize: 17)),
           ],
         ),
         content: Column(
@@ -826,13 +772,13 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             _buildScoreRow('🛡️ Vehicle Insurance', 'Valid & Active'),
             _buildScoreRow('🔋 Battery Swap Card', 'Unlimited Partner Access'),
             const SizedBox(height: 10),
-            const Text('Need to update vehicle or renewal?', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+            Text('Need to update vehicle or renewal?', style: UiText.caption.copyWith(fontSize: 11.5)),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(ctx);
               _showEditDriverProfileDialog(
@@ -859,27 +805,27 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
         title: Row(
           children: [
-            const Icon(Icons.warehouse_rounded, color: Color(0xFF0D7C66)),
+            const Icon(Icons.warehouse_rounded, color: UiTone.primary),
             const SizedBox(width: 8),
-            Flexible(child: Text(hubName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+            Flexible(child: Text(hubName, overflow: TextOverflow.ellipsis, style: UiText.h2.copyWith(fontSize: 17))),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Depot Address:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+            Text('Depot Address:', style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
             const SizedBox(height: 2),
-            Text(address, style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+            Text(address, style: UiText.body.copyWith(fontSize: 12)),
             const SizedBox(height: 10),
-            const Text('Morning Crate Loading Bay:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-            const Text('Bay #1 (Cold Storage Dispatch Bay)', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
+            Text('Morning Crate Loading Bay:', style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
+            Text('Bay #1 (Cold Storage Dispatch Bay)', style: UiText.body.copyWith(fontSize: 12)),
             const SizedBox(height: 10),
-            const Text('Depot Manager:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
-            Text('$managerName ($managerPhone)', style: const TextStyle(fontSize: 12, color: Color(0xFF0D7C66), fontWeight: FontWeight.bold)),
+            Text('Depot Manager:', style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
+            Text('$managerName ($managerPhone)', style: UiText.bodyStrong.copyWith(fontSize: 12, color: UiTone.primary)),
           ],
         ),
         actions: [
@@ -892,7 +838,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             child: const Text('Copy Address'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK'),
           ),
@@ -904,7 +850,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   void _showManagerContactSheet(BuildContext context, String hubName, String managerName, String managerPhone) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -912,14 +858,14 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           children: [
             Row(
               children: [
-                const Icon(Icons.support_agent_rounded, color: Color(0xFFEF4444), size: 28),
+                const Icon(Icons.support_agent_rounded, color: UiTone.error, size: 28),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('$managerName ($hubName Lead)', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(managerPhone, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      Text('$managerName ($hubName Lead)', style: UiText.h2.copyWith(fontSize: 16)),
+                      Text(managerPhone, style: UiText.body.copyWith(fontSize: 13)),
                     ],
                   ),
                 ),
@@ -929,13 +875,13 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFCA5A5)),
+                color: UiTone.errorSoft,
+                borderRadius: BorderRadius.circular(UiRadius.sm),
+                border: Border.all(color: UiTone.error.withValues(alpha: 0.4)),
               ),
               child: Text(
                 '📞 Direct line to $hubName Operations Lead ($managerName) for route assistance, morning stock shortages, crate issues, or customer query escalation.',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF7F1D1D), height: 1.4),
+                style: UiText.body.copyWith(fontSize: 12, color: UiTone.error, height: 1.4),
               ),
             ),
             const SizedBox(height: 16),
@@ -944,10 +890,10 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF10B981),
-                      side: const BorderSide(color: Color(0xFF10B981)),
+                      foregroundColor: UiTone.success,
+                      side: const BorderSide(color: UiTone.success),
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                     ),
                     onPressed: () async {
                       final clean = managerPhone.replaceAll(RegExp(r'[^0-9]'), '');
@@ -957,17 +903,17 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       }
                     },
                     icon: const Text('💬', style: TextStyle(fontSize: 16)),
-                    label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text('WhatsApp', style: UiText.bodyStrong.copyWith(fontSize: 14)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
+                      backgroundColor: UiTone.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                     ),
                     onPressed: () async {
                       final clean = managerPhone.replaceAll(' ', '');
@@ -977,7 +923,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                       }
                     },
                     icon: const Icon(Icons.call_rounded, size: 18),
-                    label: const Text('Call Lead', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text('Call Lead', style: UiText.bodyStrong.copyWith(fontSize: 14, color: Colors.white)),
                   ),
                 ),
               ],
@@ -991,22 +937,22 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   void _showEmergencySupportSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.emergency_rounded, color: Colors.red, size: 28),
-                SizedBox(width: 8),
-                Text('24x7 Partner Emergency Support', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.emergency_rounded, color: UiTone.error, size: 28),
+                const SizedBox(width: 8),
+                Text('24x7 Partner Emergency Support', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 12),
-            const Text('Need urgent help during your morning delivery route?', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            Text('Need urgent help during your morning delivery route?', style: UiText.body.copyWith(fontSize: 13)),
             const SizedBox(height: 14),
             _buildEmergencyActionTile(
               context,
@@ -1041,12 +987,12 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
       contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle),
-        child: Icon(icon, color: Colors.redAccent, size: 20),
+        decoration: BoxDecoration(color: UiTone.error.withValues(alpha: 0.1), shape: BoxShape.circle),
+        child: Icon(icon, color: UiTone.error, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11.5, color: Colors.grey)),
-      trailing: const Icon(Icons.phone_in_talk_rounded, color: Colors.redAccent, size: 20),
+      title: Text(title, style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: UiText.caption.copyWith(fontSize: 11.5)),
+      trailing: const Icon(Icons.phone_in_talk_rounded, color: UiTone.error, size: 20),
       onTap: () async {
         Navigator.pop(context);
         final uri = Uri.parse('tel:$phone');
@@ -1063,7 +1009,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.85,
@@ -1073,11 +1019,11 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           controller: scrollCtrl,
           padding: const EdgeInsets.all(20),
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.shield_rounded, color: Color(0xFF0D7C66), size: 28),
-                SizedBox(width: 8),
-                Text('Delivery Partner Safety Standards', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Icon(Icons.shield_rounded, color: UiTone.primary, size: 28),
+                const SizedBox(width: 8),
+                Text('Delivery Partner Safety Standards', style: UiText.h2.copyWith(fontSize: 17)),
               ],
             ),
             const SizedBox(height: 14),
@@ -1088,7 +1034,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             _buildSafetyItem('5. Helmet & Road Safety First', 'Always wear your MilkDrop safety helmet and reflective vest while operating your vehicle.'),
             const SizedBox(height: 16),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D7C66), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx),
               child: const Text('I Agree & Understand'),
             ),
@@ -1104,9 +1050,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+          Text(title, style: UiText.bodyStrong.copyWith(fontSize: 13)),
           const SizedBox(height: 2),
-          Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.3)),
+          Text(desc, style: UiText.body.copyWith(fontSize: 12, height: 1.3)),
         ],
       ),
     );
@@ -1118,8 +1064,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Text(label, style: UiText.body.copyWith(fontSize: 13)),
+          Text(value, style: UiText.bodyStrong.copyWith(fontSize: 13)),
         ],
       ),
     );
@@ -1129,19 +1075,19 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+        title: Row(
           children: [
-            Icon(Icons.logout_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Log Out Partner', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.logout_rounded, color: UiTone.error),
+            const SizedBox(width: 8),
+            Text('Log Out Partner', style: UiText.h2.copyWith(fontSize: 16)),
           ],
         ),
         content: const Text('Are you sure you want to log out of your driver partner account?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: UiTone.error, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(ctx);
               onLogout();

@@ -4,6 +4,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
+import '../../theme/ui_tokens.dart';
+import '../../theme/ui_text.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 
 class ProviderFleetMapScreen extends StatefulWidget {
   final AppState state;
@@ -43,7 +46,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
           'code': h['hub_code'] ?? 'HUB-KDD-01',
           'lat': lat,
           'lng': lng,
-          'color': const Color(0xFF10B981),
+          'color': UiTone.secondary,
           'radiusKm': (h['coverage_radius_km'] as num?)?.toDouble() ?? 8.5,
         };
       }).toList();
@@ -54,7 +57,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
         'code': 'HUB-KDD-01',
         'lat': 17.001734,
         'lng': 79.9625,
-        'color': const Color(0xFF10B981),
+        'color': UiTone.secondary,
         'radiusKm': 8.5,
       },
     ];
@@ -152,9 +155,9 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1120),
+      backgroundColor: UiTone.ink,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: UiTone.ink,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
@@ -163,13 +166,13 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Live Fleet Radar & Depot Coverage',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+              style: UiText.h2.copyWith(fontSize: 16, color: Colors.white),
             ),
             Text(
               '${driversWithCoords.length} Salaried Partners • ${_hubs.first['name']}',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+              style: UiText.label.copyWith(fontSize: 11, color: UiTone.secondary, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -237,16 +240,11 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
               bottom: 20,
               left: 16,
               right: 16,
-              child: Container(
+              child: UiInsetCard(
                 padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF131E32),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 16, offset: const Offset(0, 4)),
-                  ],
-                ),
+                radius: UiRadius.lg,
+                borderColor: UiTone.primary.withValues(alpha: 0.3),
+                shadow: UiShadow.floating,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -256,8 +254,8 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF0284C7)]),
-                            borderRadius: BorderRadius.circular(12),
+                            gradient: UiGradient.primary,
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
                           ),
                           child: const Center(
                             child: Icon(Icons.delivery_dining, color: Colors.white, size: 24),
@@ -270,12 +268,12 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                             children: [
                               Text(
                                 _selectedDriver!['name'] ?? 'Delivery Partner',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+                                style: UiText.bodyStrong.copyWith(fontSize: 15),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${_selectedDriver!['hub']} • ₹15,000 / mo',
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                style: UiText.body.copyWith(fontSize: 12),
                               ),
                               const SizedBox(height: 4),
                               Row(
@@ -285,17 +283,17 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                                     height: 8,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: _driverMarkerHue(_selectedDriver!) == BitmapDescriptor.hueGreen 
-                                          ? Colors.greenAccent 
-                                          : _driverMarkerHue(_selectedDriver!) == BitmapDescriptor.hueOrange 
-                                              ? Colors.orangeAccent 
-                                              : Colors.redAccent,
+                                      color: _driverMarkerHue(_selectedDriver!) == BitmapDescriptor.hueGreen
+                                          ? UiTone.success
+                                          : _driverMarkerHue(_selectedDriver!) == BitmapDescriptor.hueOrange
+                                              ? UiTone.warning
+                                              : UiTone.error,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     _relativeTime(_selectedDriver!['last_location_updated']),
-                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                    style: UiText.caption.copyWith(fontSize: 11),
                                   ),
                                 ],
                               ),
@@ -305,12 +303,12 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            color: UiTone.primarySoft,
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           child: Text(
                             '${_selectedDriver!['completed_stops'] ?? 10}/${_selectedDriver!['assigned_stops'] ?? 12} Drops',
-                            style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.w800, fontSize: 11),
+                            style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.primary),
                           ),
                         ),
                       ],
@@ -321,18 +319,18 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0D7C66),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              backgroundColor: UiTone.primary,
+                              foregroundColor: UiTone.surface,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                             ),
                             icon: const Icon(Icons.phone, size: 18),
-                            label: const Text('Call Partner', style: TextStyle(fontWeight: FontWeight.w700)),
+                            label: Text('Call Partner', style: UiText.label.copyWith(fontWeight: FontWeight.w700, color: UiTone.surface)),
                             onPressed: () => _callDriver(_selectedDriver!['phone'] ?? '+919123456789'),
                           ),
                         ),
                         const SizedBox(width: 10),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white70),
+                          icon: const Icon(Icons.close, color: UiTone.softText),
                           onPressed: () => setState(() => _selectedDriver = null),
                         ),
                       ],
