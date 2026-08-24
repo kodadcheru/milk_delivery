@@ -122,8 +122,10 @@ class DeliveryTaskModel {
       driverDetail: drvDetail,
       customerName: json['customer_name'] ?? 'Customer',
       customerPhone: json['customer_phone'] ?? '',
-      deliveryAddress: json['delivery_address'] ?? 'Doorstep Delivery Location',
-      deliveryInstructions: json['delivery_instructions'] ?? 'Leave near doorstep box',
+      deliveryAddress: (json['delivery_address'] != null && json['delivery_address'].toString().trim().isNotEmpty)
+          ? json['delivery_address'].toString().trim()
+          : (subDetail != null && subDetail.deliveryAddress.trim().isNotEmpty ? subDetail.deliveryAddress.trim() : 'Doorstep Delivery Location'),
+      deliveryInstructions: json['delivery_instructions'] ?? (subDetail?.deliveryInstructions ?? 'Leave near doorstep box'),
       deliveryDate: json['delivery_date'] ?? '',
       slotTime: json['slot_time'] ?? (subDetail?.deliverySlot ?? '05:30 AM - 07:00 AM'),
       status: json['status'] ?? 'PENDING',

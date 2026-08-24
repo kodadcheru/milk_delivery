@@ -269,13 +269,16 @@ class AppState extends ChangeNotifier {
       'quantity': e.value,
     }).toList();
 
+    final targetLat = activeAddress?.latitude ?? currentLat;
+    final targetLon = activeAddress?.longitude ?? currentLon;
+
     LiveOrderModel? serverOrder = await ApiService.createExpressOrder(
       items: itemsPayload,
       deliveryDate: dateStr,
       deliverySlot: slotStr,
       deliveryAddress: addr,
-      deliveryLatitude: currentLat,
-      deliveryLongitude: currentLon,
+      deliveryLatitude: targetLat,
+      deliveryLongitude: targetLon,
     );
 
     if (serverOrder != null) {

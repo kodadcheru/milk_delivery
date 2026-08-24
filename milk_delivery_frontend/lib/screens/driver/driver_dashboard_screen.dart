@@ -397,10 +397,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       return true;
     }).toList();
 
-    // Group deliveries by unique doorstep customer & GPS coordinates for consolidated stop handling
+    // Group deliveries by unique doorstep address, customer & GPS coordinates
     final Map<String, List<DeliveryTaskModel>> groupedMap = {};
     for (final t in filteredTasks) {
-      final key = '${t.customerName.toLowerCase().trim()}_${t.customerLatitude.toStringAsFixed(4)}_${t.customerLongitude.toStringAsFixed(4)}';
+      final cleanAddr = t.deliveryAddress.toLowerCase().trim();
+      final key = '${t.customerName.toLowerCase().trim()}__${cleanAddr}__${t.customerLatitude.toStringAsFixed(4)}_${t.customerLongitude.toStringAsFixed(4)}';
       groupedMap.putIfAbsent(key, () => []).add(t);
     }
 
