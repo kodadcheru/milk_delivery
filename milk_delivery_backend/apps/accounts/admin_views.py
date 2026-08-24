@@ -615,35 +615,39 @@ class AdminHubDetailView(APIView):
         assigned_data = []
         for d in assigned_drivers:
             stops = DeliveryTask.objects.filter(driver=d).count()
+            salary_val = getattr(d, "monthly_salary", 0) or 0
             assigned_data.append({
                 "id": d.id,
                 "name": f"{d.first_name} {d.last_name}".strip() or d.username,
-                "phone": d.phone,
-                "salary": f"₹{int(d.monthly_salary):,} / mo",
-                "raw_salary": float(d.monthly_salary),
-                "driver_status": d.driver_status,
+                "phone": d.phone or "",
+                "salary": f"₹{int(salary_val):,} / mo",
+                "raw_salary": float(salary_val),
+                "driver_status": getattr(d, "driver_status", "AVAILABLE") or "AVAILABLE",
                 "assigned_stops": stops,
             })
 
         available_data = []
         for d in available_drivers:
+            salary_val = getattr(d, "monthly_salary", 0) or 0
             available_data.append({
                 "id": d.id,
                 "name": f"{d.first_name} {d.last_name}".strip() or d.username,
-                "phone": d.phone,
+                "phone": d.phone or "",
                 "current_hub": d.assigned_hub.name if d.assigned_hub else "Unassigned Pool",
-                "salary": f"₹{int(d.monthly_salary):,} / mo",
+                "salary": f"₹{int(salary_val):,} / mo",
             })
 
         service_areas = ServiceArea.objects.filter(hub=hub)
         sa_data = [{
             "id": sa.id,
             "name": sa.name,
-            "pincodes": sa.pincodes,
-            "radius_km": sa.radius_km,
-            "status": sa.status,
-            "households": sa.active_households,
+            "pincodes": sa.pincodes or "",
+            "radius_km": getattr(sa, "radius_km", 5.0) or 5.0,
+            "status": getattr(sa, "status", "ACTIVE"),
+            "households": getattr(sa, "active_households", 0) or 0,
         } for sa in service_areas]
+
+        created_at_str = hub.created_at.isoformat() if getattr(hub, "created_at", None) else None
 
         return Response({
             "hub": {
@@ -652,19 +656,19 @@ class AdminHubDetailView(APIView):
                 "hub_code": hub.hub_code,
                 "name": hub.name,
                 "address": hub.address,
-                "manager_name": hub.manager_name,
-                "manager_phone": hub.manager_phone,
-                "fssai_license": hub.fssai_license,
-                "coverage_radius_km": getattr(hub, "coverage_radius_km", 8.5),
-                "bank_name": getattr(hub, "bank_name", "State Bank of India"),
-                "bank_account_number": getattr(hub, "bank_account_number", "389201948210"),
-                "bank_ifsc": getattr(hub, "bank_ifsc", "SBIN0004892"),
-                "bank_account_holder": getattr(hub, "bank_account_holder", "Srinuvasa Reddy"),
-                "upi_id": getattr(hub, "upi_id", "8885199878@upi"),
+                "manager_name": hub.manager_name or "",
+                "manager_phone": hub.manager_phone or "",
+                "fssai_license": hub.fssai_license or "",
+                "coverage_radius_km": float(getattr(hub, "coverage_radius_km", 8.5) or 8.5),
+                "bank_name": getattr(hub, "bank_name", "State Bank of India") or "State Bank of India",
+                "bank_account_number": str(getattr(hub, "bank_account_number", "389201948210") or "389201948210"),
+                "bank_ifsc": getattr(hub, "bank_ifsc", "SBIN0004892") or "SBIN0004892",
+                "bank_account_holder": getattr(hub, "bank_account_holder", "Srinuvasa Reddy") or "Srinuvasa Reddy",
+                "upi_id": getattr(hub, "upi_id", "8885199878@upi") or "8885199878@upi",
                 "bank_account": f"{getattr(hub, 'bank_name', 'State Bank of India')} • A/C ending in {str(getattr(hub, 'bank_account_number', '389201948210'))[-4:]}",
-                "latitude": hub.latitude,
-                "longitude": hub.longitude,
-                "created_at": hub.created_at,
+                "latitude": float(hub.latitude or 0.0),
+                "longitude": float(hub.longitude or 0.0),
+                "created_at": created_at_str,
             },
             "assigned_drivers": assigned_data,
             "available_drivers": available_data,

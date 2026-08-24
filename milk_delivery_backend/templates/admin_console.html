@@ -4245,7 +4245,7 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         const token = localStorage.getItem('milkdrop_admin_token') || '';
-        const res = await fetch(`${baseUrl}/admin/hubs/${hubDbId}/`, {
+        const res = await fetch(`${baseUrl}/admin/hubs/${encodeURIComponent(hubDbId)}/`, {
           headers: { 'Authorization': token ? `Bearer ${token}` : '' }
         });
 
@@ -4253,10 +4253,13 @@
           currentHubData = await res.json();
           renderHubDetailPage(currentHubData);
         } else {
-          alert('Could not load hub details.');
+          const errData = await res.json().catch(() => ({}));
+          console.error('[AdminConsole] Hub detail load failed:', errData);
+          alert('Could not load hub details: ' + (errData.detail || `Server returned ${res.status}`));
           switchTab('hubs');
         }
       } catch (err) {
+        console.error('[AdminConsole] Network error loading hub workspace:', err);
         alert('Network error loading hub workspace.');
         switchTab('hubs');
       }
