@@ -197,6 +197,27 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Subscription.objects.filter(hub=user.assigned_hub)
         return Subscription.objects.filter(customer=user)
 
+    def perform_update(self, serializer):
+        from apps.deliveries.models import DeliveryTask
+        from datetime import date, timedelta
+        prev_status = serializer.instance.status
+        instance = serializer.save()
+        if prev_status == Subscription.Statuses.CANCELLED and instance.status == Subscription.Statuses.ACTIVE:
+            tomorrow = date.today() + timedelta(days=1)
+            if not DeliveryTask.objects.filter(subscription=instance, delivery_date=tomorrow).exists():
+                DeliveryTask.objects.create(
+                    subscription=instance,
+                    hub=instance.hub,
+                    delivery_date=tomorrow,
+                    delivery_slot=instance.delivery_slot or "06:00 AM",
+                    delivery_address=instance.delivery_address or (instance.customer.address if instance.customer else ""),
+                    latitude=instance.delivery_latitude,
+                    longitude=instance.delivery_longitude,
+                    customer_name=instance.customer.get_full_name() or instance.customer.phone if instance.customer else "Customer",
+                    customer_phone=instance.customer.phone if instance.customer else "",
+                    status=DeliveryTask.Statuses.PENDING,
+                )
+
     def perform_destroy(self, instance):
         from apps.deliveries.models import DeliveryTask
 

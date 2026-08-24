@@ -1121,9 +1121,23 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> cancelSubscription(int subId) async {
-    subscriptions.removeWhere((s) => s.id == subId);
-    notifyListeners();
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      subscriptions[idx] = subscriptions[idx].copyWith(status: 'CANCELLED');
+      notifyListeners();
+    }
     final ok = await ApiService.cancelSubscription(subId);
+    await reloadAllData(silent: true);
+    return ok;
+  }
+
+  Future<bool> reactivateSubscription(int subId) async {
+    final idx = subscriptions.indexWhere((s) => s.id == subId);
+    if (idx != -1) {
+      subscriptions[idx] = subscriptions[idx].copyWith(status: 'ACTIVE');
+      notifyListeners();
+    }
+    final ok = await ApiService.reactivateSubscription(subId);
     await reloadAllData(silent: true);
     return ok;
   }

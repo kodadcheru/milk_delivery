@@ -96,9 +96,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
 
   @override
   Widget build(BuildContext context) {
-    final activeSub = widget.state.subscriptions.isNotEmpty
-        ? widget.state.subscriptions.first
-        : null;
+    final activeSub = widget.state.subscriptions
+        .where((s) => s.status == 'ACTIVE')
+        .firstOrNull;
 
     // Show ALL products by default, filtered only by search query
     final filteredProducts = widget.state.products.where((p) {

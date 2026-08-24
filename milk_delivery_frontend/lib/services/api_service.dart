@@ -496,6 +496,22 @@ class ApiService {
     return false;
   }
 
+  static Future<bool> reactivateSubscription(int subId) async {
+    try {
+      final res = await _executeWithRetry(() => http.patch(
+        Uri.parse('$baseUrl/subscriptions/$subId/'),
+        headers: _headers,
+        body: jsonEncode({'status': 'ACTIVE'}),
+      ));
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) { lastError = e.toString(); }
+    return false;
+  }
+
   static Future<bool> updateSubscription(
     int subId, {
     int? quantity,
