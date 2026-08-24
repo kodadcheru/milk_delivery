@@ -591,7 +591,8 @@ class ApiService {
       final queryParams = <String, String>{};
       if (page != null) queryParams['page'] = page.toString();
       if (pageSize != null) queryParams['page_size'] = pageSize.toString();
-      if (date != null) queryParams['date'] = date;
+      final dateParam = date ?? '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}';
+      queryParams['date'] = dateParam;
 
       final uri = Uri.parse('$baseUrl/deliveries/').replace(
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
@@ -1028,10 +1029,11 @@ class ApiService {
     return null;
   }
 
-  static Future<LiveOrderModel?> updateLiveOrderStatus(String orderId, String newStatus, {String? proofImageUrl}) async {
+  static Future<LiveOrderModel?> updateLiveOrderStatus(String orderId, String newStatus, {String? proofImageUrl, String? deliveryOtp}) async {
     try {
       final body = <String, dynamic>{'status': newStatus};
       if (proofImageUrl != null) body['proof_image_url'] = proofImageUrl;
+      if (deliveryOtp != null) body['delivery_otp'] = deliveryOtp;
 
       final res = await _executeWithRetry(() => http.patch(
             Uri.parse('$baseUrl/orders/express/$orderId/'),

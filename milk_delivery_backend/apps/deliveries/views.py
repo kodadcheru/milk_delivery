@@ -26,7 +26,12 @@ class DeliveryTaskListView(generics.ListAPIView):
 
         qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("-delivery_date", "-id")
         if req_date:
-            qs = qs.filter(delivery_date=req_date)
+            try:
+                from datetime import datetime as _dt
+                filter_date = _dt.strptime(req_date, '%Y-%m-%d').date()
+                qs = qs.filter(delivery_date=filter_date)
+            except (ValueError, TypeError):
+                pass
 
         # Scope by role
         from django.db.models import Q
@@ -107,11 +112,17 @@ class DeliveryTaskCompleteView(APIView):
                     notification_type=Notification.Types.DELIVERY,
                 )
             else:
-                # Insufficient balance — still complete delivery but notify customer to top up
+                # Insufficient balance — record debt
+                WalletTransaction.objects.create(
+                    user=customer,
+                    transaction_type=WalletTransaction.Types.DEBIT,
+                    amount=total_cost,
+                    description=f'Delivery #{task.id} - Outstanding balance (insufficient funds)',
+                )
                 Notification.objects.create(
                     user=customer,
-                    title="⚠️ Low Wallet Balance!",
-                    message=f"Delivery #{task.id} completed but wallet balance (₹{customer.wallet_balance}) is insufficient for ₹{total_cost}. Please top up your wallet to avoid service disruption.",
+                    title='⚠️ Low Wallet Balance!',
+                    message=f'Delivery #{task.id} completed. ₹{total_cost} is outstanding. Please recharge your wallet.',
                     notification_type=Notification.Types.WALLET,
                 )
 
@@ -543,12 +554,9 @@ class GenerateTodayTasksView(APIView):
 
             existing_task = DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).first()
             if existing_task:
-                if existing_task.status == DeliveryTask.Statuses.SKIPPED:
-                    existing_task.status = DeliveryTask.Statuses.PENDING
-                    existing_task.save(update_fields=["status"])
-                    created_count += 1
-                else:
-                    skipped_count += 1
+                if existing_task.status in ('DELIVERED', 'SKIPPED', 'FAILED'):
+                    pass  # Don't override any completed/skipped/failed status
+                skipped_count += 1
                 continue
 
             # Schedule eligibility
@@ -565,6 +573,9 @@ class GenerateTodayTasksView(APIView):
                 if DeliveryTask.objects.filter(subscription=sub).exists():
                     skipped_count += 1
                     continue
+            elif sub.schedule_type == 'WEEKDAYS' and target_date.weekday() >= 5:  # 5=Sat, 6=Sun
+                skipped_count += 1
+                continue
 
             # Resolve hub and driver
             hub = sub.hub or getattr(sub.customer, "assigned_hub", None)

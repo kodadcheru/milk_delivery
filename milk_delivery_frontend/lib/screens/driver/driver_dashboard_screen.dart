@@ -246,7 +246,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               keyboardType: TextInputType.number,
               maxLength: 4,
               decoration: InputDecoration(
-                hintText: 'e.g. ${order.deliveryOtp}',
+                hintText: 'Enter 4-digit OTP',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
@@ -259,7 +259,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             onPressed: () {
               if (otpController.text.trim() == order.deliveryOtp) {
                 Navigator.pop(ctx);
-                widget.state.updateOrderStatus(order.id, 'DELIVERED');
+                widget.state.updateOrderStatus(order.id, 'DELIVERED', deliveryOtp: otpController.text.trim());
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: UiTone.primary,

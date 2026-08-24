@@ -977,12 +977,7 @@ class AdminSubscriptionToggleView(APIView):
                     subscription=sub,
                     hub=sub.hub,
                     delivery_date=tomorrow,
-                    delivery_slot=sub.delivery_slot or "06:00 AM",
-                    delivery_address=sub.delivery_address or (sub.customer.address if sub.customer else ""),
-                    latitude=sub.delivery_latitude,
-                    longitude=sub.delivery_longitude,
-                    customer_name=sub.customer.get_full_name() or sub.customer.phone if sub.customer else "Customer",
-                    customer_phone=sub.customer.phone if sub.customer else "",
+                    slot_time=sub.delivery_slot or '06:00 AM',
                     status=DeliveryTask.Statuses.PENDING,
                 )
 

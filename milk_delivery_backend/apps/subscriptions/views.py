@@ -213,12 +213,7 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
                     subscription=instance,
                     hub=instance.hub,
                     delivery_date=tomorrow,
-                    delivery_slot=instance.delivery_slot or "06:00 AM",
-                    delivery_address=instance.delivery_address or (instance.customer.address if instance.customer else ""),
-                    latitude=instance.delivery_latitude,
-                    longitude=instance.delivery_longitude,
-                    customer_name=instance.customer.get_full_name() or instance.customer.phone if instance.customer else "Customer",
-                    customer_phone=instance.customer.phone if instance.customer else "",
+                    slot_time=instance.delivery_slot or '06:00 AM',
                     status=DeliveryTask.Statuses.PENDING,
                 )
 

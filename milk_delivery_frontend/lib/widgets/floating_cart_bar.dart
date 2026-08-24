@@ -129,7 +129,7 @@ class FloatingCartBar extends StatelessWidget {
     const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     String formatDate(DateTime d) {
-      return '${d.day} ${monthNames[d.month - 1]} ${d.year}';
+      return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
     }
 
     String formatDateBadge(DateTime d) {
@@ -143,6 +143,7 @@ class FloatingCartBar extends StatelessWidget {
 
     List<Map<String, dynamic>>? slotsData;
     bool hasFetchedSlots = false;
+    bool _isSubmitting = false;
 
     showModalBottomSheet(
       context: context,
@@ -701,7 +702,18 @@ class FloatingCartBar extends StatelessWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () async {
-                        Navigator.pop(ctx);
+                        if (_isSubmitting) return;
+                        
+                        final walletBalance = state.currentUser?.walletBalance ?? 0.0;
+                        if (walletBalance < total) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Insufficient wallet balance (₹${walletBalance.toStringAsFixed(0)}). Please top up ₹${(total - walletBalance).toStringAsFixed(0)} to continue.'),
+                            backgroundColor: Colors.red,
+                          ));
+                          return;
+                        }
+                        
+                        setSheetState(() => _isSubmitting = true);
                         final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
                         try {
                           final order = await state.placeExpressOrder(
@@ -710,7 +722,8 @@ class FloatingCartBar extends StatelessWidget {
                             deliverySlot: _deliveryMode == 'INSTANT' ? 'Instant Delivery' : slot,
                             deliveryAddress: currentAddr,
                           );
-                          if (context.mounted) {
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: UiTone.primary,
@@ -724,7 +737,7 @@ class FloatingCartBar extends StatelessWidget {
                             state.setTab(3); // Bookings Tab
                           }
                         } catch (e) {
-                          if (context.mounted) {
+                          if (ctx.mounted) {
                             final errorMsg = e.toString().replaceFirst('Exception: ', '');
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -732,6 +745,10 @@ class FloatingCartBar extends StatelessWidget {
                                 content: Text('❌ $errorMsg'),
                               ),
                             );
+                          }
+                        } finally {
+                          if (ctx.mounted) {
+                            setSheetState(() => _isSubmitting = false);
                           }
                         }
                       },

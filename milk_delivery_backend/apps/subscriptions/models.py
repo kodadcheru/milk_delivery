@@ -9,6 +9,7 @@ class Subscription(models.Model):
         ALTERNATE = "ALTERNATE", "Alternate Days"
         CUSTOM = "CUSTOM", "Custom Days"
         ONCE = "ONCE", "One Time Order"
+        WEEKDAYS = 'WEEKDAYS', 'Weekdays Only'
 
     class Statuses(models.TextChoices):
         ACTIVE = "ACTIVE", "Active"

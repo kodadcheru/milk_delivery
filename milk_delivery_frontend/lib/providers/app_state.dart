@@ -242,15 +242,6 @@ class AppState extends ChangeNotifier {
     String deliveryType = 'SCHEDULED',
   }) async {
     HapticFeedback.mediumImpact();
-    final orderItems = cartProductsList.map((entry) {
-      return OrderItemModel(
-        product: entry.key,
-        quantity: entry.value,
-        unitPrice: entry.key.pricePerUnit,
-      );
-    }).toList();
-
-    final total = totalCartPrice;
     final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
     final dateStr = deliveryDate ?? 'Tomorrow';
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
@@ -279,69 +270,12 @@ class AppState extends ChangeNotifier {
       cartItems.clear();
       await reloadAllData();
       return serverOrder;
+    } else {
+      throw Exception(ApiService.lastError ?? 'Failed to place order. Please try again.');
     }
-
-    // 2. Resilient In-Memory Fallback if backend is unreachable
-    final orderId = 'MD-${8000 + liveOrders.length + 1}';
-    final hub = nearestCoveringHub;
-    final driverPlaceholder = hub != null ? 'Assigning Partner (${hub['name']})...' : 'Assigning Delivery Partner...';
-
-    final fallbackOrder = LiveOrderModel(
-      id: orderId,
-      orderType: 'ONE_TIME',
-      items: orderItems,
-      totalAmount: total,
-      status: 'PREPARING',
-      deliveryDate: dateStr,
-      deliverySlot: slotStr,
-      deliveryAddress: addr,
-      deliveryLatitude: currentLat,
-      deliveryLongitude: currentLon,
-      deliveryOtp: '${(1000 + (orderId.hashCode % 9000)).abs()}',
-      driverName: driverPlaceholder,
-      driverPhone: '',
-      paymentStatus: 'PAID (Prepaid Wallet)',
-      createdAt: 'Just now',
-      deliveryType: deliveryType,
-    );
-
-    liveOrders.insert(0, fallbackOrder);
-
-    // Deduct from wallet & record transaction
-    if (currentUser != null) {
-      double newBal = currentUser!.walletBalance - total;
-      currentUser = currentUser!.copyWith(walletBalance: newBal > 0 ? newBal : 0.0);
-    }
-
-    transactions.insert(
-      0,
-      WalletTransactionModel(
-        id: transactions.length + 1,
-        amount: total,
-        transactionType: 'DEBIT',
-        description: 'Express Order $orderId (${orderItems.length} items)',
-        createdAt: 'Just now',
-      ),
-    );
-
-    notifications.insert(
-      0,
-      NotificationModel(
-        id: notifications.length + 1,
-        title: '⚡ Express Order $orderId Dispatched!',
-        message: 'Your order with ${orderItems.length} items is out for delivery. ETA ~25 mins.',
-        notificationType: 'DELIVERY',
-        isRead: false,
-        createdAt: 'Just now',
-      ),
-    );
-
-    cartItems.clear();
-    notifyListeners();
-    return fallbackOrder;
   }
 
-  void updateOrderStatus(String orderId, String newStatus) async {
+  void updateOrderStatus(String orderId, String newStatus, {String? deliveryOtp}) async {
     final idx = liveOrders.indexWhere((o) => o.id == orderId);
     if (idx != -1) {
       final old = liveOrders[idx];
@@ -349,7 +283,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
 
-    await ApiService.updateLiveOrderStatus(orderId, newStatus);
+    await ApiService.updateLiveOrderStatus(orderId, newStatus, deliveryOtp: deliveryOtp);
     await reloadAllData();
   }
 
@@ -992,17 +926,6 @@ class AppState extends ChangeNotifier {
     }
     
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
-    notifications.insert(
-      0,
-      NotificationModel(
-        id: DateTime.now().millisecondsSinceEpoch,
-        title: '🥛 Subscription Confirmed: ${product.name}',
-        message: '${qty}x ${product.name} (${packSize ?? product.unitQuantity}) subscribed for $slotStr delivery ($schedule).',
-        notificationType: 'DELIVERY',
-        isRead: false,
-        createdAt: 'Just now',
-      ),
-    );
     final targetAddr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
     final targetLat = deliveryLatitude ?? (activeAddress?.latitude ?? currentLat);
     final targetLon = deliveryLongitude ?? (activeAddress?.longitude ?? currentLon);
@@ -1024,6 +947,17 @@ class AppState extends ChangeNotifier {
     );
     if (newSub != null) {
       debugPrint('✅ [Subscription Created]: Sub #${newSub.id} for ${product.name}');
+      notifications.insert(
+        0,
+        NotificationModel(
+          id: DateTime.now().millisecondsSinceEpoch,
+          title: '🥛 Subscription Confirmed: ${product.name}',
+          message: '${qty}x ${product.name} (${packSize ?? product.unitQuantity}) subscribed for $slotStr delivery ($schedule).',
+          notificationType: 'DELIVERY',
+          isRead: false,
+          createdAt: 'Just now',
+        ),
+      );
       if (!skipReload) await reloadAllData();
     } else {
       debugPrint('⚠️ [Subscription Create Error]: ${ApiService.lastError}');
@@ -1212,7 +1146,7 @@ class AppState extends ChangeNotifier {
         return d;
       }).toList();
 
-      if (currentUser != null) {
+      if (currentUser != null && currentUser!.role == 'CUSTOMER') {
         final completedTask = deliveries.where((d) => d.id == taskId).firstOrNull;
         double debitAmount = completedTask?.subscriptionDetail?.productDetail?.pricePerUnit ?? 0.0;
         if (debitAmount > 0) {

@@ -62,9 +62,13 @@ class ExpressOrderListCreateView(APIView):
         raw_delivery_date = data.get("delivery_date", "")
         if isinstance(raw_delivery_date, str):
             from datetime import datetime as _dt
-            try:
-                delivery_date = _dt.strptime(raw_delivery_date.strip(), "%Y-%m-%d").date()
-            except (ValueError, TypeError):
+            for fmt in ("%Y-%m-%d", "%d %b %Y"):
+                try:
+                    delivery_date = _dt.strptime(raw_delivery_date.strip(), fmt).date()
+                    break
+                except (ValueError, TypeError):
+                    continue
+            else:
                 delivery_date = date.today()
         else:
             delivery_date = raw_delivery_date or date.today()
@@ -223,6 +227,9 @@ class ExpressOrderListCreateView(APIView):
             ).first() or User.objects.filter(
                 role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]
             ).first()
+            
+            order.driver = hub_driver
+            order.save(update_fields=['driver'])
 
             DeliveryTask.objects.create(
                 order=order,
@@ -232,6 +239,14 @@ class ExpressOrderListCreateView(APIView):
                 slot_time=delivery_slot,
                 status=DeliveryTask.Statuses.PENDING,
             )
+
+            if hub_driver:
+                Notification.objects.create(
+                    user=hub_driver,
+                    title='🚚 New Express Order Assigned!',
+                    message=f'Express order {order.id} has been assigned to you. Customer: {user.first_name} {user.last_name}. Deliver to: {delivery_address[:50]}',
+                    notification_type=Notification.Types.DELIVERY,
+                )
 
         try:
             from apps.core.consumers import broadcast_hub_event
@@ -267,10 +282,21 @@ class ExpressOrderDetailView(APIView):
         except LiveOrder.DoesNotExist:
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if order.customer != request.user and not request.user.is_staff:
-            return Response({"detail": "You can only modify your own orders."}, status=status.HTTP_403_FORBIDDEN)
+        is_customer = order.customer == request.user
+        is_staff = request.user.is_staff
+        is_assigned_driver = (order.driver == request.user) or \
+            DeliveryTask.objects.filter(order=order, driver=request.user).exists()
+        is_driver_role = getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER')
+
+        if not (is_customer or is_staff or is_assigned_driver or is_driver_role):
+            return Response({"detail": "Not authorized to modify this order."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = request.data.get("status")
+        if new_status == 'DELIVERED' and getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER'):
+            submitted_otp = request.data.get('delivery_otp', '')
+            if submitted_otp and submitted_otp != order.delivery_otp:
+                return Response({"detail": "Invalid delivery OTP."}, status=status.HTTP_400_BAD_REQUEST)
+                
         if new_status == "DISPATCHED":
             new_status = LiveOrder.Statuses.OUT_FOR_DELIVERY
 
