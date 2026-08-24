@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/api_service.dart';
 import '../../services/route_optimizer.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
@@ -29,6 +32,8 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   int _selectedTaskIndex = 0;
   late RouteOptimizationResult _tspResult;
   late List<DeliveryTaskModel> _orderedTasks;
+  StreamSubscription<Position>? _positionSubscription;
+  bool _hasInitialGpsFix = false;
 
   // Depot location — read from active hub, fallback to Kodad default
   LatLng get _depotLocation {
@@ -47,6 +52,21 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   @override
   void initState() {
     super.initState();
+
+    // 1. Initialize fallback location from current user profile or hub depot
+    if (widget.state.currentUser != null &&
+        widget.state.currentUser!.latitude != 0.0 &&
+        widget.state.currentUser!.longitude != 0.0) {
+      _driverLocation = LatLng(
+        widget.state.currentUser!.latitude,
+        widget.state.currentUser!.longitude,
+      );
+    } else if (widget.state.currentLat != 0.0 && widget.state.currentLon != 0.0) {
+      _driverLocation = LatLng(widget.state.currentLat, widget.state.currentLon);
+    } else {
+      _driverLocation = _depotLocation;
+    }
+
     final hubModel = HubLocationModel(
       id: widget.state.nearestCoveringHub?['hub_code']?.toString() ?? 'HUB-KDD-01',
       name: widget.state.nearestCoveringHub?['name']?.toString() ?? 'Kodad Depot',
@@ -58,11 +78,71 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
     );
     _tspResult = RouteOptimizer.optimizeBatchRoute(hub: hubModel, tasks: widget.tasks);
     _orderedTasks = _tspResult.orderedStops;
-    _driverLocation = LatLng(_depotLocation.latitude + 0.004, _depotLocation.longitude + 0.003);
+
+    // 2. Start Live Real-time GPS stream
+    _startLiveGpsTracking();
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _startLiveGpsTracking() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+        return;
+      }
+
+      // Initial fast fix
+      final initialPos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(const Duration(seconds: 4), onTimeout: () => throw TimeoutException('GPS timeout'));
+
+      if (mounted) {
+        setState(() {
+          _driverLocation = LatLng(initialPos.latitude, initialPos.longitude);
+          _hasInitialGpsFix = true;
+        });
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 14.5));
+      }
+
+      // Continuous live updates
+      const locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5, // update every 5 meters
+      );
+
+      _positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+        (Position pos) {
+          if (!mounted) return;
+          setState(() {
+            _driverLocation = LatLng(pos.latitude, pos.longitude);
+            _hasInitialGpsFix = true;
+          });
+
+          // Sync real-time location to backend fleet dispatcher
+          ApiService.updateDriverLocation(
+            latitude: pos.latitude,
+            longitude: pos.longitude,
+          );
+        },
+        onError: (_) {},
+      );
+    } catch (_) {}
   }
 
   void _launchGoogleMapsNavigation(double lat, double lon, String customerName) async {
-    final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving';
+    final origin = '${_driverLocation.latitude},${_driverLocation.longitude}';
+    final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$lat,$lon&travelmode=driving';
     final uri = Uri.parse(googleMapsUrl);
 
     try {
@@ -75,7 +155,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: UiTone.accentBlue,
-            content: Text('🗺️ Launching Google Maps turn-by-turn navigation to $customerName'),
+            content: Text('🗺️ Turn-by-turn navigation to $customerName from your location'),
           ),
         );
       }
@@ -91,7 +171,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   void _launchFullMultiStopGoogleMapsRoute(List<DeliveryTaskModel> tasks) async {
     if (tasks.isEmpty) return;
 
-    final origin = '${_depotLocation.latitude},${_depotLocation.longitude}';
+    final origin = '${_driverLocation.latitude},${_driverLocation.longitude}';
     final destination = '${tasks.last.customerLatitude},${tasks.last.customerLongitude}';
 
     String waypointsParam = '';
@@ -186,7 +266,8 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
               zoom: 13.8,
             ),
             onMapCreated: (controller) => _mapController = controller,
-            myLocationEnabled: false,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
             polylines: {
