@@ -699,48 +699,41 @@ class AppState extends ChangeNotifier {
       );
       if (addrs.isNotEmpty) {
         savedAddresses = addrs;
-        final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
-        activeAddress = defaultAddr;
-        currentDeliveryAddress = defaultAddr.summaryAddress;
-        currentLat = defaultAddr.latitude;
-        currentLon = defaultAddr.longitude;
+        // Keep the currently active address if it still exists in the fetched list
+        if (activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
+          final matched = addrs.firstWhere((a) => a.id == activeAddress!.id);
+          activeAddress = matched;
+          currentDeliveryAddress = matched.summaryAddress;
+          currentLat = matched.latitude;
+          currentLon = matched.longitude;
+        } else {
+          final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
+          activeAddress = defaultAddr;
+          currentDeliveryAddress = defaultAddr.summaryAddress;
+          currentLat = defaultAddr.latitude;
+          currentLon = defaultAddr.longitude;
+        }
       } else if (currentUser != null && currentUser!.address.isNotEmpty) {
-        final profileAddr = CustomerAddressModel(
-          id: 1,
-          userId: currentUser!.id,
-          addressType: 'HOME',
-          displayType: 'Home',
-          flatHouseNo: '2X27+P3X',
-          streetAddress: currentUser!.address,
-          city: currentUser!.city.isNotEmpty ? currentUser!.city : 'Kodad',
-          pincode: '508206',
-          latitude: currentUser!.latitude,
-          longitude: currentUser!.longitude,
-          isDefault: true,
-        );
-        savedAddresses = [profileAddr];
-        activeAddress = profileAddr;
-        currentDeliveryAddress = profileAddr.summaryAddress;
-        currentLat = profileAddr.latitude;
-        currentLon = profileAddr.longitude;
-      } else {
-        final fallbackAddr = CustomerAddressModel(
-          id: -1,
-          userId: currentUser?.id,
-          addressType: 'HOME',
-          displayType: 'Home',
-          flatHouseNo: '',
-          streetAddress: (currentDeliveryAddress.isNotEmpty && currentDeliveryAddress != 'Select Delivery Location')
-              ? currentDeliveryAddress
-              : 'Kodad Town, Main Road',
-          city: 'Kodad',
-          pincode: '508206',
-          latitude: currentLat,
-          longitude: currentLon,
-          isDefault: true,
-        );
-        savedAddresses = [fallbackAddr];
-        activeAddress = fallbackAddr;
+        if (savedAddresses.isEmpty) {
+          final profileAddr = CustomerAddressModel(
+            id: 1,
+            userId: currentUser!.id,
+            addressType: 'HOME',
+            displayType: 'Home',
+            flatHouseNo: '',
+            streetAddress: currentUser!.address,
+            city: currentUser!.city.isNotEmpty ? currentUser!.city : 'Kodad',
+            pincode: '508206',
+            latitude: currentUser!.latitude,
+            longitude: currentUser!.longitude,
+            isDefault: true,
+          );
+          savedAddresses = [profileAddr];
+          activeAddress = profileAddr;
+          currentDeliveryAddress = profileAddr.summaryAddress;
+          currentLat = profileAddr.latitude;
+          currentLon = profileAddr.longitude;
+        }
       }
     } catch (_) {}
     notifyListeners();

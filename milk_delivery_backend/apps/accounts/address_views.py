@@ -38,35 +38,25 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = _resolve_customer_user(self.request)
         if not user:
-            return CustomerAddress.objects.all()
+            return CustomerAddress.objects.none() if self.request.user.is_authenticated else CustomerAddress.objects.all()
 
-        # If user has an address on profile but no CustomerAddress rows, create primary Home address
-        if not CustomerAddress.objects.filter(user=user).exists() and user.address:
-            CustomerAddress.objects.create(
-                user=user,
-                address_type="HOME",
-                flat_house_no="2X27+P3X",
-                street_address=user.address,
-                city=user.city or "Kodad",
-                pincode="508206",
-                latitude=user.latitude or Decimal("16.9947"),
-                longitude=user.longitude or Decimal("79.9750"),
-                is_default=True,
-            )
-
-        return CustomerAddress.objects.filter(user=user).order_by("-is_default", "-created_at")
+        return CustomerAddress.objects.filter(user=user).order_by("-is_default", "-id")
 
     def perform_create(self, serializer):
         user = _resolve_customer_user(self.request)
+        if not user:
+            raise permissions.exceptions.NotAuthenticated("Authentication required to save address.")
 
-        # If user has no addresses yet, make this one default
-        has_existing = CustomerAddress.objects.filter(user=user).exists() if user else False
+        has_existing = CustomerAddress.objects.filter(user=user).exists()
         is_default = self.request.data.get("is_default", not has_existing)
 
+        if is_default:
+            CustomerAddress.objects.filter(user=user).update(is_default=False)
+
         addr = serializer.save(user=user, is_default=is_default)
-        
-        # Also update user's active delivery profile address
-        if user and (is_default or not user.address):
+
+        # Update user's active delivery profile address
+        if is_default or not user.address:
             user.address = addr.street_address or user.address
             user.latitude = addr.latitude
             user.longitude = addr.longitude
@@ -80,16 +70,26 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         if self.request.user.is_staff:
             return CustomerAddress.objects.all()
-        return CustomerAddress.objects.filter(user=self.request.user)
+        user = _resolve_customer_user(self.request)
+        if not user:
+            return CustomerAddress.objects.none()
+        return CustomerAddress.objects.filter(user=user)
 
     def perform_update(self, serializer):
-        addr = serializer.save()
-        user = addr.user
-        if user and (addr.is_default or not user.address):
-            user.address = addr.street_address or user.address
-            user.latitude = addr.latitude
-            user.longitude = addr.longitude
-            user.save(update_fields=["address", "latitude", "longitude"])
+        user = _resolve_customer_user(self.request)
+        is_default = serializer.validated_data.get("is_default", False)
+
+        if user and is_default:
+            CustomerAddress.objects.filter(user=user).exclude(pk=serializer.instance.pk).update(is_default=False)
+
+        addr = serializer.save(user=user if user else serializer.instance.user)
+        target_user = user or addr.user
+
+        if target_user and (addr.is_default or not target_user.address):
+            target_user.address = addr.street_address or target_user.address
+            target_user.latitude = addr.latitude
+            target_user.longitude = addr.longitude
+            target_user.save(update_fields=["address", "latitude", "longitude"])
 
     def perform_destroy(self, instance):
         user = instance.user
@@ -100,13 +100,11 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
             if next_default:
                 if was_default:
                     next_default.is_default = True
-                    next_default.save()
+                    next_default.save(update_fields=["is_default"])
                 user.address = next_default.street_address or user.address
                 user.latitude = next_default.latitude
                 user.longitude = next_default.longitude
-            else:
-                user.address = ""
-            user.save(update_fields=["address", "latitude", "longitude"])
+                user.save(update_fields=["address", "latitude", "longitude"])
 
 
 class CustomerAddressSetDefaultView(APIView):
