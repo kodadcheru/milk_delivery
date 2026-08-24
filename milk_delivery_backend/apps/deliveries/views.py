@@ -358,7 +358,9 @@ class ProviderPayoutListCreateView(APIView):
         hub = getattr(user, "assigned_hub", None) or LocationHub.objects.first()
 
         qs = ProviderPayout.objects.all().select_related("hub", "manager").order_by("-created_at")
-        if hub and not (user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN")):
+        if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and hub:
+            qs = qs.filter(hub=hub)
+        elif hub and not (user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN")):
             qs = qs.filter(hub=hub)
 
         payouts_data = []
@@ -535,6 +537,12 @@ class GenerateTodayTasksView(APIView):
             .filter(Q(start_date__lte=target_date) | Q(created_at__date__lte=target_date))
             .select_related("customer", "product", "hub", "customer__assigned_hub")
         )
+        
+        user = request.user
+        if getattr(user, 'role', '') in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(user, 'assigned_hub', None):
+            active_subs = active_subs.filter(
+                Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub)
+            )
 
         created_count = 0
         skipped_count = 0
@@ -723,6 +731,8 @@ class DailyMilkBatchListCreateView(APIView):
 
         if hub_code:
             batches = batches.filter(models.Q(hub__hub_code=hub_code) | models.Q(hub__id__iexact=str(hub_code)))
+        elif getattr(request.user, 'role', '') in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(request.user, 'assigned_hub', None):
+            batches = batches.filter(hub=request.user.assigned_hub)
 
         data = []
         for b in batches[:50]:

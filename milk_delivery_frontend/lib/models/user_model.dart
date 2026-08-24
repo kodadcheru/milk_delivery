@@ -13,6 +13,7 @@ class UserModel {
   final String deliverySlotPreference;
   final double latitude;
   final double longitude;
+  final int? assignedHub;
 
   final double monthlySalary;
   final String vehicleNumber;
@@ -33,6 +34,7 @@ class UserModel {
     this.deliverySlotPreference = '05:30 AM - 07:00 AM',
     this.latitude = 17.4319,
     this.longitude = 78.4073,
+    this.assignedHub,
     this.monthlySalary = 15000.0,
     this.vehicleNumber = '',
     this.drivingLicense = '',
@@ -61,6 +63,7 @@ class UserModel {
       deliverySlotPreference: json['delivery_slot_preference'] ?? '05:30 AM - 07:00 AM',
       latitude: double.tryParse(json['latitude']?.toString() ?? '17.4319') ?? 17.4319,
       longitude: double.tryParse(json['longitude']?.toString() ?? '78.4073') ?? 78.4073,
+      assignedHub: json['assigned_hub'] is int ? json['assigned_hub'] : (json['assigned_hub'] is Map ? json['assigned_hub']['id'] : null),
       monthlySalary: double.tryParse(json['monthly_salary']?.toString() ?? '15000') ?? 15000.0,
       vehicleNumber: json['vehicle_number'] ?? '',
       drivingLicense: json['driving_license'] ?? '',
@@ -83,6 +86,7 @@ class UserModel {
       'delivery_slot_preference': deliverySlotPreference,
       'latitude': latitude,
       'longitude': longitude,
+      'assigned_hub': assignedHub,
     };
   }
 
@@ -99,6 +103,7 @@ class UserModel {
     String? role,
     double? latitude,
     double? longitude,
+    int? assignedHub,
     double? monthlySalary,
     String? vehicleNumber,
     String? drivingLicense,
@@ -118,6 +123,7 @@ class UserModel {
       deliverySlotPreference: deliverySlotPreference ?? this.deliverySlotPreference,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      assignedHub: assignedHub ?? this.assignedHub,
       monthlySalary: monthlySalary ?? this.monthlySalary,
       vehicleNumber: vehicleNumber ?? this.vehicleNumber,
       drivingLicense: drivingLicense ?? this.drivingLicense,

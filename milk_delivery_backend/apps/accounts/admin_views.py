@@ -438,8 +438,17 @@ class AdminHubsView(APIView):
                 fssai_license="13621014000343",
             )
 
+        user = request.user
         hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
+        
+        # Scope to provider's assigned hub
+        if user.role in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(user, 'assigned_hub', None):
+            hubs_qs = hubs_qs.filter(id=user.assigned_hub_id)
+
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)
+        if user.role in (User.Roles.HUB_MANAGER, 'PROVIDER') and getattr(user, 'assigned_hub', None):
+            from django.db.models import Q
+            active_subs = active_subs.filter(Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub))
 
         total_sub_count = active_subs.count() or 0
         total_vol = sum(s.quantity for s in active_subs) or 0

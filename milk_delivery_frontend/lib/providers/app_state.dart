@@ -33,7 +33,12 @@ class AppState extends ChangeNotifier {
   // ── Redis & Real-Time Sync State ──
   bool isRedisConnected = false;
   Timer? _providerHeartbeatTimer;
-  String get activeHubCode => locationHubs.isNotEmpty ? (locationHubs.first['hub_code'] ?? locationHubs.first['id'] ?? 'HUB-KDD-01').toString() : 'HUB-KDD-01';
+  String get activeHubCode {
+    if (currentUser != null && currentUser!.assignedHub != null) {
+      return currentUser!.assignedHub.toString();
+    }
+    return locationHubs.isNotEmpty ? (locationHubs.first['hub_code'] ?? locationHubs.first['id'] ?? 'HUB-KDD-01').toString() : 'HUB-KDD-01';
+  }
 
   // Real-Time Location & Customer Address Book State
   String currentDeliveryAddress = 'Select Delivery Location';
@@ -75,17 +80,22 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? get nearestCoveringHub {
     if (locationHubs.isEmpty) return null;
 
-    final hub = locationHubs.first;
-    final hLat = double.tryParse(hub['latitude']?.toString() ?? '17.001734') ?? 17.001734;
-    final hLon = double.tryParse(hub['longitude']?.toString() ?? '79.9625') ?? 79.9625;
-    // Dynamic radius as configured in the Admin Web Console / Railway DB
-    final radius = double.tryParse(hub['coverage_radius_km']?.toString() ?? '8.5') ?? 8.5;
+    Map<String, dynamic>? nearest;
+    double nearestDist = double.infinity;
 
-    final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
-    if (dist <= radius) {
-      return hub;
+    for (final hub in locationHubs) {
+      final hLat = double.tryParse(hub['latitude']?.toString() ?? '17.001734') ?? 17.001734;
+      final hLon = double.tryParse(hub['longitude']?.toString() ?? '79.9625') ?? 79.9625;
+      final radius = double.tryParse(hub['coverage_radius_km']?.toString() ?? '8.5') ?? 8.5;
+      
+      final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
+      if (dist <= radius && dist < nearestDist) {
+        nearest = hub;
+        nearestDist = dist;
+      }
     }
-    return hub; // Always route to Kodad Depot as single dedicated hub
+
+    return nearest ?? locationHubs.first; // Fallback to first hub
   }
 
   bool get isLocationCovered => nearestCoveringHub != null;

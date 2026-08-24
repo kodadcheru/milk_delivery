@@ -101,9 +101,7 @@ class HubInventoryListUpdateView(APIView):
 
         user = request.user
         hub = getattr(user, "assigned_hub", None)
-        if user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
-            inventories = HubProductInventory.objects.all().select_related("hub", "product")
-        elif hub:
+        if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and hub:
             products = Product.objects.all()
             for p in products:
                 HubProductInventory.objects.get_or_create(
@@ -111,6 +109,10 @@ class HubInventoryListUpdateView(APIView):
                     product=p,
                     defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
                 )
+            inventories = HubProductInventory.objects.filter(hub=hub).select_related("hub", "product")
+        elif user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
+            inventories = HubProductInventory.objects.all().select_related("hub", "product")
+        elif hub:
             inventories = HubProductInventory.objects.filter(hub=hub).select_related("hub", "product")
         else:
             inventories = HubProductInventory.objects.none()
