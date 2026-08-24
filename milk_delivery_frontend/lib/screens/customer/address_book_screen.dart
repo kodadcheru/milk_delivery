@@ -6,7 +6,7 @@ import '../../services/permission_service.dart';
 import '../../theme/app_theme.dart';
 import 'map_location_picker_screen.dart';
 
-class AddressBookScreen extends StatelessWidget {
+class AddressBookScreen extends StatefulWidget {
   final AppState state;
   final bool isSelectingForCheckout;
 
@@ -17,7 +17,19 @@ class AddressBookScreen extends StatelessWidget {
   });
 
   @override
+  State<AddressBookScreen> createState() => _AddressBookScreenState();
+}
+
+class _AddressBookScreenState extends State<AddressBookScreen> {
+  @override
+  void initState() {
+    super.initState();
+    widget.state.fetchSavedAddresses();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -55,14 +67,14 @@ class AddressBookScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.add_location_alt_rounded, color: Color(0xFF10B981)),
             tooltip: 'Add New Address',
-            onPressed: () => _openAddEditAddressSheet(context, state),
+            onPressed: () => _openAddEditAddressSheet(context, widget.state),
           ),
         ],
       ),
       body: AnimatedBuilder(
-        animation: state,
+        animation: widget.state,
         builder: (context, _) {
-          final addresses = state.savedAddresses;
+          final addresses = widget.state.savedAddresses;
 
           if (addresses.isEmpty) {
             return Center(
@@ -469,7 +481,7 @@ class AddressBookScreen extends StatelessWidget {
                           duration: const Duration(seconds: 2),
                         ),
                       );
-                      if (isSelectingForCheckout || Navigator.canPop(context)) {
+                      if (widget.isSelectingForCheckout || Navigator.canPop(context)) {
                         Navigator.pop(context, addr);
                       }
                     },

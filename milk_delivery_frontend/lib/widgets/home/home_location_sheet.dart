@@ -8,9 +8,7 @@ import '../../theme/ui_tokens.dart';
 
 class HomeLocationSheet {
   static void show(BuildContext context, AppState state) {
-    if (state.savedAddresses.isEmpty) {
-      state.fetchSavedAddresses();
-    }
+    state.fetchSavedAddresses();
     final searchCtrl = TextEditingController();
     List<Map<String, dynamic>> searchResults = [];
     bool isSearching = false;
