@@ -320,7 +320,95 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              // ── 3b. Shift Selector Bar (Morning vs Evening) ──
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: UiTone.surfaceMuted,
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                  border: Border.all(color: UiTone.surfaceBorder),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _slotFilter = 'ALL'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _slotFilter == 'ALL' ? UiTone.ink : Colors.transparent,
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'All Shifts',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: _slotFilter == 'ALL' ? Colors.white : UiTone.softText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _slotFilter = 'MORNING'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _slotFilter == 'MORNING' ? UiTone.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('☀️ ', style: TextStyle(fontSize: 11)),
+                              Text(
+                                'Morning',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: _slotFilter == 'MORNING' ? Colors.white : UiTone.softText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _slotFilter = 'EVENING'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _slotFilter == 'EVENING' ? const Color(0xFF7C3AED) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('🌙 ', style: TextStyle(fontSize: 11)),
+                              Text(
+                                'Evening',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: _slotFilter == 'EVENING' ? Colors.white : UiTone.softText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
 
               // ── 4. Filter Chips (Active / Completed / Pending / Delivered / Type) ──
               SingleChildScrollView(

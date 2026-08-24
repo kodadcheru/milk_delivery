@@ -1175,6 +1175,8 @@ class AdminSubscriptionCreateView(APIView):
             or LocationHub.objects.first()
         )
 
+        delivery_slot = request.data.get("delivery_slot") or customer.delivery_slot_preference or "05:30 AM - 07:00 AM"
+
         sub = Subscription.objects.create(
             customer=customer,
             product=product,
@@ -1182,17 +1184,18 @@ class AdminSubscriptionCreateView(APIView):
             quantity=quantity,
             schedule_type=schedule_type,
             start_date=start_date_str,
+            delivery_slot=delivery_slot,
             status=Subscription.Statuses.ACTIVE,
         )
 
-        # Automatically schedule morning delivery task
+        # Automatically schedule first delivery task
         driver = User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=hub).first() or User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
         DeliveryTask.objects.create(
             subscription=sub,
             hub=hub,
             driver=driver,
             delivery_date=date.today(),
-            slot_time=customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
+            slot_time=delivery_slot,
             status=DeliveryTask.Statuses.PENDING,
         )
 

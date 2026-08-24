@@ -30,6 +30,13 @@ class Command(BaseCommand):
             help="Target date in YYYY-MM-DD format. Defaults to tomorrow.",
         )
         parser.add_argument(
+            "--shift",
+            type=str,
+            default="all",
+            choices=["all", "morning", "evening"],
+            help="Filter which shift to generate tasks for ('morning', 'evening', or 'all').",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             default=False,
@@ -38,6 +45,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         target_date_str = options["date"]
+        shift_opt = options.get("shift", "all").lower()
         dry_run = options["dry_run"]
 
         if target_date_str:
@@ -48,6 +56,7 @@ class Command(BaseCommand):
         self.stdout.write(f"\n{'='*60}")
         self.stdout.write(f"🥛 MilkDrop Daily Task Generator")
         self.stdout.write(f"   Target Date: {target_date}")
+        self.stdout.write(f"   Shift: {shift_opt.upper()}")
         self.stdout.write(f"   Mode: {'DRY RUN (preview only)' if dry_run else 'LIVE'}")
         self.stdout.write(f"{'='*60}\n")
 
@@ -55,7 +64,7 @@ class Command(BaseCommand):
         resumed_count = self._auto_resume_vacations(target_date, dry_run)
 
         # Step 2: Generate tasks for active subscriptions
-        created_count, skipped_count = self._generate_tasks(target_date, dry_run)
+        created_count, skipped_count = self._generate_tasks(target_date, dry_run, shift_filter=shift_opt)
 
         self.stdout.write(f"\n{'='*60}")
         self.stdout.write(f"📊 Summary:")
@@ -65,36 +74,39 @@ class Command(BaseCommand):
         self.stdout.write(f"{'='*60}\n")
 
     def _auto_resume_vacations(self, target_date, dry_run):
-        """Resume subscriptions whose VacationPause end_date has passed."""
+        """Find paused subscriptions whose vacation pause ended on or before target_date."""
         expired_pauses = VacationPause.objects.filter(
             end_date__lt=target_date,
             subscription__status=Subscription.Statuses.PAUSED,
-        ).select_related("subscription", "subscription__customer", "subscription__product")
+        ).select_related("subscription", "subscription__customer")
 
         resumed_count = 0
         for pause in expired_pauses:
             sub = pause.subscription
             if not dry_run:
                 sub.status = Subscription.Statuses.ACTIVE
-                sub.save(update_fields=["status"])
+                sub.save()
 
-                # Notify customer
                 Notification.objects.create(
                     user=sub.customer,
-                    title="🔔 Subscription Resumed",
-                    message=f"Your vacation pause has ended. Daily deliveries of {sub.product.name} resume from {target_date}.",
-                    notification_type=Notification.Types.VACATION,
+                    title="🥛 Vacation Ended — Deliveries Resumed!",
+                    message=(
+                        f"Your vacation mode ended on {pause.end_date}. "
+                        f"Your daily delivery of {sub.quantity}x {sub.product.name} resumes tomorrow."
+                    ),
+                    notification_type=Notification.Types.SUBSCRIPTION,
                 )
 
             self.stdout.write(
-                self.style.SUCCESS(f"  ✅ Resumed: Sub #{sub.id} for {sub.customer.username} "
-                                   f"(vacation ended {pause.end_date})")
+                self.style.WARNING(
+                    f"  🔄 Resumed: Sub #{sub.id} for {sub.customer.username} (vacation ended {pause.end_date})"
+                )
             )
             resumed_count += 1
 
         return resumed_count
 
-    def _generate_tasks(self, target_date, dry_run):
+    def _generate_tasks(self, target_date, dry_run, shift_filter="all"):
         """Generate DeliveryTask entries for each eligible active subscription."""
         active_subs = (
             Subscription.objects
@@ -110,6 +122,14 @@ class Command(BaseCommand):
         skipped_count = 0
 
         for sub in active_subs:
+            slot_str = (sub.delivery_slot or sub.customer.delivery_slot_preference or "05:30 AM - 07:00 AM").upper()
+            is_evening = "PM" in slot_str or "17:" in slot_str or "18:" in slot_str or "19:" in slot_str
+
+            if shift_filter == "morning" and is_evening:
+                continue
+            if shift_filter == "evening" and not is_evening:
+                continue
+
             # Check if task already exists for this date
             if DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).exists():
                 self.stdout.write(f"  ⏭️  Skip (exists): Sub #{sub.id} for {sub.customer.username}")
@@ -148,10 +168,11 @@ class Command(BaseCommand):
                 )
 
             driver_name = f"{driver.first_name} {driver.last_name}".strip() if driver else "Unassigned"
+            shift_tag = "🌙 Evening" if is_evening else "☀️ Morning"
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"  ✅ Created: Sub #{sub.id} | {sub.customer.username} | "
-                    f"{sub.quantity}x {sub.product.name} | Driver: {driver_name}"
+                    f"  ✅ Created ({shift_tag}): Sub #{sub.id} | {sub.customer.username} | "
+                    f"{sub.quantity}x {sub.product.name} | Slot: {slot_str} | Driver: {driver_name}"
                 )
             )
             created_count += 1

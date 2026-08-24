@@ -808,15 +808,18 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  '04:30 AM – 07:00 AM',
-                  '05:00 AM – 07:30 AM',
-                  '05:30 AM – 08:00 AM',
+                  '☀️ 05:00 AM – 07:30 AM',
+                  '☀️ 05:30 AM – 08:00 AM',
+                  '🌙 05:00 PM – 07:30 PM',
+                  '🌙 06:00 PM – 08:30 PM',
+                  '⚡ Dual: 05:30 AM & 06:00 PM',
                 ].map((s) {
-                  final isSel = selected.contains(s);
+                  final isSel = selected.contains(s.replaceAll('☀️ ', '').replaceAll('🌙 ', '').replaceAll('⚡ ', ''));
+                  final isEve = s.contains('🌙');
                   return ChoiceChip(
                     label: Text(s, style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.bold, color: isSel ? Colors.white : UiTone.ink)),
                     selected: isSel,
-                    selectedColor: UiTone.primary,
+                    selectedColor: isEve ? const Color(0xFF7C3AED) : UiTone.primary,
                     backgroundColor: UiTone.surfaceMuted,
                     showCheckmark: false,
                     onSelected: (sel) {

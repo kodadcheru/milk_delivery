@@ -410,12 +410,15 @@ class FloatingCartBar extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           if (slotsData == null)
-                            const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+                            const SizedBox(height: 40, child: Center(child: CircularProgressIndicator()))
                           else
                             Wrap(
                               spacing: 8,
+                              runSpacing: 8,
                               children: slotsData!.map((slotMap) {
                                 final slotName = slotMap['name']?.toString() ?? slotMap['time_range']?.toString() ?? '';
+                                final isEvening = slotName.toUpperCase().contains('PM') || slotName.toUpperCase().contains('EVENING');
+                                final icon = isEvening ? '🌙 ' : '☀️ ';
                                 final available = slotMap['available_capacity'] ?? slotMap['available'] ?? 0;
                                 final max = slotMap['max_capacity'] ?? 0;
                                 final isFull = slotMap['is_full'] == true;
@@ -425,16 +428,17 @@ class FloatingCartBar extends StatelessWidget {
                                   label: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(slotName),
+                                      Text(icon + slotName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                       if (isFull)
                                         const Text('FULL', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.bold))
                                       else if (isCutoff)
                                         const Text('CLOSED', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold))
                                       else
-                                        Text('$available/$max left', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                                        Text('$available/$max left', style: const TextStyle(fontSize: 9, color: Colors.grey)),
                                     ],
                                   ),
                                   selected: slot == slotName,
+                                  selectedColor: isEvening ? const Color(0xFFEDE9FE) : UiTone.primarySoft,
                                   onSelected: (isFull || isCutoff) ? null : (val) {
                                     setSheetState(() {
                                       slot = slotName;

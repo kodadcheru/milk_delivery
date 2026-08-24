@@ -425,7 +425,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.ink),
                                         ),
                                         Text(
-                                          'Slot: ${sub.deliverySlot} ${sub.deliveryInstructions.isNotEmpty ? "• ${sub.deliveryInstructions}" : ""}',
+                                          'Slot: ${(sub.deliverySlot.toUpperCase().contains("PM") || sub.deliverySlot.toUpperCase().contains("EVENING")) ? "🌙" : "☀️"} ${sub.deliverySlot} ${sub.deliveryInstructions.isNotEmpty ? "• ${sub.deliveryInstructions}" : ""}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(fontSize: 10, color: UiTone.success, fontWeight: FontWeight.w600),
@@ -964,40 +964,45 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     '05:30 AM - 07:00 AM',
                     '07:00 AM - 08:30 AM',
                     '05:00 PM - 07:00 PM',
+                    '06:30 PM - 08:30 PM',
                   ].map((slot) {
                     final isSel = selectedSlot == slot;
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: InkWell(
-                          onTap: () {
-                            setModalState(() {
-                              selectedSlot = slot;
-                              slotCtrl.text = slot;
-                            });
-                          },
+                    final isEve = slot.toUpperCase().contains('PM');
+                    final icon = isEve ? '🌙 ' : '☀️ ';
+                    return InkWell(
+                      onTap: () {
+                        setModalState(() {
+                          selectedSlot = slot;
+                          slotCtrl.text = slot;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(UiRadius.sm),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: isSel
+                              ? (isEve ? const Color(0xFF7C3AED) : UiTone.primary)
+                              : UiTone.shellBackground,
                           borderRadius: BorderRadius.circular(UiRadius.sm),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                            decoration: BoxDecoration(
-                              color: isSel ? UiTone.primary : UiTone.shellBackground,
-                              borderRadius: BorderRadius.circular(UiRadius.sm),
-                              border: Border.all(color: isSel ? UiTone.primary : UiTone.surfaceBorder),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              slot,
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                color: isSel ? Colors.white : UiTone.ink,
-                              ),
-                            ),
+                          border: Border.all(
+                            color: isSel
+                                ? (isEve ? const Color(0xFF7C3AED) : UiTone.primary)
+                                : UiTone.surfaceBorder,
+                          ),
+                        ),
+                        child: Text(
+                          icon + slot,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : UiTone.ink,
                           ),
                         ),
                       ),

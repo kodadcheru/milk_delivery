@@ -422,12 +422,15 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
                 '05:30 AM - 07:00 AM',
                 '07:00 AM - 08:30 AM',
                 '05:00 PM - 07:00 PM',
+                '06:30 PM - 08:30 PM',
               ].map((s) {
                 final isSel = selected == s;
+                final isEve = s.toUpperCase().contains('PM');
+                final icon = isEve ? '🌙 ' : '☀️ ';
                 return ChoiceChip(
-                  label: Text(s, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: isSel ? Colors.white : const Color(0xFF0F172A))),
+                  label: Text(icon + s, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: isSel ? Colors.white : const Color(0xFF0F172A))),
                   selected: isSel,
-                  selectedColor: const Color(0xFF0D7C66),
+                  selectedColor: isEve ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
                   backgroundColor: const Color(0xFFF1F5F9),
                   showCheckmark: false,
                   onSelected: (sel) {

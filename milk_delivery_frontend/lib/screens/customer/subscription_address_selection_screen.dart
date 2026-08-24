@@ -164,9 +164,12 @@ class _SubscriptionAddressSelectionScreenState
     );
   }
 
-  String _getSlotIcon(int index) {
-    const icons = ['⚡', '🌅', '🌇'];
-    return icons[index % icons.length];
+  String _getSlotIcon(String slotName, int index) {
+    final upper = slotName.toUpperCase();
+    if (upper.contains('PM') || upper.contains('EVENING')) return '🌙';
+    if (upper.contains('05:30')) return '⚡';
+    if (upper.contains('07:00')) return '🌅';
+    return '☀️';
   }
 
   @override
@@ -317,7 +320,7 @@ class _SubscriptionAddressSelectionScreenState
                               children: [
                                 Row(
                                   children: [
-                                    Text(_getSlotIcon(index), style: const TextStyle(fontSize: 16)),
+                                    Text(_getSlotIcon(slotName, index), style: const TextStyle(fontSize: 16)),
                                     const SizedBox(width: 6),
                                     Text(
                                       slotName,

@@ -1106,7 +1106,13 @@
             <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
             <input type="text" id="deliverySearchInput" placeholder="Search customer, phone, address, or task ID..." oninput="filterDeliveriesTable()">
           </div>
-          <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Shift Filter:</label>
+            <select id="deliveryShiftFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDeliveriesTable()">
+              <option value="ALL">All Shifts (☀️/🌙)</option>
+              <option value="MORNING">☀️ Morning Shift (AM)</option>
+              <option value="EVENING">🌙 Evening Shift (PM)</option>
+            </select>
             <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status Filter:</label>
             <select id="deliveryStatusFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDeliveriesTable()">
               <option value="ALL">All Statuses</option>
@@ -2398,6 +2404,19 @@
         <label>Subscription Start Date</label>
         <input type="date" id="newSubStartDate" class="form-control">
       </div>
+      <div class="form-group">
+        <label>Preferred Delivery Slot (Shift ⏰)</label>
+        <select id="newSubSlot" class="form-control">
+          <optgroup label="☀️ Morning Shift">
+            <option value="05:30 AM - 07:00 AM" selected>⚡ 05:30 AM - 07:00 AM (Early Morning)</option>
+            <option value="07:00 AM - 08:30 AM">🌅 07:00 AM - 08:30 AM (Standard Morning)</option>
+          </optgroup>
+          <optgroup label="🌙 Evening Shift">
+            <option value="05:00 PM - 07:00 PM">🌇 05:00 PM - 07:00 PM (Early Evening)</option>
+            <option value="06:30 PM - 08:30 PM">🌙 06:30 PM - 08:30 PM (Standard Evening)</option>
+          </optgroup>
+        </select>
+      </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('createSubModal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitCreateSubscription()"><i class="fa-solid fa-check"></i> Book Subscription</button>
@@ -3006,10 +3025,10 @@
     </div>
   <!-- ── Datalist for Typable Slot Suggestions ── -->
   <datalist id="slotPresetsList">
-    <option value="05:30 AM - 07:00 AM">Peak Morning Shift</option>
-    <option value="06:00 AM - 07:30 AM">Early Morning Shift</option>
-    <option value="07:00 AM - 08:30 AM">Standard Morning Shift</option>
-    <option value="05:00 PM - 07:00 PM">Evening Shift</option>
+    <option value="05:30 AM - 07:00 AM">⚡ Early Morning Shift</option>
+    <option value="07:00 AM - 08:30 AM">🌅 Standard Morning Shift</option>
+    <option value="05:00 PM - 07:00 PM">🌇 Early Evening Shift</option>
+    <option value="06:30 PM - 08:30 PM">🌙 Standard Evening Shift</option>
   </datalist>
 
   <!-- Hidden Section for Clean Printing -->
@@ -5325,6 +5344,7 @@
     function filterDeliveriesTable() {
       const q = document.getElementById('deliverySearchInput').value.toLowerCase().trim();
       const statusFilter = document.getElementById('deliveryStatusFilter').value;
+      const shiftFilter = document.getElementById('deliveryShiftFilter') ? document.getElementById('deliveryShiftFilter').value : 'ALL';
 
       const filtered = rawDeliveries.filter(t => {
         const sub = t.subscription_detail || {};
@@ -5337,7 +5357,12 @@
           (t.customer_phone && t.customer_phone.includes(q));
 
         const statusMatch = (statusFilter === 'ALL') || (t.status === statusFilter);
-        return textMatch && statusMatch;
+
+        const slotStr = (t.slot_time || '').toUpperCase();
+        const isEvening = slotStr.includes('PM') || slotStr.includes('17:') || slotStr.includes('18:') || slotStr.includes('19:') || slotStr.includes('EVENING');
+        const shiftMatch = (shiftFilter === 'ALL') || (shiftFilter === 'EVENING' && isEvening) || (shiftFilter === 'MORNING' && !isEvening);
+
+        return textMatch && statusMatch && shiftMatch;
       });
 
       renderDeliveriesTable(filtered);
@@ -5597,6 +5622,8 @@
       const sched = document.getElementById('newSubSchedule').value;
       const start = document.getElementById('newSubStartDate').value;
 
+      const slot = document.getElementById('newSubSlot') ? document.getElementById('newSubSlot').value : '05:30 AM - 07:00 AM';
+
       try {
         const res = await fetch(`${baseUrl}/admin/subscriptions/create/`, {
           method: 'POST',
@@ -5606,7 +5633,8 @@
             product_id: pId,
             quantity: qty,
             schedule_type: sched,
-            start_date: start
+            start_date: start,
+            delivery_slot: slot
           })
         });
 

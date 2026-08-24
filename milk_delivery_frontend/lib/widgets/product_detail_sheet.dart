@@ -41,7 +41,8 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   int _selectedWeeks = 1; // 1, 2, 3 weeks
   int _selectedMonths = 1; // 1, 2, 3 months
   String _selectedPackSize = '1 Litre';
-  final String _selectedSlot = '05:30 AM - 07:00 AM';
+  int _selectedShift = 0; // 0: Morning, 1: Evening
+  String _selectedSlot = '05:30 AM - 07:00 AM';
   bool _isBadgeExpanded = false;
 
   @override
@@ -321,6 +322,132 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         ? [1, 2, 3].map((w) => _buildDurationChip('$w Wk', _selectedWeeks == w, () => setState(() => _selectedWeeks = w))).toList()
                         : [1, 2, 3].map((m) => _buildDurationChip('$m Mo', _selectedMonths == m, () => setState(() => _selectedMonths = m))).toList(),
                   ),
+                  const SizedBox(height: 20),
+
+                  // 4b. Preferred Delivery Shift & Slot (Morning / Evening)
+                  _sectionHeader(Icons.access_time_filled_rounded, 'Delivery Slot & Shift'),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: UiTone.surfaceMuted,
+                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedShift = 0;
+                                _selectedSlot = '05:30 AM - 07:00 AM';
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 7),
+                              decoration: BoxDecoration(
+                                color: _selectedShift == 0 ? UiTone.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(UiRadius.pill),
+                              ),
+                              alignment: Alignment.center,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('☀️ ', style: TextStyle(fontSize: 12)),
+                                  Text(
+                                    'Morning Drop',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedShift == 0 ? Colors.white : UiTone.softText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedShift = 1;
+                                _selectedSlot = '05:00 PM - 07:00 PM';
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 7),
+                              decoration: BoxDecoration(
+                                color: _selectedShift == 1 ? const Color(0xFF7C3AED) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(UiRadius.pill),
+                              ),
+                              alignment: Alignment.center,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('🌙 ', style: TextStyle(fontSize: 12)),
+                                  Text(
+                                    'Evening Drop',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedShift == 1 ? Colors.white : UiTone.softText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: _selectedShift == 0
+                        ? [
+                            Expanded(
+                              child: _buildSlotChip(
+                                '05:30 AM - 07:00 AM',
+                                '⚡ Early Morning',
+                                '05:30 - 07:00 AM',
+                                _selectedSlot == '05:30 AM - 07:00 AM',
+                                () => setState(() => _selectedSlot = '05:30 AM - 07:00 AM'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSlotChip(
+                                '07:00 AM - 08:30 AM',
+                                '🌅 Standard',
+                                '07:00 - 08:30 AM',
+                                _selectedSlot == '07:00 AM - 08:30 AM',
+                                () => setState(() => _selectedSlot = '07:00 AM - 08:30 AM'),
+                              ),
+                            ),
+                          ]
+                        : [
+                            Expanded(
+                              child: _buildSlotChip(
+                                '05:00 PM - 07:00 PM',
+                                '🌇 Early Evening',
+                                '05:00 - 07:00 PM',
+                                _selectedSlot == '05:00 PM - 07:00 PM',
+                                () => setState(() => _selectedSlot = '05:00 PM - 07:00 PM'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSlotChip(
+                                '06:30 PM - 08:30 PM',
+                                '🌙 Standard',
+                                '06:30 - 08:30 PM',
+                                _selectedSlot == '06:30 PM - 08:30 PM',
+                                () => setState(() => _selectedSlot = '06:30 PM - 08:30 PM'),
+                              ),
+                            ),
+                          ],
+                  ),
                   const SizedBox(height: 24),
 
                   // 5. Plan summary card
@@ -517,6 +644,44 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               color: isSelected ? Colors.white : UiTone.ink,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSlotChip(String val, String title, String subtitle, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? UiTone.primarySoft : UiTone.surface,
+          borderRadius: BorderRadius.circular(UiRadius.xs),
+          border: Border.all(
+            color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? UiTone.primaryDark : UiTone.ink,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected ? UiTone.primary : UiTone.softText,
+              ),
+            ),
+          ],
         ),
       ),
     );
