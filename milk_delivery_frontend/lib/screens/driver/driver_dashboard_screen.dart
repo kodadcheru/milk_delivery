@@ -374,13 +374,22 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
 
-    final completedCount = tasks.where((t) => t.status == 'DELIVERED').length;
-    final pendingCount = tasks.where((t) => t.status == 'PENDING').length;
-    final totalStops = tasks.length;
+    // 1. Filter deliveries by the active Morning/Evening shift first
+    final shiftTasks = tasks.where((t) {
+      final slotStr = t.slotTime.toUpperCase();
+      final isEvening = slotStr.contains('PM') || slotStr.contains('17:') || slotStr.contains('18:') || slotStr.contains('19:') || slotStr.contains('EVENING');
+      if (_selectedShift == 'MORNING') return !isEvening;
+      if (_selectedShift == 'EVENING') return isEvening;
+      return true;
+    }).toList();
+
+    final completedCount = shiftTasks.where((t) => t.status == 'DELIVERED').length;
+    final pendingCount = shiftTasks.where((t) => t.status == 'PENDING').length;
+    final totalStops = shiftTasks.length;
     final progressPct = totalStops > 0 ? (completedCount / totalStops) : 0.0;
 
-    // Filter tasks
-    List<DeliveryTaskModel> filteredTasks = tasks.where((t) {
+    // 2. Filter shiftTasks by status tab and search query
+    List<DeliveryTaskModel> filteredTasks = shiftTasks.where((t) {
       final sub = t.subscriptionDetail;
       final isSubPaused = sub != null && sub.status == 'PAUSED';
       if (_selectedFilterIndex == 0 && (t.status == 'DELIVERED' || t.status == 'COMPLETED' || t.status == 'SKIPPED' || isSubPaused)) {
@@ -658,7 +667,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Morning Route Completion: $completedCount of $totalStops Stops',
+                            '${_selectedShift == "EVENING" ? "Evening" : "Morning"} Route Completion: $completedCount of $totalStops Stops',
                             style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.w700, color: UiTone.softText),
                           ),
                           Text(
@@ -760,8 +769,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: doorstepGroups.length,
-                  separatorBuilder: (ctx, idx) => const SizedBox(height: 14),
-                  itemBuilder: (ctx, idx) {
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, idx) {
                     final group = doorstepGroups[idx];
                     return _buildDoorstepGroupCard(group, idx);
                   },
@@ -785,6 +794,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final lon = group.customerLongitude;
     final totalItemsCount = group.tasks.fold<int>(0, (sum, t) => sum + (t.subscriptionDetail?.quantity ?? t.quantity));
 
+    final firstTask = group.tasks.isNotEmpty ? group.tasks.first : null;
+    final dateStr = (firstTask != null && firstTask.deliveryDate.isNotEmpty) ? firstTask.deliveryDate : 'Today';
+    final slotStr = group.slotTime.isNotEmpty ? group.slotTime : '05:30 AM - 07:00 AM';
+    final isEvening = slotStr.toUpperCase().contains('PM') || slotStr.toUpperCase().contains('17:') || slotStr.toUpperCase().contains('18:') || slotStr.toUpperCase().contains('19:') || slotStr.toUpperCase().contains('EVENING');
+
     return Container(
       decoration: BoxDecoration(
         color: UiTone.surface,
@@ -796,7 +810,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Stop #, Assignment Badge, Slot, & Multi-Item Tag
+          // Row 1: Stop #, Assignment Badge, Date & Shift Slot, & Status Pill
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -833,10 +847,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: UiTone.surfaceMuted,
+                      color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.12) : const Color(0xFF0D7C66).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
-                    child: Text('📅 Today • ${group.slotTime}', style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.softText)),
+                    child: Text(
+                      '📅 $dateStr • ${isEvening ? "🌙 Evening" : "☀️ Morning"} • $slotStr',
+                      style: UiText.caption.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -852,7 +873,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Row(
             children: [
               CircleAvatar(
-                radius: 18,
                 backgroundColor: UiTone.primarySoft,
                 child: Text(
                   custName.isNotEmpty ? custName[0].toUpperCase() : 'C',
