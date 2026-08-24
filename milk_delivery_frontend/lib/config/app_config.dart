@@ -22,7 +22,7 @@ class AppConfig {
   static String get googleMapsApiKey {
     return const String.fromEnvironment(
       'GOOGLE_MAPS_API_KEY',
-      defaultValue: 'AIzaSyBALn7TqvHsoW_2o-mJAWKl2RQHpdT2jZg',
+      defaultValue: 'AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4',
     );
   }
 
