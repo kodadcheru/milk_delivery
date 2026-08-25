@@ -4,10 +4,15 @@ from apps.accounts.models import CustomerAddress, Notification, User, WalletTran
 
 
 class UserSerializer(serializers.ModelSerializer):
+    customer_code = serializers.CharField(read_only=True)
+    driver_code = serializers.CharField(read_only=True)
+
     class Meta:
         model = User
         fields = [
             "id",
+            "customer_code",
+            "driver_code",
             "username",
             "first_name",
             "last_name",
@@ -26,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             "assigned_hub",
             "last_location_updated",
         ]
-        read_only_fields = ["id", "wallet_balance"]
+        read_only_fields = ["id", "customer_code", "driver_code", "wallet_balance"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -99,12 +104,14 @@ class NotificationSerializer(serializers.ModelSerializer):
 class CustomerAddressSerializer(serializers.ModelSerializer):
     formatted_address = serializers.SerializerMethodField()
     display_type = serializers.CharField(source="get_address_type_display", read_only=True)
+    customer_code = serializers.CharField(source="user.customer_code", read_only=True)
 
     class Meta:
         model = CustomerAddress
         fields = [
             "id",
             "user",
+            "customer_code",
             "address_type",
             "display_type",
             "custom_tag",
@@ -123,7 +130,7 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "user", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "customer_code", "created_at", "updated_at"]
 
     def get_formatted_address(self, obj):
         parts = []

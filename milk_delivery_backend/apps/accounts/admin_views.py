@@ -36,6 +36,7 @@ class AdminCustomerListView(APIView):
             active_subs_count = Subscription.objects.filter(customer=c, status=Subscription.Statuses.ACTIVE).count()
             data.append({
                 "id": c.id,
+                "customer_code": c.customer_code,
                 "username": c.username,
                 "first_name": c.first_name,
                 "last_name": c.last_name,
@@ -254,6 +255,7 @@ class AdminCustomerDetailView(APIView):
         return Response({
             "customer": {
                 "id": customer.id,
+                "customer_code": customer.customer_code,
                 "username": customer.username,
                 "first_name": customer.first_name,
                 "last_name": customer.last_name,

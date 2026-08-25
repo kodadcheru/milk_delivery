@@ -47,6 +47,10 @@ class UserModel {
   bool get isDriver => role.toUpperCase() == 'DRIVER';
   bool get isAdmin => role.toUpperCase() == 'ADMIN' || role.toUpperCase() == 'PROVIDER';
 
+  String get customerCode => 'CUST-${1000 + id}';
+  String get driverCode => 'DRV-${2000 + id}';
+  String get displayCode => isDriver ? driverCode : customerCode;
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] ?? 0,

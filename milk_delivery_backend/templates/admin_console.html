@@ -7936,9 +7936,10 @@
         const subCount = c.active_subscriptions_count || 0;
         const hubName = c.assigned_hub || 'Kodad Depot';
 
+        const custCode = c.customer_code || `CUST-${1000 + c.id}`;
         tbody.innerHTML += `
           <tr style="cursor: pointer; transition: background 0.15s ease;" onclick="openCustomerDetailPage(${c.id})">
-            <td><span class="status-tag status-active">#${c.id}</span></td>
+            <td><span class="status-tag status-active" style="font-weight: 800; letter-spacing: 0.5px;">${custCode}</span></td>
             <td>
               <strong style="color: #38BDF8; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px;">${fullName}</strong><br>
               <small style="color:var(--text-muted);">@${c.username} &nbsp;•&nbsp; 🏢 ${hubName}</small>
@@ -8010,7 +8011,8 @@
       const deliveries = data.deliveries || [];
 
       // Top Bar
-      document.getElementById('custDetailIdBadge').innerText = `CUST #${c.id}`;
+      const displayCode = c.customer_code || `CUST-${1000 + c.id}`;
+      document.getElementById('custDetailIdBadge').innerText = displayCode;
       document.getElementById('custDetailHeading').innerText = c.full_name || `@${c.username}`;
       document.getElementById('custDetailJoinedSubtitle').innerText = `Member since ${c.date_joined || 'Recent'} • @${c.username}`;
 

@@ -35,9 +35,18 @@ class User(AbstractUser):
     vehicle_number = models.CharField(max_length=20, blank=True, default='')
     driving_license = models.CharField(max_length=50, blank=True, default='')
 
+    @property
+    def customer_code(self):
+        return f"CUST-{1000 + self.id}"
+
+    @property
+    def driver_code(self):
+        return f"DRV-{2000 + self.id}"
+
     def __str__(self):
         hub_info = f" • {self.assigned_hub.name}" if self.assigned_hub else ""
-        return f"{self.first_name or self.username} ({self.role}{hub_info}) - ₹{self.wallet_balance}"
+        code = self.driver_code if self.role == self.Roles.DRIVER else self.customer_code
+        return f"{self.first_name or self.username} [{code}] ({self.role}{hub_info}) - ₹{self.wallet_balance}"
 
     class Meta:
         constraints = [
@@ -149,6 +158,14 @@ class CustomerAddress(models.Model):
             # Unset is_default on any other address for this user
             CustomerAddress.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(is_default=False)
         super().save(*args, **kwargs)
+        if self.is_default or not self.user.address:
+            User.objects.filter(pk=self.user.pk).update(
+                address=self.formatted_address or self.street_address,
+                city=self.city or "Kodad",
+                latitude=self.latitude,
+                longitude=self.longitude,
+                delivery_instructions=self.delivery_instructions or self.user.delivery_instructions
+            )
 
 
 class SupportMessage(models.Model):
