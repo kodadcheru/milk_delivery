@@ -940,6 +940,12 @@ class ApiService {
       if (address.id <= 0) {
         payload.remove('id');
       }
+      final resolvedUid = customerId ?? address.userId;
+      if (resolvedUid != null && resolvedUid > 0) {
+        payload['user'] = resolvedUid;
+        payload['user_id'] = resolvedUid;
+        payload['customer_id'] = resolvedUid;
+      }
 
       final res = await _executeWithRetry(() => http.post(
             uri,
@@ -969,10 +975,18 @@ class ApiService {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
 
+      final payload = address.toJson();
+      final resolvedUid = customerId ?? address.userId;
+      if (resolvedUid != null && resolvedUid > 0) {
+        payload['user'] = resolvedUid;
+        payload['user_id'] = resolvedUid;
+        payload['customer_id'] = resolvedUid;
+      }
+
       final res = await _executeWithRetry(() => http.patch(
             uri,
             headers: _headers,
-            body: jsonEncode(address.toJson()),
+            body: jsonEncode(payload),
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return CustomerAddressModel.fromJson(jsonDecode(res.body));

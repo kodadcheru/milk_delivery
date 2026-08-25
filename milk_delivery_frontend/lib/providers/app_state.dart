@@ -839,15 +839,19 @@ class AppState extends ChangeNotifier {
 
   Future<bool> saveCustomerAddress(CustomerAddressModel addr) async {
     CustomerAddressModel? result;
-    if (addr.id > 0 && savedAddresses.any((a) => a.id == addr.id)) {
+    final resolvedAddr = (addr.userId == null || addr.userId == 0) && currentUser != null && currentUser!.id > 0
+        ? addr.copyWith(userId: currentUser!.id)
+        : addr;
+
+    if (resolvedAddr.id > 0 && savedAddresses.any((a) => a.id == resolvedAddr.id)) {
       result = await ApiService.updateCustomerAddress(
-        addr,
+        resolvedAddr,
         phone: currentUser?.phone,
         customerId: currentUser?.id,
       );
     } else {
       result = await ApiService.createCustomerAddress(
-        addr,
+        resolvedAddr,
         phone: currentUser?.phone,
         customerId: currentUser?.id,
       );

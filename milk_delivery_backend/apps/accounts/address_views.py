@@ -27,21 +27,33 @@ def _find_user_by_phone(phone_str):
 def _resolve_customer_user(request):
     user = request.user
     
+    # Helper to extract customer_id and phone safely from query_params or data
+    data = getattr(request, 'data', {})
+    if not isinstance(data, dict):
+        data = {}
+    params = getattr(request, 'query_params', {})
+    
+    raw_cust_id = (
+        params.get('customer_id') or params.get('user_id') or params.get('user')
+        or data.get('customer_id') or data.get('user_id') or data.get('user')
+    )
+    raw_phone = (
+        params.get('phone') or params.get('customer_phone')
+        or data.get('phone') or data.get('customer_phone')
+    )
+    
     # 1. If staff/admin requesting specific customer, resolve that customer
     if user and user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ('ADMIN', 'PROVIDER', 'HUB_MANAGER')):
-        customer_id = request.query_params.get('customer_id') or request.data.get('customer_id')
-        phone = request.query_params.get('phone') or request.data.get('phone') or request.data.get('customer_phone')
-        
-        if customer_id:
+        if raw_cust_id:
             try:
-                found_user = User.objects.filter(id=int(customer_id)).first()
+                found_user = User.objects.filter(id=int(raw_cust_id)).first()
                 if found_user:
                     return found_user
             except (ValueError, TypeError):
                 pass
                 
-        if phone:
-            found_user = _find_user_by_phone(phone)
+        if raw_phone:
+            found_user = _find_user_by_phone(raw_phone)
             if found_user:
                 return found_user
     
@@ -50,21 +62,18 @@ def _resolve_customer_user(request):
         return user
 
     # 3. Fallback for unauthenticated / token-refresh gap
-    phone = request.query_params.get("phone") or request.data.get("phone") or request.data.get("customer_phone")
-    customer_id = request.query_params.get("customer_id") or request.data.get("customer_id")
-
-    if phone:
-        found_user = _find_user_by_phone(phone)
-        if found_user:
-            return found_user
-
-    if customer_id:
+    if raw_cust_id:
         try:
-            found_user = User.objects.filter(id=int(customer_id)).first()
+            found_user = User.objects.filter(id=int(raw_cust_id)).first()
             if found_user:
                 return found_user
         except (ValueError, TypeError):
             pass
+
+    if raw_phone:
+        found_user = _find_user_by_phone(raw_phone)
+        if found_user:
+            return found_user
 
     return None
 

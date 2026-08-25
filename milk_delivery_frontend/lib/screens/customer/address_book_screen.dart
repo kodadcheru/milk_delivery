@@ -1082,6 +1082,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
 
     final newAddr = CustomerAddressModel(
       id: widget.existing?.id ?? 0,
+      userId: widget.existing?.userId ?? widget.state.currentUser?.id,
       addressType: _addressType,
       customTag: _customTagController.text.trim(),
       flatHouseNo: _flatNoController.text.trim(),

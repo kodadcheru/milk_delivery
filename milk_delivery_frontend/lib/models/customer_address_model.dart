@@ -115,6 +115,9 @@ class CustomerAddressModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      if (userId != null && userId! > 0) 'user': userId,
+      if (userId != null && userId! > 0) 'user_id': userId,
+      if (userId != null && userId! > 0) 'customer_id': userId,
       'address_type': addressType,
       'custom_tag': customTag,
       'flat_house_no': flatHouseNo,
@@ -133,6 +136,7 @@ class CustomerAddressModel {
 
   CustomerAddressModel copyWith({
     int? id,
+    int? userId,
     String? addressType,
     String? customTag,
     String? flatHouseNo,
@@ -150,7 +154,7 @@ class CustomerAddressModel {
   }) {
     return CustomerAddressModel(
       id: id ?? this.id,
-      userId: userId,
+      userId: userId ?? this.userId,
       addressType: addressType ?? this.addressType,
       displayType: displayType,
       customTag: customTag ?? this.customTag,
