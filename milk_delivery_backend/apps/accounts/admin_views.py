@@ -1082,6 +1082,52 @@ class AdminSubscriptionsResetView(APIView):
         })
 
 
+class AdminDatabaseCompleteResetView(APIView):
+    permission_classes = [IsAdminOrStaff]
+
+    def post(self, request):
+        from apps.accounts.models import CustomerAddress, Notification, User, WalletTransaction, SupportMessage
+        from apps.subscriptions.models import Subscription, VacationPause
+        from apps.deliveries.models import DeliveryTask, LiveOrder, LiveOrderItem, BottleReturn, ProviderPayout, DailyMilkBatch
+        from seed_railway import seed
+
+        # 1. Purge all transactional and delivery records
+        deleted_items, _ = LiveOrderItem.objects.all().delete()
+        deleted_orders, _ = LiveOrder.objects.all().delete()
+        deleted_tasks, _ = DeliveryTask.objects.all().delete()
+        deleted_pauses, _ = VacationPause.objects.all().delete()
+        deleted_subs, _ = Subscription.objects.all().delete()
+        deleted_batches, _ = DailyMilkBatch.objects.all().delete()
+        deleted_bottles, _ = BottleReturn.objects.all().delete()
+        deleted_payouts, _ = ProviderPayout.objects.all().delete()
+        deleted_support, _ = SupportMessage.objects.all().delete()
+
+        # 2. Purge customer addresses and wallets/notifications
+        deleted_addresses, _ = CustomerAddress.objects.all().delete()
+        deleted_transactions, _ = WalletTransaction.objects.all().delete()
+        deleted_notifications, _ = Notification.objects.all().delete()
+
+        # 3. Purge all non-superadmin/non-staff users
+        deleted_users, _ = User.objects.filter(is_superuser=False, is_staff=False).delete()
+
+        # 4. Re-run clean seed
+        seed()
+
+        return Response({
+            "message": "Entire PostgreSQL database cleanly reset and re-seeded!",
+            "deleted_counts": {
+                "users": deleted_users,
+                "addresses": deleted_addresses,
+                "subscriptions": deleted_subs,
+                "orders": deleted_orders,
+                "delivery_tasks": deleted_tasks,
+                "wallet_transactions": deleted_transactions,
+                "notifications": deleted_notifications,
+            },
+            "status": "FRESH_PRISTINE_DATABASE"
+        }, status=status.HTTP_200_OK)
+
+
 class AdminFleetListView(APIView):
     permission_classes = [IsAdminOrHubManager]
 
