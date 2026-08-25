@@ -605,43 +605,60 @@ class AppState extends ChangeNotifier {
         currentLat = activeAddress!.latitude;
         currentLon = activeAddress!.longitude;
         _cacheAddressesLocally(); // Persist to local storage
-      } else if (savedAddresses.isEmpty) {
-        // No addresses on server — auto-create from user profile (Zepto pattern)
-        if (user != null && user.address.isNotEmpty) {
-          final profileAddr = CustomerAddressModel(
-            id: 0,
-            userId: user.id,
-            addressType: 'HOME',
-            displayType: 'Home',
-            flatHouseNo: '',
-            streetAddress: user.address,
-            city: user.city.isNotEmpty ? user.city : 'Kodad',
-            pincode: '508206',
-            latitude: user.latitude,
-            longitude: user.longitude,
-            isDefault: true,
-          );
-          // Save to backend so it persists across sessions
+      } else if (savedAddresses.isNotEmpty) {
+        // Server has 0 addresses, but device has local cached addresses — sync all to server!
+        final List<CustomerAddressModel> synced = [];
+        for (final localAddr in savedAddresses) {
           final created = await ApiService.createCustomerAddress(
-            profileAddr,
-            phone: user.phone,
-            customerId: user.id,
+            localAddr,
+            phone: user?.phone,
+            customerId: user?.id,
           );
-          if (created != null) {
-            savedAddresses = [created];
-            activeAddress = created;
-            currentDeliveryAddress = created.summaryAddress;
-            currentLat = created.latitude;
-            currentLon = created.longitude;
-          } else {
-            savedAddresses = [profileAddr];
-            activeAddress = profileAddr;
-            currentDeliveryAddress = profileAddr.summaryAddress;
-            currentLat = profileAddr.latitude;
-            currentLon = profileAddr.longitude;
-          }
+          synced.add(created ?? localAddr);
+        }
+        if (synced.isNotEmpty) {
+          savedAddresses = synced;
+          activeAddress = synced.firstWhere((a) => a.isDefault, orElse: () => synced.first);
+          currentDeliveryAddress = activeAddress!.summaryAddress;
+          currentLat = activeAddress!.latitude;
+          currentLon = activeAddress!.longitude;
           _cacheAddressesLocally();
         }
+      } else if (user != null && user.address.isNotEmpty) {
+        // No local cache either — auto-create from user profile (Zepto pattern)
+        final profileAddr = CustomerAddressModel(
+          id: 0,
+          userId: user.id,
+          addressType: 'HOME',
+          displayType: 'Home',
+          flatHouseNo: '',
+          streetAddress: user.address,
+          city: user.city.isNotEmpty ? user.city : 'Kodad',
+          pincode: '508206',
+          latitude: user.latitude,
+          longitude: user.longitude,
+          isDefault: true,
+        );
+        // Save to backend so it persists across sessions
+        final created = await ApiService.createCustomerAddress(
+          profileAddr,
+          phone: user.phone,
+          customerId: user.id,
+        );
+        if (created != null) {
+          savedAddresses = [created];
+          activeAddress = created;
+          currentDeliveryAddress = created.summaryAddress;
+          currentLat = created.latitude;
+          currentLon = created.longitude;
+        } else {
+          savedAddresses = [profileAddr];
+          activeAddress = profileAddr;
+          currentDeliveryAddress = profileAddr.summaryAddress;
+          currentLat = profileAddr.latitude;
+          currentLon = profileAddr.longitude;
+        }
+        _cacheAddressesLocally();
       }
 
       final fetchedProds = (results[2] as List<ProductModel>?) ?? [];
@@ -754,41 +771,58 @@ class AppState extends ChangeNotifier {
           currentLon = defaultAddr.longitude;
         }
         _cacheAddressesLocally(); // Persist to local storage
-      } else if (savedAddresses.isEmpty) {
-        if (currentUser != null && currentUser!.address.isNotEmpty) {
-          final profileAddr = CustomerAddressModel(
-            id: 0,
-            userId: currentUser!.id,
-            addressType: 'HOME',
-            displayType: 'Home',
-            flatHouseNo: '',
-            streetAddress: currentUser!.address,
-            city: currentUser!.city.isNotEmpty ? currentUser!.city : 'Kodad',
-            pincode: '508206',
-            latitude: currentUser!.latitude,
-            longitude: currentUser!.longitude,
-            isDefault: true,
-          );
+      } else if (savedAddresses.isNotEmpty) {
+        // Server has 0 addresses, but device has local cached addresses — sync all to server!
+        final List<CustomerAddressModel> synced = [];
+        for (final localAddr in savedAddresses) {
           final created = await ApiService.createCustomerAddress(
-            profileAddr,
-            phone: currentUser!.phone,
-            customerId: currentUser!.id,
+            localAddr,
+            phone: currentUser?.phone,
+            customerId: currentUser?.id,
           );
-          if (created != null) {
-            savedAddresses = [created];
-            activeAddress = created;
-            currentDeliveryAddress = created.summaryAddress;
-            currentLat = created.latitude;
-            currentLon = created.longitude;
-          } else {
-            savedAddresses = [profileAddr];
-            activeAddress = profileAddr;
-            currentDeliveryAddress = profileAddr.summaryAddress;
-            currentLat = profileAddr.latitude;
-            currentLon = profileAddr.longitude;
-          }
+          synced.add(created ?? localAddr);
+        }
+        if (synced.isNotEmpty) {
+          savedAddresses = synced;
+          activeAddress = synced.firstWhere((a) => a.isDefault, orElse: () => synced.first);
+          currentDeliveryAddress = activeAddress!.summaryAddress;
+          currentLat = activeAddress!.latitude;
+          currentLon = activeAddress!.longitude;
           _cacheAddressesLocally();
         }
+      } else if (currentUser != null && currentUser!.address.isNotEmpty) {
+        final profileAddr = CustomerAddressModel(
+          id: 0,
+          userId: currentUser!.id,
+          addressType: 'HOME',
+          displayType: 'Home',
+          flatHouseNo: '',
+          streetAddress: currentUser!.address,
+          city: currentUser!.city.isNotEmpty ? currentUser!.city : 'Kodad',
+          pincode: '508206',
+          latitude: currentUser!.latitude,
+          longitude: currentUser!.longitude,
+          isDefault: true,
+        );
+        final created = await ApiService.createCustomerAddress(
+          profileAddr,
+          phone: currentUser!.phone,
+          customerId: currentUser!.id,
+        );
+        if (created != null) {
+          savedAddresses = [created];
+          activeAddress = created;
+          currentDeliveryAddress = created.summaryAddress;
+          currentLat = created.latitude;
+          currentLon = created.longitude;
+        } else {
+          savedAddresses = [profileAddr];
+          activeAddress = profileAddr;
+          currentDeliveryAddress = profileAddr.summaryAddress;
+          currentLat = profileAddr.latitude;
+          currentLon = profileAddr.longitude;
+        }
+        _cacheAddressesLocally();
       }
     } catch (_) {}
     notifyListeners();
