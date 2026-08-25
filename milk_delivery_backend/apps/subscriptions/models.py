@@ -19,6 +19,7 @@ class Subscription(models.Model):
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="subscriptions")
     hub = models.ForeignKey("deliveries.LocationHub", on_delete=models.SET_NULL, null=True, blank=True, related_name="subscriptions")
+    address = models.ForeignKey("accounts.CustomerAddress", on_delete=models.SET_NULL, null=True, blank=True, related_name="subscriptions")
     quantity = models.PositiveIntegerField(default=1)
     schedule_type = models.CharField(max_length=20, choices=Schedules.choices, default=Schedules.DAILY)
     start_date = models.DateField()
@@ -32,8 +33,22 @@ class Subscription(models.Model):
     effective_unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def formatted_delivery_address(self):
+        if self.address:
+            return self.address.formatted_address
+        return self.delivery_address or (self.customer.address if hasattr(self.customer, 'address') else '')
+
+    @property
+    def customer_code(self):
+        return getattr(self.customer, 'customer_code', f"CUST-{1000 + self.customer_id}")
+
+    @property
+    def hub_code(self):
+        return getattr(self.hub, 'hub_code', 'HUB-KDD-01') if self.hub else 'HUB-KDD-01'
+
     def __str__(self):
-        return f"{self.customer.username} - {self.quantity}x {self.product.name} ({self.schedule_type})"
+        return f"{self.customer.username} [{self.customer_code}] - {self.quantity}x {self.product.name} ({self.schedule_type})"
 
 
 class VacationPause(models.Model):

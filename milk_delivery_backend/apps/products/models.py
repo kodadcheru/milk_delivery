@@ -51,6 +51,15 @@ class Product(models.Model):
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if self.category_ref and not self.category:
+            self.category = self.category_ref.slug or self.category_ref.name.upper()
+        elif self.category and not self.category_ref:
+            cat = Category.objects.filter(models.Q(slug__iexact=self.category) | models.Q(name__iexact=self.category)).first()
+            if cat:
+                self.category_ref = cat
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} ({self.category}) - ₹{self.price_per_unit} / {self.unit_quantity}"
 

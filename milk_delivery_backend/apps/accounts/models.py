@@ -137,6 +137,10 @@ class CustomerAddress(models.Model):
         return f"{type_str} - {self.flat_house_no}, {self.building_name}, {self.street_address} ({self.user.username})"
 
     @property
+    def address_code(self):
+        return f"ADDR-{3000 + self.id}"
+
+    @property
     def formatted_address(self):
         parts = []
         if self.flat_house_no:

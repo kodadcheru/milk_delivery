@@ -98,6 +98,7 @@ class DeliveryTask(models.Model):
     batch = models.ForeignKey('DailyMilkBatch', null=True, blank=True, on_delete=models.SET_NULL, related_name='delivery_tasks')
     hub = models.ForeignKey(LocationHub, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_deliveries")
+    address = models.ForeignKey("accounts.CustomerAddress", on_delete=models.SET_NULL, null=True, blank=True, related_name="delivery_tasks")
     delivery_date = models.DateField()
     slot_time = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
     status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.PENDING)
@@ -112,9 +113,40 @@ class DeliveryTask(models.Model):
             models.Index(fields=["driver", "delivery_date"], name="deliv_driver_date_idx"),
         ]
 
+    @property
+    def target_customer(self):
+        if self.subscription:
+            return self.subscription.customer
+        if self.order:
+            return self.order.customer
+        return None
+
+    @property
+    def customer_code(self):
+        c = self.target_customer
+        return getattr(c, 'customer_code', f"CUST-{1000 + c.id}") if c else ""
+
+    @property
+    def driver_code(self):
+        return getattr(self.driver, 'driver_code', f"DRV-{2000 + self.driver.id}") if self.driver else "UNASSIGNED"
+
+    @property
+    def hub_code(self):
+        return getattr(self.hub, 'hub_code', 'HUB-KDD-01') if self.hub else 'HUB-KDD-01'
+
+    @property
+    def formatted_delivery_address(self):
+        if self.address:
+            return self.address.formatted_address
+        if self.subscription and self.subscription.address:
+            return self.subscription.address.formatted_address
+        if self.order and self.order.address:
+            return self.order.address.formatted_address
+        return self.subscription.delivery_address if self.subscription else (self.order.delivery_address if self.order else "")
+
     def __str__(self):
-        cust_name = self.subscription.customer.username if self.subscription else (self.order.customer.username if self.order else "Unknown")
-        return f"Delivery #{self.id} on {self.delivery_date} - {cust_name} ({self.status})"
+        cust_name = self.target_customer.username if self.target_customer else "Unknown"
+        return f"Delivery #{self.id} [{self.customer_code}] on {self.delivery_date} - {cust_name} ({self.status})"
 
 
 class LiveOrder(models.Model):
@@ -139,6 +171,7 @@ class LiveOrder(models.Model):
     hub = models.ForeignKey(LocationHub, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_orders")
     batch = models.ForeignKey('DailyMilkBatch', null=True, blank=True, on_delete=models.SET_NULL, related_name='live_orders')
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_orders")
+    address = models.ForeignKey("accounts.CustomerAddress", on_delete=models.SET_NULL, null=True, blank=True, related_name="live_orders")
     delivery_type = models.CharField(
         max_length=20,
         choices=DeliveryTypes.choices,
@@ -168,8 +201,26 @@ class LiveOrder(models.Model):
             models.Index(fields=["status", "-created_at"], name="order_status_created_idx"),
         ]
 
+    @property
+    def customer_code(self):
+        return getattr(self.customer, 'customer_code', f"CUST-{1000 + self.customer_id}")
+
+    @property
+    def driver_code(self):
+        return getattr(self.driver, 'driver_code', f"DRV-{2000 + self.driver_id}") if self.driver else "UNASSIGNED"
+
+    @property
+    def hub_code(self):
+        return getattr(self.hub, 'hub_code', 'HUB-KDD-01') if self.hub else 'HUB-KDD-01'
+
+    @property
+    def formatted_delivery_address(self):
+        if self.address:
+            return self.address.formatted_address
+        return self.delivery_address or (self.customer.address if hasattr(self.customer, 'address') else '')
+
     def __str__(self):
-        return f"{self.id} - {self.customer.username} ({self.status}) - ₹{self.total_amount}"
+        return f"{self.id} [{self.customer_code}] - {self.customer.username} ({self.status}) - ₹{self.total_amount}"
 
 
 class LiveOrderItem(models.Model):
