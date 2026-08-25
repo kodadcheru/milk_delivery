@@ -156,19 +156,19 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
             target_user.save(update_fields=["address", "latitude", "longitude"])
 
     def perform_destroy(self, instance):
-        user = instance.user
+        customer = instance.customer
         was_default = instance.is_default
         instance.delete()
-        if user:
-            next_default = CustomerAddress.objects.filter(user=user).first()
+        if customer:
+            next_default = CustomerAddress.objects.filter(customer=customer).first()
             if next_default:
                 if was_default:
                     next_default.is_default = True
                     next_default.save(update_fields=["is_default"])
-                user.address = next_default.street_address or user.address
-                user.latitude = next_default.latitude
-                user.longitude = next_default.longitude
-                user.save(update_fields=["address", "latitude", "longitude"])
+                customer.address = next_default.street_address or customer.address
+                customer.latitude = next_default.latitude
+                customer.longitude = next_default.longitude
+                customer.save(update_fields=["address", "latitude", "longitude"])
 
 
 class CustomerAddressSetDefaultView(APIView):
@@ -186,18 +186,19 @@ class CustomerAddressSetDefaultView(APIView):
                 return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             try:
-                addr = CustomerAddress.objects.get(pk=pk, user=user)
+                addr = CustomerAddress.objects.get(pk=pk, customer=user)
             except CustomerAddress.DoesNotExist:
                 return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        CustomerAddress.objects.filter(user=addr.user).update(is_default=False)
+        CustomerAddress.objects.filter(customer=addr.customer).update(is_default=False)
         addr.is_default = True
         addr.save(update_fields=["is_default"])
 
-        addr.user.address = addr.street_address or addr.user.address
-        addr.user.latitude = addr.latitude
-        addr.user.longitude = addr.longitude
-        addr.user.save(update_fields=["address", "latitude", "longitude"])
+        if addr.customer:
+            addr.customer.address = addr.street_address or addr.customer.address
+            addr.customer.latitude = addr.latitude
+            addr.customer.longitude = addr.longitude
+            addr.customer.save(update_fields=["address", "latitude", "longitude"])
 
         return Response({
             "message": f"'{addr.get_address_type_display()}' set as primary delivery address",

@@ -210,7 +210,7 @@ class RegisterMobileUserView(APIView):
         if user.address:
             from apps.accounts.models import CustomerAddress
             CustomerAddress.objects.get_or_create(
-                user=user,
+                customer=user,
                 is_default=True,
                 defaults={
                     'address_type': 'HOME',
