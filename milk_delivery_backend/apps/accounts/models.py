@@ -127,6 +127,23 @@ class CustomerAddress(models.Model):
         type_str = self.custom_tag if self.address_type == self.AddressTypes.OTHER and self.custom_tag else self.get_address_type_display()
         return f"{type_str} - {self.flat_house_no}, {self.building_name}, {self.street_address} ({self.user.username})"
 
+    @property
+    def formatted_address(self):
+        parts = []
+        if self.flat_house_no:
+            parts.append(self.flat_house_no)
+        if self.floor:
+            parts.append(self.floor)
+        if self.building_name:
+            parts.append(self.building_name)
+        if self.street_address:
+            parts.append(self.street_address)
+        if self.landmark:
+            parts.append(f"Near {self.landmark}")
+        if self.city:
+            parts.append(f"{self.city} - {self.pincode}")
+        return ", ".join(parts) if parts else self.street_address
+
     def save(self, *args, **kwargs):
         if self.is_default:
             # Unset is_default on any other address for this user

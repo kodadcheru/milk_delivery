@@ -165,14 +165,23 @@ class AdminCustomerDetailView(APIView):
                 address_type="HOME",
                 street_address=customer.address,
                 city=customer.city or "Kodad",
-                latitude=customer.latitude or 17.001734,
-                longitude=customer.longitude or 79.9625,
+                latitude=Decimal(str(customer.latitude)) if customer.latitude else Decimal("17.001734"),
+                longitude=Decimal(str(customer.longitude)) if customer.longitude else Decimal("79.9625"),
                 is_default=True,
             )
 
         addresses = CustomerAddress.objects.filter(user=customer).order_by("-is_default", "-id")
         addrs_data = []
         for a in addresses:
+            parts = []
+            if a.flat_house_no: parts.append(a.flat_house_no)
+            if a.floor: parts.append(a.floor)
+            if a.building_name: parts.append(a.building_name)
+            if a.street_address: parts.append(a.street_address)
+            if a.landmark: parts.append(f"Near {a.landmark}")
+            if a.city: parts.append(f"{a.city} - {a.pincode}")
+            formatted = ", ".join(parts) if parts else a.street_address
+
             addrs_data.append({
                 "id": a.id,
                 "address_type": a.address_type,
@@ -189,7 +198,7 @@ class AdminCustomerDetailView(APIView):
                 "longitude": float(a.longitude) if a.longitude else 79.9625,
                 "delivery_instructions": a.delivery_instructions or "",
                 "is_default": a.is_default,
-                "formatted_address": a.formatted_address,
+                "formatted_address": formatted,
                 "created_at": a.created_at.strftime("%d %b %Y") if hasattr(a, "created_at") and a.created_at else "",
             })
 
