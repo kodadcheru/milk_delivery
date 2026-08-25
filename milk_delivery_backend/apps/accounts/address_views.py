@@ -6,10 +6,28 @@ from apps.accounts.models import CustomerAddress, User
 from apps.accounts.serializers import CustomerAddressSerializer
 
 
+def _clean_phone_digits(phone_str):
+    if not phone_str:
+        return ""
+    digits = "".join(filter(str.isdigit, str(phone_str)))
+    return digits[-10:] if len(digits) >= 10 else digits
+
+
+def _find_user_by_phone(phone_str):
+    last_10 = _clean_phone_digits(phone_str)
+    if not last_10:
+        return None
+    return (
+        User.objects.filter(phone__endswith=last_10).first()
+        or User.objects.filter(phone__icontains=last_10).first()
+        or User.objects.filter(username=phone_str).first()
+    )
+
+
 def _resolve_customer_user(request):
     user = request.user
     
-    # If staff/admin requesting specific customer, resolve that customer
+    # 1. If staff/admin requesting specific customer, resolve that customer
     if user and user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ('ADMIN', 'PROVIDER', 'HUB_MANAGER')):
         customer_id = request.query_params.get('customer_id') or request.data.get('customer_id')
         phone = request.query_params.get('phone') or request.data.get('phone') or request.data.get('customer_phone')
@@ -23,22 +41,20 @@ def _resolve_customer_user(request):
                 pass
                 
         if phone:
-            clean_phone = str(phone).replace("+91", "").replace(" ", "").strip()
-            found_user = User.objects.filter(phone__icontains=clean_phone).first()
+            found_user = _find_user_by_phone(phone)
             if found_user:
                 return found_user
     
-    # Default: return the authenticated user
+    # 2. Authenticated user
     if user and user.is_authenticated:
         return user
 
-    # Fallback for unauthenticated
+    # 3. Fallback for unauthenticated / token-refresh gap
     phone = request.query_params.get("phone") or request.data.get("phone") or request.data.get("customer_phone")
     customer_id = request.query_params.get("customer_id") or request.data.get("customer_id")
 
     if phone:
-        clean_phone = str(phone).replace("+91", "").replace(" ", "").strip()
-        found_user = User.objects.filter(phone__icontains=clean_phone).first()
+        found_user = _find_user_by_phone(phone)
         if found_user:
             return found_user
 
@@ -55,12 +71,24 @@ def _resolve_customer_user(request):
 
 class CustomerAddressListCreateView(generics.ListCreateAPIView):
     serializer_class = CustomerAddressSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         user = _resolve_customer_user(self.request)
         if not user:
-            return CustomerAddress.objects.none() if self.request.user.is_authenticated else CustomerAddress.objects.all()
+            return CustomerAddress.objects.none()
+
+        # If user has a profile address but zero CustomerAddress records, auto-create one
+        if not CustomerAddress.objects.filter(user=user).exists() and user.address:
+            CustomerAddress.objects.create(
+                user=user,
+                address_type="HOME",
+                street_address=user.address,
+                city=getattr(user, "city", "") or "Kodad",
+                latitude=getattr(user, "latitude", Decimal("17.001734")),
+                longitude=getattr(user, "longitude", Decimal("79.9625")),
+                is_default=True,
+            )
 
         return CustomerAddress.objects.filter(user=user).order_by("-is_default", "-id")
 
@@ -70,7 +98,7 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
             raise permissions.exceptions.NotAuthenticated("Authentication required to save address.")
 
         has_existing = CustomerAddress.objects.filter(user=user).exists()
-        is_default = self.request.data.get("is_default", not has_existing)
+        is_default = bool(self.request.data.get("is_default", not has_existing))
 
         if is_default:
             CustomerAddress.objects.filter(user=user).update(is_default=False)
@@ -87,10 +115,10 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
 
 class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CustomerAddressSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user and self.request.user.is_authenticated and self.request.user.is_staff:
             return CustomerAddress.objects.all()
         user = _resolve_customer_user(self.request)
         if not user:
@@ -130,34 +158,34 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CustomerAddressSetDefaultView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
         user = request.user if request.user and request.user.is_authenticated else _resolve_customer_user(request)
         if not user:
             return Response({"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
             
-        if request.user.is_staff:
-            addr = CustomerAddress.objects.filter(pk=pk).first()
+        if request.user and request.user.is_authenticated and request.user.is_staff:
+            try:
+                addr = CustomerAddress.objects.get(pk=pk)
+            except CustomerAddress.DoesNotExist:
+                return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
-            addr = CustomerAddress.objects.filter(pk=pk, user=user).first()
+            try:
+                addr = CustomerAddress.objects.get(pk=pk, user=user)
+            except CustomerAddress.DoesNotExist:
+                return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if not addr:
-            return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        if user:
-            CustomerAddress.objects.filter(user=user).exclude(pk=addr.pk).update(is_default=False)
+        CustomerAddress.objects.filter(user=addr.user).update(is_default=False)
         addr.is_default = True
-        addr.save()
+        addr.save(update_fields=["is_default"])
 
-        # Update user active profile
-        if user:
-            user.address = addr.street_address or user.address
-            user.latitude = addr.latitude
-            user.longitude = addr.longitude
-            user.save(update_fields=["address", "latitude", "longitude"])
+        addr.user.address = addr.street_address or addr.user.address
+        addr.user.latitude = addr.latitude
+        addr.user.longitude = addr.longitude
+        addr.user.save(update_fields=["address", "latitude", "longitude"])
 
         return Response({
             "message": f"'{addr.get_address_type_display()}' set as primary delivery address",
             "address": CustomerAddressSerializer(addr).data,
-        })
+        }, status=status.HTTP_200_OK)

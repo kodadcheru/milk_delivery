@@ -65,6 +65,14 @@ class AppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final jsonList = savedAddresses.map((a) => jsonEncode(a.toJson())).toList();
       await prefs.setStringList(_kCachedAddresses, jsonList);
+      final phone = currentUser?.phone;
+      if (phone != null && phone.isNotEmpty) {
+        final cleanDigits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+        final last10 = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+        if (last10.isNotEmpty) {
+          await prefs.setStringList('cached_addresses_$last10', jsonList);
+        }
+      }
       if (activeAddress != null) {
         await prefs.setInt(_kActiveAddressId, activeAddress!.id);
       }
@@ -75,10 +83,18 @@ class AppState extends ChangeNotifier {
   }
 
   /// Load cached addresses from SharedPreferences (instant, no network)
-  Future<void> loadCachedAddresses() async {
+  Future<void> loadCachedAddresses({String? phone}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final cached = prefs.getStringList(_kCachedAddresses);
+      List<String>? cached = prefs.getStringList(_kCachedAddresses);
+      final targetPhone = phone ?? currentUser?.phone;
+      if ((cached == null || cached.isEmpty) && targetPhone != null && targetPhone.isNotEmpty) {
+        final cleanDigits = targetPhone.replaceAll(RegExp(r'[^0-9]'), '');
+        final last10 = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+        if (last10.isNotEmpty) {
+          cached = prefs.getStringList('cached_addresses_$last10');
+        }
+      }
       if (cached != null && cached.isNotEmpty) {
         final List<CustomerAddressModel> restored = [];
         for (final jsonStr in cached) {
@@ -104,7 +120,7 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Clear cached addresses (on logout only)
+  /// Clear cached addresses on logout
   Future<void> _clearCachedAddresses() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -540,9 +556,12 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
     try {
+      final userPhone = currentUser?.phone;
+      final userId = currentUser?.id;
+
       final results = await Future.wait([
         ApiService.fetchUserProfile(),
-        ApiService.fetchCustomerAddresses(),
+        ApiService.fetchCustomerAddresses(customerId: userId, phone: userPhone),
         ApiService.fetchProducts(),
         ApiService.fetchSubscriptions(hubCode: activeHubCode),
         ApiService.fetchDeliveries(hubCode: activeHubCode),
@@ -566,21 +585,25 @@ class AppState extends ChangeNotifier {
       if (user != null) {
         currentUser = user;
         currentRole = user.role;
-        if (user.address.isNotEmpty) {
+        if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
           currentDeliveryAddress = user.address;
         }
-        currentLat = user.latitude;
-        currentLon = user.longitude;
+        if (user.latitude != 0.0) currentLat = user.latitude;
+        if (user.longitude != 0.0) currentLon = user.longitude;
       }
 
       final addrs = results[1] as List<CustomerAddressModel>? ?? [];
       if (addrs.isNotEmpty) {
         savedAddresses = addrs;
-        final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
-        activeAddress = defaultAddr;
-        currentDeliveryAddress = defaultAddr.summaryAddress;
-        currentLat = defaultAddr.latitude;
-        currentLon = defaultAddr.longitude;
+        if (activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
+          activeAddress = addrs.firstWhere((a) => a.id == activeAddress!.id);
+        } else {
+          final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
+          activeAddress = defaultAddr;
+        }
+        currentDeliveryAddress = activeAddress!.summaryAddress;
+        currentLat = activeAddress!.latitude;
+        currentLon = activeAddress!.longitude;
         _cacheAddressesLocally(); // Persist to local storage
       } else if (savedAddresses.isEmpty) {
         // No addresses on server — auto-create from user profile (Zepto pattern)
@@ -599,7 +622,11 @@ class AppState extends ChangeNotifier {
             isDefault: true,
           );
           // Save to backend so it persists across sessions
-          final created = await ApiService.createCustomerAddress(profileAddr);
+          final created = await ApiService.createCustomerAddress(
+            profileAddr,
+            phone: user.phone,
+            customerId: user.id,
+          );
           if (created != null) {
             savedAddresses = [created];
             activeAddress = created;
@@ -780,15 +807,28 @@ class AppState extends ChangeNotifier {
   Future<bool> saveCustomerAddress(CustomerAddressModel addr) async {
     CustomerAddressModel? result;
     if (addr.id > 0 && savedAddresses.any((a) => a.id == addr.id)) {
-      result = await ApiService.updateCustomerAddress(addr);
+      result = await ApiService.updateCustomerAddress(
+        addr,
+        phone: currentUser?.phone,
+        customerId: currentUser?.id,
+      );
     } else {
-      result = await ApiService.createCustomerAddress(addr);
+      result = await ApiService.createCustomerAddress(
+        addr,
+        phone: currentUser?.phone,
+        customerId: currentUser?.id,
+      );
     }
 
     if (result != null) {
-      await fetchSavedAddresses();
-      final freshlySaved = savedAddresses.firstWhere((a) => a.id == result!.id, orElse: () => result!);
-      selectActiveAddress(freshlySaved);
+      savedAddresses.removeWhere((a) => a.id == result.id);
+      savedAddresses.insert(0, result);
+      if (result.isDefault || activeAddress == null) {
+        selectActiveAddress(result);
+      } else {
+        await _cacheAddressesLocally();
+        notifyListeners();
+      }
       return true;
     } else {
       // Resilient fallback: save locally to state
@@ -797,7 +837,7 @@ class AppState extends ChangeNotifier {
       savedAddresses.removeWhere((a) => a.id == newId);
       savedAddresses.insert(0, fallbackAddr);
       selectActiveAddress(fallbackAddr);
-      _cacheAddressesLocally(); // Persist fallback locally
+      await _cacheAddressesLocally(); // Persist fallback locally
       return true;
     }
   }
@@ -819,7 +859,7 @@ class AppState extends ChangeNotifier {
         }
       }
     }
-    _cacheAddressesLocally(); // Update local cache
+    await _cacheAddressesLocally(); // Update local cache
     notifyListeners();
 
     await ApiService.deleteCustomerAddress(addressId);
@@ -860,8 +900,8 @@ class AppState extends ChangeNotifier {
     subscriptions = [];
     deliveries = [];
     transactions = [];
-    // Load cached addresses FIRST (instant, no network) — Zepto/Swiggy pattern
-    await loadCachedAddresses();
+    // Load cached addresses FIRST for this user's phone (instant, no network)
+    await loadCachedAddresses(phone: user.phone);
     // Then sync with server in reloadAllData
     await reloadAllData();
   }

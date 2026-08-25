@@ -615,8 +615,8 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
       text: e?.streetAddress ?? (widget.state.currentDeliveryAddress != 'Select Delivery Location' ? widget.state.currentDeliveryAddress : ''),
     );
     _landmarkController = TextEditingController(text: e?.landmark ?? '');
-    _cityController = TextEditingController(text: e?.city ?? 'Hyderabad');
-    _pincodeController = TextEditingController(text: e?.pincode ?? '');
+    _cityController = TextEditingController(text: e?.city.isNotEmpty == true ? e!.city : 'Kodad');
+    _pincodeController = TextEditingController(text: e?.pincode.isNotEmpty == true ? e!.pincode : '508206');
     _instructionsController = TextEditingController(
       text: e?.deliveryInstructions ?? '',
     );

@@ -922,12 +922,29 @@ class ApiService {
     return [];
   }
 
-  static Future<CustomerAddressModel?> createCustomerAddress(CustomerAddressModel address) async {
+  static Future<CustomerAddressModel?> createCustomerAddress(
+    CustomerAddressModel address, {
+    String? phone,
+    int? customerId,
+  }) async {
     try {
+      final queryParams = <String, String>{};
+      if (phone != null && phone.isNotEmpty) queryParams['phone'] = phone;
+      if (customerId != null && customerId > 0) queryParams['customer_id'] = customerId.toString();
+
+      final uri = Uri.parse('$baseUrl/accounts/addresses/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      final payload = address.toJson();
+      if (address.id <= 0) {
+        payload.remove('id');
+      }
+
       final res = await _executeWithRetry(() => http.post(
-            Uri.parse('$baseUrl/accounts/addresses/'),
+            uri,
             headers: _headers,
-            body: jsonEncode(address.toJson()),
+            body: jsonEncode(payload),
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return CustomerAddressModel.fromJson(jsonDecode(res.body));
@@ -938,10 +955,22 @@ class ApiService {
     return null;
   }
 
-  static Future<CustomerAddressModel?> updateCustomerAddress(CustomerAddressModel address) async {
+  static Future<CustomerAddressModel?> updateCustomerAddress(
+    CustomerAddressModel address, {
+    String? phone,
+    int? customerId,
+  }) async {
     try {
+      final queryParams = <String, String>{};
+      if (phone != null && phone.isNotEmpty) queryParams['phone'] = phone;
+      if (customerId != null && customerId > 0) queryParams['customer_id'] = customerId.toString();
+
+      final uri = Uri.parse('$baseUrl/accounts/addresses/${address.id}/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
       final res = await _executeWithRetry(() => http.patch(
-            Uri.parse('$baseUrl/accounts/addresses/${address.id}/'),
+            uri,
             headers: _headers,
             body: jsonEncode(address.toJson()),
           ));
