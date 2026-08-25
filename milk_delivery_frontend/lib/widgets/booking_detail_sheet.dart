@@ -3,11 +3,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/delivery_task_model.dart';
 import '../models/live_order_model.dart';
 import '../providers/app_state.dart';
-import '../screens/customer/help_support_screen.dart';
 import '../screens/customer/live_driver_tracking_screen.dart';
 import '../theme/ui_tokens.dart';
 import '../theme/ui_text.dart';
 import '../theme/ui_format.dart';
+import 'delivery_rating_dialog.dart';
+import 'delivery_chat_sheet.dart';
+import 'order_invoice_sheet.dart';
+import 'doorstep_proof_modal.dart';
 
 
 class BookingDetailSheet extends StatelessWidget {
@@ -563,18 +566,72 @@ class BookingDetailSheet extends StatelessWidget {
 
                   // ── 6. Doorstep Photo Proof (If Available) ──
                   if (proofUrl.isNotEmpty) ...[
-                    _sectionLabel('Doorstep Delivery Photo Proof 📸'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _sectionLabel('Doorstep Photo Proof 📸'),
+                        InkWell(
+                          onTap: () {
+                            DoorstepProofModal.show(
+                              context,
+                              imageUrl: proofUrl,
+                              orderId: isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}',
+                              deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                              slotTime: isExpress ? liveOrder!.deliverySlot : (subscriptionTask?.slotTime ?? '05:30 AM'),
+                              address: displayAddress,
+                              driverName: driverName,
+                            );
+                          },
+                          child: Text('Tap to zoom & verify 🔍', style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      child: Container(
-                        height: 160,
-                        width: double.infinity,
-                        color: UiTone.surfaceMuted,
-                        child: Image.network(
-                          proofUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, color: UiText.muted)),
+                    GestureDetector(
+                      onTap: () {
+                        DoorstepProofModal.show(
+                          context,
+                          imageUrl: proofUrl,
+                          orderId: isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}',
+                          deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                          slotTime: isExpress ? liveOrder!.deliverySlot : (subscriptionTask?.slotTime ?? '05:30 AM'),
+                          address: displayAddress,
+                          driverName: driverName,
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(UiRadius.md),
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 160,
+                              width: double.infinity,
+                              color: UiTone.surfaceMuted,
+                              child: Image.network(
+                                proofUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, color: UiText.muted)),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 13),
+                                    SizedBox(width: 4),
+                                    Text('Verified Drop', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -660,69 +717,132 @@ class BookingDetailSheet extends StatelessWidget {
           ),
 
           // ── Bottom Action CTAs ──
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => HelpSupportScreen(state: state, initialTopic: 'I need help with booking $title'),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.headset_mic_rounded, color: UiTone.primary, size: 16),
-                    label: Text('Help & Chat', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: UiTone.primary),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+          if (isDelivered) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        OrderInvoiceSheet.show(
+                          context,
+                          order: liveOrder,
+                          task: subscriptionTask,
+                          orderId: isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}',
+                          orderDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                          slotTime: isExpress ? liveOrder!.deliverySlot : (subscriptionTask?.slotTime ?? '05:30 AM'),
+                          address: displayAddress,
+                          totalAmount: isExpress
+                              ? liveOrder!.totalAmount
+                              : ((subscriptionTask?.subscriptionDetail?.displayPrice ?? 40) * (subscriptionTask?.subscriptionDetail?.quantity ?? 1)).toDouble(),
+                        );
+                      },
+                      icon: const Icon(Icons.receipt_long_rounded, color: UiTone.primary, size: 16),
+                      label: Text('Tax Invoice 🧾', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: UiTone.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => LiveDriverTrackingScreen(
-                            state: state,
-                            liveOrder: liveOrder,
-                            subscriptionTask: subscriptionTask,
-                            orderTitle: isExpress
-                                ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
-                                : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
-                            deliveryAddress: displayAddress,
-                            driverName: driverName,
-                            driverPhone: driverPhone,
-                            deliveryOtp: otp,
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        DeliveryRatingDialog.show(
+                          context,
+                          productName: isExpress
+                              ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                              : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
+                          driverName: driverName,
+                          deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                        );
+                      },
+                      icon: const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                      label: Text('Rate Delivery ⭐', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        DeliveryChatSheet.show(
+                          context,
+                          driverName: driverName,
+                          driverPhone: driverPhone,
+                          orderTitle: isExpress
+                              ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                              : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
+                          deliveryAddress: displayAddress,
+                        );
+                      },
+                      icon: const Icon(Icons.forum_rounded, color: UiTone.primary, size: 16),
+                      label: Text('In-App Chat', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: UiTone.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (ctx) => LiveDriverTrackingScreen(
+                              state: state,
+                              liveOrder: liveOrder,
+                              subscriptionTask: subscriptionTask,
+                              orderTitle: isExpress
+                                  ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                                  : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
+                              deliveryAddress: displayAddress,
+                              driverName: driverName,
+                              driverPhone: driverPhone,
+                              deliveryOtp: otp,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.moped_rounded, size: 18),
-                    label: Text('Track Partner Live 🛵', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: UiTone.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                      elevation: 0,
+                        );
+                      },
+                      icon: const Icon(Icons.moped_rounded, size: 18),
+                      label: Text('Track Partner Live 🛵', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );

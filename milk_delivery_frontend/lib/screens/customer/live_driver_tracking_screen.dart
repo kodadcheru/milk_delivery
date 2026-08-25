@@ -11,6 +11,7 @@ import '../../providers/app_state.dart';
 import '../../services/route_optimizer.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
+import '../../widgets/delivery_chat_sheet.dart';
 import 'help_support_screen.dart';
 
 class LiveDriverTrackingScreen extends StatefulWidget {
@@ -610,30 +611,52 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                           const SizedBox(height: 14),
                           const Divider(height: 1, color: UiTone.surfaceBorder),
                           const SizedBox(height: 12),
-                          // 1-Click Call & WhatsApp Action Buttons
+                          // 1-Click Call, In-App Chat & WhatsApp Action Buttons
                           Row(
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: _callDriver,
-                                  icon: const Icon(Icons.phone_in_talk_rounded, size: 16, color: UiTone.primary),
-                                  label: Text('Call Partner', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800)),
+                                  icon: const Icon(Icons.phone_in_talk_rounded, size: 15, color: UiTone.primary),
+                                  label: Text('Call', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800, fontSize: 12)),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(vertical: 11),
                                     side: const BorderSide(color: UiTone.primary, width: 1.4),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    DeliveryChatSheet.show(
+                                      context,
+                                      driverName: driverName,
+                                      driverPhone: widget.driverPhone,
+                                      orderTitle: widget.orderTitle,
+                                      deliveryAddress: resolvedAddress,
+                                    );
+                                  },
+                                  icon: const Icon(Icons.forum_rounded, size: 15, color: Colors.white),
+                                  label: Text('Live Chat', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: UiTone.primaryDark,
+                                    padding: const EdgeInsets.symmetric(vertical: 11),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: _sendWhatsAppMessage,
-                                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Colors.white),
-                                  label: Text('WhatsApp Chat', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15, color: Colors.white),
+                                  label: Text('WhatsApp', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF25D366),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(vertical: 11),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                                     elevation: 0,
                                   ),
