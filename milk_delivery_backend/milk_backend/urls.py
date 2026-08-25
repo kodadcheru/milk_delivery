@@ -161,6 +161,9 @@ urlpatterns = [
     path("api/accounts/addresses/", CustomerAddressListCreateView.as_view(), name="address_list"),
     path("api/accounts/addresses/<int:pk>/", CustomerAddressDetailView.as_view(), name="address_detail"),
     path("api/accounts/addresses/<int:pk>/set-default/", CustomerAddressSetDefaultView.as_view(), name="address_set_default"),
+    path("api/addresses/", CustomerAddressListCreateView.as_view(), name="address_list_alias"),
+    path("api/addresses/<int:pk>/", CustomerAddressDetailView.as_view(), name="address_detail_alias"),
+    path("api/addresses/<int:pk>/set-default/", CustomerAddressSetDefaultView.as_view(), name="address_set_default_alias"),
     # Notification endpoints
     path("api/notifications/", NotificationListView.as_view(), name="notification_list"),
     path("api/notifications/<int:pk>/read/", NotificationMarkReadView.as_view(), name="notification_mark_read"),
