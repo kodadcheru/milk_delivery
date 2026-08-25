@@ -73,16 +73,34 @@ class CustomerAddressModel {
   }
 
   factory CustomerAddressModel.fromJson(Map<String, dynamic> json) {
+    String flat = json['flat_house_no']?.toString() ?? '';
+    String building = json['building_name']?.toString() ?? '';
+    String street = json['street_address']?.toString() ?? '';
+    final String rawFormatted = json['formatted_address']?.toString() ?? '';
+
+    // Service-Mobile Resilient String Fallback: If discrete fields are blank, split CSV
+    if (flat.isEmpty && building.isEmpty && street.isNotEmpty && street.contains(',')) {
+      final parts = street.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      if (parts.length >= 3) {
+        flat = parts[0];
+        building = parts[1];
+        street = parts.sublist(2).join(', ');
+      } else if (parts.length == 2) {
+        flat = parts[0];
+        street = parts[1];
+      }
+    }
+
     return CustomerAddressModel(
       id: json['id'] ?? 0,
       userId: json['user'],
       addressType: json['address_type'] ?? 'HOME',
       displayType: json['display_type'] ?? 'Home',
       customTag: json['custom_tag'] ?? '',
-      flatHouseNo: json['flat_house_no'] ?? '',
+      flatHouseNo: flat,
       floor: json['floor'] ?? '',
-      buildingName: json['building_name'] ?? '',
-      streetAddress: json['street_address'] ?? '',
+      buildingName: building,
+      streetAddress: street,
       landmark: json['landmark'] ?? '',
       city: json['city'] ?? '',
       pincode: json['pincode'] ?? '',
@@ -90,7 +108,7 @@ class CustomerAddressModel {
       longitude: double.tryParse(json['longitude']?.toString() ?? '79.9625') ?? 79.9625,
       deliveryInstructions: json['delivery_instructions'] ?? '',
       isDefault: json['is_default'] ?? false,
-      formattedAddress: json['formatted_address'] ?? '',
+      formattedAddress: rawFormatted,
     );
   }
 

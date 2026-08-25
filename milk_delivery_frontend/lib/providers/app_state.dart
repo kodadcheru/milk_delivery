@@ -878,26 +878,28 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> deleteCustomerAddress(int addressId) async {
+    final wasDefaultOrActive = activeAddress?.id == addressId || 
+        savedAddresses.any((a) => a.id == addressId && a.isDefault);
+
     savedAddresses.removeWhere((a) => a.id == addressId);
-    if (activeAddress?.id == addressId) {
-      if (savedAddresses.isNotEmpty) {
-        selectActiveAddress(savedAddresses.first);
-      } else {
-        activeAddress = null;
-        if (locationHubs.isNotEmpty) {
-          final h = locationHubs.first;
-          currentLat = double.tryParse(h['latitude']?.toString() ?? '17.001734') ?? 17.001734;
-          currentLon = double.tryParse(h['longitude']?.toString() ?? '79.9625') ?? 79.9625;
-          currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
-        } else {
-          currentDeliveryAddress = 'Select Delivery Location';
-        }
+
+    if (savedAddresses.isNotEmpty) {
+      if (wasDefaultOrActive || !savedAddresses.any((a) => a.isDefault)) {
+        final newPrimary = savedAddresses.first.copyWith(isDefault: true);
+        savedAddresses[0] = newPrimary;
+        selectActiveAddress(newPrimary);
+        await ApiService.setDefaultCustomerAddress(newPrimary.id);
       }
+    } else {
+      activeAddress = null;
+      currentDeliveryAddress = 'Select Delivery Location';
     }
+
     await _cacheAddressesLocally(); // Update local cache
     notifyListeners();
 
     await ApiService.deleteCustomerAddress(addressId);
+    await fetchSavedAddresses();
     return true;
   }
 
