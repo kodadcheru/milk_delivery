@@ -408,6 +408,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       return true;
     }).toList();
 
+    // Sort tasks in natural ascending forward sequence
+    filteredTasks.sort((a, b) => a.id.compareTo(b.id));
+
     // Group deliveries by unique doorstep address, customer & GPS coordinates
     final Map<String, List<DeliveryTaskModel>> groupedMap = {};
     for (final t in filteredTasks) {

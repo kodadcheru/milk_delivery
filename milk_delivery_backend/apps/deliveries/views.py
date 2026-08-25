@@ -24,7 +24,7 @@ class DeliveryTaskListView(generics.ListAPIView):
         user = self.request.user
         req_date = self.request.query_params.get("date", None)
 
-        qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("-delivery_date", "-id")
+        qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("delivery_date", "id")
         
         hub_code = self.request.query_params.get("hub_code") or self.request.query_params.get("hub")
         if hub_code:
