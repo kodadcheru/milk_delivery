@@ -75,7 +75,57 @@ class DeliveryChatSendView(APIView):
             "timestamp": msg.created_at.isoformat(),
         }
 
-        # 2. Update Redis Cache Stream
+        # 2. Trigger In-App Notification for recipient
+        try:
+            from apps.accounts.models import Notification, User
+            recipient_user = None
+            if sender_role == "DRIVER":
+                # Find customer user
+                if task_obj and task_obj.user:
+                    recipient_user = task_obj.user
+                elif order_obj and order_obj.user:
+                    recipient_user = order_obj.user
+                elif sender_phone:
+                    # Look up by task customer phone
+                    cust_phone = ""
+                    if task_obj and hasattr(task_obj, "customer_phone"):
+                        cust_phone = task_obj.customer_phone
+                    elif order_obj and hasattr(order_obj, "customer_phone"):
+                        cust_phone = order_obj.customer_phone
+                    if cust_phone:
+                        clean_p = cust_phone.replace("+91", "").strip()
+                        recipient_user = User.objects.filter(phone__icontains=clean_p).first()
+
+                if recipient_user:
+                    Notification.objects.create(
+                        user=recipient_user,
+                        title=f"💬 {sender_name} (Delivery Partner)",
+                        message=text,
+                        notification_type="DELIVERY",
+                        target_screen="CHAT",
+                        target_param=channel_key,
+                    )
+            elif sender_role == "CUSTOMER":
+                # Find driver user
+                if task_obj and task_obj.driver:
+                    recipient_user = task_obj.driver
+                elif order_obj and order_obj.driver_phone:
+                    clean_dp = order_obj.driver_phone.replace("+91", "").strip()
+                    recipient_user = User.objects.filter(phone__icontains=clean_dp).first()
+
+                if recipient_user:
+                    Notification.objects.create(
+                        user=recipient_user,
+                        title=f"💬 {sender_name} (Customer)",
+                        message=text,
+                        notification_type="DELIVERY",
+                        target_screen="CHAT",
+                        target_param=channel_key,
+                    )
+        except Exception:
+            pass
+
+        # 3. Update Redis Cache Stream
         cache_key = _get_delivery_chat_cache_key(channel_key)
         history = cache.get(cache_key) or []
         history.append(msg_payload)

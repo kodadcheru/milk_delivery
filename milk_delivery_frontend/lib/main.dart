@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'config/app_config.dart';
@@ -6,6 +7,7 @@ import 'services/api_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/ui_tokens.dart';
 import 'theme/ui_text.dart';
+import 'widgets/in_app_chat_banner.dart';
 import 'widgets/next_gen_nav_bar.dart';
 import 'screens/auth/phone_login_screen.dart';
 import 'screens/customer/home_tab.dart';
@@ -148,23 +150,55 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
   int _driverTab = 0;
   int _providerTab = 0;
   int _adminTab = 0;
+  Timer? _notifPollTimer;
+  final Set<int> _seenNotifIds = <int>{};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Initialise seen notification IDs
+    for (final n in widget.state.notifications) {
+      _seenNotifIds.add(n.id);
+    }
+    // Real-time notification & in-app chat poller (every 4 seconds)
+    _notifPollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _pollLiveNotifications());
   }
 
   @override
   void dispose() {
+    _notifPollTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _pollLiveNotifications() async {
+    if (!mounted) return;
+    try {
+      final notifs = await ApiService.fetchNotifications(pageSize: 10);
+      if (!mounted) return;
+
+      for (final n in notifs) {
+        if (!n.isRead && !_seenNotifIds.contains(n.id)) {
+          _seenNotifIds.add(n.id);
+          // If this is an in-app chat message or urgent delivery notification, pop the heads-up banner!
+          if (n.targetScreen == 'CHAT' || n.title.contains('💬') || n.notificationType == 'DELIVERY') {
+            InAppChatBanner.show(context, notification: n, state: widget.state);
+          }
+        }
+      }
+      // Update notifications in state
+      if (notifs.isNotEmpty) {
+        widget.state.notifications = notifs;
+      }
+    } catch (_) {}
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       widget.state.reloadAllData();
+      _pollLiveNotifications();
     }
   }
 

@@ -6,6 +6,8 @@ import '../screens/customer/help_support_screen.dart';
 import '../screens/customer/address_book_screen.dart';
 import '../screens/driver/morning_batch_screen.dart';
 import '../screens/driver/driver_route_map_screen.dart';
+import '../widgets/delivery_chat_sheet.dart';
+import '../widgets/driver_delivery_chat_sheet.dart';
 
 class NotificationRouter {
   static void navigate(BuildContext context, NotificationModel item, AppState state) {
@@ -19,6 +21,27 @@ class NotificationRouter {
     final title = item.title.toLowerCase();
     final message = item.message.toLowerCase();
     final param = item.targetParam.trim();
+
+    // Direct Chat Routing (for both Driver and Customer)
+    if (targetScreen == 'CHAT' || title.contains('💬') || title.contains('chat') || type == 'CHAT') {
+      final userRole = (state.currentUser?.role ?? 'CUSTOMER').toUpperCase();
+      if (userRole == 'DRIVER' || userRole == 'DELIVERY_PARTNER') {
+        DriverDeliveryChatSheet.show(
+          context,
+          customerName: item.title.replaceAll('💬', '').replaceAll('(Customer)', '').trim(),
+          driverName: state.currentUser?.name ?? 'Delivery Partner',
+          orderSummary: 'Active Milk Delivery',
+        );
+      } else {
+        DeliveryChatSheet.show(
+          context,
+          driverName: item.title.replaceAll('💬', '').replaceAll('(Delivery Partner)', '').trim(),
+          customerName: state.currentUser?.name ?? 'Customer',
+          orderTitle: 'Live Milk Delivery',
+        );
+      }
+      return;
+    }
 
     // 2. Driver-specific routing
     final userRole = (state.currentUser?.role ?? 'CUSTOMER').toUpperCase();
