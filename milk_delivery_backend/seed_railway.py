@@ -2,8 +2,9 @@ import os
 import django
 from decimal import Decimal
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "milk_backend.settings")
-django.setup()
+if __name__ == "__main__":
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "milk_backend.settings")
+    django.setup()
 
 from apps.accounts.models import User
 from apps.products.models import Category, Product, StorefrontConfig
