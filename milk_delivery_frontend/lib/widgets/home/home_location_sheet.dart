@@ -172,12 +172,12 @@ class HomeLocationSheet {
               ),
 
               if (state.savedAddresses.isNotEmpty) ...[
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 180),
+                SizedBox(
+                  height: 82,
                   child: ListView.separated(
-                    shrinkWrap: true,
+                    scrollDirection: Axis.horizontal,
                     itemCount: state.savedAddresses.length,
-                    separatorBuilder: (c, i) => const SizedBox(height: 8),
+                    separatorBuilder: (c, i) => const SizedBox(width: 10),
                     itemBuilder: (c, i) {
                       final addr = state.savedAddresses[i];
                       final isSelected = state.activeAddress?.id == addr.id;
@@ -193,47 +193,72 @@ class HomeLocationSheet {
                             ),
                           );
                         },
-                        borderRadius: BorderRadius.circular(UiRadius.sm),
+                        borderRadius: BorderRadius.circular(14),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          width: 200,
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: isSelected ? const Color(0xFFE6F5F0) : UiTone.shellBackground,
-                            borderRadius: BorderRadius.circular(UiRadius.sm),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
-                              width: isSelected ? 1.6 : 1.0,
+                              width: isSelected ? 1.8 : 1.0,
                             ),
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                                color: UiTone.primary.withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              )
+                            ] : null,
                           ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(addr.icon, style: const TextStyle(fontSize: 20)),
-                              const SizedBox(width: 10),
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? UiTone.primary.withValues(alpha: 0.15) : Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: isSelected ? UiTone.primary.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+                                ),
+                                child: Center(
+                                  child: Text(addr.icon, style: const TextStyle(fontSize: 16)),
+                                ),
+                              ),
+                              const SizedBox(width: 9),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Row(
                                       children: [
-                                        Text(
-                                          addr.title,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 13,
-                                            color: UiTone.ink,
+                                        Flexible(
+                                          child: Text(
+                                            addr.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 12.5,
+                                              color: isSelected ? UiTone.primaryDark : UiTone.ink,
+                                            ),
                                           ),
                                         ),
                                         if (addr.isDefault) ...[
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 4),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFFEF3C7),
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius: BorderRadius.circular(3),
                                             ),
                                             child: const Text(
-                                              'PRIMARY',
+                                              'DEFAULT',
                                               style: TextStyle(
-                                                fontSize: 8.5,
+                                                fontSize: 7.5,
                                                 fontWeight: FontWeight.w900,
                                                 color: UiTone.warning,
                                               ),
@@ -242,19 +267,16 @@ class HomeLocationSheet {
                                         ],
                                       ],
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       addr.summaryAddress,
-                                      maxLines: 1,
+                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), height: 1.2),
                                     ),
                                   ],
                                 ),
                               ),
-                              if (isSelected)
-                                const Icon(Icons.check_circle_rounded, color: UiTone.primary, size: 18)
-                              else
-                                const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF94A3B8)),
                             ],
                           ),
                         ),
@@ -262,9 +284,9 @@ class HomeLocationSheet {
                     },
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 const Divider(height: 1),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
               ],
 
               // Google Maps Search Bar

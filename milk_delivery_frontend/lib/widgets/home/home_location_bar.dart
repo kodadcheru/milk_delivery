@@ -26,10 +26,14 @@ class HomeLocationBar extends StatefulWidget {
 }
 
 class _HomeLocationBarState extends State<HomeLocationBar>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Bell shake animation
   late AnimationController _bellController;
   late Animation<double> _bellAnimation;
+
+  // Location pin pulse animation (Service-Mobile style)
+  late AnimationController _locationPulseController;
+  late Animation<double> _locationPulseScale;
 
   // Search hint rotator
   Timer? _hintTimer;
@@ -56,6 +60,15 @@ class _HomeLocationBarState extends State<HomeLocationBar>
       TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.06), weight: 1),
       TweenSequenceItem(tween: Tween(begin: 0.06, end: 0), weight: 1),
     ]).animate(CurvedAnimation(parent: _bellController, curve: Curves.easeInOut));
+
+    // Continuous smooth location breathing pulse
+    _locationPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _locationPulseScale = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _locationPulseController, curve: Curves.easeInOut),
+    );
 
     _hintTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted) {
@@ -85,6 +98,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   void dispose() {
     _hintTimer?.cancel();
     _bellController.dispose();
+    _locationPulseController.dispose();
     widget.searchController?.removeListener(_onSearchListener);
     super.dispose();
   }
@@ -93,7 +107,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
     final state = widget.state;
-    final city = state.activeAddress?.title ?? 'Kodad';
+    final city = state.activeAddress?.title ?? (state.activeAddress?.customTag.isNotEmpty == true ? state.activeAddress!.customTag : 'Kodad');
     final subtitle = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
     final unreadNotifs = state.unreadNotificationCount;
     final sf = state.storefrontConfig;
@@ -147,12 +161,79 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                   onTap: widget.onLocationTap,
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on, size: 20, color: Colors.white),
-                      const SizedBox(width: 6),
+                      // Pulsing Location Icon Box (Service-Mobile Signature)
+                      AnimatedBuilder(
+                        animation: _locationPulseScale,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _locationPulseScale.value,
+                            child: child,
+                          );
+                        },
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.place_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       Flexible(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Eyebrow with Live Status Tag
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'DELIVERY LOCATION',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFFDFF7EA),
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Text(
+                                    'LIVE 📍',
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 1),
+                            // Main Locality Name & Subtitle
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -162,22 +243,47 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 22),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.22),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'CHANGE',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(width: 2),
+                                      Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        color: Colors.white,
+                                        size: 13,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                             Text(
-                              subtitle.length > 38 ? '${subtitle.substring(0, 38)}...' : subtitle,
+                              subtitle.length > 36 ? '${subtitle.substring(0, 36)}...' : subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFFDFF7EA),
                               ),
