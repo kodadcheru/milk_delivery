@@ -78,8 +78,14 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
         if not user:
             return CustomerAddress.objects.none()
 
+        from django.db.models import Q
+        clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
+        user_query = Q(user=user)
+        if clean_digits:
+            user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
+
         # If user has a profile address but zero CustomerAddress records, auto-create one
-        if not CustomerAddress.objects.filter(user=user).exists() and user.address:
+        if not CustomerAddress.objects.filter(user_query).exists() and user.address:
             CustomerAddress.objects.create(
                 user=user,
                 address_type="HOME",
@@ -90,27 +96,38 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
                 is_default=True,
             )
 
-        return CustomerAddress.objects.filter(user=user).order_by("-is_default", "-id")
+        return CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
 
     def perform_create(self, serializer):
         user = _resolve_customer_user(self.request)
         if not user:
             raise permissions.exceptions.NotAuthenticated("Authentication required to save address.")
 
-        has_existing = CustomerAddress.objects.filter(user=user).exists()
+        from django.db.models import Q
+        clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
+        user_query = Q(user=user)
+        if clean_digits:
+            user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
+
+        has_existing = CustomerAddress.objects.filter(user_query).exists()
         is_default = bool(self.request.data.get("is_default", not has_existing))
 
         if is_default:
-            CustomerAddress.objects.filter(user=user).update(is_default=False)
+            CustomerAddress.objects.filter(user_query).update(is_default=False)
 
         addr = serializer.save(user=user, is_default=is_default)
 
         # Update user's active delivery profile address
+        formatted = addr.formatted_address or addr.street_address
         if is_default or not user.address:
-            user.address = addr.street_address or user.address
+            user.address = formatted or user.address
             user.latitude = addr.latitude
             user.longitude = addr.longitude
             user.save(update_fields=["address", "latitude", "longitude"])
+            if clean_digits:
+                User.objects.filter(phone__endswith=clean_digits).exclude(id=user.id).update(
+                    address=user.address, latitude=user.latitude, longitude=user.longitude
+                )
 
 
 class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):

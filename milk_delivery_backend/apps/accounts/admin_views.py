@@ -158,8 +158,15 @@ class AdminCustomerDetailView(APIView):
         if not customer:
             return Response({"detail": f"Customer/User #{pk} not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        from django.db.models import Q
+
+        clean_digits = "".join(filter(str.isdigit, customer.phone or customer.username or ""))[-10:]
+        user_query = Q(user=customer)
+        if clean_digits:
+            user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
+
         # Auto-create CustomerAddress if customer has address on profile but 0 address entries
-        if not CustomerAddress.objects.filter(user=customer).exists() and customer.address:
+        if not CustomerAddress.objects.filter(user_query).exists() and customer.address:
             CustomerAddress.objects.create(
                 user=customer,
                 address_type="HOME",
@@ -170,7 +177,16 @@ class AdminCustomerDetailView(APIView):
                 is_default=True,
             )
 
-        addresses = CustomerAddress.objects.filter(user=customer).order_by("-is_default", "-id")
+        addresses = CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
+        
+        # If customer.address is empty on profile, backfill from default address
+        default_addr = addresses.filter(is_default=True).first() or addresses.first()
+        if default_addr and not customer.address:
+            customer.address = default_addr.formatted_address or default_addr.street_address
+            customer.latitude = default_addr.latitude
+            customer.longitude = default_addr.longitude
+            customer.save(update_fields=["address", "latitude", "longitude"])
+
         addrs_data = []
         for a in addresses:
             parts = []
