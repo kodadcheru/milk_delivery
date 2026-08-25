@@ -12,6 +12,7 @@ import '../../services/route_optimizer.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
+import '../../widgets/driver_delivery_chat_sheet.dart';
 
 class DriverRouteMapScreen extends StatefulWidget {
   final AppState state;
@@ -423,6 +424,27 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                     const SizedBox(height: 14),
                     Row(
                       children: [
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: UiTone.primary,
+                            side: const BorderSide(color: UiTone.primary, width: 1.4),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                          ),
+                          icon: const Icon(Icons.forum_rounded, size: 18),
+                          label: Text('Chat', style: UiText.bodyStrong.copyWith(fontSize: 13, color: UiTone.primary)),
+                          onPressed: () {
+                            DriverDeliveryChatSheet.show(
+                              context,
+                              customerName: selectedTask.customerName,
+                              customerPhone: selectedTask.customerPhone,
+                              deliveryAddress: selectedTask.deliveryAddress,
+                              orderSummary: selectedTask.productName.isNotEmpty ? selectedTask.productName : 'Morning Milk Drop',
+                              slotTime: selectedTask.slotTime,
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
@@ -432,7 +454,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                             ),
                             icon: const Icon(Icons.navigation, size: 18),
-                            label: Text('Navigate with Google Maps', style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white)),
+                            label: Text('Navigate', style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white)),
                             onPressed: () {
                               _launchGoogleMapsNavigation(
                                 selectedTask.customerLatitude,

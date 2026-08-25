@@ -12,6 +12,7 @@ import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import '../../widgets/driver_delivery_chat_sheet.dart';
 import '../common/day_wise_orders_screen.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
@@ -907,6 +908,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.primary),
                   ),
                 ),
+              // In-App Live Chat Button
+              IconButton(
+                style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
+                icon: const Icon(Icons.forum_rounded, color: UiTone.primary, size: 16),
+                tooltip: 'Live Chat with Customer',
+                onPressed: () {
+                  DriverDeliveryChatSheet.show(
+                    context,
+                    customerName: custName,
+                    customerPhone: custPhone,
+                    deliveryAddress: group.deliveryAddress,
+                    orderSummary: group.tasks.isNotEmpty ? group.tasks.first.productName : 'Morning Milk Drop',
+                    slotTime: group.slotTime,
+                  );
+                },
+              ),
+              const SizedBox(width: 6),
               // Call Button
               IconButton(
                 style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),

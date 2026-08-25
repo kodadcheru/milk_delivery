@@ -7,6 +7,7 @@ import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_format.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
+import '../customer/help_support_screen.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
 
@@ -332,6 +333,14 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 _buildSectionHeader('Support & Partner Safety'),
                 const SizedBox(height: 8),
                 _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    accent: UiTone.primary,
+                    label: 'Live Support & Hub Desk Chat',
+                    subtitle: 'Direct 24/7 help with delivery routes & drops',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HelpSupportScreen(state: widget.state, initialTopic: 'Delivery Partner Route Assistance'))),
+                  ),
+                  _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.headset_mic_rounded,
                     accent: UiTone.warning,

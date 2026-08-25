@@ -11,6 +11,7 @@ import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/route_optimizer.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import '../../widgets/driver_delivery_chat_sheet.dart';
 
 class MorningBatchScreen extends StatefulWidget {
   final AppState state;
@@ -668,15 +669,36 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                         ],
                       ),
                     ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        DriverDeliveryChatSheet.show(
+                          context,
+                          customerName: currentStop.customerName,
+                          customerPhone: currentStop.customerPhone,
+                          deliveryAddress: currentStop.deliveryAddress,
+                          orderSummary: currentStop.productName.isNotEmpty ? currentStop.productName : 'Morning Milk Drop',
+                          slotTime: currentStop.slotTime,
+                        );
+                      },
+                      icon: const Icon(Icons.forum_rounded, size: 14, color: UiTone.primary),
+                      label: const Text('Chat', style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w800, fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: UiTone.primary, width: 1.2),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
                     ElevatedButton.icon(
                       onPressed: () => _callPhone(context, currentStop.customerPhone),
                       icon: const Icon(Icons.phone_rounded, size: 14),
-                      label: const Text('Call'),
+                      label: const Text('Call', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: UiTone.secondary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        elevation: 0,
                       ),
                     ),
                   ],
