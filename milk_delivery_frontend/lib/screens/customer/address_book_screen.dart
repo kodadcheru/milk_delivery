@@ -795,10 +795,59 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  // Address Type Selector (Home, Work, Other)
+                  // ── 1. Dual Location Action Bar (Service-Mobile Signature) ──
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _pickOnGoogleMap,
+                          icon: const Icon(Icons.map_rounded, color: Colors.white, size: 18),
+                          label: const Text(
+                            'Pick on map 🗺️',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D7C66),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isDetectingGps ? null : _useCurrentGPSLocation,
+                          icon: _isDetectingGps
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7C66)),
+                                )
+                              : const Icon(Icons.my_location_rounded, color: Color(0xFF0D7C66), size: 18),
+                          label: Text(
+                            _isDetectingGps ? 'Locating...' : 'Use GPS 🎯',
+                            style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ── 2. Save Address As Label Box Selector ──
                   const Text(
-                    'Save Address As',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                    'Save address as',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -816,130 +865,17 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                     TextFormField(
                       controller: _customTagController,
                       decoration: InputDecoration(
-                        labelText: 'Custom Label (e.g. Parents Villa, Farm)',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        labelText: 'Address label',
+                        hintText: 'e.g. Mom\'s House, Gym, Farmhouse',
+                        prefixIcon: const Icon(Icons.label_rounded, color: Color(0xFF0D7C66)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter label' : null,
+                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a label' : null,
                     ),
                   ],
 
                   const SizedBox(height: 16),
-
-                  // ── 📍 1-Tap "Use Current GPS Location" Button ──
-                  InkWell(
-                    onTap: _isDetectingGps ? null : _useCurrentGPSLocation,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0F766E), Color(0xFF10B981)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.25),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: _isDetectingGps
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _isDetectingGps ? 'Detecting Live GPS...' : 'Use Current GPS Location 📍',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13.5,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _isDetectingGps
-                                      ? 'Reverse-geocoding street & pin code...'
-                                      : 'Auto-fill street, society, city & coordinates',
-                                  style: const TextStyle(fontSize: 11, color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.bolt_rounded, color: Color(0xFFFBBF24), size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Google Maps Pin Drop Button
-                  InkWell(
-                    onTap: _pickOnGoogleMap,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDF4),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF86EFAC)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.map_rounded, color: Colors.white, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Pinpoint on Google Maps 🗺️',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                    color: Color(0xFF065F46),
-                                  ),
-                                ),
-                                Text(
-                                  'Tap to adjust exact GPS delivery point & search societies',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFF047857)),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF059669)),
-                        ],
-                      ),
-                    ),
-                  ),
 
                   const SizedBox(height: 16),
 
