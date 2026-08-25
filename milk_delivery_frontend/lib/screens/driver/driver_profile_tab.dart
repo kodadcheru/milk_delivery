@@ -1168,7 +1168,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: UiTone.error, foregroundColor: Colors.white),
             onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
+              Navigator.of(ctx).pop();
               onLogout();
             },
             child: const Text('Log Out'),

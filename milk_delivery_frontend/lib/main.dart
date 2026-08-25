@@ -63,16 +63,23 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   }
 
   Future<void> _checkExistingSession() async {
-    // Load cached addresses FIRST (instant, no network) — Zepto/Swiggy pattern
+    // Load cached addresses and cached role FIRST (instant, zero network latency)
     await _appState.loadCachedAddresses();
+    await _appState.loadCachedUserRole();
     final token = await ApiService.initAuthToken();
     if (token != null && mounted) {
-      setState(() {
-        _isLoggedIn = true;
-        _isInitializing = false;
-      });
+      try {
+        await _appState.reloadAllData();
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = true;
+          _isInitializing = false;
+        });
+      }
     } else if (mounted) {
       setState(() {
+        _isLoggedIn = false;
         _isInitializing = false;
       });
     }
@@ -105,10 +112,12 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
       theme: AppTheme.lightTheme,
       home: !_isLoggedIn
           ? PhoneLoginScreen(
+              key: const ValueKey('phone_login_screen_root'),
               state: _appState,
               onLoginSuccess: () => setState(() => _isLoggedIn = true),
             )
           : MainAppShell(
+              key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
               state: _appState,
               onLogout: () async {
                 await _appState.logout();

@@ -420,7 +420,7 @@ class AdminProfileTab extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
+              Navigator.of(ctx).pop();
               onLogout();
             },
             child: const Text('Log Out'),

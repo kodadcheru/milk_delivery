@@ -585,6 +585,10 @@ class AppState extends ChangeNotifier {
       if (user != null) {
         currentUser = user;
         currentRole = user.role;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('milkdrop_cached_user_role', user.role);
+        } catch (_) {}
         if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
           currentDeliveryAddress = user.address;
         }
@@ -829,9 +833,24 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadCachedUserRole() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedRole = prefs.getString('milkdrop_cached_user_role');
+      if (savedRole != null && savedRole.isNotEmpty) {
+        currentRole = savedRole;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
   Future<void> onUserAuthenticated(UserModel user) async {
     currentUser = user;
     currentRole = user.role;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('milkdrop_cached_user_role', user.role);
+    } catch (_) {}
     subscriptions = [];
     deliveries = [];
     transactions = [];
@@ -844,6 +863,10 @@ class AppState extends ChangeNotifier {
   Future<void> logout() async {
     await ApiService.clearAuthToken();
     await _clearCachedAddresses(); // Clear local cache on logout
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('milkdrop_cached_user_role');
+    } catch (_) {}
     currentUser = null;
     currentRole = 'CUSTOMER';
     savedAddresses = [];
