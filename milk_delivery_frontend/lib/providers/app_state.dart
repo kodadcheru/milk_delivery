@@ -583,6 +583,7 @@ class AppState extends ChangeNotifier {
         currentLon = defaultAddr.longitude;
         _cacheAddressesLocally(); // Persist to local storage
       } else if (savedAddresses.isEmpty) {
+        // No addresses on server — auto-create from user profile (Zepto pattern)
         if (user != null && user.address.isNotEmpty) {
           final profileAddr = CustomerAddressModel(
             id: 0,
@@ -597,12 +598,22 @@ class AppState extends ChangeNotifier {
             longitude: user.longitude,
             isDefault: true,
           );
-          savedAddresses = [profileAddr];
-          activeAddress = profileAddr;
-          currentDeliveryAddress = profileAddr.summaryAddress;
-          currentLat = profileAddr.latitude;
-          currentLon = profileAddr.longitude;
-          _cacheAddressesLocally(); // Persist fallback too
+          // Save to backend so it persists across sessions
+          final created = await ApiService.createCustomerAddress(profileAddr);
+          if (created != null) {
+            savedAddresses = [created];
+            activeAddress = created;
+            currentDeliveryAddress = created.summaryAddress;
+            currentLat = created.latitude;
+            currentLon = created.longitude;
+          } else {
+            savedAddresses = [profileAddr];
+            activeAddress = profileAddr;
+            currentDeliveryAddress = profileAddr.summaryAddress;
+            currentLat = profileAddr.latitude;
+            currentLon = profileAddr.longitude;
+          }
+          _cacheAddressesLocally();
         }
       }
 
@@ -731,12 +742,21 @@ class AppState extends ChangeNotifier {
             longitude: currentUser!.longitude,
             isDefault: true,
           );
-          savedAddresses = [profileAddr];
-          activeAddress = profileAddr;
-          currentDeliveryAddress = profileAddr.summaryAddress;
-          currentLat = profileAddr.latitude;
-          currentLon = profileAddr.longitude;
-          _cacheAddressesLocally(); // Persist fallback
+          final created = await ApiService.createCustomerAddress(profileAddr);
+          if (created != null) {
+            savedAddresses = [created];
+            activeAddress = created;
+            currentDeliveryAddress = created.summaryAddress;
+            currentLat = created.latitude;
+            currentLon = created.longitude;
+          } else {
+            savedAddresses = [profileAddr];
+            activeAddress = profileAddr;
+            currentDeliveryAddress = profileAddr.summaryAddress;
+            currentLat = profileAddr.latitude;
+            currentLon = profileAddr.longitude;
+          }
+          _cacheAddressesLocally();
         }
       }
     } catch (_) {}
