@@ -41,6 +41,7 @@ class AdminCustomerListView(APIView):
                 "first_name": c.first_name,
                 "last_name": c.last_name,
                 "full_name": f"{c.first_name} {c.last_name}".strip() or c.username,
+                "gender": c.gender or "Male",
                 "phone": c.phone,
                 "email": c.email,
                 "address": c.address,
@@ -104,6 +105,7 @@ class AdminCustomerListView(APIView):
             last_name=last_name,
             phone=clean_phone,
             email=email or f"{username}@milkdrop.in",
+            gender=request.data.get("gender", "Male").strip(),
             address=address,
             city=city,
             role=User.Roles.CUSTOMER,
@@ -260,6 +262,7 @@ class AdminCustomerDetailView(APIView):
                 "first_name": customer.first_name,
                 "last_name": customer.last_name,
                 "full_name": f"{customer.first_name} {customer.last_name}".strip() or customer.username,
+                "gender": customer.gender or "Male",
                 "phone": customer.phone,
                 "email": customer.email,
                 "address": customer.address,
@@ -285,6 +288,7 @@ class AdminCustomerDetailView(APIView):
 
         if "first_name" in request.data: customer.first_name = request.data["first_name"].strip()
         if "last_name" in request.data: customer.last_name = request.data["last_name"].strip()
+        if "gender" in request.data: customer.gender = request.data["gender"].strip()
         if "phone" in request.data: customer.phone = request.data["phone"].strip()
         if "email" in request.data: customer.email = request.data["email"].strip()
         if "address" in request.data: customer.address = request.data["address"].strip()

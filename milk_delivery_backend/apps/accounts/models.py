@@ -17,7 +17,13 @@ class User(AbstractUser):
     Roles.PROVIDER = Roles.HUB_MANAGER
     Roles.SUPPORT = Roles.SUPPORT_AGENT
 
+    class Genders(models.TextChoices):
+        MALE = "Male", "Male 👨"
+        FEMALE = "Female", "Female 👩"
+        OTHER = "Other", "Other 👤"
+
     role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.CUSTOMER)
+    gender = models.CharField(max_length=10, choices=Genders.choices, default=Genders.MALE)
     phone = models.CharField(max_length=20, unique=True)
     address = models.TextField(blank=True, default="")
     city = models.CharField(max_length=100, default="Kodad")

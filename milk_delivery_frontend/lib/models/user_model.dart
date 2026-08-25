@@ -5,6 +5,7 @@ class UserModel {
   final String lastName;
   final String email;
   final String role; // CUSTOMER, DRIVER, ADMIN
+  final String gender;
   final String phone;
   final String address;
   final String city;
@@ -26,6 +27,7 @@ class UserModel {
     required this.lastName,
     required this.email,
     required this.role,
+    this.gender = 'Male',
     required this.phone,
     required this.address,
     required this.city,
@@ -59,6 +61,7 @@ class UserModel {
       lastName: json['last_name'] ?? '',
       email: json['email'] ?? '',
       role: json['role'] ?? 'CUSTOMER',
+      gender: json['gender']?.toString() ?? 'Male',
       phone: json['phone'] ?? '',
       address: json['address'] ?? '',
       city: json['city'] ?? 'Hyderabad',
@@ -82,6 +85,7 @@ class UserModel {
       'last_name': lastName,
       'email': email,
       'role': role,
+      'gender': gender,
       'phone': phone,
       'address': address,
       'city': city,
@@ -98,6 +102,7 @@ class UserModel {
     String? firstName,
     String? lastName,
     String? email,
+    String? gender,
     String? phone,
     String? address,
     String? city,
@@ -119,6 +124,7 @@ class UserModel {
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       role: role ?? this.role,
+      gender: gender ?? this.gender,
       phone: phone ?? this.phone,
       address: address ?? this.address,
       city: city ?? this.city,

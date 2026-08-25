@@ -1473,6 +1473,15 @@
             </div>
 
             <div class="form-group">
+              <label>Gender 👤</label>
+              <select id="custDetailGender" class="form-control">
+                <option value="Male">👨 Male</option>
+                <option value="Female">👩 Female</option>
+                <option value="Other">👤 Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label>Delivery Address <span style="color: #EF4444;">*</span></label>
               <input type="text" id="custDetailAddress" class="form-control" placeholder="House / Flat / Colony address" required>
             </div>
@@ -2915,9 +2924,17 @@
           <input type="text" id="addCustPhone" class="form-control" placeholder="e.g. 9876543210" required>
         </div>
         <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" id="addCustEmail" class="form-control" placeholder="ramesh@gmail.com">
+          <label>Gender 👤</label>
+          <select id="addCustGender" class="form-control">
+            <option value="Male">👨 Male</option>
+            <option value="Female">👩 Female</option>
+            <option value="Other">👤 Other</option>
+          </select>
         </div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="addCustEmail" class="form-control" placeholder="ramesh@gmail.com">
       </div>
       <div class="form-group">
         <label>Doorstep Delivery Address <span style="color: #EF4444;">*</span></label>
@@ -7818,6 +7835,7 @@
       const fn = document.getElementById('addCustFirstName').value.trim();
       const ln = document.getElementById('addCustLastName').value.trim();
       const ph = document.getElementById('addCustPhone').value.trim();
+      const gen = document.getElementById('addCustGender').value;
       const em = document.getElementById('addCustEmail').value.trim();
       const addr = document.getElementById('addCustAddress').value.trim();
       const city = document.getElementById('addCustCity').value.trim() || 'Kodad';
@@ -7843,6 +7861,7 @@
             first_name: fn,
             last_name: ln,
             phone: ph,
+            gender: gen,
             email: em,
             address: addr,
             city: city,
@@ -7937,11 +7956,12 @@
         const hubName = c.assigned_hub || 'Kodad Depot';
 
         const custCode = c.customer_code || `CUST-${1000 + c.id}`;
+        const genderIcon = c.gender === 'Female' ? '👩' : (c.gender === 'Other' ? '👤' : '👨');
         tbody.innerHTML += `
           <tr style="cursor: pointer; transition: background 0.15s ease;" onclick="openCustomerDetailPage(${c.id})">
             <td><span class="status-tag status-active" style="font-weight: 800; letter-spacing: 0.5px;">${custCode}</span></td>
             <td>
-              <strong style="color: #38BDF8; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px;">${fullName}</strong><br>
+              <strong style="color: #38BDF8; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px;">${fullName}</strong> &nbsp;<span style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px;">${genderIcon} ${c.gender || 'Male'}</span><br>
               <small style="color:var(--text-muted);">@${c.username} &nbsp;•&nbsp; 🏢 ${hubName}</small>
             </td>
             <td>${c.phone || '-'}<br><small style="color:var(--text-muted);">${c.email || ''}</small></td>
@@ -8020,6 +8040,7 @@
       document.getElementById('custDetailDbId').value = c.id;
       document.getElementById('custDetailFirstName').value = c.first_name || '';
       document.getElementById('custDetailLastName').value = c.last_name || '';
+      document.getElementById('custDetailGender').value = c.gender || 'Male';
       document.getElementById('custDetailPhone').value = c.phone || '';
       document.getElementById('custDetailEmail').value = c.email || '';
       document.getElementById('custDetailAddress').value = c.address || '';
@@ -8279,6 +8300,7 @@
       const cId = document.getElementById('custDetailDbId').value;
       const fn = document.getElementById('custDetailFirstName').value.trim();
       const ln = document.getElementById('custDetailLastName').value.trim();
+      const gen = document.getElementById('custDetailGender').value;
       const ph = document.getElementById('custDetailPhone').value.trim();
       const em = document.getElementById('custDetailEmail').value.trim();
       const addr = document.getElementById('custDetailAddress').value.trim();
@@ -8302,6 +8324,7 @@
           body: JSON.stringify({
             first_name: fn,
             last_name: ln,
+            gender: gen,
             phone: ph,
             email: em,
             address: addr,

@@ -198,6 +198,7 @@ class RegisterMobileUserView(APIView):
             first_name=first_name,
             last_name=last_name,
             email=email,
+            gender=gender,
             address=address,
             city=city,
             role=User.Roles.CUSTOMER,
