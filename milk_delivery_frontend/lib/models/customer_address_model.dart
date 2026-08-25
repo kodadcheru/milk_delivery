@@ -93,7 +93,11 @@ class CustomerAddressModel {
 
     return CustomerAddressModel(
       id: json['id'] ?? 0,
-      userId: json['user'],
+      userId: json['user'] is int
+          ? json['user']
+          : (int.tryParse(json['user']?.toString() ?? '') ??
+              (json['user_id'] is int ? json['user_id'] : int.tryParse(json['user_id']?.toString() ?? '')) ??
+              (json['customer_id'] is int ? json['customer_id'] : int.tryParse(json['customer_id']?.toString() ?? ''))),
       addressType: json['address_type'] ?? 'HOME',
       displayType: json['display_type'] ?? 'Home',
       customTag: json['custom_tag'] ?? '',
