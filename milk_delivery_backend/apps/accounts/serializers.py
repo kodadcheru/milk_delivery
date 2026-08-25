@@ -108,13 +108,13 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
     customer_id = serializers.IntegerField(source="customer.id", read_only=True)
     user = serializers.PrimaryKeyRelatedField(source="customer", read_only=True)
     street_address = serializers.CharField(required=False, allow_blank=True, default="Main Road, Kodad")
-    latitude = serializers.DecimalField(max_digits=18, decimal_places=10, required=False, default=Decimal("17.00173400"))
-    longitude = serializers.DecimalField(max_digits=18, decimal_places=10, required=False, default=Decimal("79.96250000"))
+    latitude = serializers.FloatField(required=False, default=17.001734)
+    longitude = serializers.FloatField(required=False, default=79.9625)
 
     def validate_latitude(self, value):
         if value is not None:
             try:
-                return round(Decimal(str(value)), 8)
+                return Decimal(f"{float(value):.8f}")
             except Exception:
                 return Decimal("17.00173400")
         return Decimal("17.00173400")
@@ -122,7 +122,7 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
     def validate_longitude(self, value):
         if value is not None:
             try:
-                return round(Decimal(str(value)), 8)
+                return Decimal(f"{float(value):.8f}")
             except Exception:
                 return Decimal("79.96250000")
         return Decimal("79.96250000")
