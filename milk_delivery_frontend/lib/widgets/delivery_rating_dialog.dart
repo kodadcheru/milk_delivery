@@ -1,23 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../providers/app_state.dart';
 import '../theme/ui_tokens.dart';
 import '../theme/ui_text.dart';
 
 class DeliveryRatingDialog extends StatefulWidget {
+  final AppState state;
   final String productName;
   final String driverName;
   final String deliveryDate;
+  final String? orderId;
+  final int? taskId;
+  final Function(int rating)? onRated;
 
   const DeliveryRatingDialog({
     super.key,
+    required this.state,
     required this.productName,
     required this.driverName,
     required this.deliveryDate,
+    this.orderId,
+    this.taskId,
+    this.onRated,
   });
 
-  static void show(BuildContext context, {
+  static void show(
+    BuildContext context, {
+    required AppState state,
     required String productName,
     required String driverName,
     required String deliveryDate,
+    String? orderId,
+    int? taskId,
+    Function(int rating)? onRated,
   }) {
     showModalBottomSheet(
       context: context,
@@ -26,9 +41,13 @@ class DeliveryRatingDialog extends StatefulWidget {
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: DeliveryRatingDialog(
+          state: state,
           productName: productName,
           driverName: driverName,
           deliveryDate: deliveryDate,
+          orderId: orderId,
+          taskId: taskId,
+          onRated: onRated,
         ),
       ),
     );
@@ -42,6 +61,7 @@ class _DeliveryRatingDialogState extends State<DeliveryRatingDialog> {
   int _rating = 5;
   final TextEditingController _feedbackController = TextEditingController();
   final Set<String> _selectedTags = {'❄️ Chilled at 4°C', '⏰ On-Time 5:30 AM'};
+  bool _isSubmitting = false;
 
   static const List<String> _ratingTags = [
     '❄️ Chilled at 4°C',
@@ -65,6 +85,45 @@ class _DeliveryRatingDialogState extends State<DeliveryRatingDialog> {
   void dispose() {
     _feedbackController.dispose();
     super.dispose();
+  }
+
+  void _handleSubmit() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+    HapticFeedback.mediumImpact();
+
+    await widget.state.submitDeliveryRating(
+      orderId: widget.orderId,
+      taskId: widget.taskId,
+      rating: _rating,
+      feedback: _feedbackController.text,
+      tags: _selectedTags.toList(),
+    );
+
+    widget.onRated?.call(_rating);
+
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.stars_rounded, color: Colors.amber, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Rated $_rating★! Thank you for rating ${widget.driverName.isNotEmpty ? widget.driverName : "delivery"}.',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0D7C66),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+      ),
+    );
   }
 
   @override
@@ -98,18 +157,25 @@ class _DeliveryRatingDialogState extends State<DeliveryRatingDialog> {
               border: Border.all(color: const Color(0xFFFDE68A)),
             ),
             child: const Center(
-              child: Text('⭐', style: TextStyle(fontSize: 26)),
+              child: Text('🥛', style: TextStyle(fontSize: 26)),
             ),
           ),
           const SizedBox(height: 12),
-          Text('Rate Your Delivery', style: UiText.h2.copyWith(fontSize: 19)),
+          Text('How was your delivery?', style: UiText.h2.copyWith(fontSize: 18)),
           const SizedBox(height: 4),
           Text(
-            '${widget.productName} • Delivered by ${widget.driverName}\nDate: ${widget.deliveryDate}',
+            '${widget.productName} • Delivered on ${widget.deliveryDate}',
+            style: UiText.caption.copyWith(color: UiTone.softText),
             textAlign: TextAlign.center,
-            style: UiText.caption.copyWith(color: UiTone.softText, height: 1.3),
           ),
-          const SizedBox(height: 16),
+          if (widget.driverName.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Delivered by ${widget.driverName}',
+              style: UiText.caption.copyWith(color: const Color(0xFF0D7C66), fontWeight: FontWeight.w700),
+            ),
+          ],
+          const SizedBox(height: 18),
 
           // 5-Star Interactive Rating
           Row(
@@ -118,17 +184,16 @@ class _DeliveryRatingDialogState extends State<DeliveryRatingDialog> {
               final star = index + 1;
               final isFilled = star <= _rating;
               return GestureDetector(
-                onTap: () => setState(() => _rating = star),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _rating = star);
+                },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: AnimatedScale(
-                    scale: isFilled ? 1.12 : 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(
-                      isFilled ? Icons.star_rounded : Icons.star_border_rounded,
-                      color: isFilled ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
-                      size: 42,
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(
+                    isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 38,
+                    color: isFilled ? const Color(0xFFF59E0B) : UiTone.surfaceBorder,
                   ),
                 ),
               );
@@ -138,44 +203,48 @@ class _DeliveryRatingDialogState extends State<DeliveryRatingDialog> {
           Text(
             sentiment,
             style: TextStyle(
+              fontWeight: FontWeight.w700,
               fontSize: 13,
-              fontWeight: FontWeight.w800,
               color: _rating >= 4 ? const Color(0xFF0D7C66) : const Color(0xFFD97706),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Quick Feedback Chips
+          // Delivery Compliment Tags
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: 8,
+            runSpacing: 8,
             alignment: WrapAlignment.center,
             children: _ratingTags.map((tag) {
               final isSelected = _selectedTags.contains(tag);
               return FilterChip(
-                label: Text(tag, style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: isSelected ? UiTone.primary : UiTone.ink,
-                )),
+                label: Text(
+                  tag,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected ? const Color(0xFF0D7C66) : UiTone.ink,
+                  ),
+                ),
                 selected: isSelected,
-                onSelected: (selected) {
+                onSelected: (val) {
                   setState(() {
-                    if (selected) {
+                    if (val) {
                       _selectedTags.add(tag);
                     } else {
                       _selectedTags.remove(tag);
                     }
                   });
                 },
-                selectedColor: UiTone.primarySoft,
+                selectedColor: const Color(0xFF0D7C66).withValues(alpha: 0.12),
                 backgroundColor: UiTone.surfaceMuted,
-                checkmarkColor: UiTone.primary,
                 side: BorderSide(
-                  color: isSelected ? UiTone.primary : Colors.transparent,
-                  width: 1,
+                  color: isSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+                  width: isSelected ? 1.4 : 1.0,
                 ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                showCheckmark: false,
               );
             }).toList(),
           ),
@@ -205,31 +274,16 @@ class _DeliveryRatingDialogState extends State<DeliveryRatingDialog> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.stars_rounded, color: Colors.amber, size: 20),
-                        const SizedBox(width: 8),
-                        Text('Rated $_rating★! Thank you for helping us keep milk pure.',
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                    backgroundColor: const Color(0xFF0D7C66),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                  ),
-                );
-              },
+              onPressed: _isSubmitting ? null : _handleSubmit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0D7C66),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                 elevation: 0,
               ),
-              child: const Text('Submit Review ⭐', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              child: _isSubmitting
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Submit Review ⭐', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
             ),
           ),
           const SizedBox(height: 6),

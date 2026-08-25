@@ -199,6 +199,63 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> hubInventory = [];
   Map<String, dynamic>? adminSummary;
 
+  // Persisted Delivery Ratings (Order ID -> rating stars, Task ID -> rating stars)
+  final Map<String, int> _ratedOrders = {};
+  final Map<int, int> _ratedTasks = {};
+
+  bool isOrderRated(String orderId) => _ratedOrders.containsKey(orderId);
+  int getOrderRating(String orderId) => _ratedOrders[orderId] ?? 5;
+  bool isTaskRated(int taskId) => _ratedTasks.containsKey(taskId);
+  int getTaskRating(int taskId) => _ratedTasks[taskId] ?? 5;
+
+  Future<void> loadSavedRatings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final orderJson = prefs.getString('milkdrop_rated_orders');
+      if (orderJson != null) {
+        final decoded = jsonDecode(orderJson) as Map<String, dynamic>;
+        decoded.forEach((k, v) => _ratedOrders[k] = int.tryParse(v.toString()) ?? 5);
+      }
+      final taskJson = prefs.getString('milkdrop_rated_tasks');
+      if (taskJson != null) {
+        final decoded = jsonDecode(taskJson) as Map<String, dynamic>;
+        decoded.forEach((k, v) => _ratedTasks[int.tryParse(k) ?? 0] = int.tryParse(v.toString()) ?? 5);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> submitDeliveryRating({
+    String? orderId,
+    int? taskId,
+    required int rating,
+    String feedback = '',
+    List<String> tags = const [],
+  }) async {
+    if (orderId != null && orderId.isNotEmpty) {
+      _ratedOrders[orderId] = rating;
+    }
+    if (taskId != null && taskId > 0) {
+      _ratedTasks[taskId] = rating;
+    }
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('milkdrop_rated_orders', jsonEncode(_ratedOrders));
+      final taskMap = <String, int>{};
+      _ratedTasks.forEach((k, v) => taskMap[k.toString()] = v);
+      await prefs.setString('milkdrop_rated_tasks', jsonEncode(taskMap));
+    } catch (_) {}
+
+    await ApiService.submitDeliveryRating(
+      orderId: orderId,
+      taskId: taskId,
+      rating: rating,
+      feedback: feedback,
+      tags: tags,
+    );
+  }
+
   // Real-Time Hub Product Slot & Capacity Manager (Optimistic 0ms Latency)
   Future<void> updateHubProductCapacity(int productId, int dailyCapacitySlots, {bool? isAvailable}) async {
     HapticFeedback.lightImpact();
@@ -580,6 +637,7 @@ class AppState extends ChangeNotifier {
       dailyMilkBatches = (results[12] as List<Map<String, dynamic>>?) ?? [];
       
       await loadQualityHistory();
+      await loadSavedRatings();
 
       final user = results[0] as UserModel?;
       if (user != null) {

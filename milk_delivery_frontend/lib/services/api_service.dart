@@ -1593,5 +1593,32 @@ class ApiService {
     }
     return [];
   }
+
+  // ── 22. Delivery & Order Rating ──
+  static Future<bool> submitDeliveryRating({
+    String? orderId,
+    int? taskId,
+    required int rating,
+    String feedback = '',
+    List<String> tags = const [],
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/rate/'),
+            headers: _headers,
+            body: jsonEncode({
+              if (orderId != null) 'order_id': orderId,
+              if (taskId != null) 'task_id': taskId,
+              'rating': rating,
+              'feedback': feedback,
+              'tags': tags,
+            }),
+          ));
+      return res.statusCode == 200 || res.statusCode == 201;
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return false;
+  }
 }
 

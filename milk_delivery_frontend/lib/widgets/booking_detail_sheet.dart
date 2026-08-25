@@ -752,26 +752,50 @@ class BookingDetailSheet extends StatelessWidget {
                   flex: 2,
                   child: SizedBox(
                     height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        DeliveryRatingDialog.show(
-                          context,
-                          productName: isExpress
-                              ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
-                              : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
-                          driverName: driverName,
-                          deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
-                        );
-                      },
-                      icon: const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
-                      label: Text('Rate Delivery ⭐', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                        elevation: 0,
-                      ),
-                    ),
+                    child: (isExpress && state.isOrderRated(liveOrder!.id)) || (!isExpress && subscriptionTask != null && state.isTaskRated(subscriptionTask!.id))
+                        ? Container(
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(UiRadius.sm),
+                              border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Rated ${isExpress ? state.getOrderRating(liveOrder!.id) : state.getTaskRating(subscriptionTask!.id)}★ ✓',
+                                  style: UiText.bodyStrong.copyWith(color: const Color(0xFF0D7C66), fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: () {
+                              DeliveryRatingDialog.show(
+                                context,
+                                state: state,
+                                orderId: isExpress ? liveOrder!.id : null,
+                                taskId: !isExpress ? subscriptionTask?.id : null,
+                                productName: isExpress
+                                    ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                                    : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
+                                driverName: driverName,
+                                deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                                onRated: (_) {},
+                              );
+                            },
+                            icon: const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                            label: Text('Rate Delivery ⭐', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: UiTone.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                              elevation: 0,
+                            ),
+                          ),
                   ),
                 ),
               ],

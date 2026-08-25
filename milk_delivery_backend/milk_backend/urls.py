@@ -84,6 +84,7 @@ from apps.deliveries.views import (
     ProviderPayoutListCreateView,
     SlotAvailabilityView,
     QualityHistoryView,
+    DeliveryRatingSubmitView,
 )
 from apps.deliveries.order_views import (
     ExpressOrderListCreateView,
@@ -196,6 +197,7 @@ urlpatterns = [
     path("api/deliveries/<int:pk>/complete/", DeliveryTaskCompleteView.as_view(), name="delivery_complete"),
     path("api/deliveries/<int:pk>/skip/", DeliveryTaskSkipView.as_view(), name="delivery_skip"),
     path("api/deliveries/summary/", DeliverySummaryView.as_view(), name="delivery_summary"),
+    path("api/deliveries/rate/", DeliveryRatingSubmitView.as_view(), name="delivery_rate"),
     path("api/slots/availability/", SlotAvailabilityView.as_view(), name="slot_availability"),
     path("api/admin/generate-tasks/", GenerateTodayTasksView.as_view(), name="generate_tasks"),
     # Bottle Return & Payout Tracking endpoints

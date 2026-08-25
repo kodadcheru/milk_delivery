@@ -763,26 +763,50 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   ),
                 ),
                 const SizedBox(width: 6),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    DeliveryRatingDialog.show(
-                      context,
-                      productName: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                      driverName: order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner',
-                      deliveryDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
-                    );
-                  },
-                  icon: const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                  label: const Text('Rate ⭐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D7C66),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                    minimumSize: const Size(0, 30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                    elevation: 0,
+                if (widget.state.isOrderRated(order.id))
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                      border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Rated ${widget.state.getOrderRating(order.id)}★ ✓',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      DeliveryRatingDialog.show(
+                        context,
+                        state: widget.state,
+                        orderId: order.id,
+                        productName: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                        driverName: order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner',
+                        deliveryDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
+                        onRated: (_) => setState(() {}),
+                      );
+                    },
+                    icon: const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                    label: const Text('Rate ⭐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D7C66),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      minimumSize: const Size(0, 30),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
+                      elevation: 0,
+                    ),
                   ),
-                ),
               ],
             ],
           ),
@@ -932,26 +956,50 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       ),
                       const SizedBox(width: 6),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          DeliveryRatingDialog.show(
-                            context,
-                            productName: product?.name ?? 'Fresh A2 Cow Milk',
-                            driverName: task.driverDetail?.fullName.isNotEmpty == true ? task.driverDetail!.fullName : 'Assigned Partner',
-                            deliveryDate: task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today',
-                          );
-                        },
-                        icon: const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
-                        label: const Text('Rate ⭐', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0D7C66),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          minimumSize: const Size(0, 28),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                          elevation: 0,
+                      if (widget.state.isTaskRated(task.id))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                            border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Rated ${widget.state.getTaskRating(task.id)}★ ✓',
+                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            DeliveryRatingDialog.show(
+                              context,
+                              state: widget.state,
+                              taskId: task.id,
+                              productName: product?.name ?? 'Fresh A2 Cow Milk',
+                              driverName: task.driverDetail?.fullName.isNotEmpty == true ? task.driverDetail!.fullName : 'Assigned Partner',
+                              deliveryDate: task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today',
+                              onRated: (_) => setState(() {}),
+                            );
+                          },
+                          icon: const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                          label: const Text('Rate ⭐', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D7C66),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            minimumSize: const Size(0, 28),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
+                            elevation: 0,
+                          ),
                         ),
-                      ),
                     ],
                   ],
                 ),
