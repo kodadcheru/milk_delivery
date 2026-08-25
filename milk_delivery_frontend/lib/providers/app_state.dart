@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -50,6 +51,70 @@ class AppState extends ChangeNotifier {
 
   List<CustomerAddressModel> savedAddresses = [];
   CustomerAddressModel? activeAddress;
+
+  // ── Address Cache Keys (Zepto/Swiggy pattern) ──
+  static const _kCachedAddresses = 'cached_addresses';
+  static const _kActiveAddressId = 'active_address_id';
+  static const _kCachedDeliveryAddr = 'cached_delivery_address';
+  static const _kCachedLat = 'cached_lat';
+  static const _kCachedLon = 'cached_lon';
+
+  /// Persist addresses + active selection to SharedPreferences
+  Future<void> _cacheAddressesLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = savedAddresses.map((a) => jsonEncode(a.toJson())).toList();
+      await prefs.setStringList(_kCachedAddresses, jsonList);
+      if (activeAddress != null) {
+        await prefs.setInt(_kActiveAddressId, activeAddress!.id);
+      }
+      await prefs.setString(_kCachedDeliveryAddr, currentDeliveryAddress);
+      await prefs.setDouble(_kCachedLat, currentLat);
+      await prefs.setDouble(_kCachedLon, currentLon);
+    } catch (_) {}
+  }
+
+  /// Load cached addresses from SharedPreferences (instant, no network)
+  Future<void> loadCachedAddresses() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getStringList(_kCachedAddresses);
+      if (cached != null && cached.isNotEmpty) {
+        final List<CustomerAddressModel> restored = [];
+        for (final jsonStr in cached) {
+          try {
+            final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+            restored.add(CustomerAddressModel.fromJson(map));
+          } catch (_) {}
+        }
+        if (restored.isNotEmpty) {
+          savedAddresses = restored;
+          final activeId = prefs.getInt(_kActiveAddressId);
+          if (activeId != null) {
+            activeAddress = restored.firstWhere((a) => a.id == activeId,
+                orElse: () => restored.firstWhere((a) => a.isDefault, orElse: () => restored.first));
+          } else {
+            activeAddress = restored.firstWhere((a) => a.isDefault, orElse: () => restored.first);
+          }
+          currentDeliveryAddress = prefs.getString(_kCachedDeliveryAddr) ?? activeAddress!.summaryAddress;
+          currentLat = prefs.getDouble(_kCachedLat) ?? activeAddress!.latitude;
+          currentLon = prefs.getDouble(_kCachedLon) ?? activeAddress!.longitude;
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Clear cached addresses (on logout only)
+  Future<void> _clearCachedAddresses() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kCachedAddresses);
+      await prefs.remove(_kActiveAddressId);
+      await prefs.remove(_kCachedDeliveryAddr);
+      await prefs.remove(_kCachedLat);
+      await prefs.remove(_kCachedLon);
+    } catch (_) {}
+  }
 
   List<ServiceAreaModel> serviceAreas = [];
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
@@ -516,6 +581,7 @@ class AppState extends ChangeNotifier {
         currentDeliveryAddress = defaultAddr.summaryAddress;
         currentLat = defaultAddr.latitude;
         currentLon = defaultAddr.longitude;
+        _cacheAddressesLocally(); // Persist to local storage
       } else if (savedAddresses.isEmpty) {
         if (user != null && user.address.isNotEmpty) {
           final profileAddr = CustomerAddressModel(
@@ -536,6 +602,7 @@ class AppState extends ChangeNotifier {
           currentDeliveryAddress = profileAddr.summaryAddress;
           currentLat = profileAddr.latitude;
           currentLon = profileAddr.longitude;
+          _cacheAddressesLocally(); // Persist fallback too
         }
       }
 
@@ -648,6 +715,7 @@ class AppState extends ChangeNotifier {
           currentLat = defaultAddr.latitude;
           currentLon = defaultAddr.longitude;
         }
+        _cacheAddressesLocally(); // Persist to local storage
       } else if (savedAddresses.isEmpty) {
         if (currentUser != null && currentUser!.address.isNotEmpty) {
           final profileAddr = CustomerAddressModel(
@@ -668,6 +736,7 @@ class AppState extends ChangeNotifier {
           currentDeliveryAddress = profileAddr.summaryAddress;
           currentLat = profileAddr.latitude;
           currentLon = profileAddr.longitude;
+          _cacheAddressesLocally(); // Persist fallback
         }
       }
     } catch (_) {}
@@ -680,6 +749,7 @@ class AppState extends ChangeNotifier {
     currentDeliveryAddress = addr.summaryAddress;
     currentLat = addr.latitude;
     currentLon = addr.longitude;
+    _cacheAddressesLocally(); // Persist selection
     notifyListeners();
 
     if (currentUser != null) {
@@ -707,6 +777,7 @@ class AppState extends ChangeNotifier {
       savedAddresses.removeWhere((a) => a.id == newId);
       savedAddresses.insert(0, fallbackAddr);
       selectActiveAddress(fallbackAddr);
+      _cacheAddressesLocally(); // Persist fallback locally
       return true;
     }
   }
@@ -728,6 +799,7 @@ class AppState extends ChangeNotifier {
         }
       }
     }
+    _cacheAddressesLocally(); // Update local cache
     notifyListeners();
 
     await ApiService.deleteCustomerAddress(addressId);
@@ -765,16 +837,18 @@ class AppState extends ChangeNotifier {
   Future<void> onUserAuthenticated(UserModel user) async {
     currentUser = user;
     currentRole = user.role;
-    savedAddresses = [];
     subscriptions = [];
     deliveries = [];
     transactions = [];
-    activeAddress = null;
+    // Load cached addresses FIRST (instant, no network) — Zepto/Swiggy pattern
+    await loadCachedAddresses();
+    // Then sync with server in reloadAllData
     await reloadAllData();
   }
 
   Future<void> logout() async {
     await ApiService.clearAuthToken();
+    await _clearCachedAddresses(); // Clear local cache on logout
     currentUser = null;
     currentRole = 'CUSTOMER';
     savedAddresses = [];
