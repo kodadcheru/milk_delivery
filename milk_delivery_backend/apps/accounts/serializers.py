@@ -108,6 +108,24 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
     customer_id = serializers.IntegerField(source="customer.id", read_only=True)
     user = serializers.PrimaryKeyRelatedField(source="customer", read_only=True)
     street_address = serializers.CharField(required=False, allow_blank=True, default="Main Road, Kodad")
+    latitude = serializers.DecimalField(max_digits=18, decimal_places=10, required=False, default=Decimal("17.00173400"))
+    longitude = serializers.DecimalField(max_digits=18, decimal_places=10, required=False, default=Decimal("79.96250000"))
+
+    def validate_latitude(self, value):
+        if value is not None:
+            try:
+                return round(Decimal(str(value)), 8)
+            except Exception:
+                return Decimal("17.00173400")
+        return Decimal("17.00173400")
+
+    def validate_longitude(self, value):
+        if value is not None:
+            try:
+                return round(Decimal(str(value)), 8)
+            except Exception:
+                return Decimal("79.96250000")
+        return Decimal("79.96250000")
 
     class Meta:
         model = CustomerAddress

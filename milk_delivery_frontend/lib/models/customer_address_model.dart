@@ -135,8 +135,8 @@ class CustomerAddressModel {
       'landmark': landmark,
       'city': city.isNotEmpty ? city : 'Kodad',
       'pincode': pincode.isNotEmpty ? pincode : '508206',
-      'latitude': latitude,
-      'longitude': longitude,
+      'latitude': double.parse(latitude.toStringAsFixed(8)),
+      'longitude': double.parse(longitude.toStringAsFixed(8)),
       'delivery_instructions': deliveryInstructions,
       'is_default': isDefault,
     };
