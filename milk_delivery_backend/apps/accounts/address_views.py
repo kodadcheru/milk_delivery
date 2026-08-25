@@ -88,7 +88,8 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = _resolve_customer_user(self.request)
         if not user:
-            raise permissions.exceptions.NotAuthenticated("Authentication required to save address.")
+            from rest_framework.exceptions import NotAuthenticated
+            raise NotAuthenticated("Authentication required to save address.")
 
         from django.db.models import Q
         clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
