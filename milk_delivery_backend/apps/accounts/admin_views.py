@@ -1003,6 +1003,25 @@ class AdminSubscriptionToggleView(APIView):
         })
 
 
+class AdminSubscriptionsResetView(APIView):
+    permission_classes = [IsAdminOrStaff]
+
+    def post(self, request):
+        from apps.subscriptions.models import Subscription, VacationPause
+        from apps.deliveries.models import DeliveryTask
+
+        deleted_tasks_count, _ = DeliveryTask.objects.filter(subscription__isnull=False).delete()
+        deleted_pauses_count, _ = VacationPause.objects.all().delete()
+        deleted_subs_count, _ = Subscription.objects.all().delete()
+
+        return Response({
+            "message": f"Successfully deleted {deleted_subs_count} subscriptions, {deleted_pauses_count} vacation pauses, and {deleted_tasks_count} delivery drops.",
+            "deleted_subscriptions": deleted_subs_count,
+            "deleted_pauses": deleted_pauses_count,
+            "deleted_tasks": deleted_tasks_count,
+        })
+
+
 class AdminFleetListView(APIView):
     permission_classes = [IsAdminOrHubManager]
 

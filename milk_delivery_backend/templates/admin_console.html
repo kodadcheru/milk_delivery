@@ -1155,9 +1155,10 @@
             <div class="section-title"><i class="fa-solid fa-repeat"></i> Active Customer Subscriptions</div>
             <span style="font-size: 12px; color: var(--text-muted);">Recurring morning milk deliveries with automated daily wallet billing</span>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="openCreateSubModal()"><i class="fa-solid fa-plus"></i> Create New Subscription</button>
             <button class="btn btn-secondary" onclick="loadSubscriptions()"><i class="fa-solid fa-sync"></i> Refresh</button>
+            <button class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; padding: 6px 12px; font-size: 12px;" onclick="resetAllSubscriptions()"><i class="fa-solid fa-trash-can"></i> Clear All Subscriptions</button>
           </div>
         </div>
 
@@ -5782,6 +5783,33 @@
           filterSubscriptionsTable();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    async function resetAllSubscriptions() {
+      if (!confirm('⚠️ Are you sure you want to delete ALL customer subscriptions, vacation pauses, and daily subscription delivery drops to start freshly on Railway?\n\nThis action cannot be undone!')) {
+        return;
+      }
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/admin/subscriptions/reset/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          alert('✅ ' + (data.message || 'All subscriptions reset successfully!'));
+          await loadSubscriptions();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert('❌ Failed to reset subscriptions: ' + (err.detail || 'Server error'));
+        }
+      } catch (err) {
+        console.error('[AdminConsole] Reset subscriptions error:', err);
+        alert('Network error resetting subscriptions.');
+      }
     }
 
     function populateSubHubFilter() {
