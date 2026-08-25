@@ -154,7 +154,16 @@ class AdminCustomerDetailView(APIView):
         from apps.subscriptions.models import Subscription
         from apps.deliveries.models import DeliveryTask
 
+        # Resilient customer resolution: by PK, by phone, or by clean 10 digits
         customer = User.objects.filter(pk=pk).first()
+        if not customer:
+            clean_pk = "".join(filter(str.isdigit, str(pk)))
+            if clean_pk:
+                customer = User.objects.filter(phone__endswith=clean_pk[-10:]).first()
+        if not customer and request.query_params.get("phone"):
+            clean_q = "".join(filter(str.isdigit, request.query_params.get("phone", "")))[-10:]
+            if clean_q:
+                customer = User.objects.filter(phone__endswith=clean_q).first()
         if not customer:
             return Response({"detail": f"Customer/User #{pk} not found"}, status=status.HTTP_404_NOT_FOUND)
 

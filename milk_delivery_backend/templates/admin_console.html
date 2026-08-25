@@ -7971,20 +7971,31 @@
     let currentCustomerData = null;
 
     async function openCustomerDetailPage(customerId) {
+      if (!customerId) return;
       try {
         switchTab('customer-detail');
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         const token = localStorage.getItem('milkdrop_admin_token') || '';
+        if (!token) {
+          alert('Admin session not found. Please log in.');
+          showLoginModal();
+          return;
+        }
+
         const res = await fetch(`${baseUrl}/admin/customers/${customerId}/`, {
-          headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (res.ok) {
           currentCustomerData = await res.json();
           renderCustomerDetailPage(currentCustomerData);
+        } else if (res.status === 401 || res.status === 403) {
+          alert('Admin session expired. Please log in again.');
+          showLoginModal();
         } else {
-          alert('Could not load customer profile details.');
+          const err = await res.json().catch(() => ({}));
+          alert(`Could not load customer #${customerId}: ${err.detail || 'Record not found'}`);
           switchTab('customers');
         }
       } catch (e) {
