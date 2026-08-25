@@ -821,10 +821,11 @@ class AppState extends ChangeNotifier {
     }
 
     if (result != null) {
-      savedAddresses.removeWhere((a) => a.id == result.id);
-      savedAddresses.insert(0, result);
-      if (result.isDefault || activeAddress == null) {
-        selectActiveAddress(result);
+      final saved = result;
+      savedAddresses.removeWhere((a) => a.id == saved.id);
+      savedAddresses.insert(0, saved);
+      if (saved.isDefault || activeAddress == null) {
+        selectActiveAddress(saved);
       } else {
         await _cacheAddressesLocally();
         notifyListeners();
