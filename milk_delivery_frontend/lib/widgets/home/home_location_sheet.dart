@@ -71,8 +71,8 @@ class HomeLocationSheet {
                 onTap: () async {
                   setModalState(() => isSearching = true);
                   await state.requestDeviceGPS();
-                  final lat = state.currentLat ?? 17.001734;
-                  final lon = state.currentLon ?? 79.9625;
+                  final lat = state.currentLat;
+                  final lon = state.currentLon;
                   final res = await LocationService.reverseGeocode(lat, lon);
                   setModalState(() => isSearching = false);
                   final addrStr = res?['summary_address'] ?? res?['full_address'] ?? 'Kodad Central Hub, Telangana - 508206';
