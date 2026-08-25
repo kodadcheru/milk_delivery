@@ -632,8 +632,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                   onPressed: () {
                                     DeliveryChatSheet.show(
                                       context,
+                                      taskId: widget.subscriptionTask?.id,
+                                      orderId: widget.liveOrder?.id,
                                       driverName: driverName,
                                       driverPhone: widget.driverPhone,
+                                      customerName: widget.state.currentUser?.name ?? 'Customer',
+                                      customerPhone: widget.state.currentUser?.phone ?? '',
                                       orderTitle: widget.orderTitle,
                                       deliveryAddress: resolvedAddress,
                                     );

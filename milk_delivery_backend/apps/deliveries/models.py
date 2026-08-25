@@ -324,3 +324,32 @@ class DailyMilkBatch(models.Model):
     def __str__(self):
         return f"{self.batch_code} ({self.product_name}) - {self.fat_percentage}% FAT, {self.snf_percentage}% SNF @ ₹{self.price_per_litre}/L"
 
+
+class DeliveryChatMessage(models.Model):
+    """
+    Real-time in-app chat message between Driver and Customer for a delivery task or order.
+    """
+    class SenderRoles(models.TextChoices):
+        DRIVER = "DRIVER", "Delivery Driver"
+        CUSTOMER = "CUSTOMER", "Customer"
+        SYSTEM = "SYSTEM", "System Update"
+
+    channel_key = models.CharField(max_length=100, db_index=True)
+    task = models.ForeignKey(DeliveryTask, on_delete=models.SET_NULL, null=True, blank=True, related_name="chat_messages")
+    order = models.ForeignKey(LiveOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name="chat_messages")
+    sender_role = models.CharField(max_length=20, choices=SenderRoles.choices, default=SenderRoles.DRIVER)
+    sender_name = models.CharField(max_length=150, default="")
+    sender_phone = models.CharField(max_length=30, blank=True, default="")
+    text = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["channel_key", "created_at"], name="deliv_chat_chan_idx"),
+        ]
+
+    def __str__(self):
+        return f"[{self.channel_key}] {self.sender_role} ({self.sender_name}): {self.text[:30]}"
+

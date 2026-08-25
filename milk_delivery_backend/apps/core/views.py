@@ -26,6 +26,19 @@ class HealthCheckView(APIView):
                 cursor.fetchone()
                 cursor.execute("""
                     ALTER TABLE accounts_user ADD COLUMN IF NOT EXISTS gender varchar(10) DEFAULT 'Male';
+                    CREATE TABLE IF NOT EXISTS deliveries_deliverychatmessage (
+                        id BIGSERIAL PRIMARY KEY,
+                        channel_key VARCHAR(100) NOT NULL,
+                        task_id BIGINT REFERENCES deliveries_deliverytask(id) ON DELETE SET NULL,
+                        order_id VARCHAR(50) REFERENCES deliveries_liveorder(id) ON DELETE SET NULL,
+                        sender_role VARCHAR(20) NOT NULL DEFAULT 'DRIVER',
+                        sender_name VARCHAR(150) NOT NULL DEFAULT '',
+                        sender_phone VARCHAR(30) NOT NULL DEFAULT '',
+                        text TEXT NOT NULL,
+                        is_read BOOLEAN NOT NULL DEFAULT FALSE,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    );
+                    CREATE INDEX IF NOT EXISTS deliv_chat_chan_idx ON deliveries_deliverychatmessage (channel_key, created_at);
                 """)
             db_latency_ms = round((time.time() - t0) * 1000, 2)
         except Exception as e:

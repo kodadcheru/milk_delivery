@@ -436,10 +436,13 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                           onPressed: () {
                             DriverDeliveryChatSheet.show(
                               context,
+                              taskId: selectedTask.id,
                               customerName: selectedTask.customerName,
                               customerPhone: selectedTask.customerPhone,
+                              driverName: widget.state.currentUser?.name ?? 'Delivery Partner',
+                              driverPhone: widget.state.currentUser?.phone ?? '',
                               deliveryAddress: selectedTask.deliveryAddress,
-                              orderSummary: selectedTask.productName.isNotEmpty ? selectedTask.productName : 'Morning Milk Drop',
+                              orderSummary: selectedTask.productName.isNotEmpty ? selectedTask.productName : 'Milk Drop',
                               slotTime: selectedTask.slotTime,
                             );
                           },

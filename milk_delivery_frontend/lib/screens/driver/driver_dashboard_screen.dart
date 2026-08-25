@@ -919,10 +919,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 onPressed: () {
                   DriverDeliveryChatSheet.show(
                     context,
+                    taskId: group.tasks.isNotEmpty ? group.tasks.first.id : null,
                     customerName: custName,
                     customerPhone: custPhone,
+                    driverName: widget.state.currentUser?.name ?? 'Delivery Partner',
+                    driverPhone: widget.state.currentUser?.phone ?? '',
                     deliveryAddress: group.deliveryAddress,
-                    orderSummary: group.tasks.isNotEmpty ? group.tasks.first.productName : 'Morning Milk Drop',
+                    orderSummary: group.tasks.isNotEmpty ? group.tasks.first.productName : 'Milk Drop',
                     slotTime: group.slotTime,
                   );
                 },

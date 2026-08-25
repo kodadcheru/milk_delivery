@@ -1532,5 +1532,66 @@ class ApiService {
     }
     return [];
   }
+
+  // ── 21. Driver <-> Customer In-App Delivery Chat ──
+  static Future<Map<String, dynamic>?> sendDeliveryChatMessage({
+    required String channelKey,
+    int? taskId,
+    String? orderId,
+    required String senderRole,
+    required String senderName,
+    String senderPhone = '',
+    required String text,
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/chat/send/'),
+            headers: _headers,
+            body: jsonEncode({
+              'channel_key': channelKey,
+              if (taskId != null) 'task_id': taskId,
+              if (orderId != null) 'order_id': orderId,
+              'sender_role': senderRole,
+              'sender_name': senderName,
+              'sender_phone': senderPhone,
+              'text': text,
+            }),
+          ));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchDeliveryChatHistory({
+    required String channelKey,
+    int? taskId,
+    String? orderId,
+  }) async {
+    try {
+      final query = <String, String>{'channel': channelKey};
+      if (taskId != null) query['task_id'] = taskId.toString();
+      if (orderId != null) query['order_id'] = orderId;
+
+      final uri = Uri.parse('$baseUrl/deliveries/chat/history/').replace(queryParameters: query);
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data['messages'] is List) {
+          return (data['messages'] as List).map((m) => m as Map<String, dynamic>).toList();
+        }
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return [];
+  }
 }
 

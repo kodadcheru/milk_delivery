@@ -736,10 +736,13 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
                       onPressed: () {
                         DriverDeliveryChatSheet.show(
                           context,
+                          taskId: currentStop.id,
                           customerName: currentStop.customerName,
                           customerPhone: currentStop.customerPhone,
+                          driverName: widget.state.currentUser?.name ?? 'Delivery Partner',
+                          driverPhone: widget.state.currentUser?.phone ?? '',
                           deliveryAddress: currentStop.deliveryAddress,
-                          orderSummary: currentStop.productName.isNotEmpty ? currentStop.productName : 'Morning Milk Drop',
+                          orderSummary: currentStop.productName.isNotEmpty ? currentStop.productName : (_isEveningBatch ? 'Evening Milk Drop' : 'Morning Milk Drop'),
                           slotTime: currentStop.slotTime,
                         );
                       },

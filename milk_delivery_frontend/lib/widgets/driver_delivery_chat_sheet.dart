@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/api_service.dart';
 import '../theme/ui_tokens.dart';
 import '../theme/ui_text.dart';
 
@@ -8,25 +9,35 @@ class DriverChatMessage {
   final String text;
   final bool isDriver;
   final DateTime timestamp;
+  final String senderName;
 
   DriverChatMessage({
     required this.text,
     required this.isDriver,
     required this.timestamp,
+    this.senderName = '',
   });
 }
 
 class DriverDeliveryChatSheet extends StatefulWidget {
+  final int? taskId;
+  final String? orderId;
   final String customerName;
   final String customerPhone;
+  final String driverName;
+  final String driverPhone;
   final String deliveryAddress;
   final String orderSummary;
   final String slotTime;
 
   const DriverDeliveryChatSheet({
     super.key,
+    this.taskId,
+    this.orderId,
     required this.customerName,
     this.customerPhone = '',
+    this.driverName = 'Delivery Partner',
+    this.driverPhone = '',
     this.deliveryAddress = 'Doorstep Delivery Location',
     this.orderSummary = 'Morning Milk Delivery',
     this.slotTime = '05:30 AM - 07:00 AM',
@@ -34,8 +45,12 @@ class DriverDeliveryChatSheet extends StatefulWidget {
 
   static void show(
     BuildContext context, {
+    int? taskId,
+    String? orderId,
     required String customerName,
     String customerPhone = '',
+    String driverName = 'Delivery Partner',
+    String driverPhone = '',
     String deliveryAddress = 'Doorstep Delivery Location',
     String orderSummary = 'Morning Milk Delivery',
     String slotTime = '05:30 AM - 07:00 AM',
@@ -47,8 +62,12 @@ class DriverDeliveryChatSheet extends StatefulWidget {
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: DriverDeliveryChatSheet(
+          taskId: taskId,
+          orderId: orderId,
           customerName: customerName,
           customerPhone: customerPhone,
+          driverName: driverName,
+          driverPhone: driverPhone,
           deliveryAddress: deliveryAddress,
           orderSummary: orderSummary,
           slotTime: slotTime,
@@ -64,19 +83,21 @@ class DriverDeliveryChatSheet extends StatefulWidget {
 class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _pollTimer;
+  bool _isLoading = true;
 
-  final List<DriverChatMessage> _messages = [
-    DriverChatMessage(
-      text: 'Namaste! I am on the way with your morning milk delivery.',
-      isDriver: true,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 6)),
-    ),
-    DriverChatMessage(
-      text: 'Please leave the packet inside the milk bag at the door. Thank you!',
-      isDriver: false,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 4)),
-    ),
-  ];
+  String get _channelKey {
+    if (widget.taskId != null && widget.taskId! > 0) {
+      return 'delivery_task_${widget.taskId}';
+    }
+    if (widget.orderId != null && widget.orderId!.isNotEmpty) {
+      return 'delivery_order_${widget.orderId}';
+    }
+    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    return 'delivery_cust_${cleanPhone.isNotEmpty ? cleanPhone : widget.customerName.toLowerCase().replaceAll(' ', '_')}';
+  }
+
+  final List<DriverChatMessage> _messages = [];
 
   static const List<String> _quickUpdates = [
     '🛵 Reached your building / gate',
@@ -88,51 +109,101 @@ class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fetchLiveMessages();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchLiveMessages(silent: true));
+  }
+
+  @override
   void dispose() {
+    _pollTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _sendMessage([String? customText]) {
+  Future<void> _fetchLiveMessages({bool silent = false}) async {
+    final rawMessages = await ApiService.fetchDeliveryChatHistory(
+      channelKey: _channelKey,
+      taskId: widget.taskId,
+      orderId: widget.orderId,
+    );
+
+    if (!mounted) return;
+
+    if (rawMessages.isNotEmpty) {
+      final parsed = rawMessages.map<DriverChatMessage>((m) {
+        final role = (m['sender_role'] ?? 'DRIVER').toString().toUpperCase();
+        final isDrv = role == 'DRIVER' || m['is_driver'] == true;
+        final tsStr = m['timestamp']?.toString();
+        final ts = tsStr != null ? (DateTime.tryParse(tsStr) ?? DateTime.now()) : DateTime.now();
+
+        return DriverChatMessage(
+          text: m['text']?.toString() ?? '',
+          isDriver: isDrv,
+          timestamp: ts,
+          senderName: m['sender_name']?.toString() ?? (isDrv ? 'You' : widget.customerName),
+        );
+      }).toList();
+
+      final previousCount = _messages.length;
+      setState(() {
+        _messages.clear();
+        _messages.addAll(parsed);
+        _isLoading = false;
+      });
+
+      if (parsed.length > previousCount) {
+        _scrollToBottom();
+      }
+    } else {
+      if (_messages.isEmpty) {
+        // Initial default welcome note
+        setState(() {
+          _messages.add(
+            DriverChatMessage(
+              text: 'Namaste! I am on the way with your fresh milk delivery.',
+              isDriver: true,
+              timestamp: DateTime.now(),
+              senderName: widget.driverName,
+            ),
+          );
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _sendMessage([String? customText]) async {
     final text = (customText ?? _textController.text).trim();
     if (text.isEmpty) return;
 
     if (customText == null) _textController.clear();
 
-    setState(() {
-      _messages.add(DriverChatMessage(
-        text: text,
-        isDriver: true,
-        timestamp: DateTime.now(),
-      ));
-    });
+    final localMsg = DriverChatMessage(
+      text: text,
+      isDriver: true,
+      timestamp: DateTime.now(),
+      senderName: widget.driverName,
+    );
 
+    setState(() {
+      _messages.add(localMsg);
+    });
     _scrollToBottom();
 
-    // Simulated Customer Response
-    Timer(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      String reply = 'Thank you! Received.';
-      if (text.contains('OTP') || text.contains('otp')) {
-        reply = 'My delivery OTP is 4821. Thank you!';
-      } else if (text.contains('gate') || text.contains('building')) {
-        reply = 'Opening the gate now! Door 302 on 3rd floor.';
-      } else if (text.contains('doorstep') || text.contains('Placed') || text.contains('bag')) {
-        reply = 'Got the milk packet from the doorstep bag! Much appreciated.';
-      } else if (text.contains('security')) {
-        reply = 'Perfect, I will collect it from the security gate.';
-      }
+    await ApiService.sendDeliveryChatMessage(
+      channelKey: _channelKey,
+      taskId: widget.taskId,
+      orderId: widget.orderId,
+      senderRole: 'DRIVER',
+      senderName: widget.driverName,
+      senderPhone: widget.driverPhone,
+      text: text,
+    );
 
-      setState(() {
-        _messages.add(DriverChatMessage(
-          text: reply,
-          isDriver: false,
-          timestamp: DateTime.now(),
-        ));
-      });
-      _scrollToBottom();
-    });
+    _fetchLiveMessages(silent: true);
   }
 
   void _scrollToBottom() {
@@ -148,24 +219,27 @@ class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
   }
 
   Future<void> _callCustomer() async {
-    if (widget.customerPhone.isEmpty) return;
-    final clean = widget.customerPhone.replaceAll(' ', '');
-    final uri = Uri.parse('tel:$clean');
+    final phone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Customer phone number not available')),
+      );
+      return;
+    }
+    final uri = Uri.parse('tel:$phone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
   }
 
-  Future<void> _sendWhatsApp() async {
-    if (widget.customerPhone.isEmpty) return;
-    var phone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (!phone.startsWith('91') && phone.length == 10) {
-      phone = '91$phone';
-    }
-    final message = Uri.encodeComponent(
-      'Namaste ${widget.customerName}! I have arrived with your MilkDrop order at ${widget.deliveryAddress}. Please collect or provide OTP.',
+  Future<void> _openWhatsApp() async {
+    final phone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (phone.isEmpty) return;
+    final clean = phone.length == 10 ? '91$phone' : phone;
+    final msg = Uri.encodeComponent(
+      'Namaste ${widget.customerName}! Your fresh MilkDrop delivery is arriving shortly at ${widget.deliveryAddress}. 🥛',
     );
-    final uri = Uri.parse('https://wa.me/$phone?text=$message');
+    final uri = Uri.parse('https://wa.me/$clean?text=$msg');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -173,38 +247,41 @@ class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-
     return Container(
-      height: MediaQuery.of(context).size.height * 0.82,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: UiTone.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl)),
       ),
       child: Column(
         children: [
-          // Drag Handle
-          const SizedBox(height: 12),
-          Container(
-            width: 44,
-            height: 4,
-            decoration: BoxDecoration(
-              color: UiTone.surfaceBorder,
-              borderRadius: BorderRadius.circular(UiRadius.pill),
+          // ── Sheet Drag Handle ──
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: UiTone.surfaceBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
 
-          // Header: Customer Info & Action Buttons
+          // ── Header ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: UiTone.primarySoft,
-                  child: const Text('🏡', style: TextStyle(fontSize: 20)),
+                  backgroundColor: UiTone.primary.withValues(alpha: 0.1),
+                  child: Text(
+                    widget.customerName.isNotEmpty ? widget.customerName[0].toUpperCase() : 'C',
+                    style: UiText.h2.copyWith(color: UiTone.primary, fontSize: 18),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +291,7 @@ class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
                           Flexible(
                             child: Text(
                               widget.customerName,
-                              style: UiText.bodyStrong.copyWith(fontSize: 15.5, fontWeight: FontWeight.w900),
+                              style: UiText.h2.copyWith(fontSize: 16),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -222,211 +299,193 @@ class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: UiTone.successSoft,
+                              color: UiTone.success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(UiRadius.xs),
                             ),
-                            child: Text('CUSTOMER', style: UiText.caption.copyWith(color: UiTone.success, fontSize: 9, fontWeight: FontWeight.w900)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(width: 6, height: 6, decoration: const BoxDecoration(color: UiTone.success, shape: BoxShape.circle)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Live Channel',
+                                  style: UiText.caption.copyWith(color: UiTone.success, fontWeight: FontWeight.w800, fontSize: 9.5),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${widget.orderSummary} • ${widget.slotTime}',
-                        style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5),
-                        maxLines: 1,
+                        style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                // Call CTA
-                if (widget.customerPhone.isNotEmpty)
-                  IconButton.filledTonal(
-                    onPressed: _callCustomer,
-                    icon: const Icon(Icons.phone_rounded, size: 18, color: UiTone.primary),
-                    tooltip: 'Call Customer',
-                    style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
-                  ),
-                const SizedBox(width: 4),
-                // WhatsApp CTA
-                if (widget.customerPhone.isNotEmpty)
-                  IconButton.filledTonal(
-                    onPressed: _sendWhatsApp,
-                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF25D366)),
-                    tooltip: 'WhatsApp',
-                    style: IconButton.styleFrom(backgroundColor: const Color(0xFFE8F8EE)),
-                  ),
+                // Call & WhatsApp quick actions
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: UiTone.ink),
+                  icon: const Icon(Icons.phone_rounded, color: UiTone.primary, size: 22),
+                  onPressed: _callCustomer,
+                  tooltip: 'Call Customer',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 22),
+                  onPressed: _openWhatsApp,
+                  tooltip: 'WhatsApp',
                 ),
               ],
             ),
           ),
+          const Divider(height: 1),
 
-          // Address Ribbon
+          // ── Quick Update Chips ──
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            color: UiTone.surfaceMuted,
-            child: Row(
-              children: [
-                const Icon(Icons.place_rounded, size: 14, color: UiTone.primary),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    widget.deliveryAddress,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.caption.copyWith(fontWeight: FontWeight.w700, color: UiTone.ink, fontSize: 11.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: UiTone.surfaceBorder),
-
-          // Message Thread
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                final isMe = msg.isDriver;
-                final timeStr = '${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}';
-
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    constraints: BoxConstraints(maxWidth: isMobile ? 280 : 400),
-                    decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(18),
-                        topRight: const Radius.circular(18),
-                        bottomLeft: Radius.circular(isMe ? 18 : 4),
-                        bottomRight: Radius.circular(isMe ? 4 : 18),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          msg.text,
-                          style: TextStyle(
-                            color: isMe ? Colors.white : const Color(0xFF0F172A),
-                            fontSize: 13.5,
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              timeStr,
-                              style: TextStyle(
-                                color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (isMe) ...[
-                              const SizedBox(width: 4),
-                              const Icon(Icons.done_all_rounded, size: 13, color: Colors.white70),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Quick 1-Tap Driver Updates
-          Container(
-            height: 38,
-            margin: const EdgeInsets.symmetric(vertical: 4),
+            height: 48,
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: ListView.separated(
-              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
               itemCount: _quickUpdates.length,
-              separatorBuilder: (ctx, i) => const SizedBox(width: 8),
-              itemBuilder: (ctx, i) {
-                final update = _quickUpdates[i];
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (ctx, idx) {
+                final update = _quickUpdates[idx];
                 return ActionChip(
-                  label: Text(update, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-                  backgroundColor: const Color(0xFFF8FAFC),
-                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  label: Text(
+                    update,
+                    style: UiText.caption.copyWith(color: UiTone.ink, fontWeight: FontWeight.w600, fontSize: 11.5),
+                  ),
+                  backgroundColor: UiTone.surfaceMuted,
+                  side: const BorderSide(color: UiTone.surfaceBorder),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   onPressed: () => _sendMessage(update),
                 );
               },
             ),
           ),
+          const Divider(height: 1),
 
-          // Input Bar
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-              child: Row(
-                children: [
-                  Expanded(
+          // ── Chat Messages ──
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: UiTone.primary))
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    itemCount: _messages.length,
+                    itemBuilder: (ctx, idx) {
+                      final msg = _messages[idx];
+                      return _buildMessageBubble(msg);
+                    },
+                  ),
+          ),
+
+          // ── Input Bar ──
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            decoration: BoxDecoration(
+              color: UiTone.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: UiTone.surfaceMuted,
+                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                      border: Border.all(color: UiTone.surfaceBorder),
+                    ),
                     child: TextField(
                       controller: _textController,
                       textCapitalization: TextCapitalization.sentences,
-                      style: UiText.body.copyWith(fontSize: 14),
+                      style: UiText.body.copyWith(fontSize: 13.5),
                       decoration: InputDecoration(
-                        hintText: 'Message customer regarding drop...',
-                        hintStyle: UiText.caption.copyWith(color: UiTone.softText),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(UiRadius.pill),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(UiRadius.pill),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(UiRadius.pill),
-                          borderSide: const BorderSide(color: Color(0xFF0D7C66), width: 1.5),
-                        ),
+                        hintText: 'Type message to ${widget.customerName.split(" ").first}...',
+                        hintStyle: UiText.body.copyWith(color: UiText.muted, fontSize: 13),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: UiTone.primary,
+                  child: IconButton(
+                    icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
                     onPressed: () => _sendMessage(),
-                    icon: const Icon(Icons.send_rounded, size: 20),
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.all(12),
-                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(DriverChatMessage msg) {
+    final isDriver = msg.isDriver;
+    final timeStr = '${msg.timestamp.hour.toString().padLeft(2, "0")}:${msg.timestamp.minute.toString().padLeft(2, "0")}';
+
+    return Align(
+      alignment: isDriver ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDriver ? UiTone.primary : UiTone.surfaceMuted,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(UiRadius.md),
+            topRight: const Radius.circular(UiRadius.md),
+            bottomLeft: Radius.circular(isDriver ? UiRadius.md : 2),
+            bottomRight: Radius.circular(isDriver ? 2 : UiRadius.md),
+          ),
+          border: isDriver ? null : Border.all(color: UiTone.surfaceBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: isDriver ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(
+              msg.text,
+              style: UiText.body.copyWith(
+                color: isDriver ? Colors.white : UiTone.ink,
+                fontSize: 13,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  timeStr,
+                  style: UiText.caption.copyWith(
+                    color: isDriver ? Colors.white.withValues(alpha: 0.7) : UiTone.softText,
+                    fontSize: 10,
+                  ),
+                ),
+                if (isDriver) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.done_all_rounded, size: 13, color: Colors.white70),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -515,8 +515,11 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       onPressed: () {
                         DeliveryChatSheet.show(
                           context,
+                          orderId: order.id,
                           driverName: driverName,
                           driverPhone: driverPhone,
+                          customerName: widget.state.currentUser?.name ?? 'Customer',
+                          customerPhone: widget.state.currentUser?.phone ?? '',
                           orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
                           deliveryAddress: order.deliveryAddress,
                         );
@@ -690,8 +693,11 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   onPressed: () {
                     DeliveryChatSheet.show(
                       context,
+                      orderId: order.id,
                       driverName: order.driverName.isNotEmpty ? order.driverName : 'Assigned Partner',
                       driverPhone: order.driverPhone,
+                      customerName: widget.state.currentUser?.name ?? 'Customer',
+                      customerPhone: widget.state.currentUser?.phone ?? '',
                       orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
                       deliveryAddress: order.deliveryAddress,
                     );

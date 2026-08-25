@@ -786,8 +786,12 @@ class BookingDetailSheet extends StatelessWidget {
                       onPressed: () {
                         DeliveryChatSheet.show(
                           context,
+                          taskId: subscriptionTask?.id,
+                          orderId: liveOrder?.id,
                           driverName: driverName,
                           driverPhone: driverPhone,
+                          customerName: state.currentUser?.name ?? 'Customer',
+                          customerPhone: state.currentUser?.phone ?? '',
                           orderTitle: isExpress
                               ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
                               : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
