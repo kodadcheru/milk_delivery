@@ -171,9 +171,9 @@ class AdminCustomerDetailView(APIView):
         from django.db.models import Q
 
         clean_digits = "".join(filter(str.isdigit, customer.phone or customer.username or ""))[-10:]
-        user_query = Q(user=customer)
+        user_query = Q(customer=customer)
         if clean_digits:
-            user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
+            user_query |= Q(customer__phone__endswith=clean_digits) | Q(customer__username__icontains=clean_digits)
 
         addresses = CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
         

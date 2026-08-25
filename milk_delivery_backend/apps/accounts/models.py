@@ -111,7 +111,7 @@ class CustomerAddress(models.Model):
         WORK = "WORK", "Work / Office 💼"
         OTHER = "OTHER", "Other Location 📍"
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_addresses")
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_addresses", db_column="customer_id")
     address_type = models.CharField(max_length=20, choices=AddressTypes.choices, default=AddressTypes.HOME)
     custom_tag = models.CharField(max_length=100, blank=True, default="", help_text="e.g. Parents Villa, Vacation House")
     flat_house_no = models.CharField(max_length=100, blank=True, default="")
@@ -132,9 +132,18 @@ class CustomerAddress(models.Model):
         ordering = ["-is_default", "-created_at"]
         verbose_name_plural = "Customer Addresses"
 
+    @property
+    def user(self):
+        return self.customer
+
+    @user.setter
+    def user(self, value):
+        self.customer = value
+
     def __str__(self):
         type_str = self.custom_tag if self.address_type == self.AddressTypes.OTHER and self.custom_tag else self.get_address_type_display()
-        return f"{type_str} - {self.flat_house_no}, {self.building_name}, {self.street_address} ({self.user.username})"
+        cust_name = self.customer.username if self.customer else "Unknown"
+        return f"{type_str} - {self.flat_house_no}, {self.building_name}, {self.street_address} ({cust_name})"
 
     @property
     def address_code(self):
@@ -159,16 +168,16 @@ class CustomerAddress(models.Model):
 
     def save(self, *args, **kwargs):
         if self.is_default:
-            # Unset is_default on any other address for this user
-            CustomerAddress.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(is_default=False)
+            # Unset is_default on any other address for this customer
+            CustomerAddress.objects.filter(customer=self.customer, is_default=True).exclude(pk=self.pk).update(is_default=False)
         super().save(*args, **kwargs)
-        if self.is_default or not self.user.address:
-            User.objects.filter(pk=self.user.pk).update(
+        if self.customer and (self.is_default or not self.customer.address):
+            User.objects.filter(pk=self.customer.pk).update(
                 address=self.formatted_address or self.street_address,
                 city=self.city or "Kodad",
                 latitude=self.latitude,
                 longitude=self.longitude,
-                delivery_instructions=self.delivery_instructions or self.user.delivery_instructions
+                delivery_instructions=self.delivery_instructions or self.customer.delivery_instructions
             )
 
 

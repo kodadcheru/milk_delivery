@@ -104,12 +104,16 @@ class NotificationSerializer(serializers.ModelSerializer):
 class CustomerAddressSerializer(serializers.ModelSerializer):
     formatted_address = serializers.SerializerMethodField()
     display_type = serializers.CharField(source="get_address_type_display", read_only=True)
-    customer_code = serializers.CharField(source="user.customer_code", read_only=True)
+    customer_code = serializers.CharField(source="customer.customer_code", read_only=True)
+    customer_id = serializers.IntegerField(source="customer.id", read_only=True)
+    user = serializers.PrimaryKeyRelatedField(source="customer", read_only=True)
 
     class Meta:
         model = CustomerAddress
         fields = [
             "id",
+            "customer",
+            "customer_id",
             "user",
             "customer_code",
             "address_type",
@@ -130,7 +134,7 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "user", "customer_code", "created_at", "updated_at"]
+        read_only_fields = ["id", "customer", "customer_id", "user", "customer_code", "created_at", "updated_at"]
 
     def get_formatted_address(self, obj):
         parts = []

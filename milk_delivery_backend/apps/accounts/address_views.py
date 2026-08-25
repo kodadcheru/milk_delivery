@@ -88,10 +88,10 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
             return CustomerAddress.objects.none()
 
         from django.db.models import Q
-        user_query = Q(user=user)
+        user_query = Q(customer=user)
         clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
         if clean_digits:
-            user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
+            user_query |= Q(customer__phone__endswith=clean_digits) | Q(customer__username__icontains=clean_digits)
         return CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
 
     def perform_create(self, serializer):
@@ -102,9 +102,9 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
 
         from django.db.models import Q
         clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
-        user_query = Q(user=user)
+        user_query = Q(customer=user)
         if clean_digits:
-            user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
+            user_query |= Q(customer__phone__endswith=clean_digits) | Q(customer__username__icontains=clean_digits)
 
         has_existing = CustomerAddress.objects.filter(user_query).exists()
         is_default = bool(self.request.data.get("is_default", not has_existing))
@@ -112,7 +112,7 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
         if is_default:
             CustomerAddress.objects.filter(user_query).update(is_default=False)
 
-        addr = serializer.save(user=user, is_default=is_default)
+        addr = serializer.save(customer=user, is_default=is_default)
 
         # Update user's active delivery profile address
         formatted = addr.formatted_address or addr.street_address
@@ -137,14 +137,14 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = _resolve_customer_user(self.request)
         if not user:
             return CustomerAddress.objects.none()
-        return CustomerAddress.objects.filter(user=user)
+        return CustomerAddress.objects.filter(customer=user)
 
     def perform_update(self, serializer):
         user = _resolve_customer_user(self.request)
         is_default = serializer.validated_data.get("is_default", False)
 
         if user and is_default:
-            CustomerAddress.objects.filter(user=user).exclude(pk=serializer.instance.pk).update(is_default=False)
+            CustomerAddress.objects.filter(customer=user).exclude(pk=serializer.instance.pk).update(is_default=False)
 
         addr = serializer.save(user=user if user else serializer.instance.user)
         target_user = user or addr.user
