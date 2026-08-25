@@ -112,7 +112,16 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
         if is_default:
             CustomerAddress.objects.filter(user_query).update(is_default=False)
 
-        addr = serializer.save(customer=user, is_default=is_default)
+        street = serializer.validated_data.get("street_address", "").strip()
+        if not street:
+            flat = serializer.validated_data.get("flat_house_no", "").strip()
+            bldg = serializer.validated_data.get("building_name", "").strip()
+            lm = serializer.validated_data.get("landmark", "").strip()
+            c = serializer.validated_data.get("city", "").strip()
+            composed = ", ".join(filter(bool, [flat, bldg, lm, c]))
+            street = composed if composed else "Main Road, Kodad"
+
+        addr = serializer.save(customer=user, street_address=street, is_default=is_default)
 
         # Update user's active delivery profile address
         formatted = addr.formatted_address or addr.street_address

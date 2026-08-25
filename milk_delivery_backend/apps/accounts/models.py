@@ -117,7 +117,7 @@ class CustomerAddress(models.Model):
     flat_house_no = models.CharField(max_length=100, blank=True, default="")
     floor = models.CharField(max_length=50, blank=True, default="")
     building_name = models.CharField(max_length=150, blank=True, default="")
-    street_address = models.CharField(max_length=255, default="Main Road, Kodad")
+    street_address = models.CharField(max_length=255, blank=True, default="Main Road, Kodad")
     landmark = models.CharField(max_length=150, blank=True, default="")
     city = models.CharField(max_length=100, default="Kodad")
     pincode = models.CharField(max_length=20, default="508206")

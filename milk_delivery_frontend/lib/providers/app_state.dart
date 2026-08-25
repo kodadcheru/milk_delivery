@@ -770,14 +770,8 @@ class AppState extends ChangeNotifier {
       await fetchSavedAddresses();
       return true;
     } else {
-      // Resilient fallback: save locally to state
-      final newId = addr.id > 0 ? addr.id : (DateTime.now().millisecondsSinceEpoch % 10000 + 1);
-      final fallbackAddr = addr.copyWith(id: newId);
-      savedAddresses.removeWhere((a) => a.id == newId);
-      savedAddresses.insert(0, fallbackAddr);
-      selectActiveAddress(fallbackAddr);
-      await _cacheAddressesLocally(); // Persist fallback locally
-      return true;
+      debugPrint('❌ [saveCustomerAddress] Database save failed: ${ApiService.lastError}');
+      return false;
     }
   }
 

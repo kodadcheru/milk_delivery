@@ -107,6 +107,7 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
     customer_code = serializers.CharField(source="customer.customer_code", read_only=True)
     customer_id = serializers.IntegerField(source="customer.id", read_only=True)
     user = serializers.PrimaryKeyRelatedField(source="customer", read_only=True)
+    street_address = serializers.CharField(required=False, allow_blank=True, default="Main Road, Kodad")
 
     class Meta:
         model = CustomerAddress

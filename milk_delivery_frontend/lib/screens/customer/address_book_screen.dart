@@ -1113,9 +1113,10 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
           ),
         );
       } else {
+        final err = ApiService.lastError ?? 'Could not save address. Please check connection.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save address. Please check connection.'),
+          SnackBar(
+            content: Text(err),
             backgroundColor: Colors.redAccent,
           ),
         );

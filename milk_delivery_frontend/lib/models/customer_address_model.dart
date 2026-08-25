@@ -117,6 +117,10 @@ class CustomerAddressModel {
   }
 
   Map<String, dynamic> toJson() {
+    final effectiveStreet = streetAddress.trim().isNotEmpty
+        ? streetAddress.trim()
+        : (summaryAddress.trim().isNotEmpty ? summaryAddress.trim() : 'Main Road, Kodad');
+
     return {
       'id': id,
       if (userId != null && userId! > 0) 'user': userId,
@@ -127,10 +131,10 @@ class CustomerAddressModel {
       'flat_house_no': flatHouseNo,
       'floor': floor,
       'building_name': buildingName,
-      'street_address': streetAddress,
+      'street_address': effectiveStreet,
       'landmark': landmark,
-      'city': city,
-      'pincode': pincode,
+      'city': city.isNotEmpty ? city : 'Kodad',
+      'pincode': pincode.isNotEmpty ? pincode : '508206',
       'latitude': latitude,
       'longitude': longitude,
       'delivery_instructions': deliveryInstructions,
