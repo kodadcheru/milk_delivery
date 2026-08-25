@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/notifications_screen.dart';
+import '../../screens/customer/help_support_screen.dart';
 import '../../theme/ui_tokens.dart';
 
 class HomeLocationBar extends StatefulWidget {
@@ -185,6 +186,33 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+
+              // 24/7 Support Chat Quick Icon
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (ctx) => HelpSupportScreen(state: state),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.32),
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 21),
                   ),
                 ),
               ),

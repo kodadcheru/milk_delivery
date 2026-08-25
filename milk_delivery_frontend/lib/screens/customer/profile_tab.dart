@@ -152,10 +152,95 @@ class ProfileTab extends StatelessWidget {
           // Part 2: Scrollable Menu List
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               children: [
+                // ── 1. Hero 24/7 Live Chat & Support Card ──
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF044E3A), Color(0xFF0D7C66)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x200D7C66), blurRadius: 14, offset: Offset(0, 6)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text('💬', style: TextStyle(fontSize: 24)),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  '24/7 Live Support & Chat',
+                                  style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w900),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text('ONLINE', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Instant help with morning drops, subscriptions & wallet',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => HelpSupportScreen(state: state)),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0D7C66),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Chat ⚡', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Group 1
                 _buildCardGroup([
+                  _buildMenuTile(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    iconBg: const Color(0xFFE6F5F0),
+                    iconFg: const Color(0xFF0D7C66),
+                    label: 'Live Chat & Support Desk',
+                    trailingBadge: '🟢 ONLINE',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HelpSupportScreen(state: state))),
+                  ),
+                  _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.calendar_today_rounded,
                     iconBg: const Color(0xFFE8F2FE),
@@ -194,7 +279,7 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.headset_mic_rounded,
                     iconBg: const Color(0xFFFFF3E6),
                     iconFg: const Color(0xFFE67E22),
-                    label: 'Help & support',
+                    label: 'Help & FAQs',
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HelpSupportScreen(state: state))),
                   ),
                   _buildDivider(),
@@ -301,6 +386,7 @@ class ProfileTab extends StatelessWidget {
     required Color iconFg,
     required String label,
     required VoidCallback onTap,
+    String? trailingBadge,
   }) {
     return Material(
       color: Colors.transparent,
@@ -323,9 +409,24 @@ class ProfileTab extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1A2B23)),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A2B23)),
                 ),
               ),
+              if (trailingBadge != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F5F0),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    trailingBadge,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF0D7C66)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               const Icon(Icons.chevron_right, size: 20, color: Color(0xFFC0C8C4)),
             ],
           ),
