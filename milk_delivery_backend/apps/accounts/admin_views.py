@@ -165,18 +165,6 @@ class AdminCustomerDetailView(APIView):
         if clean_digits:
             user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
 
-        # Auto-create CustomerAddress if customer has address on profile but 0 address entries
-        if not CustomerAddress.objects.filter(user_query).exists() and customer.address:
-            CustomerAddress.objects.create(
-                user=customer,
-                address_type="HOME",
-                street_address=customer.address,
-                city=customer.city or "Kodad",
-                latitude=Decimal(str(customer.latitude)) if customer.latitude else Decimal("17.001734"),
-                longitude=Decimal(str(customer.longitude)) if customer.longitude else Decimal("79.9625"),
-                is_default=True,
-            )
-
         addresses = CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
         
         # If customer.address is empty on profile, backfill from default address

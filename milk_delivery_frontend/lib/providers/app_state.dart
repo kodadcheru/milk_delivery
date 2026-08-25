@@ -682,12 +682,7 @@ class AppState extends ChangeNotifier {
       isVacationMode = subscriptions.isNotEmpty && subscriptions.any((sub) => sub.status == 'PAUSED');
       }
 
-      if (savedAddresses.isEmpty && locationHubs.isNotEmpty && currentDeliveryAddress == 'Select Delivery Location') {
-        final h = locationHubs.first;
-        currentLat = double.tryParse(h['latitude']?.toString() ?? '16.9947') ?? 16.9947;
-        currentLon = double.tryParse(h['longitude']?.toString() ?? '79.9750') ?? 79.9750;
-        currentDeliveryAddress = '${h['name'] ?? 'Kodad Depot'}, ${h['city'] ?? 'Telangana'}';
-      }
+      // No automatic fallback address - address is explicitly determined by customer selection
 
       if (currentRole == 'ADMIN' || currentRole == 'PROVIDER' || currentRole == 'HUB_MANAGER') {
         adminSummary = await ApiService.fetchDeliverySummary();
@@ -868,6 +863,7 @@ class AppState extends ChangeNotifier {
         await _cacheAddressesLocally();
         notifyListeners();
       }
+      await fetchSavedAddresses();
       return true;
     } else {
       // Resilient fallback: save locally to state

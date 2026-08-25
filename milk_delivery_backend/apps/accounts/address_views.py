@@ -79,23 +79,8 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
             return CustomerAddress.objects.none()
 
         from django.db.models import Q
-        clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
-        user_query = Q(user=user)
         if clean_digits:
             user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
-
-        # If user has a profile address but zero CustomerAddress records, auto-create one
-        if not CustomerAddress.objects.filter(user_query).exists() and user.address:
-            CustomerAddress.objects.create(
-                user=user,
-                address_type="HOME",
-                street_address=user.address,
-                city=getattr(user, "city", "") or "Kodad",
-                latitude=getattr(user, "latitude", Decimal("17.001734")),
-                longitude=getattr(user, "longitude", Decimal("79.9625")),
-                is_default=True,
-            )
-
         return CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
 
     def perform_create(self, serializer):
