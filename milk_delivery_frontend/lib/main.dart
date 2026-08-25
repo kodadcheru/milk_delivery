@@ -170,7 +170,13 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
       final driverScreens = [
         DriverDashboardScreen(state: widget.state),
         DayWiseOrdersScreen(state: widget.state, role: 'DRIVER'),
-        MorningBatchScreen(state: widget.state),
+        MorningBatchScreen(
+          state: widget.state,
+          onReturnToDashboard: () {
+            setState(() => _driverTab = 0);
+            widget.state.reloadAllData();
+          },
+        ),
         DriverProfileTab(state: widget.state, onLogout: widget.onLogout),
       ];
 
@@ -311,7 +317,14 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
       final providerScreens = [
         ProviderDashboardScreen(state: widget.state),
         DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER'),
-        MorningBatchScreen(state: widget.state),
+        MorningBatchScreen(
+          state: widget.state,
+          onReturnToDashboard: () {
+            setState(() => _providerTab = 0);
+            widget.state.syncProviderTab(0);
+            widget.state.reloadAllData();
+          },
+        ),
         ProviderProfileTab(state: widget.state, onLogout: widget.onLogout),
       ];
 
@@ -472,7 +485,13 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
       final adminScreens = [
         AdminDashboardScreen(state: widget.state),
         DayWiseOrdersScreen(state: widget.state, role: 'ADMIN'),
-        MorningBatchScreen(state: widget.state),
+        MorningBatchScreen(
+          state: widget.state,
+          onReturnToDashboard: () {
+            setState(() => _adminTab = 0);
+            widget.state.reloadAllData();
+          },
+        ),
         AdminProfileTab(state: widget.state, onLogout: widget.onLogout),
       ];
 

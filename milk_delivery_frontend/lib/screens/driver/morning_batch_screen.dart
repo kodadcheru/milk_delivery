@@ -17,12 +17,14 @@ class MorningBatchScreen extends StatefulWidget {
   final AppState state;
   final String shiftName;
   final String? slotFilter;
+  final VoidCallback? onReturnToDashboard;
 
   const MorningBatchScreen({
     super.key,
     required this.state,
     this.shiftName = 'Morning Batch',
     this.slotFilter,
+    this.onReturnToDashboard,
   });
 
   @override
@@ -1070,12 +1072,21 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
                 await widget.state.reloadAllData();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       backgroundColor: UiTone.primary,
-                      content: Text('🎉 Morning batch finalized! All data synced.'),
+                      content: Text('🎉 ${_isEveningBatch ? "Evening" : "Morning"} batch finalized! All data synced.'),
                     ),
                   );
-                  Navigator.pop(context);
+                  if (widget.onReturnToDashboard != null) {
+                    widget.onReturnToDashboard!();
+                  } else if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    setState(() {
+                      _batchStage = 0;
+                      _currentStopIndex = 0;
+                    });
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
