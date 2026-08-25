@@ -63,6 +63,8 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   }
 
   Future<void> _checkExistingSession() async {
+    // Load cached addresses FIRST (instant, no network) — Zepto/Swiggy pattern
+    await _appState.loadCachedAddresses();
     final token = await ApiService.initAuthToken();
     if (token != null && mounted) {
       setState(() {
