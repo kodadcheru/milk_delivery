@@ -150,13 +150,48 @@ class AdminCustomerDetailView(APIView):
     permission_classes = [IsAdminOrStaff]
 
     def get(self, request, pk):
-        from apps.accounts.models import User
+        from apps.accounts.models import CustomerAddress, User
         from apps.subscriptions.models import Subscription
         from apps.deliveries.models import DeliveryTask
 
         customer = User.objects.filter(pk=pk).first()
         if not customer:
             return Response({"detail": f"Customer/User #{pk} not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Auto-create CustomerAddress if customer has address on profile but 0 address entries
+        if not CustomerAddress.objects.filter(user=customer).exists() and customer.address:
+            CustomerAddress.objects.create(
+                user=customer,
+                address_type="HOME",
+                street_address=customer.address,
+                city=customer.city or "Kodad",
+                latitude=customer.latitude or 17.001734,
+                longitude=customer.longitude or 79.9625,
+                is_default=True,
+            )
+
+        addresses = CustomerAddress.objects.filter(user=customer).order_by("-is_default", "-id")
+        addrs_data = []
+        for a in addresses:
+            addrs_data.append({
+                "id": a.id,
+                "address_type": a.address_type,
+                "display_type": a.get_address_type_display(),
+                "custom_tag": a.custom_tag or "",
+                "flat_house_no": a.flat_house_no or "",
+                "floor": a.floor or "",
+                "building_name": a.building_name or "",
+                "street_address": a.street_address or "",
+                "landmark": a.landmark or "",
+                "city": a.city or "Kodad",
+                "pincode": a.pincode or "508206",
+                "latitude": float(a.latitude) if a.latitude else 17.001734,
+                "longitude": float(a.longitude) if a.longitude else 79.9625,
+                "delivery_instructions": a.delivery_instructions or "",
+                "is_default": a.is_default,
+                "formatted_address": a.formatted_address,
+                "created_at": a.created_at.strftime("%d %b %Y") if hasattr(a, "created_at") and a.created_at else "",
+            })
 
         subs = Subscription.objects.filter(customer=customer).select_related("product", "hub", "customer__assigned_hub").order_by("-created_at")
         subs_data = []
@@ -213,6 +248,7 @@ class AdminCustomerDetailView(APIView):
                 "date_joined": customer.date_joined.strftime("%d %b %Y"),
                 "is_active": customer.is_active,
             },
+            "saved_addresses": addrs_data,
             "subscriptions": subs_data,
             "deliveries": tasks_data,
         })

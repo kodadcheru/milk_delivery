@@ -6,6 +6,7 @@ import '../../theme/ui_format.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
+import '../../models/customer_address_model.dart';
 import '../../models/live_order_model.dart';
 import '../../models/subscription_model.dart';
 import '../../models/bottle_return_model.dart';
@@ -1577,20 +1578,36 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Address & Assigned Driver
-          Row(
-            children: [
-              const Icon(Icons.place_rounded, size: 14, color: UiTone.softText),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  task.deliveryAddress.replaceAll(', Hyderabad', ', Telangana').replaceAll('Hyderabad', 'Telangana'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body.copyWith(fontSize: 11),
-                ),
+          // Address & Assigned Driver (Tap to view customer address book)
+          InkWell(
+            onTap: () => _showCustomerAddressesModal(task),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  const Icon(Icons.place_rounded, size: 14, color: UiTone.primary),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      task.deliveryAddress.replaceAll(', Hyderabad', ', Telangana').replaceAll('Hyderabad', 'Telangana'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body.copyWith(fontSize: 11, color: UiTone.ink, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: UiTone.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('Addresses 📖', style: UiText.caption.copyWith(fontSize: 9.5, color: UiTone.primary, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 4),
           Row(
@@ -1686,6 +1703,172 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showCustomerAddressesModal(DeliveryTaskModel task) {
+    final custName = task.customerName.isNotEmpty ? task.customerName : 'Customer';
+    final custPhone = task.customerPhone;
+    final custId = task.subscriptionDetail?.customerId;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: UiTone.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return FutureBuilder<List<CustomerAddressModel>>(
+          future: ApiService.fetchCustomerAddresses(customerId: custId, phone: custPhone),
+          builder: (context, snapshot) {
+            final isLoading = snapshot.connectionState == ConnectionState.waiting;
+            final addrs = snapshot.data ?? [];
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '📍 $custName\'s Address Book',
+                            style: UiText.h2.copyWith(fontSize: 16),
+                          ),
+                          Text(
+                            'Customer Doorstep Delivery Locations',
+                            style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: UiTone.softText),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (isLoading)
+                    const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+                  else if (addrs.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: UiTone.surfaceMuted,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, color: UiTone.softText),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              task.deliveryAddress.isNotEmpty ? task.deliveryAddress : 'Default profile address',
+                              style: UiText.body.copyWith(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...addrs.map((CustomerAddressModel a) {
+                      final isDefault = a.isDefault;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDefault ? const Color(0xFFF0FDF4) : UiTone.surfaceMuted,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDefault ? UiTone.primary.withValues(alpha: 0.4) : Colors.transparent,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isDefault ? UiTone.primary : UiTone.border,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                a.addressType == 'WORK'
+                                    ? Icons.work_outline_rounded
+                                    : (a.addressType == 'OTHER' ? Icons.location_on_rounded : Icons.home_rounded),
+                                color: isDefault ? Colors.white : UiTone.ink,
+                                size: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        a.customTag.isNotEmpty ? a.customTag : a.displayType,
+                                        style: UiText.bodyStrong.copyWith(fontSize: 13),
+                                      ),
+                                      if (isDefault) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: UiTone.primary.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            'PRIMARY DEFAULT ⭐',
+                                            style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.primary),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    a.summaryAddress,
+                                    style: UiText.body.copyWith(fontSize: 11.5, color: UiTone.ink),
+                                  ),
+                                  if (a.deliveryInstructions.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '🚪 ${a.deliveryInstructions}',
+                                      style: UiText.caption.copyWith(fontSize: 10.5, color: const Color(0xFFD97706)),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

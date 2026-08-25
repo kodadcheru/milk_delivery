@@ -1515,6 +1515,22 @@
               </div>
             </div>
           </div>
+
+          <!-- 3. Customer Address Book Card -->
+          <div class="section-card" id="cust-detail-address-book-card" style="margin-bottom: 0;">
+            <div class="section-header" style="margin-bottom: 12px;">
+              <div>
+                <div class="section-title"><i class="fa-solid fa-address-book" style="color: #38BDF8;"></i> Address Book <span id="custDetailAddressCountBadge" class="status-tag status-active" style="font-size: 11px; padding: 2px 7px;">0 Saved</span></div>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Multi-address doorstep locations & landmarks</span>
+              </div>
+              <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 11.5px;" onclick="openAddAddressModalForCurrentCustomer()">
+                <i class="fa-solid fa-plus"></i> Add Address
+              </button>
+            </div>
+            <div id="cust-detail-addresses-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
         </div>
 
         <!-- Right Column: Subscriptions & Delivery History -->
@@ -2759,6 +2775,81 @@
       </div>
       <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="closeModal('walletLedgerModal')">Close Ledger</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Add Customer Address (Admin) ── -->
+  <div class="modal-overlay" id="addCustomerAddressModal">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-title"><i class="fa-solid fa-location-dot" style="color: var(--primary-accent);"></i> Add Address for Customer</div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Address Tag / Type</label>
+          <select id="adminNewAddrType" class="form-control">
+            <option value="HOME">🏠 Home</option>
+            <option value="WORK">🏢 Work / Office</option>
+            <option value="OTHER">📍 Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Custom Tag / Nickname</label>
+          <input type="text" id="adminNewAddrCustomTag" class="form-control" placeholder="e.g. Parents Villa, Farmhouse">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Flat / House No <span style="color: #EF4444;">*</span></label>
+          <input type="text" id="adminNewAddrFlatNo" class="form-control" placeholder="e.g. Flat 302, Door 4-12" required>
+        </div>
+        <div class="form-group">
+          <label>Floor No</label>
+          <input type="text" id="adminNewAddrFloor" class="form-control" placeholder="e.g. 3rd Floor">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Building / Society / Apartment Name <span style="color: #EF4444;">*</span></label>
+        <input type="text" id="adminNewAddrBuilding" class="form-control" placeholder="e.g. Sri Lakshmi Residency, Green Valley" required>
+      </div>
+
+      <div class="form-group">
+        <label>Street Address / Road <span style="color: #EF4444;">*</span></label>
+        <input type="text" id="adminNewAddrStreet" class="form-control" placeholder="e.g. Main Road, Beside SBI Bank" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Landmark</label>
+          <input type="text" id="adminNewAddrLandmark" class="form-control" placeholder="e.g. Near Water Tank">
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="adminNewAddrCity" class="form-control" value="Kodad">
+        </div>
+        <div class="form-group">
+          <label>Pincode</label>
+          <input type="text" id="adminNewAddrPincode" class="form-control" value="508206">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-bell-concierge" style="color: #F59E0B;"></i> Doorstep Delivery Instructions</label>
+        <input type="text" id="adminNewAddrInstructions" class="form-control" placeholder="e.g. Hang milk bag on gate hook, ring bell once">
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+        <input type="checkbox" id="adminNewAddrIsDefault" style="width: 16px; height: 16px; accent-color: var(--primary-accent);">
+        <label for="adminNewAddrIsDefault" style="margin: 0; cursor: pointer; font-size: 13px; font-weight: 600;">Set as Primary Delivery Address ⭐</label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+        <button class="btn btn-secondary" onclick="closeModal('addCustomerAddressModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAdminNewCustomerAddress()">
+          <i class="fa-solid fa-check"></i> Save Address
+        </button>
       </div>
     </div>
   </div>
@@ -7995,6 +8086,179 @@
             </tr>
           `;
         });
+      }
+
+      // Saved Addresses List
+      const addrs = data.saved_addresses || [];
+      const addrCountBadge = document.getElementById('custDetailAddressCountBadge');
+      if (addrCountBadge) {
+        addrCountBadge.innerText = `${addrs.length} Saved`;
+      }
+      const addrsContainer = document.getElementById('cust-detail-addresses-container');
+      if (addrsContainer) {
+        addrsContainer.innerHTML = '';
+        if (addrs.length === 0) {
+          addrsContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.1);">
+              <i class="fa-solid fa-location-dot" style="font-size: 24px; color: var(--text-muted); margin-bottom: 6px; display: block;"></i>
+              <span style="font-size: 12px; color: var(--text-muted);">No addresses saved yet.</span>
+            </div>
+          `;
+        } else {
+          addrs.forEach(a => {
+            const isDef = a.is_default === true;
+            let icon = 'fa-house';
+            let iconColor = '#38BDF8';
+            if (a.address_type === 'WORK') { icon = 'fa-building'; iconColor = '#F59E0B'; }
+            else if (a.address_type === 'OTHER') { icon = 'fa-location-dot'; iconColor = '#10B981'; }
+
+            const defaultBadge = isDef 
+              ? '<span class="status-tag status-delivered" style="font-size: 10px; padding: 2px 7px;"><i class="fa-solid fa-star"></i> Primary Default</span>'
+              : `<button class="btn btn-secondary" style="padding: 2px 8px; font-size: 10px;" onclick="setCustomerAddressAsDefault(${a.id})"><i class="fa-regular fa-star"></i> Set Default</button>`;
+
+            const mapLink = (a.latitude && a.longitude)
+              ? `<a href="https://www.google.com/maps/search/?api=1&query=${a.latitude},${a.longitude}" target="_blank" class="btn btn-secondary" style="padding: 2px 7px; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-map-location-dot" style="color: #38BDF8;"></i> Map</a>`
+              : '';
+
+            addrsContainer.innerHTML += `
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid ${isDef ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.07)'}; border-radius: 10px; padding: 12px; transition: border 0.15s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid ${icon}" style="color: ${iconColor}; font-size: 13px;"></i>
+                    <strong style="font-size: 12.5px; color: #FFFFFF;">${a.custom_tag || a.display_type || a.address_type}</strong>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    ${defaultBadge}
+                    ${mapLink}
+                    <button class="btn btn-danger" style="padding: 2px 6px; font-size: 10px;" onclick="deleteCustomerAddressFromAdmin(${a.id})" title="Delete Address"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-color); line-height: 1.4;">
+                  ${a.formatted_address || a.street_address}
+                </div>
+                ${a.delivery_instructions ? `<div style="margin-top: 6px; font-size: 11px; color: #F59E0B; background: rgba(245, 158, 11, 0.08); padding: 4px 8px; border-radius: 6px;"><i class="fa-solid fa-bell-concierge"></i> ${a.delivery_instructions}</div>` : ''}
+              </div>
+            `;
+          });
+        }
+      }
+    }
+
+    function openAddAddressModalForCurrentCustomer() {
+      document.getElementById('adminNewAddrType').value = 'HOME';
+      document.getElementById('adminNewAddrCustomTag').value = '';
+      document.getElementById('adminNewAddrFlatNo').value = '';
+      document.getElementById('adminNewAddrFloor').value = '';
+      document.getElementById('adminNewAddrBuilding').value = '';
+      document.getElementById('adminNewAddrStreet').value = '';
+      document.getElementById('adminNewAddrLandmark').value = '';
+      document.getElementById('adminNewAddrCity').value = 'Kodad';
+      document.getElementById('adminNewAddrPincode').value = '508206';
+      document.getElementById('adminNewAddrInstructions').value = '';
+      document.getElementById('adminNewAddrIsDefault').checked = false;
+      document.getElementById('addCustomerAddressModal').style.display = 'flex';
+    }
+
+    async function submitAdminNewCustomerAddress() {
+      const cId = document.getElementById('custDetailDbId').value;
+      if (!cId) {
+        alert('⚠️ No customer selected.');
+        return;
+      }
+      const type = document.getElementById('adminNewAddrType').value;
+      const customTag = document.getElementById('adminNewAddrCustomTag').value.trim();
+      const flatNo = document.getElementById('adminNewAddrFlatNo').value.trim();
+      const floor = document.getElementById('adminNewAddrFloor').value.trim();
+      const building = document.getElementById('adminNewAddrBuilding').value.trim();
+      const street = document.getElementById('adminNewAddrStreet').value.trim();
+      const landmark = document.getElementById('adminNewAddrLandmark').value.trim();
+      const city = document.getElementById('adminNewAddrCity').value.trim() || 'Kodad';
+      const pincode = document.getElementById('adminNewAddrPincode').value.trim() || '508206';
+      const instructions = document.getElementById('adminNewAddrInstructions').value.trim();
+      const isDefault = document.getElementById('adminNewAddrIsDefault').checked;
+
+      if (!flatNo || !building || !street) {
+        alert('⚠️ Flat/House No, Building/Society Name, and Street Address are required.');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/accounts/addresses/?customer_id=${cId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
+            address_type: type,
+            custom_tag: customTag,
+            flat_house_no: flatNo,
+            floor: floor,
+            building_name: building,
+            street_address: street,
+            landmark: landmark,
+            city: city,
+            pincode: pincode,
+            delivery_instructions: instructions,
+            is_default: isDefault,
+            latitude: 17.001734,
+            longitude: 79.9625,
+          })
+        });
+
+        if (res.ok) {
+          closeModal('addCustomerAddressModal');
+          alert('✅ Address added to customer address book successfully!');
+          openCustomerDetailPage(cId);
+        } else {
+          const errData = await res.json();
+          alert('❌ Failed to add address: ' + (errData.detail || errData.error || 'Server error'));
+        }
+      } catch (e) {
+        alert('❌ Network error saving customer address.');
+      }
+    }
+
+    async function setCustomerAddressAsDefault(addressId) {
+      const cId = document.getElementById('custDetailDbId').value;
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/accounts/addresses/${addressId}/set-default/?customer_id=${cId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+        if (res.ok) {
+          openCustomerDetailPage(cId);
+        } else {
+          alert('Could not set address as default.');
+        }
+      } catch (e) {
+        alert('Network error.');
+      }
+    }
+
+    async function deleteCustomerAddressFromAdmin(addressId) {
+      if (!confirm('Are you sure you want to delete this address from the customer account?')) return;
+      const cId = document.getElementById('custDetailDbId').value;
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token') || '';
+        const res = await fetch(`${baseUrl}/accounts/addresses/${addressId}/?customer_id=${cId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+        if (res.ok) {
+          openCustomerDetailPage(cId);
+        } else {
+          alert('Could not delete address.');
+        }
+      } catch (e) {
+        alert('Network error.');
       }
     }
 
