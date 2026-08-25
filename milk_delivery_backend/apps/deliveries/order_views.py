@@ -1,7 +1,7 @@
 from decimal import Decimal
 import random
 import uuid
-from datetime import date
+from datetime import date, datetime, timedelta
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
@@ -112,10 +112,9 @@ class ExpressOrderListCreateView(APIView):
             return Response({"detail": "Delivery location is outside our operational service area."}, status=status.HTTP_400_BAD_REQUEST)
 
         delivery_type = data.get('delivery_type', 'SCHEDULED')
-        from datetime import timedelta
         
         if delivery_type == 'INSTANT':
-            delivery_date = date.today()
+            delivery_date = timezone.now().date()
             eta_minutes = 25
             estimated_delivery_time = timezone.now() + timedelta(minutes=25)
             delivery_slot = 'Instant Delivery'
@@ -133,11 +132,9 @@ class ExpressOrderListCreateView(APIView):
             if slot_config:
                 delivery_date_for_check = delivery_date
                 if isinstance(delivery_date_for_check, str):
-                    from datetime import datetime as dt
                     try:
-                        delivery_date_for_check = dt.strptime(delivery_date_for_check, '%Y-%m-%d').date()
+                        delivery_date_for_check = datetime.strptime(delivery_date_for_check, '%Y-%m-%d').date()
                     except ValueError:
-                        from django.utils import timezone
                         delivery_date_for_check = timezone.now().date()
                 
                 if slot_config.is_full(delivery_date_for_check):

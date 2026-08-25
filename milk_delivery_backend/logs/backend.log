@@ -350,3 +350,11 @@ Traceback (most recent call last):
     "end_date": str(s.end_date) if s.end_date else None,
                                    ^^^^^^^^^^
 AttributeError: 'Subscription' object has no attribute 'end_date'
+[2026-08-25 14:14:55,224] ERROR [django.request:61] Unhandled Exception in <apps.deliveries.order_views.ExpressOrderListCreateView object at 0x108ebbe00>: cannot access local variable 'timezone' where it is not associated with a value
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/order_views.py", line 120, in post
+    estimated_delivery_time = timezone.now() + timedelta(minutes=25)
+                              ^^^^^^^^
+UnboundLocalError: cannot access local variable 'timezone' where it is not associated with a value
