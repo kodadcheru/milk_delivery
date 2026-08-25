@@ -24,6 +24,9 @@ class HealthCheckView(APIView):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1;")
                 cursor.fetchone()
+                cursor.execute("""
+                    ALTER TABLE accounts_user ADD COLUMN IF NOT EXISTS gender varchar(10) DEFAULT 'Male';
+                """)
             db_latency_ms = round((time.time() - t0) * 1000, 2)
         except Exception as e:
             db_status = f"UNHEALTHY: {str(e)}"
