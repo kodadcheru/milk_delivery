@@ -1087,12 +1087,35 @@ class AdminDatabaseCompleteResetView(APIView):
 
     def post(self, request):
         try:
+            from django.core.management import call_command
+            from django.db import connection
+
+            # 1. Ensure migrations and schema are up to date
+            try:
+                call_command("migrate", interactive=False)
+            except Exception as mig_err:
+                print("Migration notice:", mig_err)
+
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    DO $$
+                    BEGIN
+                        IF EXISTS (
+                            SELECT 1 
+                            FROM information_schema.columns 
+                            WHERE table_name='accounts_customeraddress' AND column_name='user_id'
+                        ) THEN
+                            ALTER TABLE accounts_customeraddress RENAME COLUMN user_id TO customer_id;
+                        END IF;
+                    END $$;
+                """)
+
             from apps.accounts.models import CustomerAddress, Notification, User, WalletTransaction, SupportMessage
             from apps.subscriptions.models import Subscription, VacationPause
             from apps.deliveries.models import DeliveryTask, LiveOrder, LiveOrderItem, BottleReturn, ProviderPayout, DailyMilkBatch
             from seed_railway import seed
 
-            # 1. Purge all transactional and delivery records
+            # 2. Purge all transactional and delivery records
             deleted_items, _ = LiveOrderItem.objects.all().delete()
             deleted_orders, _ = LiveOrder.objects.all().delete()
             deleted_tasks, _ = DeliveryTask.objects.all().delete()
@@ -1103,15 +1126,15 @@ class AdminDatabaseCompleteResetView(APIView):
             deleted_payouts, _ = ProviderPayout.objects.all().delete()
             deleted_support, _ = SupportMessage.objects.all().delete()
 
-            # 2. Purge customer addresses and wallets/notifications
+            # 3. Purge customer addresses and wallets/notifications
             deleted_addresses, _ = CustomerAddress.objects.all().delete()
             deleted_transactions, _ = WalletTransaction.objects.all().delete()
             deleted_notifications, _ = Notification.objects.all().delete()
 
-            # 3. Purge all non-superadmin/non-staff users
+            # 4. Purge all non-superadmin/non-staff users
             deleted_users, _ = User.objects.filter(is_superuser=False, is_staff=False).delete()
 
-            # 4. Re-run clean seed
+            # 5. Re-run clean seed
             seed()
 
             return Response({
