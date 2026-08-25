@@ -256,6 +256,19 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
       }
     }
     _routeResult = RouteOptimizer.optimizeBatchRoute(hub: _activeHub, tasks: tasks);
+
+    final firstPendingIdx = _routeResult.orderedStops.indexWhere((s) => s.status == 'PENDING');
+    if (firstPendingIdx != -1) {
+      _currentStopIndex = firstPendingIdx;
+      // If there are delivered stops, ensure we are in the active delivery stage
+      final deliveredCount = _routeResult.orderedStops.where((s) => s.status == 'DELIVERED').length;
+      if (deliveredCount > 0 && _batchStage == 0) {
+        _batchStage = 1;
+      }
+    } else if (_routeResult.orderedStops.isNotEmpty && _routeResult.orderedStops.every((s) => s.status == 'DELIVERED' || s.status == 'SKIPPED')) {
+      _batchStage = 2; // All stops delivered, show completion screen!
+      _currentStopIndex = _routeResult.orderedStops.length - 1;
+    }
   }
 
   void _callPhone(BuildContext context, String phone) async {
@@ -616,11 +629,15 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
     final currentStop = stops[_currentStopIndex];
     final progress = (_currentStopIndex) / stops.length;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return RefreshIndicator(
+      color: UiTone.primary,
+      onRefresh: _loadFreshData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // ── Progress Header ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -959,8 +976,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
           const SizedBox(height: 20),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ══════════════════════════════════════════════════════════════════════════
   // STAGE 2: HUB RETURN & EMPTY BOTTLE RECONCILIATION SUMMARY
