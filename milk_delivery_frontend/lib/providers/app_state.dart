@@ -769,7 +769,11 @@ class AppState extends ChangeNotifier {
             longitude: currentUser!.longitude,
             isDefault: true,
           );
-          final created = await ApiService.createCustomerAddress(profileAddr);
+          final created = await ApiService.createCustomerAddress(
+            profileAddr,
+            phone: currentUser!.phone,
+            customerId: currentUser!.id,
+          );
           if (created != null) {
             savedAddresses = [created];
             activeAddress = created;
