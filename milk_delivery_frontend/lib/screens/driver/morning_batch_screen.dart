@@ -29,7 +29,7 @@ class MorningBatchScreen extends StatefulWidget {
   State<MorningBatchScreen> createState() => _MorningBatchScreenState();
 }
 
-class _MorningBatchScreenState extends State<MorningBatchScreen> {
+class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBindingObserver {
   late RouteOptimizationResult _routeResult;
 
   bool _isLoading = true;
@@ -38,6 +38,30 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   int _totalBottlesCollected = 0;
   int _currentStopBottles = 0;
   final Set<String> _verifiedCrates = {};
+
+  bool get _isEveningBatch {
+    if (widget.slotFilter != null && (widget.slotFilter!.toLowerCase().contains('pm') || widget.slotFilter!.toLowerCase().contains('evening'))) {
+      return true;
+    }
+    if (widget.shiftName.toLowerCase().contains('evening')) {
+      return true;
+    }
+    final activeTasks = widget.state.deliveries.where((d) => d.status != 'SKIPPED').toList();
+    if (activeTasks.isNotEmpty) {
+      final firstSlot = activeTasks.first.slotTime.toLowerCase();
+      if (firstSlot.contains('pm') || firstSlot.contains('evening') || firstSlot.contains('18:') || firstSlot.contains('19:') || firstSlot.contains('20:')) {
+        return true;
+      }
+    }
+    return DateTime.now().hour >= 12;
+  }
+
+  String get _batchModeTitle => _isEveningBatch ? 'Evening Batch Mode 🌙' : 'Morning Batch Mode 🥛';
+  String get _batchModeTiming => _isEveningBatch ? '06:00 PM – 08:30 PM • Fuel-Optimized Route' : '05:00 AM – 07:00 AM • Fuel-Optimized Route';
+  String get _routeSequenceTitle => _isEveningBatch ? 'Optimized Evening Route Sequence' : 'Optimized Morning Route Sequence';
+  String get _batchCompletedTitle => _isEveningBatch ? 'Evening Batch Completed! 🎉' : 'Morning Batch Completed! 🎉';
+  String get _batchCompletedSubtitle => _isEveningBatch ? 'All evening subscriptions delivered 100% on time.' : 'All morning subscriptions delivered 100% on time.';
+  String get _batchReceiptRowLabel => _isEveningBatch ? 'Evening Shift Doorsteps Completed' : 'Morning Shift Doorsteps Completed';
 
   HubLocationModel get _activeHub {
     final h = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
@@ -165,7 +189,27 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadFreshData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadFreshData();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MorningBatchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _optimizeRoute();
   }
 
   Future<void> _loadFreshData() async {
@@ -296,9 +340,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Morning Batch Mode 🥛',
+            Text(_batchModeTitle,
                 style: UiText.h2.copyWith(color: Colors.white, fontSize: 16)),
-            Text('05:00 AM – 07:00 AM • Fuel-Optimized Route',
+            Text(_batchModeTiming,
                 style: UiText.caption.copyWith(
                     color: Colors.white.withValues(alpha: 0.7), fontSize: 10.5)),
           ],
@@ -851,9 +895,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           const SizedBox(height: 20),
 
           // ── Full Route Stops Timeline ──
-          const UiSectionHeader(
-            title: 'Optimized Morning Route Sequence',
-            padding: EdgeInsets.only(bottom: 8),
+          UiSectionHeader(
+            title: _routeSequenceTitle,
+            padding: const EdgeInsets.only(bottom: 8),
           ),
 
           ListView.separated(
@@ -936,9 +980,9 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
           ),
           const SizedBox(height: 16),
 
-          Text('Morning Batch Completed! 🎉', style: UiText.h1.copyWith(fontSize: 20)),
+          Text(_batchCompletedTitle, style: UiText.h1.copyWith(fontSize: 20)),
           const SizedBox(height: 4),
-          Text('All morning subscriptions delivered 100% on time.', style: UiText.body.copyWith(fontSize: 12, color: UiTone.softText)),
+          Text(_batchCompletedSubtitle, style: UiText.body.copyWith(fontSize: 12, color: UiTone.softText)),
           const SizedBox(height: 20),
 
           // Return to Hub Card
@@ -980,7 +1024,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> {
                 const Divider(height: 16),
                 _buildReceiptRow('Monthly Salary (Paid by Hub)', '${widget.state.currentUser?.monthlySalary ?? '₹15,000 / Month'}'),
                 const Divider(height: 16),
-                _buildReceiptRow('Morning Shift Doorsteps Completed', '${stops.length} / ${stops.length} Drops (100%)'),
+                _buildReceiptRow(_batchReceiptRowLabel, '${stops.length} / ${stops.length} Drops (100%)'),
                 const Divider(height: 16),
                 _buildReceiptRow('On-Time Arrival SLA', '100% On-Time (< 07:00 AM)'),
                 const Divider(height: 16),

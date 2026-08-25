@@ -135,10 +135,29 @@ class MainAppShell extends StatefulWidget {
   State<MainAppShell> createState() => _MainAppShellState();
 }
 
-class _MainAppShellState extends State<MainAppShell> {
+class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver {
   int _driverTab = 0;
   int _providerTab = 0;
   int _adminTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      widget.state.reloadAllData();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -252,7 +271,10 @@ class _MainAppShellState extends State<MainAppShell> {
         body: driverScreens[_driverTab.clamp(0, driverScreens.length - 1)],
         bottomNavigationBar: NextGenBottomNavBar(
           selectedIndex: _driverTab.clamp(0, driverScreens.length - 1),
-          onItemSelected: (idx) => setState(() => _driverTab = idx),
+          onItemSelected: (idx) {
+            setState(() => _driverTab = idx);
+            widget.state.reloadAllData();
+          },
           items: [
             NextGenNavItem(
               icon: Icons.local_shipping_outlined,
@@ -416,6 +438,7 @@ class _MainAppShellState extends State<MainAppShell> {
           onItemSelected: (idx) {
             setState(() => _providerTab = idx);
             widget.state.syncProviderTab(idx);
+            widget.state.reloadAllData();
           },
           items: [
             const NextGenNavItem(
@@ -535,7 +558,10 @@ class _MainAppShellState extends State<MainAppShell> {
         body: adminScreens[_adminTab.clamp(0, adminScreens.length - 1)],
         bottomNavigationBar: NextGenBottomNavBar(
           selectedIndex: _adminTab.clamp(0, adminScreens.length - 1),
-          onItemSelected: (idx) => setState(() => _adminTab = idx),
+          onItemSelected: (idx) {
+            setState(() => _adminTab = idx);
+            widget.state.reloadAllData();
+          },
           items: [
             const NextGenNavItem(
               icon: Icons.dashboard_outlined,
