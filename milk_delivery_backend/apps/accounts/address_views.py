@@ -79,6 +79,8 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
             return CustomerAddress.objects.none()
 
         from django.db.models import Q
+        user_query = Q(user=user)
+        clean_digits = _clean_phone_digits(user.phone or getattr(user, 'username', ''))
         if clean_digits:
             user_query |= Q(user__phone__endswith=clean_digits) | Q(user__username__icontains=clean_digits)
         return CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
