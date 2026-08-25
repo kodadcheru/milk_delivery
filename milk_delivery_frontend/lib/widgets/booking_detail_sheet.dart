@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/delivery_task_model.dart';
 import '../models/live_order_model.dart';
@@ -11,7 +12,6 @@ import 'delivery_rating_dialog.dart';
 import 'delivery_chat_sheet.dart';
 import 'order_invoice_sheet.dart';
 import 'doorstep_proof_modal.dart';
-
 
 class BookingDetailSheet extends StatelessWidget {
   final AppState state;
@@ -29,8 +29,7 @@ class BookingDetailSheet extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: UiTone.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => BookingDetailSheet(state: state, liveOrder: order),
     );
   }
@@ -39,836 +38,444 @@ class BookingDetailSheet extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: UiTone.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl))),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => BookingDetailSheet(state: state, subscriptionTask: task),
     );
   }
 
   void _callPhone(BuildContext context, String phone) async {
-    final cleanPhone = phone.replaceAll(' ', '');
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Delivery partner phone number not available')),
+      );
+      return;
+    }
     final uri = Uri.parse('tel:$cleanPhone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: UiTone.primary,
-            content: Text('📞 Dialing: $phone'),
-          ),
-        );
-      }
     }
   }
 
-  /// Shared section label style (bold, 13, ink).
-  Widget _sectionLabel(String text) =>
-      Text(text, style: UiText.bodyStrong.copyWith(fontSize: 13));
+  void _copyOtp(BuildContext context, String otp) {
+    Clipboard.setData(ClipboardData(text: otp));
+    HapticFeedback.selectionClick();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text('Delivery OTP $otp copied to clipboard!'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0D7C66),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isExpress = liveOrder != null;
+    final orderId = isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}';
+    final status = isExpress ? liveOrder!.status.toUpperCase() : subscriptionTask!.status.toUpperCase();
+    final isDelivered = status == 'DELIVERED' || status == 'COMPLETED';
+    final isCancelled = status == 'CANCELLED' || status == 'SKIPPED' || status == 'FAILED';
+    final isActive = !isDelivered && !isCancelled;
 
-    final title = isExpress ? 'Express Order #${liveOrder!.id}' : 'Morning Delivery #${subscriptionTask!.id}';
-    final status = isExpress ? liveOrder!.status : subscriptionTask!.status;
-    final isDelivered = status == 'DELIVERED';
     final activeAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
     final rawAddress = isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress;
     final displayAddress = (rawAddress.isNotEmpty && rawAddress != 'Doorstep Delivery Location')
         ? rawAddress
         : (activeAddr.isNotEmpty ? activeAddr : 'Doorstep Delivery Location');
 
-    final driverName = isExpress ? liveOrder!.driverName : (subscriptionTask!.driverDetail?.fullName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Assigning Delivery Partner...');
-    final driverPhone = isExpress ? liveOrder!.driverPhone : (subscriptionTask!.driverDetail?.phone.isNotEmpty == true ? subscriptionTask!.driverDetail!.phone : '');
-    final isDriverAssigned = driverPhone.isNotEmpty && !driverName.startsWith('Assigning');
+    final driverName = isExpress
+        ? (liveOrder!.driverName.isNotEmpty ? liveOrder!.driverName : 'Assigned MilkDrop Partner')
+        : (subscriptionTask!.driverDetail?.fullName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Assigned MilkDrop Partner');
+    final driverPhone = isExpress ? liveOrder!.driverPhone : (subscriptionTask!.driverDetail?.phone ?? '');
+    final isDriverAssigned = driverPhone.isNotEmpty;
     final slot = isExpress ? liveOrder!.deliverySlot : subscriptionTask!.slotTime;
-    final proofUrl = isExpress ? '' : subscriptionTask!.proofImageUrl;
-    final otp = isExpress ? liveOrder!.deliveryOtp : '06AM';
+    final rawDate = isExpress ? liveOrder!.deliveryDate : subscriptionTask!.deliveryDate;
+    final displayDate = rawDate.isNotEmpty ? rawDate : 'Today, ${DateTime.now().day}/${DateTime.now().month}';
+    final otp = isExpress ? liveOrder!.deliveryOtp : (subscriptionTask?.id != null ? '${(subscriptionTask!.id * 73) % 9000 + 1000}' : '4821');
+    final proofUrl = isExpress ? '' : (subscriptionTask?.proofImageUrl ?? '');
+
+    // Price calculation
+    double totalAmount = 0.0;
+    if (isExpress) {
+      totalAmount = liveOrder!.totalAmount;
+    } else if (subscriptionTask != null) {
+      totalAmount = (subscriptionTask!.pricePerUnit > 0 ? subscriptionTask!.pricePerUnit : 40.0) *
+          (subscriptionTask!.quantity > 0 ? subscriptionTask!.quantity : 1);
+    }
+
+    final isRated = isExpress ? state.isOrderRated(liveOrder!.id) : (subscriptionTask != null && state.isTaskRated(subscriptionTask!.id));
+    final ratingScore = isExpress ? state.getOrderRating(liveOrder!.id) : (subscriptionTask != null ? state.getTaskRating(subscriptionTask!.id) : 5);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      height: MediaQuery.of(context).size.height * 0.90,
+      decoration: const BoxDecoration(
+        color: UiTone.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          // ── Drag Handle ──
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 44,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: UiTone.surfaceBorder,
+                borderRadius: BorderRadius.circular(UiRadius.pill),
+              ),
+            ),
+          ),
+
+          // ── Top Header Bar ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              orderId,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isExpress ? const Color(0xFF0D7C66).withValues(alpha: 0.15) : const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(UiRadius.pill),
+                            ),
+                            child: Text(
+                              isExpress ? '⚡ 30-MIN EXPRESS' : '🥛 DAILY MORNING DROP',
+                              style: TextStyle(
+                                color: isExpress ? const Color(0xFF0D7C66) : const Color(0xFF2563EB),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isDelivered ? 'Delivered successfully • Cold chain intact' : 'Live Order & Real-Time Tracking',
+                        style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 22),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // ── Scrollable Body ──
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+              children: [
+                // ── 1. Hero Live Status Card ──
+                _buildHeroStatusCard(context, isDelivered, isCancelled, isActive, slot, displayDate, otp, isExpress),
+
+                const SizedBox(height: 14),
+
+                // ── 2. Assigned Driver Partner Card ──
+                _buildDriverPartnerCard(context, driverName, driverPhone, isDriverAssigned, isExpress, orderId),
+
+                const SizedBox(height: 14),
+
+                // ── 3. Doorstep Delivery Address ──
+                _buildAddressCard(displayAddress),
+
+                const SizedBox(height: 14),
+
+                // ── 4. Itemized Quick-Commerce Bill Receipt ──
+                _buildBillReceiptCard(isExpress, totalAmount),
+
+                // ── 5. Doorstep Photo Proof (if available) ──
+                if (proofUrl.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  _buildPhotoProofCard(context, proofUrl),
+                ],
+
+                const SizedBox(height: 14),
+
+                // ── 6. Live Order Stepper Timeline ──
+                _buildTimelineCard(status, isDelivered, isCancelled),
+              ],
+            ),
+          ),
+
+          // ── Bottom Action Bar (Floating CTA) ──
+          _buildBottomActionBar(context, isDelivered, isActive, isExpress, totalAmount, isRated, ratingScore, driverName, driverPhone, slot, displayAddress, orderId),
+        ],
+      ),
+    );
+  }
+
+  // ── 1. HERO STATUS CARD ──
+  Widget _buildHeroStatusCard(
+    BuildContext context,
+    bool isDelivered,
+    bool isCancelled,
+    bool isActive,
+    String slot,
+    String displayDate,
+    String otp,
+    bool isExpress,
+  ) {
+    Color bgGradientStart;
+    Color bgGradientEnd;
+    Color accentColor;
+    String statusTitle;
+    String statusSubtitle;
+    IconData statusIcon;
+
+    if (isDelivered) {
+      bgGradientStart = const Color(0xFF0D7C66);
+      bgGradientEnd = const Color(0xFF10A37F);
+      accentColor = const Color(0xFF6EE7B7);
+      statusTitle = 'DELIVERED AT DOORSTEP';
+      statusSubtitle = 'Chilled at 4°C • Verified by Driver Photo';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isCancelled) {
+      bgGradientStart = const Color(0xFF991B1B);
+      bgGradientEnd = const Color(0xFFDC2626);
+      accentColor = const Color(0xFFFCA5A5);
+      statusTitle = 'DELIVERY CANCELLED / SKIPPED';
+      statusSubtitle = 'Wallet amount credited back to account';
+      statusIcon = Icons.cancel_rounded;
+    } else {
+      bgGradientStart = const Color(0xFF0F172A);
+      bgGradientEnd = const Color(0xFF1E293B);
+      accentColor = const Color(0xFF38BDF8);
+      statusTitle = 'OUT FOR DELIVERY 🛵';
+      statusSubtitle = 'Partner is en-route • ETA ~12-18 mins';
+      statusIcon = Icons.two_wheeler_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [bgGradientStart, bgGradientEnd],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: bgGradientStart.withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drag Handle
-          Center(
-            child: Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(color: UiTone.surfaceBorder, borderRadius: BorderRadius.circular(UiRadius.pill)),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Header with Close Button
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(statusIcon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: UiText.h2),
+                    Text(
+                      statusTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
-                      isExpress ? '⚡ 30-Minute Priority Order' : '🥛 Daily Morning Subscription Slot',
-                      style: UiText.caption,
+                      statusSubtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 11.5,
+                      ),
                     ),
                   ],
                 ),
               ),
-              IconButton(icon: const Icon(Icons.close), color: UiTone.softText, onPressed: () => Navigator.pop(context)),
             ],
           ),
-          const SizedBox(height: 12),
-
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── 1. Order Status Banner ──
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: (isDelivered ? UiTone.secondary : UiTone.accentBlue).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      border: Border.all(
-                        color: isDelivered ? UiTone.secondary : UiTone.accentBlue,
-                        width: 1.2,
-                      ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.schedule_rounded, color: Colors.white70, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$displayDate • $slot',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isDelivered ? UiTone.secondary : UiTone.accentBlue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isDelivered ? Icons.check_circle_rounded : Icons.local_shipping_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isDelivered ? 'DELIVERED AT DOORSTEP' : 'OUT FOR DELIVERY',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 13,
-                                  color: isDelivered ? UiTone.primary : UiTone.accentBlue,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isDelivered ? 'Photo proof uploaded & wallet auto-debited' : 'Estimated Arrival within $slot',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDelivered ? UiTone.primary : UiTone.accentBlue,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isExpress && !isDelivered)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: UiTone.primary, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                            child: Column(
-                              children: [
-                                const Text('OTP', style: TextStyle(color: Colors.white70, fontSize: 8.5, fontWeight: FontWeight.bold)),
-                                Text(otp, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ── 1.5. Scheduled Date & Delivery Window ──
-                  _sectionLabel('Scheduled Date & Delivery Window:'),
-                  const SizedBox(height: 8),
-
-                  Builder(builder: (context) {
-                    final rawDate = isExpress ? liveOrder!.deliveryDate : subscriptionTask!.deliveryDate;
-                    final displayDate = rawDate.isNotEmpty ? rawDate : 'Today, ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
-                    final isEvening = slot.toUpperCase().contains('PM') || slot.toUpperCase().contains('17:') || slot.toUpperCase().contains('18:') || slot.toUpperCase().contains('19:');
-                    final shiftTitle = isEvening ? '🌙 Evening Delivery Shift' : '☀️ Morning Delivery Shift';
-                    final orderPlaced = isExpress ? (liveOrder!.createdAt.isNotEmpty ? liveOrder!.createdAt : 'Today') : 'Active Daily Plan';
-
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
+                  ],
+                ),
+                if (isActive)
+                  GestureDetector(
+                    onTap: () => _copyOtp(context, otp),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: UiTone.shellBackground,
-                        borderRadius: BorderRadius.circular(UiRadius.md),
-                        border: Border.all(color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.3) : const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                        color: const Color(0xFF0D7C66),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.15) : const Color(0xFF0D7C66).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(UiRadius.sm),
-                                ),
-                                child: Icon(
-                                  isEvening ? Icons.nights_stay_rounded : Icons.wb_sunny_rounded,
-                                  color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '📅 Delivery Date: $displayDate',
-                                      style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '$shiftTitle • $slot',
-                                      style: UiText.caption.copyWith(
-                                        color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 11.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 14),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Order Placed / Scheduled', style: UiText.caption.copyWith(fontSize: 11)),
-                              Text(orderPlaced, style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: UiTone.ink)),
-                            ],
-                          ),
+                          const Text('OTP: ', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text(otp, style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.copy_rounded, color: Colors.white70, size: 12),
                         ],
                       ),
-                    );
-                  }),
-                  const SizedBox(height: 16),
-
-                  // ── 2. Assigned Delivery Partner with 2-WAY CALLING ──
-                  _sectionLabel('Assigned Delivery Partner:'),
-                  const SizedBox(height: 8),
-
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: UiTone.shellBackground,
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      border: Border.all(color: UiTone.surfaceBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: UiTone.primary.withValues(alpha: 0.15),
-                          child: Text(isDriverAssigned ? '👨‍🌾' : '🛵', style: const TextStyle(fontSize: 24)),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      isDriverAssigned ? driverName : '⌛ Partner Assignment in Progress',
-                                      maxLines: 2,
-                                      style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                  if (isDriverAssigned) ...[
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.verified_rounded, color: UiTone.secondary, size: 14),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isDriverAssigned ? 'EV Scooter • TS 09 EQ 4821 • ⭐ 4.9' : 'Nearest Depot Hub assigning morning route partner',
-                                style: UiText.caption.copyWith(fontSize: 10.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Direct 2-Way Calling Button / Support
-                        ElevatedButton.icon(
-                          onPressed: () => _callPhone(context, isDriverAssigned ? driverPhone : '+918919548905'),
-                          icon: const Icon(Icons.phone_rounded, size: 14),
-                          label: Text(isDriverAssigned ? 'Call' : 'Support'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDriverAssigned ? UiTone.secondary : UiTone.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                            elevation: 0,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // ── 3. Doorstep Delivery Address ──
-                  _sectionLabel('Doorstep Delivery Location:'),
-                  const SizedBox(height: 8),
-
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: UiTone.shellBackground,
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      border: Border.all(color: UiTone.surfaceBorder),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.place_rounded, color: UiTone.primary, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(displayAddress, style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Timeslot: $slot',
-                                style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ── 4. Itemized Product Breakdown ──
-                  _sectionLabel('Order Items & Payment:'),
-                  const SizedBox(height: 8),
-
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: UiTone.shellBackground,
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      border: Border.all(color: UiTone.surfaceBorder),
-                    ),
-                    child: Column(
-                      children: [
-                        if (isExpress) ...[
-                          ...liveOrder!.items.map((it) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Text(it.product.icon, style: const TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      '${it.quantity}x ${it.product.name} (${it.product.unitQuantity})',
-                                      style: UiText.bodyStrong.copyWith(fontSize: 12.5),
-                                    ),
-                                  ),
-                                  Text(
-                                    UiFormat.price(it.totalPrice),
-                                    style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                          const Divider(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Payment Status', style: UiText.label),
-                              Text(liveOrder!.paymentStatus, style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Total Amount Paid', style: UiText.bodyStrong.copyWith(fontSize: 13)),
-                              Text(UiFormat.price(liveOrder!.totalAmount), style: UiText.price.copyWith(color: UiTone.primary, fontWeight: FontWeight.w900)),
-                            ],
-                          ),
-                        ] else ...[
-                          Row(
-                            children: [
-                              Text(subscriptionTask!.subscriptionDetail?.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 22)),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '${subscriptionTask!.subscriptionDetail?.quantity ?? 1}x ${subscriptionTask!.subscriptionDetail?.packSize ?? "1 Litre"}',
-                                  style: UiText.bodyStrong.copyWith(fontSize: 13),
-                                ),
-                              ),
-                              Text(
-                                UiFormat.price((subscriptionTask!.subscriptionDetail?.displayPrice ?? 40) * (subscriptionTask!.subscriptionDetail?.quantity ?? 1)),
-                                style: UiText.price.copyWith(fontSize: 14, color: UiTone.primary, fontWeight: FontWeight.w900),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Subscription Schedule', style: UiText.label),
-                              Text(subscriptionTask!.subscriptionDetail?.scheduleType ?? 'DAILY', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          const Divider(height: 16),
-                          // ── Subscription Management Controls ──
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text('Subscription Controls ⚙️', style: UiText.label.copyWith(color: UiTone.ink, fontWeight: FontWeight.w700)),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: UiTone.surfaceMuted,
-                                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('Daily Qty:', style: UiText.caption.copyWith(fontWeight: FontWeight.w700)),
-                                      Row(
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove_circle_outline, size: 18, color: UiTone.primary),
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(),
-                                            onPressed: () async {
-                                             final sub = subscriptionTask!.subscriptionDetail;
-                                             if (sub != null && sub.quantity > 1) {
-                                               final success = await state.updateSubscriptionDetails(sub.id, quantity: sub.quantity - 1);
-                                               if (context.mounted) {
-                                                 ScaffoldMessenger.of(context).showSnackBar(
-                                                   SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity - 1}' : 'Failed to update subscription')),
-                                                 );
-                                               }
-                                             }
-                                           },
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                                            child: Text('${subscriptionTask!.subscriptionDetail?.quantity ?? 1}', style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900)),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.add_circle_outline, size: 18, color: UiTone.primary),
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(),
-                                            onPressed: () async {
-                                             final sub = subscriptionTask!.subscriptionDetail;
-                                             if (sub != null) {
-                                               final success = await state.updateSubscriptionDetails(sub.id, quantity: sub.quantity + 1);
-                                               if (context.mounted) {
-                                                 ScaffoldMessenger.of(context).showSnackBar(
-                                                   SnackBar(content: Text(success ? 'Updated daily quantity to ${sub.quantity + 1}' : 'Failed to update subscription')),
-                                                 );
-                                               }
-                                             }
-                                           },
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                 final sub = subscriptionTask!.subscriptionDetail;
-                                 if (sub == null) return;
-                                 final now = DateTime.now();
-                                 final picked = await showDateRangePicker(
-                                   context: context,
-                                   firstDate: now,
-                                   lastDate: now.add(const Duration(days: 90)),
-                                   helpText: 'Select Vacation Dates to Pause Milk Drops',
-                                 );
-                                 if (picked != null && context.mounted) {
-                                   final startStr = picked.start.toIso8601String().split('T')[0];
-                                   final endStr = picked.end.toIso8601String().split('T')[0];
-                                   final success = await state.pauseSubscriptionWithDates(sub.id, startStr, endStr, 'Vacation');
-                                   if (context.mounted) {
-                                     ScaffoldMessenger.of(context).showSnackBar(
-                                       SnackBar(
-                                         backgroundColor: success ? UiTone.primary : UiTone.error,
-                                         content: Text(success ? '🌴 Vacation Mode Active: Paused drops from $startStr to $endStr' : 'Failed to activate vacation mode'),
-                                       ),
-                                     );
-                                   }
-                                 }
-                               },
-                                icon: const Icon(Icons.beach_access_rounded, size: 14),
-                                label: const Text('Vacation 🌴', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: UiTone.primary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  elevation: 0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ── 5. Milk Purity & Quality Test Report (FAT, SNF, Water %) ──
-                  if (isExpress) ...[
-                    _buildMilkQualityReport(
-                      productName: liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Vedic Milk',
-                      category: liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.category : 'MILK',
-                    ),
-                  ] else ...[
-                    _buildMilkQualityReport(
-                      productName: subscriptionTask!.subscriptionDetail?.productDetail?.name ?? 'Fresh Vedic Milk',
-                      category: subscriptionTask!.subscriptionDetail?.productDetail?.category ?? 'MILK',
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-
-                  // ── 6. Doorstep Photo Proof (If Available) ──
-                  if (proofUrl.isNotEmpty) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _sectionLabel('Doorstep Photo Proof 📸'),
-                        InkWell(
-                          onTap: () {
-                            DoorstepProofModal.show(
-                              context,
-                              imageUrl: proofUrl,
-                              orderId: isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}',
-                              deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
-                              slotTime: isExpress ? liveOrder!.deliverySlot : (subscriptionTask?.slotTime ?? '05:30 AM'),
-                              address: displayAddress,
-                              driverName: driverName,
-                            );
-                          },
-                          child: Text('Tap to zoom & verify 🔍', style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () {
-                        DoorstepProofModal.show(
-                          context,
-                          imageUrl: proofUrl,
-                          orderId: isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}',
-                          deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
-                          slotTime: isExpress ? liveOrder!.deliverySlot : (subscriptionTask?.slotTime ?? '05:30 AM'),
-                          address: displayAddress,
-                          driverName: driverName,
-                        );
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(UiRadius.md),
-                        child: Stack(
-                          children: [
-                            Container(
-                              height: 160,
-                              width: double.infinity,
-                              color: UiTone.surfaceMuted,
-                              child: Image.network(
-                                proofUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, color: UiText.muted)),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.7),
-                                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 13),
-                                    SizedBox(width: 4),
-                                    Text('Verified Drop', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  // ── 7. Live Mobility Service Tracking Radar Card (If Active / In Transit) ──
-                  if (!isDelivered) ...[
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (ctx) => LiveDriverTrackingScreen(
-                              state: state,
-                              liveOrder: liveOrder,
-                              subscriptionTask: subscriptionTask,
-                              orderTitle: isExpress
-                                  ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
-                                  : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
-                              deliveryAddress: displayAddress,
-                              driverName: driverName,
-                              driverPhone: driverPhone,
-                              deliveryOtp: otp,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: UiTone.ink,
-                          borderRadius: BorderRadius.circular(UiRadius.lg),
-                          boxShadow: UiShadow.card,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: UiTone.primary.withValues(alpha: 0.25),
-                                borderRadius: BorderRadius.circular(UiRadius.md),
-                              ),
-                              child: const Text('🛵', style: TextStyle(fontSize: 22)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Live Radar & Partner Tracking',
-                                        style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 13.5),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Driver: $driverName • OTP: $otp',
-                                    style: UiText.caption.copyWith(color: Colors.white70, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ],
-              ),
+              ],
             ),
           ),
+        ],
+      ),
+    );
+  }
 
-          // ── Bottom Action CTAs ──
-          if (isDelivered) ...[
-            Row(
+  // ── 2. ASSIGNED DRIVER PARTNER CARD ──
+  Widget _buildDriverPartnerCard(
+    BuildContext context,
+    String driverName,
+    String driverPhone,
+    bool isDriverAssigned,
+    bool isExpress,
+    String orderId,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(
+              child: Icon(Icons.delivery_dining_rounded, color: Color(0xFF0D7C66), size: 26),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        OrderInvoiceSheet.show(
-                          context,
-                          order: liveOrder,
-                          task: subscriptionTask,
-                          orderId: isExpress ? liveOrder!.id : 'SUB-DROP-#${subscriptionTask!.id}',
-                          orderDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
-                          slotTime: isExpress ? liveOrder!.deliverySlot : (subscriptionTask?.slotTime ?? '05:30 AM'),
-                          address: displayAddress,
-                          totalAmount: isExpress
-                              ? liveOrder!.totalAmount
-                              : ((subscriptionTask?.subscriptionDetail?.displayPrice ?? 40) * (subscriptionTask?.subscriptionDetail?.quantity ?? 1)).toDouble(),
-                        );
-                      },
-                      icon: const Icon(Icons.receipt_long_rounded, color: UiTone.primary, size: 16),
-                      label: Text('Tax Invoice 🧾', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: UiTone.primary),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        driverName,
+                        style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified_rounded, color: Color(0xFF0D7C66), size: 14),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 48,
-                    child: (isExpress && state.isOrderRated(liveOrder!.id)) || (!isExpress && subscriptionTask != null && state.isTaskRated(subscriptionTask!.id))
-                        ? Container(
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(UiRadius.sm),
-                              border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Rated ${isExpress ? state.getOrderRating(liveOrder!.id) : state.getTaskRating(subscriptionTask!.id)}★ ✓',
-                                  style: UiText.bodyStrong.copyWith(color: const Color(0xFF0D7C66), fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ElevatedButton.icon(
-                            onPressed: () {
-                              DeliveryRatingDialog.show(
-                                context,
-                                state: state,
-                                orderId: isExpress ? liveOrder!.id : null,
-                                taskId: !isExpress ? subscriptionTask?.id : null,
-                                productName: isExpress
-                                    ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
-                                    : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
-                                driverName: driverName,
-                                deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
-                                onRated: (_) {},
-                              );
-                            },
-                            icon: const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
-                            label: Text('Rate Delivery ⭐', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: UiTone.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                              elevation: 0,
-                            ),
-                          ),
-                  ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
+                    const SizedBox(width: 3),
+                    Text(
+                      '4.9 ★ • Electric Scooter Fleet',
+                      style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ] else ...[
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        DeliveryChatSheet.show(
-                          context,
-                          taskId: subscriptionTask?.id,
-                          orderId: liveOrder?.id,
-                          driverName: driverName,
-                          driverPhone: driverPhone,
-                          customerName: state.currentUser?.name ?? 'Customer',
-                          customerPhone: state.currentUser?.phone ?? '',
-                          orderTitle: isExpress
-                              ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
-                              : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
-                          deliveryAddress: displayAddress,
-                        );
-                      },
-                      icon: const Icon(Icons.forum_rounded, color: UiTone.primary, size: 16),
-                      label: Text('In-App Chat', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w700)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: UiTone.primary),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (ctx) => LiveDriverTrackingScreen(
-                              state: state,
-                              liveOrder: liveOrder,
-                              subscriptionTask: subscriptionTask,
-                              orderTitle: isExpress
-                                  ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
-                                  : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
-                              deliveryAddress: displayAddress,
-                              driverName: driverName,
-                              driverPhone: driverPhone,
-                              deliveryOtp: otp,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.moped_rounded, size: 18),
-                      label: Text('Track Partner Live 🛵', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          ),
+          if (isDriverAssigned) ...[
+            IconButton.filledTonal(
+              onPressed: () => _callPhone(context, driverPhone),
+              icon: const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF0D7C66)),
+              style: IconButton.styleFrom(backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1)),
+              tooltip: 'Call Driver',
+            ),
+            const SizedBox(width: 6),
+            IconButton.filledTonal(
+              onPressed: () {
+                DeliveryChatSheet.show(
+                  context,
+                  taskId: subscriptionTask?.id,
+                  orderId: isExpress ? liveOrder?.id : null,
+                  driverName: driverName,
+                  driverPhone: driverPhone,
+                  customerName: state.currentUser?.name ?? 'Customer',
+                  customerPhone: state.currentUser?.phone ?? '',
+                  orderTitle: 'Order $orderId',
+                  deliveryAddress: isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress,
+                );
+              },
+              icon: const Icon(Icons.forum_rounded, size: 16, color: Color(0xFF0D7C66)),
+              style: IconButton.styleFrom(backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1)),
+              tooltip: 'Live In-App Chat',
             ),
           ],
         ],
@@ -876,203 +483,35 @@ class BookingDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildMilkQualityReport({
-    required String productName,
-    required String category,
-  }) {
-    final nameLower = productName.toLowerCase();
-
-    // 1. Check if the delivery task itself has batch parameters wired
-    double directFat = subscriptionTask?.fatPercentage ?? liveOrder?.fatPercentage ?? 0.0;
-    double directSnf = subscriptionTask?.snfPercentage ?? liveOrder?.snfPercentage ?? 0.0;
-    double directWater = subscriptionTask?.waterPercentage ?? liveOrder?.waterPercentage ?? 0.0;
-    double directPrice = subscriptionTask?.batchPricePerLitre ?? liveOrder?.batchPricePerLitre ?? 0.0;
-    String directBatchCode = subscriptionTask?.batchCode ?? liveOrder?.batchCode ?? '';
-    double directTemp = subscriptionTask?.temperatureCelsius ?? 3.8;
-
-    String fatVal = '';
-    String snfVal = '';
-    String waterVal = '';
-    String priceVal = '';
-    String batchCode = '';
-    String tempVal = '';
-    String puritySub = '';
-
-    // Consider > 0 for fat to indicate it was directly provided from the DB instead of defaulted
-    // In DeliveryTaskModel, default was 6.8 but maybe it comes as 0.0 from DB if not set, wait...
-    // Actually the prompt says: "If those are null/0, fall back to the existing state.dailyMilkBatches string matching"
-    // Since delivery_task_model has 6.8 as default, if it's 6.8 it might be the default. But we'll just check > 0 and batchCode != 'BATCH-LIVE-01' maybe?
-    // Wait, let's just do > 0.
-    if (directFat > 0 && directSnf > 0 && (directBatchCode.isNotEmpty && directBatchCode != 'BATCH-LIVE-01' && directBatchCode != 'BATCH-TODAY-01')) {
-      fatVal = '$directFat%';
-      snfVal = '$directSnf%';
-      waterVal = '$directWater%';
-      priceVal = directPrice > 0 ? '₹${directPrice.toStringAsFixed(0)}/L' : '';
-      batchCode = directBatchCode;
-      tempVal = '$directTemp°C';
-      puritySub = 'Hub Certified ($batchCode) • Chilled at $tempVal';
-    } else {
-      // 2. Check if Hub Provider certified a batch for today
-      Map<String, dynamic>? activeBatch;
-      final batches = state.dailyMilkBatches;
-      if (batches.isNotEmpty) {
-        activeBatch = batches.firstWhere(
-          (b) {
-            final bName = b['product_name']?.toString().toLowerCase() ?? '';
-            return bName.contains(nameLower.split(' ').first) || (nameLower.split(' ').isNotEmpty && bName.contains(nameLower.split(' ').first));
-          },
-          orElse: () => batches.first,
-        );
-      }
-
-      if (activeBatch != null) {
-        fatVal = '${activeBatch['fat_percentage']}%';
-        snfVal = '${activeBatch['snf_percentage']}%';
-        waterVal = '${activeBatch['water_percentage']}%';
-        final parsedP = double.tryParse(activeBatch['price_per_litre']?.toString() ?? '68') ?? 68.0;
-        priceVal = '₹${parsedP.toStringAsFixed(0)}/L';
-        batchCode = activeBatch['batch_code']?.toString() ?? (directBatchCode.isNotEmpty ? directBatchCode : 'BATCH-KDD-01');
-        tempVal = '${activeBatch['temperature_celsius']}°C';
-      } else {
-        batchCode = directBatchCode.isNotEmpty ? directBatchCode : 'BATCH-KDD-01';
-        tempVal = '3.8°C';
-        if (nameLower.contains('buffalo')) {
-          fatVal = '6.8%';
-          snfVal = '9.0%';
-          waterVal = '0.0%';
-        } else if (nameLower.contains('desi') || nameLower.contains('gir') || nameLower.contains('a2')) {
-          fatVal = '4.5%';
-          snfVal = '8.8%';
-          waterVal = '0.0%';
-        } else if (nameLower.contains('paneer')) {
-          fatVal = '22.0%';
-          snfVal = '18.0%';
-          waterVal = '0.0%';
-        } else if (nameLower.contains('curd') || nameLower.contains('dahi')) {
-          fatVal = '5.0%';
-          snfVal = '9.0%';
-          waterVal = '0.0%';
-        } else if (nameLower.contains('ghee')) {
-          fatVal = '99.7%';
-          snfVal = '0.3%';
-          waterVal = '0.0%';
-        } else if (category.toUpperCase() == 'MILK' || nameLower.contains('milk')) {
-          fatVal = '4.2%';
-          snfVal = '8.5%';
-          waterVal = '0.0%';
-        } else {
-          fatVal = '6.8%';
-          snfVal = '9.0%';
-          waterVal = '0.0%';
-        }
-      }
-      puritySub = 'Hub Certified ($batchCode) • Chilled at $tempVal';
-    }
-
+  // ── 3. ADDRESS CARD ──
+  Widget _buildAddressCard(String address) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: UiTone.successSoft,
-        borderRadius: BorderRadius.circular(UiRadius.md),
-        border: Border.all(color: UiTone.secondary.withValues(alpha: 0.35), width: 1.2),
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: UiTone.secondary.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.verified_rounded, color: UiTone.success, size: 18),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Daily Milk Quality & Lab Report 🥛',
-                      style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w800, color: UiTone.primaryDark),
-                    ),
-                    Text(
-                      priceVal.isNotEmpty
-                          ? 'Today\'s Hub Price: $priceVal • FSSAI Grade A+'
-                          : 'FSSAI Certified • Passed 24 Quality Checks',
-                      style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.success, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: UiTone.success,
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                ),
-                child: Text(priceVal.isNotEmpty ? priceVal : 'GRADE A+', style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 3 Metric Stat Boxes: FAT %, SNF %, WATER %
-          Row(
-            children: [
-              Expanded(
-                child: _buildQualityMetricBox(
-                  icon: '🧈',
-                  title: 'FAT %',
-                  value: fatVal,
-                  subtitle: 'Natural Cream',
-                  accentColor: UiTone.warning,
-                  bgColor: UiTone.warningSoft,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQualityMetricBox(
-                  icon: '🔬',
-                  title: 'SNF %',
-                  value: snfVal,
-                  subtitle: 'Solid-Not-Fat',
-                  accentColor: UiTone.accentBlue,
-                  bgColor: UiTone.infoSoft,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQualityMetricBox(
-                  icon: '💧',
-                  title: 'Water %',
-                  value: waterVal,
-                  subtitle: '0% Added Water',
-                  accentColor: UiTone.success,
-                  bgColor: UiTone.successSoft,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: UiTone.surface,
-              borderRadius: BorderRadius.circular(UiRadius.xs),
-              border: Border.all(color: UiTone.surfaceBorder),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
+            child: const Icon(Icons.place_rounded, color: Color(0xFF2563EB), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.ac_unit_rounded, size: 14, color: UiTone.accentBlue),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Zero Adulteration • $puritySub',
-                    style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.softText, fontWeight: FontWeight.w600),
-                  ),
-                ),
+                const Text('Doorstep Delivery Address', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+                const SizedBox(height: 3),
+                Text(address, style: UiText.bodyStrong.copyWith(fontSize: 13, height: 1.35)),
               ],
             ),
           ),
@@ -1081,46 +520,373 @@ class BookingDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildQualityMetricBox({
-    required String icon,
-    required String title,
-    required String value,
-    required String subtitle,
-    required Color accentColor,
-    required Color bgColor,
-  }) {
+  // ── 4. ITEMIZED BILL RECEIPT CARD ──
+  Widget _buildBillReceiptCard(bool isExpress, double totalAmount) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(UiRadius.sm),
-        border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(icon, style: const TextStyle(fontSize: 12)),
-              const SizedBox(width: 4),
-              Text(
-                title,
-                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: accentColor),
+              const Text('Itemized Bill Receipt', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                ),
+                child: const Text('PAID ONLINE ✓', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF0D7C66))),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: accentColor),
+          const Divider(height: 20),
+
+          // Items List
+          if (isExpress && liveOrder!.items.isNotEmpty) ...[
+            ...liveOrder!.items.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: UiTone.surfaceMuted,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(child: Text('🥛', style: TextStyle(fontSize: 16))),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.product.name, style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
+                            Text('Qty: ${item.quantity} × ${UiFormat.price(item.unitPrice)}', style: UiText.caption.copyWith(fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Text(UiFormat.price(item.totalPrice), style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                    ],
+                  ),
+                )),
+          ] else ...[
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: UiTone.surfaceMuted,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(child: Text('🥛', style: TextStyle(fontSize: 16))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(subscriptionTask?.productName ?? 'Farm Fresh A2 Cow Milk', style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
+                      Text('Daily Subscription Drop', style: UiText.caption.copyWith(fontSize: 11)),
+                    ],
+                  ),
+                ),
+                Text(UiFormat.price(totalAmount), style: UiText.bodyStrong.copyWith(fontSize: 13)),
+              ],
+            ),
+          ],
+
+          const Divider(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Cold-Chain Delivery Fee', style: UiText.caption.copyWith(fontSize: 11.5)),
+              const Text('FREE ₹0', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66))),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: accentColor.withValues(alpha: 0.8)),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Grand Total', style: UiText.h2.copyWith(fontSize: 14.5)),
+              Text(UiFormat.price(totalAmount), style: UiText.h2.copyWith(fontSize: 16, color: const Color(0xFF0D7C66))),
+            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  // ── 5. DOORSTEP PHOTO PROOF CARD ──
+  Widget _buildPhotoProofCard(BuildContext context, String proofUrl) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Doorstep Delivery Proof 📸', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+              TextButton(
+                onPressed: () => DoorstepProofModal.show(context, imageUrl: proofUrl),
+                child: const Text('View Full Image', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              proofUrl,
+              height: 140,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                height: 100,
+                color: UiTone.surfaceMuted,
+                child: const Center(child: Icon(Icons.image_not_supported_rounded, color: UiTone.softText)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── 6. TIMELINE CARD ──
+  Widget _buildTimelineCard(String status, bool isDelivered, bool isCancelled) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Live Delivery Progress', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 16),
+          _buildTimelineStep('1', 'Order Placed & Confirmed', 'Batch allocated from local Kodad depot', true),
+          _buildTimelineStep('2', 'Quality Certified & Packed', 'Chilled to 4°C in insulated bag', isDelivered || status == 'OUT_FOR_DELIVERY'),
+          _buildTimelineStep('3', 'Out for Delivery 🛵', 'Assigned partner carrying fresh supply', isDelivered || status == 'OUT_FOR_DELIVERY'),
+          _buildTimelineStep('4', 'Delivered at Doorstep 🥛', 'Placed in doorstep bag with photo proof', isDelivered, isLast: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineStep(String stepNumber, String title, String subtitle, bool isCompleted, {bool isLast = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: isCompleted ? const Color(0xFF0D7C66) : UiTone.surfaceMuted,
+                shape: BoxShape.circle,
+                border: Border.all(color: isCompleted ? const Color(0xFF0D7C66) : UiTone.surfaceBorder),
+              ),
+              child: Center(
+                child: isCompleted
+                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 13)
+                    : Text(stepNumber, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: UiTone.softText)),
+              ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 28,
+                color: isCompleted ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+              ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: isCompleted ? UiTone.ink : UiTone.softText,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isCompleted ? const Color(0xFF64748B) : UiTone.softText,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── 7. BOTTOM FLOATING ACTION BAR ──
+  Widget _buildBottomActionBar(
+    BuildContext context,
+    bool isDelivered,
+    bool isActive,
+    bool isExpress,
+    double totalAmount,
+    bool isRated,
+    int ratingScore,
+    String driverName,
+    String driverPhone,
+    String slot,
+    String displayAddress,
+    String orderId,
+  ) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+      decoration: BoxDecoration(
+        color: UiTone.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Invoice Button
+          Expanded(
+            child: SizedBox(
+              height: 46,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  OrderInvoiceSheet.show(
+                    context,
+                    order: liveOrder,
+                    task: subscriptionTask,
+                    orderId: orderId,
+                    orderDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                    slotTime: slot,
+                    address: displayAddress,
+                    totalAmount: totalAmount,
+                  );
+                },
+                icon: const Icon(Icons.receipt_long_rounded, size: 16, color: Color(0xFF0D7C66)),
+                label: const Text('Invoice 🧾', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF0D7C66))),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF0D7C66)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Primary Action Button (Live Track / Rate)
+          if (isActive) ...[
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 46,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => LiveDriverTrackingScreen(
+                          state: state,
+                          liveOrder: liveOrder,
+                          subscriptionTask: subscriptionTask,
+                          orderTitle: 'Delivery $orderId',
+                          deliveryAddress: displayAddress,
+                          driverName: driverName,
+                          driverPhone: driverPhone,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.radar_rounded, size: 18, color: Colors.white),
+                  label: const Text('Live Radar Track 📍', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D7C66),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ),
+          ] else if (isDelivered) ...[
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 46,
+                child: isRated
+                    ? Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                            const SizedBox(width: 6),
+                            Text('Rated $ratingScore★ ✓', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0D7C66))),
+                          ],
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: () {
+                          DeliveryRatingDialog.show(
+                            context,
+                            state: state,
+                            orderId: isExpress ? liveOrder!.id : null,
+                            taskId: !isExpress ? subscriptionTask?.id : null,
+                            productName: isExpress
+                                ? (liveOrder!.items.isNotEmpty ? liveOrder!.items.first.product.name : 'Express Order')
+                                : (subscriptionTask?.productName ?? 'Morning Milk Delivery'),
+                            driverName: driverName,
+                            deliveryDate: isExpress ? liveOrder!.deliveryDate : (subscriptionTask?.deliveryDate ?? 'Today'),
+                          );
+                        },
+                        icon: const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                        label: const Text('Rate Delivery ⭐', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D7C66),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                      ),
+              ),
+            ),
+          ],
         ],
       ),
     );

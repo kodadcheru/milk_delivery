@@ -78,10 +78,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
   bool _isCancelledTask(String status) {
     final s = status.toUpperCase();
-    return s == 'SKIPPED' || s == 'CANCELLED' || s == 'PAUSED';
+    return s == 'SKIPPED' || s == 'PAUSED' || s == 'FAILED';
   }
 
-  bool _isActive(String status) => _isActiveOrder(status);
+  Color _getStatusColor(String status) {
+    if (_isDeliveredOrder(status) || _isDeliveredTask(status)) return const Color(0xFF0D7C66);
+    if (_isCancelledOrder(status) || _isCancelledTask(status)) return const Color(0xFFDC2626);
+    return const Color(0xFF2563EB);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +100,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         subscriptions.where((t) => _isCancelledTask(t.status)).length;
     final totalCount = liveOrders.length + subscriptions.length;
 
-    // Filter orders based on selected chip
     List<LiveOrderModel> filteredOrders;
     List<DeliveryTaskModel> filteredSubscriptions;
 
@@ -138,7 +141,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         ? activeOrders.first
         : null;
 
-    // Remaining orders excluding the hero one
     final remainingOrders = List<LiveOrderModel>.from(filteredOrders);
     if (firstActiveOrder != null) {
       remainingOrders.removeWhere((o) => o.id == firstActiveOrder.id);
@@ -147,24 +149,34 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final isListEmpty = filteredOrders.isEmpty && filteredSubscriptions.isEmpty;
 
     return Scaffold(
-      backgroundColor: UiTone.shellBackground,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: RefreshIndicator(
-          color: UiTone.primary,
+          color: const Color(0xFF0D7C66),
           strokeWidth: 2.5,
           onRefresh: () => widget.state.reloadAllData(),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
             children: [
-              _buildHeaderRow(totalCount),
-              const SizedBox(height: 12),
+              _buildTopHeaderRow(totalCount),
+              const SizedBox(height: 14),
+
+              // KPI Stats Row
+              _buildStatsBar(activeOrdersCount, deliveredOrdersCount, totalCount),
+              const SizedBox(height: 14),
+
+              // Search Bar
               _buildSearchBar(),
+              const SizedBox(height: 10),
+
+              // Filter Chips Carousel
               _buildFilterChips(
                 totalCount: totalCount,
                 activeCount: activeOrdersCount,
                 deliveredCount: deliveredOrdersCount,
                 cancelledCount: cancelledOrdersCount,
               ),
+
               if (isListEmpty)
                 _buildFilteredEmptyState(_selectedFilterIndex)
               else ...[
@@ -178,7 +190,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ? 'Delivered Orders'
                         : _selectedFilterIndex == 3
                             ? 'Cancelled Orders'
-                            : 'Recent Orders',
+                            : 'Express Orders',
+                    count: remainingOrders.length,
                   ),
                   ...remainingOrders.map((o) => _buildOrderCard(o)),
                 ],
@@ -201,50 +214,103 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     );
   }
 
-  Widget _buildHeaderRow(int totalCount) {
+  Widget _buildTopHeaderRow(int totalCount) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('My Deliveries & Orders', style: UiText.h1.copyWith(fontSize: 21)),
+            Row(
+              children: [
+                Text('My Bookings & Orders', style: UiText.h1.copyWith(fontSize: 21)),
+                const SizedBox(width: 6),
+                const Text('🥛', style: TextStyle(fontSize: 20)),
+              ],
+            ),
             const SizedBox(height: 2),
-            Text('Live tracking, receipts & delivery ratings', style: UiText.caption.copyWith(color: UiTone.softText)),
+            Text('Live tracking, receipts & delivery ratings', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 12)),
           ],
         ),
         const Spacer(),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: UiTone.primarySoft,
+            color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(UiRadius.pill),
+            border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
           ),
-          child: Text(
-            '$totalCount Orders',
-            style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF0D7C66), shape: BoxShape.circle)),
+              const SizedBox(width: 5),
+              Text(
+                '$totalCount Total',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0D7C66)),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
+  Widget _buildStatsBar(int active, int delivered, int total) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatItem('⚡ Live Active', '$active Drops', const Color(0xFF2563EB), const Color(0xFFEFF6FF)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildStatItem('✅ Delivered', '$delivered Completed', const Color(0xFF0D7C66), const Color(0xFFF0FDF4)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildStatItem('🥛 Pure Milk', '100% Quality', const Color(0xFFD97706), const Color(0xFFFFFBEB)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color textColor, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: textColor)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: textColor)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: UiTone.surface,
-        borderRadius: BorderRadius.circular(UiRadius.md),
-        border: Border.all(color: UiTone.surfaceBorder),
-        boxShadow: UiShadow.card,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
+        ],
       ),
       child: TextField(
         controller: _searchController,
         onChanged: (val) => setState(() => _searchQuery = val),
-        style: UiText.body.copyWith(fontSize: 13.5),
+        style: UiText.body.copyWith(fontSize: 13),
         decoration: InputDecoration(
-          hintText: 'Search orders, milk type, date, or partner...',
-          hintStyle: UiText.caption.copyWith(color: UiTone.softText),
-          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: UiTone.softText),
+          hintText: 'Search by Order ID, Product, Driver or Date...',
+          hintStyle: UiText.caption.copyWith(color: const Color(0xFF94A3B8), fontSize: 12.5),
+          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF0D7C66)),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear_rounded, size: 18, color: UiTone.softText),
@@ -263,21 +329,21 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
   Widget _buildSectionHeader(String title, {int? count}) {
     return Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 12),
+      padding: const EdgeInsets.only(top: 18, bottom: 10),
       child: Row(
         children: [
           Text(title, style: UiText.h2.copyWith(fontSize: 15)),
           if (count != null) ...[
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: UiTone.surfaceMuted,
+                color: const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(UiRadius.xs),
               ),
               child: Text(
                 '$count',
-                style: UiText.caption.copyWith(fontWeight: FontWeight.w700, color: UiTone.softText),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF475569)),
               ),
             ),
           ],
@@ -300,8 +366,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     ];
 
     return Container(
-      height: 42,
-      margin: const EdgeInsets.only(top: 10),
+      height: 38,
+      margin: const EdgeInsets.only(top: 4),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -313,21 +379,23 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 onTap: () => setState(() => _selectedFilterIndex = index),
                 borderRadius: BorderRadius.circular(UiRadius.pill),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF0D7C66) : UiTone.surface,
+                    color: isSelected ? const Color(0xFF0D7C66) : Colors.white,
                     borderRadius: BorderRadius.circular(UiRadius.pill),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+                      color: isSelected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
                     ),
-                    boxShadow: isSelected ? UiShadow.glowPrimary : null,
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: const Color(0xFF0D7C66).withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 3))]
+                        : null,
                   ),
                   child: Text(
                     chips[index],
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? Colors.white : UiTone.ink,
+                      color: isSelected ? Colors.white : const Color(0xFF334155),
                     ),
                   ),
                 ),
@@ -340,36 +408,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
   }
 
   Widget _buildFilteredEmptyState(int filterIndex) {
-    String title;
-    String subtitle;
-    IconData icon;
-
-    switch (filterIndex) {
-      case 1:
-        title = 'No Active Orders';
-        subtitle = 'You don’t have any deliveries on the way right now.';
-        icon = Icons.moped_rounded;
-        break;
-      case 2:
-        title = 'No Delivered Orders';
-        subtitle = 'Completed orders and morning drops will appear here.';
-        icon = Icons.inventory_2_outlined;
-        break;
-      case 3:
-        title = 'No Cancelled Orders';
-        subtitle = 'You have not cancelled or skipped any scheduled drops.';
-        icon = Icons.cancel_outlined;
-        break;
-      default:
-        title = _searchQuery.isNotEmpty ? 'No Matching Results' : 'No Orders Yet';
-        subtitle = _searchQuery.isNotEmpty
-            ? 'Try searching with another product name or date.'
-            : 'Explore fresh milk, paneer, and ghee to place your first order!';
-        icon = Icons.shopping_basket_outlined;
-    }
-
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
       alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -377,159 +417,123 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: UiTone.surfaceMuted,
+              color: Colors.white,
               shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Icon(icon, size: 40, color: UiTone.softText),
+            child: const Icon(Icons.shopping_basket_outlined, size: 40, color: Color(0xFF0D7C66)),
           ),
           const SizedBox(height: 16),
-          Text(title, style: UiText.h2.copyWith(fontSize: 16)),
-          const SizedBox(height: 6),
+          Text(_searchQuery.isNotEmpty ? 'No Matching Deliveries' : 'No Orders Found', style: UiText.h2.copyWith(fontSize: 16)),
+          const SizedBox(height: 4),
           Text(
-            subtitle,
+            _searchQuery.isNotEmpty
+                ? 'Try searching with another product name or date.'
+                : 'Explore farm fresh milk, paneer, and ghee to place your first order!',
             textAlign: TextAlign.center,
-            style: UiText.caption.copyWith(color: UiTone.softText),
+            style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 12),
           ),
         ],
       ),
     );
   }
 
+  // ── HERO ACTIVE ORDER CARD ──
   Widget _buildActiveOrderHeroCard(LiveOrderModel order) {
-    final driverName = order.driverName.isNotEmpty ? order.driverName : 'Assigned Partner';
-    final driverPhone = order.driverPhone;
-
     return Container(
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: UiTone.surface,
-        borderRadius: BorderRadius.circular(UiRadius.xl),
-        border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
-        boxShadow: UiShadow.card,
-      ),
-      child: Column(
-        children: [
-          // Top Pulse Banner
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            decoration: BoxDecoration(
-              gradient: UiGradient.hero,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(UiRadius.xl)),
-            ),
-            child: Row(
-              children: [
-                FadeTransition(
-                  opacity: _animController,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.moped_rounded, color: Colors.white, size: 18),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'LIVE RADAR • ON THE WAY',
-                        style: UiText.caption.copyWith(color: Colors.white70, fontWeight: FontWeight.w800, letterSpacing: 0.8),
-                      ),
-                      Text(
-                        'Arriving in ~${order.etaMinutes > 0 ? order.etaMinutes : 22} mins',
-                        style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 14.5),
-                      ),
-                    ],
-                  ),
-                ),
-                if (order.deliveryOtp.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(UiRadius.pill),
-                    ),
-                    child: Text(
-                      'OTP: ${order.deliveryOtp}',
-                      style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w900, fontSize: 12),
-                    ),
-                  ),
-              ],
-            ),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x330F172A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D7C66),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            order.items.isNotEmpty ? order.items.first.product.name : 'Morning Fresh Order',
-                            style: UiText.h2.copyWith(fontSize: 15),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${order.items.length} items • ${order.deliveryAddress}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: UiText.caption.copyWith(color: UiTone.softText),
-                          ),
+                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                          const SizedBox(width: 5),
+                          const Text('LIVE RADAR', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
                         ],
                       ),
                     ),
-                    Text(UiFormat.price(order.totalAmount), style: UiText.price.copyWith(color: UiTone.primaryDark)),
+                    const SizedBox(width: 8),
+                    Text(
+                      order.id,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'monospace'),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'OTP: ${order.deliveryOtp}',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1),
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: UiTone.surfaceBorder),
                 const SizedBox(height: 12),
-
-                // Driver & Action Row
+                Text(
+                  order.items.isNotEmpty
+                      ? order.items.map((i) => '${i.quantity}x ${i.product.name}').join(', ')
+                      : 'Express Milk Drop',
+                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Delivering to: ${order.deliveryAddress}',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 14),
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: UiTone.primarySoft,
-                      child: const Text('👨‍🌾', style: TextStyle(fontSize: 18)),
-                    ),
-                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(driverName, style: UiText.bodyStrong.copyWith(fontSize: 13)),
-                          Text('4.9 ★ • EV Scooter', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11)),
+                          Text('Driver Partner', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+                          Text(
+                            order.driverName.isNotEmpty ? order.driverName : 'Assigned Partner',
+                            style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w800),
+                          ),
                         ],
                       ),
                     ),
-                    // In-App Chat
-                    IconButton.filledTonal(
-                      onPressed: () {
-                        DeliveryChatSheet.show(
-                          context,
-                          orderId: order.id,
-                          driverName: driverName,
-                          driverPhone: driverPhone,
-                          customerName: widget.state.currentUser?.name ?? 'Customer',
-                          customerPhone: widget.state.currentUser?.phone ?? '',
-                          orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                          deliveryAddress: order.deliveryAddress,
-                        );
-                      },
-                      icon: const Icon(Icons.forum_rounded, size: 18, color: Color(0xFF0D7C66)),
-                      tooltip: 'Live Chat',
-                      style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
-                    ),
-                    const SizedBox(width: 6),
-                    // Track Radar CTA
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.push(
@@ -540,21 +544,20 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                               liveOrder: order,
                               orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
                               deliveryAddress: order.deliveryAddress,
-                              driverName: driverName,
-                              driverPhone: driverPhone,
+                              driverName: order.driverName,
+                              driverPhone: order.driverPhone,
                               deliveryOtp: order.deliveryOtp,
                             ),
                           ),
                         );
                       },
-                      icon: const Icon(Icons.moped_rounded, size: 16),
-                      label: const Text('Track 🛵', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      icon: const Icon(Icons.moped_rounded, size: 15, color: Colors.white),
+                      label: const Text('Live Track 🛵', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0D7C66),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                        elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
                       ),
                     ),
                   ],
@@ -562,45 +565,15 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timelineCard({
-    required Widget child,
-    required Color accent,
-    VoidCallback? onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: UiTone.surface,
-        borderRadius: BorderRadius.circular(UiRadius.lg),
-        border: Border.all(color: UiTone.surfaceBorder),
-        boxShadow: UiShadow.card,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(UiRadius.lg),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(left: BorderSide(width: 4, color: accent)),
-              borderRadius: BorderRadius.circular(UiRadius.lg),
-            ),
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: child,
-          ),
         ),
       ),
     );
   }
 
+  // ── ORDER CARD ──
   Widget _buildOrderCard(LiveOrderModel order) {
     final statusColor = _getStatusColor(order.status);
-    final isActive = _isActive(order.status);
+    final isActive = _isActiveOrder(order.status);
     final isDelivered = _isDeliveredOrder(order.status);
 
     String itemsSummary = '';
@@ -612,299 +585,122 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       }
     }
 
-    return _timelineCard(
-      accent: statusColor,
-      onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: UiTone.surfaceMuted,
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                ),
-                child: Text(
-                  order.id,
-                  style: UiText.caption.copyWith(fontWeight: FontWeight.w700, color: UiTone.softText, fontFamily: 'monospace'),
-                ),
-              ),
-              const Spacer(),
-              if (order.deliveryType == 'INSTANT')
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF0D7C66), Color(0xFF10A37F)]),
-                    borderRadius: BorderRadius.circular(UiRadius.xs),
-                  ),
-                  child: const Text(
-                    '⚡ INSTANT',
-                    style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                ),
-                child: Text(
-                  order.status,
-                  style: UiText.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10.5),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            itemsSummary.isNotEmpty ? itemsSummary : 'Fresh Dairy Order',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: UiText.bodyStrong.copyWith(fontSize: 13),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(Icons.calendar_today_rounded, size: 12, color: UiTone.softText),
-              const SizedBox(width: 4),
-              Text(
-                '${order.deliveryDate.isNotEmpty ? order.deliveryDate : "Today"} • ${order.deliverySlot}',
-                style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: UiTone.surfaceBorder),
-          const SizedBox(height: 10),
-
-          // Bottom Action Row (Track / Rate / Invoice / Proof)
-          Row(
-            children: [
-              Text(
-                UiFormat.price(order.totalAmount),
-                style: UiText.price.copyWith(fontSize: 14.5, color: UiTone.primaryDark),
-              ),
-              const Spacer(),
-              if (isActive) ...[
-                OutlinedButton.icon(
-                  onPressed: () {
-                    DeliveryChatSheet.show(
-                      context,
-                      orderId: order.id,
-                      driverName: order.driverName.isNotEmpty ? order.driverName : 'Assigned Partner',
-                      driverPhone: order.driverPhone,
-                      customerName: widget.state.currentUser?.name ?? 'Customer',
-                      customerPhone: widget.state.currentUser?.phone ?? '',
-                      orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                      deliveryAddress: order.deliveryAddress,
-                    );
-                  },
-                  icon: const Icon(Icons.forum_rounded, size: 13, color: Color(0xFF0D7C66)),
-                  label: const Text('Chat', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF0D7C66)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                    minimumSize: const Size(0, 30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (ctx) => LiveDriverTrackingScreen(
-                          state: widget.state,
-                          liveOrder: order,
-                          orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                          deliveryAddress: order.deliveryAddress,
-                          driverName: order.driverName,
-                          driverPhone: order.driverPhone,
-                          deliveryOtp: order.deliveryOtp,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.moped_rounded, size: 13),
-                  label: const Text('Track 🛵', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D7C66),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                    minimumSize: const Size(0, 30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                    elevation: 0,
-                  ),
-                ),
-              ] else if (isDelivered) ...[
-                OutlinedButton.icon(
-                  onPressed: () {
-                    OrderInvoiceSheet.show(
-                      context,
-                      order: order,
-                      orderId: order.id,
-                      orderDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
-                      slotTime: order.deliverySlot,
-                      address: order.deliveryAddress,
-                      totalAmount: order.totalAmount,
-                    );
-                  },
-                  icon: const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF0D7C66)),
-                  label: const Text('Invoice 🧾', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF0D7C66)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                    minimumSize: const Size(0, 30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                if (widget.state.isOrderRated(order.id))
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(UiRadius.pill),
-                      border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Rated ${widget.state.getOrderRating(order.id)}★ ✓',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      DeliveryRatingDialog.show(
-                        context,
-                        state: widget.state,
-                        orderId: order.id,
-                        productName: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                        driverName: order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner',
-                        deliveryDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
-                        onRated: (_) => setState(() {}),
-                      );
-                    },
-                    icon: const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                    label: const Text('Rate ⭐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                      minimumSize: const Size(0, 30),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
-                      elevation: 0,
-                    ),
-                  ),
-              ],
-            ],
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 10, offset: Offset(0, 3)),
         ],
       ),
-    );
-  }
-
-  Widget _buildSubscriptionCard(DeliveryTaskModel task) {
-    final sub = task.subscriptionDetail;
-    final product = sub?.productDetail;
-    final statusColor = _getStatusColor(task.status);
-    final slotStr = task.slotTime.isNotEmpty ? task.slotTime : '05:30 AM - 07:00 AM';
-    final isEvening = slotStr.toUpperCase().contains('PM') || slotStr.toUpperCase().contains('17:') || slotStr.toUpperCase().contains('18:') || slotStr.toUpperCase().contains('19:');
-    final isDelivered = _isDeliveredTask(task.status);
-    final isActive = _isActiveTask(task.status);
-
-    return _timelineCard(
-      accent: statusColor,
-      onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(UiRadius.xs),
-            child: Image.network(
-              product?.imageUrl ?? 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
-              width: 54,
-              height: 54,
-              fit: BoxFit.cover,
-              errorBuilder: (c, e, s) => Container(
-                width: 54,
-                height: 54,
-                color: UiTone.surfaceMuted,
-                child: const Center(child: Text('🥛', style: TextStyle(fontSize: 24))),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => BookingDetailSheet.showForExpressOrder(context, widget.state, order),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Header Row
                 Row(
                   children: [
-                    Expanded(
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       child: Text(
-                        product?.name ?? 'Fresh A2 Cow Milk',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                        order.id,
+                        style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontFamily: 'monospace', fontSize: 10.5),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    if (order.deliveryType == 'INSTANT')
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF0D7C66), Color(0xFF10A37F)]),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('⚡ INSTANT', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                      ),
+                    const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
                       ),
                       child: Text(
-                        task.status,
-                        style: UiText.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                        order.status,
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 10.5),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 10),
+
+                // Items summary
                 Text(
-                  '${sub?.quantity ?? 1}x ${sub?.packSize ?? "1 Litre"} • Recurring Morning Drop',
-                  style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
+                  itemsSummary.isNotEmpty ? itemsSummary : 'Fresh Farm Milk & Essentials',
+                  style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
+
+                // Date & Slot
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.12) : const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(UiRadius.xs),
-                      ),
-                      child: Text(
-                        '${isEvening ? "🌙" : "☀️"} 📅 ${task.deliveryDate.isNotEmpty ? task.deliveryDate : "Today"} • $slotStr',
-                        style: UiText.caption.copyWith(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                    const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF64748B)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${order.deliveryDate.isNotEmpty ? order.deliveryDate : "Today"} • ${order.deliverySlot}',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                const SizedBox(height: 10),
+
+                // Action Row
+                Row(
+                  children: [
+                    Text(
+                      UiFormat.price(order.totalAmount),
+                      style: UiText.price.copyWith(fontSize: 15, color: const Color(0xFF0D7C66)),
+                    ),
+                    const Spacer(),
+                    if (isActive) ...[
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          DeliveryChatSheet.show(
+                            context,
+                            orderId: order.id,
+                            driverName: order.driverName.isNotEmpty ? order.driverName : 'Assigned Partner',
+                            driverPhone: order.driverPhone,
+                            customerName: widget.state.currentUser?.name ?? 'Customer',
+                            customerPhone: widget.state.currentUser?.phone ?? '',
+                            orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                            deliveryAddress: order.deliveryAddress,
+                          );
+                        },
+                        icon: const Icon(Icons.forum_rounded, size: 13, color: Color(0xFF0D7C66)),
+                        label: const Text('Chat', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66))),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF0D7C66)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          minimumSize: const Size(0, 30),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Actions (Track Partner / Rate / Invoice / Proof)
-                Row(
-                  children: [
-                    const Spacer(),
-                    if (isActive)
+                      const SizedBox(width: 6),
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.push(
@@ -912,28 +708,196 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             MaterialPageRoute(
                               builder: (ctx) => LiveDriverTrackingScreen(
                                 state: widget.state,
-                                subscriptionTask: task,
-                                orderTitle: product?.name ?? 'Fresh A2 Cow Milk',
-                                deliveryAddress: task.deliveryAddress,
-                                driverName: task.driverDetail?.fullName.isNotEmpty == true ? task.driverDetail!.fullName : 'Assigned Partner',
-                                driverPhone: task.driverDetail?.phone ?? '',
-                                deliveryOtp: '06AM',
+                                liveOrder: order,
+                                orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                                deliveryAddress: order.deliveryAddress,
+                                driverName: order.driverName,
+                                driverPhone: order.driverPhone,
+                                deliveryOtp: order.deliveryOtp,
                               ),
                             ),
                           );
                         },
                         icon: const Icon(Icons.moped_rounded, size: 13),
-                        label: const Text('Track Partner 🛵', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                        label: const Text('Track 🛵', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0D7C66),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          minimumSize: const Size(0, 28),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                          minimumSize: const Size(0, 30),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
                           elevation: 0,
                         ),
-                      )
-                    else if (isDelivered) ...[
+                      ),
+                    ] else if (isDelivered) ...[
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          OrderInvoiceSheet.show(
+                            context,
+                            order: order,
+                            orderId: order.id,
+                            orderDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
+                            slotTime: order.deliverySlot,
+                            address: order.deliveryAddress,
+                            totalAmount: order.totalAmount,
+                          );
+                        },
+                        icon: const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF0D7C66)),
+                        label: const Text('Invoice 🧾', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66))),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF0D7C66)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          minimumSize: const Size(0, 30),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      if (widget.state.isOrderRated(order.id))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                            border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Rated ${widget.state.getOrderRating(order.id)}★ ✓',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            DeliveryRatingDialog.show(
+                              context,
+                              state: widget.state,
+                              orderId: order.id,
+                              productName: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                              driverName: order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner',
+                              deliveryDate: order.deliveryDate.isNotEmpty ? order.deliveryDate : 'Today',
+                              onRated: (_) => setState(() {}),
+                            );
+                          },
+                          icon: const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                          label: const Text('Rate ⭐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D7C66),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            minimumSize: const Size(0, 30),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
+                            elevation: 0,
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── SUBSCRIPTION CARD ──
+  Widget _buildSubscriptionCard(DeliveryTaskModel task) {
+    final statusColor = _getStatusColor(task.status);
+    final isDelivered = _isDeliveredTask(task.status);
+    final total = (task.pricePerUnit > 0 ? task.pricePerUnit : 40.0) * (task.quantity > 0 ? task.quantity : 1);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 10, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => BookingDetailSheet.showForSubscription(context, widget.state, task),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'DROP #${task.id}',
+                        style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontFamily: 'monospace', fontSize: 10.5),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('🥛 DAILY DROP', style: TextStyle(color: Color(0xFF2563EB), fontSize: 9, fontWeight: FontWeight.w900)),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                      ),
+                      child: Text(
+                        task.status,
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 10.5),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  task.productName.isNotEmpty ? task.productName : 'Farm Fresh A2 Cow Milk',
+                  style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.wb_sunny_rounded, size: 12, color: Color(0xFFD97706)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${task.deliveryDate.isNotEmpty ? task.deliveryDate : "Today"} • ${task.slotTime}',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text(
+                      UiFormat.price(total),
+                      style: UiText.price.copyWith(fontSize: 15, color: const Color(0xFF0D7C66)),
+                    ),
+                    const Spacer(),
+                    if (isDelivered) ...[
                       OutlinedButton.icon(
                         onPressed: () {
                           OrderInvoiceSheet.show(
@@ -941,17 +905,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             task: task,
                             orderId: 'SUB-DROP-#${task.id}',
                             orderDate: task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today',
-                            slotTime: slotStr,
+                            slotTime: task.slotTime,
                             address: task.deliveryAddress,
-                            totalAmount: (sub?.displayPrice ?? 40) * (sub?.quantity ?? 1),
+                            totalAmount: total,
                           );
                         },
-                        icon: const Icon(Icons.receipt_long_rounded, size: 12, color: Color(0xFF0D7C66)),
-                        label: const Text('Invoice 🧾', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF0D7C66))),
+                        icon: const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF0D7C66)),
+                        label: const Text('Invoice 🧾', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66))),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFF0D7C66)),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                          minimumSize: const Size(0, 28),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          minimumSize: const Size(0, 30),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.pill)),
                         ),
                       ),
@@ -983,7 +947,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                               context,
                               state: widget.state,
                               taskId: task.id,
-                              productName: product?.name ?? 'Fresh A2 Cow Milk',
+                              productName: task.productName,
                               driverName: task.driverDetail?.fullName.isNotEmpty == true ? task.driverDetail!.fullName : 'Assigned Partner',
                               deliveryDate: task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today',
                               onRated: (_) => setState(() {}),
@@ -1006,18 +970,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    final s = status.toUpperCase();
-    if (s == 'DELIVERED' || s == 'COMPLETED') return const Color(0xFF10B981);
-    if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT' || s == 'ON_THE_WAY') return const Color(0xFF0D7C66);
-    if (s == 'PLACED' || s == 'CONFIRMED' || s == 'PREPARING' || s == 'PACKED' || s == 'ACTIVE' || s == 'PENDING') return const Color(0xFF0284C7);
-    if (s == 'CANCELLED' || s == 'REJECTED' || s == 'FAILED' || s == 'SKIPPED') return const Color(0xFFEF4444);
-    if (s == 'PAUSED') return const Color(0xFFF59E0B);
-    return UiTone.softText;
   }
 }
