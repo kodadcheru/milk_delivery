@@ -28,21 +28,11 @@ class StorefrontConfigModel {
           ? json['banner_image_url'] as String
           : 'https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80',
       rawBannerImageUrl: json['raw_banner_image_url'] as String?,
-      headline: (json['headline'] as String?)?.isNotEmpty == true
-          ? json['headline'] as String
-          : 'Order by 11PM Tonight →',
-      subtitle: (json['subtitle'] as String?)?.isNotEmpty == true
-          ? json['subtitle'] as String
-          : '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub',
-      dispatchTag: (json['dispatch_tag'] as String?)?.isNotEmpty == true
-          ? json['dispatch_tag'] as String
-          : 'MORNING DROP 05:30 AM ☀️',
-      promoChip: (json['promo_chip'] as String?)?.isNotEmpty == true
-          ? json['promo_chip'] as String
-          : '🥛 FRESH TODAY',
-      ctaText: (json['cta_text'] as String?)?.isNotEmpty == true
-          ? json['cta_text'] as String
-          : 'SUBSCRIBE NOW ➔',
+      headline: json['headline'] != null ? (json['headline'] as String) : 'Order by 11PM Tonight →',
+      subtitle: json['subtitle'] != null ? (json['subtitle'] as String) : '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub',
+      dispatchTag: json['dispatch_tag'] != null ? (json['dispatch_tag'] as String) : 'MORNING DROP 05:30 AM ☀️',
+      promoChip: json['promo_chip'] != null ? (json['promo_chip'] as String) : '🥛 FRESH TODAY',
+      ctaText: json['cta_text'] != null ? (json['cta_text'] as String) : 'SUBSCRIBE NOW ➔',
       isActive: json['is_active'] as bool? ?? true,
     );
   }

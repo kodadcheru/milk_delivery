@@ -113,11 +113,16 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
     final bannerUrl = sf.bannerImageUrl.trim();
     final hasCustomBanner = bannerUrl.isNotEmpty;
+    final hasAnyText = sf.headline.trim().isNotEmpty ||
+        sf.subtitle.trim().isNotEmpty ||
+        sf.dispatchTag.trim().isNotEmpty ||
+        sf.promoChip.trim().isNotEmpty ||
+        sf.ctaText.trim().isNotEmpty;
 
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 280),
-      padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, 32),
+      constraints: BoxConstraints(minHeight: hasAnyText ? 260 : 160),
+      padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, hasAnyText ? 28 : 18),
       decoration: BoxDecoration(
         color: const Color(0xFF0E784D),
         gradient: !hasCustomBanner
@@ -132,7 +137,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 image: NetworkImage(bannerUrl),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withValues(alpha: 0.52),
+                  Colors.black.withValues(alpha: hasAnyText ? 0.52 : 0.28),
                   BlendMode.darken,
                 ),
               )
@@ -297,55 +302,55 @@ class _HomeLocationBarState extends State<HomeLocationBar>
               ),
 
               // Notification Bell
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (ctx) => NotificationsScreen(state: state),
-                    ),
-                  );
-                },
-                child: AnimatedBuilder(
-                  animation: _bellAnimation,
-                  builder: (context, child) {
-                    return Transform.rotate(
-                      angle: _bellAnimation.value,
-                      child: child,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => NotificationsScreen(state: state),
+                      ),
                     );
                   },
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
                   child: Container(
-                    width: 42,
-                    height: 42,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.32),
+                        color: Colors.white.withValues(alpha: 0.35),
+                        width: 1,
                       ),
                     ),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        const Icon(Icons.notifications_outlined, color: Colors.white, size: 23),
+                        const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                         if (unreadNotifs > 0)
                           Positioned(
-                            right: 5,
-                            top: 5,
+                            top: 8,
+                            right: 8,
                             child: Container(
-                              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444),
-                                borderRadius: BorderRadius.circular(9),
-                                border: Border.all(color: Colors.white, width: 1.5),
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
                               ),
-                              alignment: Alignment.center,
+                              constraints: const BoxConstraints(
+                                minWidth: 8,
+                                minHeight: 8,
+                              ),
                               child: Text(
                                 unreadNotifs > 9 ? '9+' : '$unreadNotifs',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 9,
+                                  fontSize: 8,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -359,19 +364,23 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ],
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
 
-          // ── Integrated Top Banner Search Bar (Service-Mobile App Style) ──
+          // ── Seamless Blended Translucent Search Bar ──
           Container(
-            height: 52,
+            height: 50,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.45),
+                width: 1.2,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -380,8 +389,8 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 const SizedBox(width: 14),
                 const Icon(
                   Icons.search_rounded,
-                  color: Color(0xFF0D7C66),
-                  size: 24,
+                  color: Colors.white,
+                  size: 22,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -391,14 +400,14 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                     style: const TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                      color: Colors.white,
                     ),
                     decoration: InputDecoration(
                       hintText: "Search '${_hints[_currentHintIndex]}'...",
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF94A3B8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       border: InputBorder.none,
                       isDense: true,
@@ -408,7 +417,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 ),
                 if (widget.searchController?.text.isNotEmpty == true)
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.close_rounded, size: 20, color: Colors.white),
                     onPressed: widget.onClearSearch,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -419,102 +428,111 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // ── Storefront Promo Strip (Configured by Admin) ──
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(UiRadius.pill),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
-                ),
-                child: Text(
-                  sf.dispatchTag,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFD700),
-                  borderRadius: BorderRadius.circular(UiRadius.pill),
-                ),
-                child: Text(
-                  sf.promoChip,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // Headline (Configured by Admin)
-          Text(
-            sf.headline,
-            style: const TextStyle(
-              fontSize: 27,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: -0.5,
-              height: 1.15,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Subtitle + CTA (Configured by Admin)
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  sf.subtitle,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFDFF7EA),
-                    height: 1.25,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(UiRadius.pill),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+          // ── Storefront Promo Strip (Only rendered if text is present) ──
+          if (sf.dispatchTag.trim().isNotEmpty || sf.promoChip.trim().isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                if (sf.dispatchTag.trim().isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
                     ),
-                  ],
-                ),
-                child: Text(
-                  sf.ctaText,
-                  style: const TextStyle(
-                    color: Color(0xFF0D7C66),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
+                    child: Text(
+                      sf.dispatchTag.trim(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                ],
+                if (sf.promoChip.trim().isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD700),
+                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                    ),
+                    child: Text(
+                      sf.promoChip.trim(),
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+
+          // Headline (Only rendered if text is present)
+          if (sf.headline.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              sf.headline.trim(),
+              style: const TextStyle(
+                fontSize: 27,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -0.5,
+                height: 1.15,
               ),
-            ],
-          ),
+            ),
+          ],
+
+          // Subtitle + CTA (Only rendered if text is present)
+          if (sf.subtitle.trim().isNotEmpty || sf.ctaText.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (sf.subtitle.trim().isNotEmpty)
+                  Expanded(
+                    child: Text(
+                      sf.subtitle.trim(),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFDFF7EA),
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                if (sf.ctaText.trim().isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(UiRadius.pill),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      sf.ctaText.trim(),
+                      style: const TextStyle(
+                        color: Color(0xFF0D7C66),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );
