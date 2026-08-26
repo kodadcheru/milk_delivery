@@ -230,17 +230,8 @@ class ProfileTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Group 1
+                // Group 1: Core Account & Orders
                 _buildCardGroup([
-                  _buildMenuTile(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    iconBg: const Color(0xFFE6F5F0),
-                    iconFg: const Color(0xFF0D7C66),
-                    label: 'Live Chat & Support Desk',
-                    trailingBadge: '🟢 ONLINE',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HelpSupportScreen(state: state))),
-                  ),
-                  _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.calendar_today_rounded,
                     iconBg: const Color(0xFFE8F2FE),
