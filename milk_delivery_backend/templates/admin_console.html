@@ -6411,7 +6411,7 @@
           const curVal = sel.value;
           sel.innerHTML = '';
           rawCategories.forEach(c => {
-            sel.innerHTML += `<option value="${c.name}">${c.icon || ''} ${c.name}</option>`;
+            sel.innerHTML += `<option value="${c.id}" data-name="${c.name}">${c.icon || '🥛'} ${c.name}</option>`;
           });
           if (curVal) sel.value = curVal;
         }
@@ -6808,7 +6808,9 @@
 
     async function submitAddProduct() {
       const name = document.getElementById('prodName').value.trim();
-      const category = document.getElementById('prodCategorySelect').value;
+      const catSelect = document.getElementById('prodCategorySelect');
+      const category_id = parseInt(catSelect.value) || null;
+      const category = catSelect.options[catSelect.selectedIndex]?.dataset?.name || catSelect.options[catSelect.selectedIndex]?.text?.replace(/^[^\s]+\s+/, '') || 'Milk';
       const desc = document.getElementById('prodDesc').value.trim();
       const price = document.getElementById('prodPrice').value.trim();
       const unitQty = document.getElementById('prodUnitQty').value.trim();
@@ -6827,6 +6829,7 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({
             name,
+            category_id,
             category,
             description: desc,
             price_per_unit: price,
@@ -6858,7 +6861,15 @@
       populateCategoryDropdowns();
       document.getElementById('editProdId').value = p.id;
       document.getElementById('editProdName').value = p.name;
-      document.getElementById('editProdCategorySelect').value = p.category || '';
+      
+      const editSelect = document.getElementById('editProdCategorySelect');
+      const matchedCat = rawCategories.find(c => (p.category_detail && c.id === p.category_detail.id) || (p.category && c.name.toLowerCase() === p.category.toLowerCase()) || (p.category && c.slug.toLowerCase() === p.category.toLowerCase()));
+      if (matchedCat) {
+        editSelect.value = matchedCat.id;
+      } else if (p.category_id) {
+        editSelect.value = p.category_id;
+      }
+
       document.getElementById('editProdPrice').value = p.price_per_unit;
       document.getElementById('editProdUnitQty').value = p.unit_quantity || '';
       document.getElementById('editProdBadge').value = p.badge_text || '';
@@ -6873,7 +6884,9 @@
     async function submitUpdateProduct() {
       const id = document.getElementById('editProdId').value;
       const name = document.getElementById('editProdName').value.trim();
-      const category = document.getElementById('editProdCategorySelect').value;
+      const catSelect = document.getElementById('editProdCategorySelect');
+      const category_id = parseInt(catSelect.value) || null;
+      const category = catSelect.options[catSelect.selectedIndex]?.dataset?.name || catSelect.options[catSelect.selectedIndex]?.text?.replace(/^[^\s]+\s+/, '') || '';
       const price = document.getElementById('editProdPrice').value.trim();
       const unitQty = document.getElementById('editProdUnitQty').value.trim();
       const badge = document.getElementById('editProdBadge').value.trim();
@@ -6887,6 +6900,7 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
           body: JSON.stringify({
             name,
+            category_id,
             category,
             description: desc,
             price_per_unit: price,

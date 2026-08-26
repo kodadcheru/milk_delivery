@@ -379,20 +379,32 @@ class ApiService {
     return [];
   }
 
-  static Future<ProductModel?> createProduct(String name, String description, double price, String unitQty, String imageUrl, {String category = 'MILK'}) async {
+  static Future<ProductModel?> createProduct(
+    String name,
+    String description,
+    double price,
+    String unitQty,
+    String imageUrl, {
+    String category = 'MILK',
+    int? categoryId,
+  }) async {
     try {
+      final payload = <String, dynamic>{
+        'name': name,
+        'description': description,
+        'category': category,
+        'price_per_unit': price.toStringAsFixed(2),
+        'unit_quantity': unitQty,
+        'image_url': imageUrl,
+        'is_available': true,
+      };
+      if (categoryId != null && categoryId > 0) {
+        payload['category_id'] = categoryId;
+      }
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/products/'),
             headers: _headers,
-            body: jsonEncode({
-              'name': name,
-              'description': description,
-              'category': category,
-              'price_per_unit': price.toStringAsFixed(2),
-              'unit_quantity': unitQty,
-              'image_url': imageUrl,
-              'is_available': true,
-            }),
+            body: jsonEncode(payload),
           ));
       if (res.statusCode == 201) {
         return ProductModel.fromJson(jsonDecode(res.body));

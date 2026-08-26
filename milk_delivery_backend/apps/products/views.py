@@ -57,14 +57,17 @@ class ProductListView(generics.ListCreateAPIView):
         cat_name = self.request.data.get("category", "MILK")
         cat_obj = None
         if cat_id:
-            cat_obj = Category.objects.filter(id=cat_id).first()
-        elif cat_name:
-            cat_obj = Category.objects.filter(Q(name__iexact=cat_name) | Q(slug__iexact=cat_name)).first()
-            if not cat_obj:
-                cat_obj = Category.objects.create(name=cat_name)
+            try:
+                cat_obj = Category.objects.filter(id=int(cat_id)).first()
+            except (ValueError, TypeError):
+                pass
+        if not cat_obj and cat_name:
+            cat_obj = Category.objects.filter(Q(name__iexact=str(cat_name).strip()) | Q(slug__iexact=str(cat_name).strip())).first()
+            if not cat_obj and str(cat_name).strip():
+                cat_obj = Category.objects.create(name=str(cat_name).strip())
 
         serializer.save(
-            category=cat_obj.name if cat_obj else cat_name,
+            category=cat_obj.name if cat_obj else str(cat_name).strip(),
             category_ref=cat_obj
         )
 
@@ -80,9 +83,12 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         cat_name = self.request.data.get("category")
         cat_obj = None
         if cat_id:
-            cat_obj = Category.objects.filter(id=cat_id).first()
-        elif cat_name:
-            cat_obj = Category.objects.filter(Q(name__iexact=cat_name) | Q(slug__iexact=cat_name)).first()
+            try:
+                cat_obj = Category.objects.filter(id=int(cat_id)).first()
+            except (ValueError, TypeError):
+                pass
+        if not cat_obj and cat_name:
+            cat_obj = Category.objects.filter(Q(name__iexact=str(cat_name).strip()) | Q(slug__iexact=str(cat_name).strip())).first()
 
         updated_instance = serializer.save(
             category=cat_obj.name if cat_obj else (cat_name or serializer.instance.category),

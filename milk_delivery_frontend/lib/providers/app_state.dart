@@ -1368,7 +1368,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> addNewProduct(String name, String desc, double price, String unitQty, String imgUrl, {String category = 'MILK'}) async {
+  Future<void> addNewProduct(String name, String desc, double price, String unitQty, String imgUrl, {String category = 'MILK', int? categoryId}) async {
     notifications.insert(
       0,
       NotificationModel(
@@ -1380,7 +1380,7 @@ class AppState extends ChangeNotifier {
         createdAt: 'Just now',
       ),
     );
-    final p = await ApiService.createProduct(name, desc, price, unitQty, imgUrl, category: category);
+    final p = await ApiService.createProduct(name, desc, price, unitQty, imgUrl, category: category, categoryId: categoryId);
     if (p != null) {
       await reloadAllData();
     }

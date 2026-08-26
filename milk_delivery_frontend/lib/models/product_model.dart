@@ -2,6 +2,7 @@ import '../l10n/app_translations.dart';
 
 class ProductModel {
   final int id;
+  final int? categoryId;
   final String name;
   final String category; // MILK, MEAT, EGGS, WATER_CAN
   final String description;
@@ -20,6 +21,7 @@ class ProductModel {
 
   ProductModel({
     required this.id,
+    this.categoryId,
     required this.name,
     this.category = 'MILK',
     required this.description,
@@ -56,36 +58,54 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     String nameStr = json['name'] ?? '';
-    String cat = (json['category'] ?? 'MILK').toString().toUpperCase();
-    String defaultIcon = '🥛';
+    String cat = (json['category'] ?? 'MILK').toString();
+    final catDetail = json['category_detail'] is Map<String, dynamic> ? json['category_detail'] as Map<String, dynamic> : null;
 
-    if (cat == 'WATER_CAN' || nameStr.toLowerCase().contains('water') || nameStr.toLowerCase().contains('can')) {
-      defaultIcon = nameStr.toLowerCase().contains('dispenser') || nameStr.toLowerCase().contains('tap') ? '🚰' : '💧';
-    } else if (cat == 'EGGS' || nameStr.toLowerCase().contains('egg')) {
-      defaultIcon = '🥚';
-    } else if (cat == 'MEAT' || nameStr.toLowerCase().contains('mutton') || nameStr.toLowerCase().contains('meat') || nameStr.toLowerCase().contains('chicken')) {
-      defaultIcon = nameStr.toLowerCase().contains('mutton') || nameStr.toLowerCase().contains('meat') ? '🥩' : '🍗';
-    } else if (cat == 'PANEER' || nameStr.toLowerCase().contains('paneer')) {
-      defaultIcon = '🧀';
-    } else if (cat == 'GHEE' || nameStr.toLowerCase().contains('ghee') || nameStr.toLowerCase().contains('butter') || nameStr.toLowerCase().contains('makkhan')) {
-      defaultIcon = '🧈';
-    } else if (cat == 'CURD' || nameStr.toLowerCase().contains('curd') || nameStr.toLowerCase().contains('dahi') || nameStr.toLowerCase().contains('yogurt')) {
-      defaultIcon = '🥣';
-    } else if (cat == 'BAKERY' || nameStr.toLowerCase().contains('bread') || nameStr.toLowerCase().contains('bakery')) {
-      defaultIcon = '🍞';
-    } else {
-      defaultIcon = '🥛';
+    final int? catId = json['category_id'] is int
+        ? json['category_id']
+        : (int.tryParse(json['category_id']?.toString() ?? '') ??
+            (json['category_ref'] is int ? json['category_ref'] : int.tryParse(json['category_ref']?.toString() ?? '')) ??
+            (catDetail != null ? catDetail['id'] as int? : null));
+
+    String resolvedIcon = json['category_icon']?.toString() ??
+        (catDetail != null && catDetail['icon'] != null && catDetail['icon'].toString().isNotEmpty ? catDetail['icon'].toString() : '');
+
+    if (resolvedIcon.isEmpty) {
+      final catUpper = cat.toUpperCase();
+      if (catUpper == 'WATER_CAN' || nameStr.toLowerCase().contains('water') || nameStr.toLowerCase().contains('can')) {
+        resolvedIcon = nameStr.toLowerCase().contains('dispenser') || nameStr.toLowerCase().contains('tap') ? '🚰' : '💧';
+      } else if (catUpper == 'EGGS' || nameStr.toLowerCase().contains('egg')) {
+        resolvedIcon = '🥚';
+      } else if (catUpper == 'MEAT' || nameStr.toLowerCase().contains('mutton') || nameStr.toLowerCase().contains('meat') || nameStr.toLowerCase().contains('chicken')) {
+        resolvedIcon = nameStr.toLowerCase().contains('mutton') || nameStr.toLowerCase().contains('meat') ? '🥩' : '🍗';
+      } else if (catUpper == 'PANEER' || nameStr.toLowerCase().contains('paneer')) {
+        resolvedIcon = '🧀';
+      } else if (catUpper == 'GHEE' || nameStr.toLowerCase().contains('ghee') || nameStr.toLowerCase().contains('butter') || nameStr.toLowerCase().contains('makkhan')) {
+        resolvedIcon = '🧈';
+      } else if (catUpper == 'CURD' || nameStr.toLowerCase().contains('curd') || nameStr.toLowerCase().contains('dahi') || nameStr.toLowerCase().contains('yogurt')) {
+        resolvedIcon = '🥣';
+      } else if (catUpper == 'BAKERY' || nameStr.toLowerCase().contains('bread') || nameStr.toLowerCase().contains('bakery')) {
+        resolvedIcon = '🍞';
+      } else {
+        resolvedIcon = '🥛';
+      }
+    }
+
+    String imgUrl = json['image_url']?.toString() ?? '';
+    if (imgUrl.isEmpty && catDetail != null && catDetail['image_url'] != null) {
+      imgUrl = catDetail['image_url'].toString();
     }
 
     return ProductModel(
       id: json['id'] ?? 0,
+      categoryId: catId,
       name: nameStr,
       category: cat,
       description: json['description'] ?? '',
       pricePerUnit: double.tryParse(json['price_per_unit']?.toString() ?? '0') ?? 0.0,
       unit: json['unit'] ?? 'PACKET',
       unitQuantity: json['unit_quantity'] ?? '1 L',
-      imageUrl: json['image_url'] ?? '',
+      imageUrl: imgUrl,
       badgeText: json['badge_text'] ?? 'Daily Essential',
       nutritionInfo: json['nutrition_info'] ?? '100% Pure & Certified Quality',
       farmOrigin: json['farm_origin'] ?? 'Heritage Source, Hyderabad',
@@ -93,13 +113,14 @@ class ProductModel {
       availableSlots: json['available_slots'] ?? 100,
       dailyCapacitySlots: json['daily_capacity_slots'] ?? 100,
       rating: double.tryParse(json['rating']?.toString() ?? '4.9') ?? 4.9,
-      icon: defaultIcon,
+      icon: resolvedIcon,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      if (categoryId != null && categoryId! > 0) 'category_id': categoryId,
       'name': name,
       'category': category,
       'description': description,
@@ -122,6 +143,7 @@ class ProductModel {
   /// subscription flows while preserving stock, rating, imagery, etc.
   ProductModel copyWith({
     int? id,
+    int? categoryId,
     String? name,
     String? category,
     String? description,
@@ -140,6 +162,7 @@ class ProductModel {
   }) {
     return ProductModel(
       id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
       name: name ?? this.name,
       category: category ?? this.category,
       description: description ?? this.description,

@@ -52,16 +52,26 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if self.category_ref and not self.category:
-            self.category = self.category_ref.slug or self.category_ref.name.upper()
-        elif self.category and not self.category_ref:
+        if self.category_ref:
+            self.category = self.category_ref.name
+        elif self.category:
             cat = Category.objects.filter(models.Q(slug__iexact=self.category) | models.Q(name__iexact=self.category)).first()
-            if cat:
-                self.category_ref = cat
+            if not cat:
+                cat = Category.objects.create(name=self.category)
+            self.category_ref = cat
+            self.category = cat.name
         super().save(*args, **kwargs)
 
+    @property
+    def category_name(self):
+        return self.category_ref.name if self.category_ref else self.category
+
+    @property
+    def category_icon(self):
+        return self.category_ref.icon if self.category_ref else "🥛"
+
     def __str__(self):
-        return f"{self.name} ({self.category}) - ₹{self.price_per_unit} / {self.unit_quantity}"
+        return f"{self.name} ({self.category_name}) - ₹{self.price_per_unit} / {self.unit_quantity}"
 
 
 class HubProductInventory(models.Model):

@@ -49,7 +49,11 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source="category_ref", required=False, allow_null=True
+    )
     category_detail = CategorySerializer(source="category_ref", read_only=True)
+    category_icon = serializers.CharField(read_only=True)
     available_slots = serializers.SerializerMethodField()
     daily_capacity_slots = serializers.SerializerMethodField()
 
@@ -59,8 +63,10 @@ class ProductSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "category",
+            "category_id",
             "category_ref",
             "category_detail",
+            "category_icon",
             "description",
             "price_per_unit",
             "unit",

@@ -42,7 +42,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final activeSubsCount = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').length;
 
     final filteredProducts = widget.state.products.where((p) {
-      return _catalogCategoryFilter == 'ALL' || p.category == _catalogCategoryFilter;
+      if (_catalogCategoryFilter == 'ALL') return true;
+      final target = _catalogCategoryFilter.toLowerCase();
+      final pCat = p.category.toLowerCase();
+      final pCatId = p.categoryId?.toString() ?? '';
+      return pCat == target || pCatId == target;
     }).toList();
 
     final filteredDeliveries = widget.state.deliveries.where((d) {
@@ -605,20 +609,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Category Filter Chips
+          // Dynamic Category Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 _buildCatChip('ALL', 'All Items (${widget.state.products.length})'),
                 const SizedBox(width: 8),
-                _buildCatChip('MILK', '🥛 Milk'),
-                const SizedBox(width: 8),
-                _buildCatChip('MEAT', '🥩 Meat'),
-                const SizedBox(width: 8),
-                _buildCatChip('EGGS', '🥚 Eggs'),
-                const SizedBox(width: 8),
-                _buildCatChip('WATER_CAN', '💧 Water Can'),
+                if (widget.state.categories.isNotEmpty)
+                  ...widget.state.categories.where((c) => c.isActive).map((c) {
+                    final matchingCount = widget.state.products.where((p) =>
+                      p.category.toLowerCase() == c.name.toLowerCase() ||
+                      p.category.toLowerCase() == c.slug.toLowerCase() ||
+                      p.categoryId == c.id
+                    ).length;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _buildCatChip(c.name, '${c.icon} ${c.name} ($matchingCount)'),
+                    );
+                  })
+                else ...[
+                  _buildCatChip('MILK', '🥛 Milk'),
+                  const SizedBox(width: 8),
+                  _buildCatChip('MEAT', '🥩 Meat'),
+                  const SizedBox(width: 8),
+                  _buildCatChip('EGGS', '🥚 Eggs'),
+                  const SizedBox(width: 8),
+                  _buildCatChip('WATER_CAN', '💧 Water Can'),
+                ],
               ],
             ),
           ),
@@ -966,7 +984,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final descCtrl = TextEditingController(text: 'Organic fresh malai paneer rich in protein.');
     final priceCtrl = TextEditingController(text: '95.00');
     final qtyCtrl = TextEditingController(text: '200 g Pack');
-    String selectedCategory = 'MILK';
+    final activeCats = widget.state.categories.where((c) => c.isActive).toList();
+    String selectedCategory = activeCats.isNotEmpty ? activeCats.first.name : 'MILK';
 
     showDialog(
       context: context,
@@ -981,13 +1000,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: selectedCategory,
                   decoration: const InputDecoration(labelText: 'Core Category', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'MILK', child: Text('🥛 Fresh Milk & Dairy')),
-                    DropdownMenuItem(value: 'MEAT', child: Text('🥩 Meat & Poultry')),
-                    DropdownMenuItem(value: 'EGGS', child: Text('🥚 Farm Eggs')),
-                    DropdownMenuItem(value: 'WATER_CAN', child: Text('💧 Water Cans')),
-                  ],
-                  onChanged: (val) => setDialogState(() => selectedCategory = val ?? 'MILK'),
+                  items: activeCats.isNotEmpty
+                      ? activeCats
+                          .map((c) => DropdownMenuItem(
+                                value: c.name,
+                                child: Text('${c.icon} ${c.name}'),
+                              ))
+                          .toList()
+                      : const [
+                          DropdownMenuItem(value: 'MILK', child: Text('🥛 Fresh Milk & Dairy')),
+                          DropdownMenuItem(value: 'MEAT', child: Text('🥩 Meat & Poultry')),
+                          DropdownMenuItem(value: 'EGGS', child: Text('🥚 Farm Eggs')),
+                          DropdownMenuItem(value: 'WATER_CAN', child: Text('💧 Water Cans')),
+                        ],
+                  onChanged: (val) => setDialogState(() => selectedCategory = val ?? (activeCats.isNotEmpty ? activeCats.first.name : 'MILK')),
                 ),
                 const SizedBox(height: 10),
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Product Name', border: OutlineInputBorder())),
@@ -1005,6 +1031,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 final double p = double.tryParse(priceCtrl.text) ?? 50.0;
+                final matchedCat = activeCats.where((c) => c.name.toLowerCase() == selectedCategory.toLowerCase()).firstOrNull;
                 widget.state.addNewProduct(
                   nameCtrl.text,
                   descCtrl.text,
@@ -1012,6 +1039,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   qtyCtrl.text,
                   'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
                   category: selectedCategory,
+                  categoryId: matchedCat?.id,
                 );
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
