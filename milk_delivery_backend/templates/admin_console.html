@@ -4503,21 +4503,24 @@
       tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Loading live inventory slots & daily capacities...</td></tr>';
 
       try {
-        const token = localStorage.getItem('milkdrop_admin_token') || '';
-        const headers = { 'Authorization': token ? `Bearer ${token}` : '' };
+        const headers = getAdminHeaders();
 
         const [prodRes, invRes, subRes] = await Promise.all([
-          fetch(`${baseUrl}/products/?all=true`),
-          fetch(`${baseUrl}/hub-inventory/`, { headers }),
+          fetch(`${baseUrl}/products/?all=true`, { headers }),
+          fetch(`${baseUrl}/hub-inventory/?hub_id=${hubDbId}`, { headers }),
           fetch(`${baseUrl}/admin/subscriptions/`, { headers })
         ]);
 
-        const products = prodRes.ok ? await prodRes.json() : [];
-        const inventories = invRes.ok ? await invRes.json() : [];
-        const subscriptions = subRes.ok ? await subRes.json() : [];
+        const productsRaw = prodRes.ok ? await prodRes.json() : [];
+        const inventoriesRaw = invRes.ok ? await invRes.json() : [];
+        const subscriptionsRaw = subRes.ok ? await subRes.json() : [];
+
+        const products = Array.isArray(productsRaw) ? productsRaw : (productsRaw.results || []);
+        const inventories = Array.isArray(inventoriesRaw) ? inventoriesRaw : (inventoriesRaw.results || []);
+        const subscriptions = Array.isArray(subscriptionsRaw) ? subscriptionsRaw : (subscriptionsRaw.results || []);
 
         if (products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No products found in catalog.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);"><i class="fa-solid fa-box-open" style="margin-right: 6px;"></i> No items in catalog yet. Create products in Product Catalog tab first.</td></tr>';
           return;
         }
 
@@ -4536,20 +4539,24 @@
           const available = Math.max(0, capacity - booked);
           const fillPct = capacity > 0 ? Math.min(100, Math.round((booked / capacity) * 100)) : 0;
           const barColor = fillPct > 85 ? '#EF4444' : (fillPct > 60 ? '#F59E0B' : '#10B981');
+          const catName = (p.category_detail && p.category_detail.name) || p.category || 'DAIRY';
+          const imgHtml = p.image_url 
+            ? `<img src="${p.image_url}" alt="${p.name}" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border-color);" onerror="this.src='https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=100&q=80'">`
+            : `<span style="font-size: 20px;">${p.category_icon || p.icon || '🥛'}</span>`;
 
           tbody.innerHTML += `
             <tr id="inv-row-${p.id}">
               <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 20px;">${p.icon || '🥛'}</span>
+                  ${imgHtml}
                   <div>
                     <strong style="color: #FFFFFF; font-size: 13px;">${p.name}</strong><br>
                     <small style="color: var(--text-muted);">${p.unit || ''} • ${p.unit_quantity || ''}</small>
                   </div>
                 </div>
               </td>
-              <td><span class="status-tag status-hub" style="font-size: 11px;">${p.category || 'DAIRY'}</span></td>
-              <td><strong style="color: var(--primary-accent);">₹${parseFloat(p.price || 0).toFixed(2)}</strong></td>
+              <td><span class="status-tag status-hub" style="font-size: 11px;">${catName}</span></td>
+              <td><strong style="color: var(--primary-accent);">₹${parseFloat(p.price_per_unit || p.price || 0).toFixed(2)}</strong></td>
               <td>
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <input type="number" id="cap-input-${p.id}" value="${capacity}" class="form-control" style="width: 80px; padding: 4px 8px; font-weight: bold; text-align: center; color: #38BDF8;" min="0">
@@ -4584,7 +4591,7 @@
         });
       } catch (err) {
         console.error('[loadHubDailySlots Error]', err);
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: #F87171;">Failed to load hub inventory slots.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: #F87171;">Failed to load hub inventory slots: ' + (err.message || 'Network error') + '</td></tr>';
       }
     }
 
@@ -4612,7 +4619,6 @@
 
     async function syncHubSlotApi(productId, hubDbId, slots, isAvailable) {
       try {
-        const token = localStorage.getItem('milkdrop_admin_token') || '';
         const payload = {
           product_id: productId,
           hub_id: hubDbId,
@@ -4622,10 +4628,7 @@
 
         const res = await fetch(`${baseUrl}/hub-inventory/`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-          },
+          headers: getAdminHeaders(),
           body: JSON.stringify(payload)
         });
 
@@ -4637,10 +4640,15 @@
           }
           loadHubDailySlots(hubDbId);
         } else {
-          alert('Could not update slot capacity.');
+          let errDetail = 'Server returned an error.';
+          try {
+            const err = await res.json();
+            errDetail = err.detail || JSON.stringify(err);
+          } catch (_) {}
+          alert(`Could not update slot capacity (${res.status}): ${errDetail}`);
         }
       } catch (e) {
-        alert('Network error syncing slot capacity.');
+        alert('Network error syncing slot capacity: ' + e.message);
       }
     }
 

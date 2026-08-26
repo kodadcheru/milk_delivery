@@ -102,28 +102,40 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class HubInventoryListUpdateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get(self, request):
         from apps.accounts.models import User
+        from apps.deliveries.models import LocationHub
         from apps.products.models import HubProductInventory
         from apps.products.serializers import HubProductInventorySerializer
 
-        user = request.user
-        hub = getattr(user, "assigned_hub", None)
-        if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and hub:
+        user = getattr(request, "user", None)
+        if not (user and user.is_authenticated) and hasattr(request, "_request") and getattr(request._request, "user", None) and request._request.user.is_authenticated:
+            user = request._request.user
+
+        hub_id = request.query_params.get("hub_id")
+        target_hub = None
+        if hub_id:
+            try:
+                target_hub = LocationHub.objects.filter(pk=int(hub_id)).first()
+            except (ValueError, TypeError):
+                pass
+        if not target_hub and user and user.is_authenticated:
+            target_hub = getattr(user, "assigned_hub", None)
+
+        if target_hub:
             products = Product.objects.all()
             for p in products:
                 HubProductInventory.objects.get_or_create(
-                    hub=hub,
+                    hub=target_hub,
                     product=p,
                     defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
                 )
-            inventories = HubProductInventory.objects.filter(hub=hub).select_related("hub", "product")
-        elif user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
+            inventories = HubProductInventory.objects.filter(hub=target_hub).select_related("hub", "product")
+        elif user and user.is_authenticated and (user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN")):
             inventories = HubProductInventory.objects.all().select_related("hub", "product")
-        elif hub:
-            inventories = HubProductInventory.objects.filter(hub=hub).select_related("hub", "product")
         else:
             inventories = HubProductInventory.objects.none()
 
@@ -136,7 +148,10 @@ class HubInventoryListUpdateView(APIView):
         from apps.products.models import HubProductInventory
         from apps.products.serializers import HubProductInventorySerializer
 
-        user = request.user
+        user = getattr(request, "user", None)
+        if not (user and user.is_authenticated) and hasattr(request, "_request") and getattr(request._request, "user", None) and request._request.user.is_authenticated:
+            user = request._request.user
+
         product_id = request.data.get("product_id")
         hub_id = request.data.get("hub_id")
         daily_slots = request.data.get("daily_capacity_slots")
@@ -144,12 +159,15 @@ class HubInventoryListUpdateView(APIView):
 
         hub = None
         if hub_id:
-            hub = LocationHub.objects.filter(id=hub_id).first()
-        elif getattr(user, "assigned_hub", None):
+            try:
+                hub = LocationHub.objects.filter(pk=int(hub_id)).first()
+            except (ValueError, TypeError):
+                pass
+        if not hub and user and user.is_authenticated and getattr(user, "assigned_hub", None):
             hub = user.assigned_hub
 
         if not hub:
-            return Response({"detail": "Assigned hub required to manage capacity slots."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Valid hub required to manage capacity slots."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not product_id or daily_slots is None:
             return Response({"detail": "product_id and daily_capacity_slots are required."}, status=status.HTTP_400_BAD_REQUEST)
