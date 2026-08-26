@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/ui_tokens.dart';
-import 'common/app_cached_image.dart';
 
 class DoorstepProofModal extends StatelessWidget {
   final String imageUrl;
@@ -112,14 +111,30 @@ class DoorstepProofModal extends StatelessWidget {
                     InteractiveViewer(
                       minScale: 0.8,
                       maxScale: 3.0,
-                      child: AppCachedImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        fallbackIcon: '🥛',
-                        fallbackBgColor: const Color(0xFF1E293B),
-                        memCacheWidth: 800,
-                        memCacheHeight: 800,
-                      ),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (ctx, e, st) => Container(
+                                color: const Color(0xFF1E293B),
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('🥛', style: TextStyle(fontSize: 48)),
+                                      SizedBox(height: 8),
+                                      Text('Doorstep Placement Verified', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: const Color(0xFF1E293B),
+                              child: const Center(
+                                child: Text('🥛 Doorstep Proof Photo', style: TextStyle(color: Colors.white70)),
+                              ),
+                            ),
                     ),
 
                     // Top Gradient Vignette

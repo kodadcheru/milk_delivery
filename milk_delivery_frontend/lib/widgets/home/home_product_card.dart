@@ -5,7 +5,6 @@ import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 import '../buy_once_sheet.dart';
 import '../product_detail_sheet.dart';
-import '../common/app_cached_image.dart';
 
 /// Product card shared by the home grid and the category products screen.
 ///
@@ -41,15 +40,14 @@ class HomeProductCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // 1. Full-bleed cached image or emoji fallback
-                AppCachedImage(
-                  imageUrl: item.imageUrl,
-                  fallbackIcon: item.icon,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 400,
-                  memCacheHeight: 400,
-                  customErrorWidget: _buildEmojiFallback(),
-                ),
+                // 1. Full-bleed image or emoji fallback
+                item.imageUrl.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _buildEmojiFallback(),
+                      )
+                    : _buildEmojiFallback(),
 
                 // 2. Bottom gradient overlay — covers lower 55%
                 Positioned(

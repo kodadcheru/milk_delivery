@@ -6,7 +6,6 @@ import '../services/pack_pricing.dart';
 import '../theme/ui_format.dart';
 import '../theme/ui_text.dart';
 import '../theme/ui_tokens.dart';
-import 'common/app_cached_image.dart';
 
 enum SubscriptionPlanType { weekly, monthly }
 
@@ -129,14 +128,17 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Product image
-                      AppCachedImage(
-                        imageUrl: item.imageUrl,
-                        height: 70,
-                        width: 70,
-                        fit: BoxFit.cover,
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(UiRadius.sm),
-                        fallbackIcon: item.icon,
-                        customErrorWidget: _heroFallback(item),
+                        child: item.imageUrl.isNotEmpty
+                            ? Image.network(
+                                item.imageUrl,
+                                height: 70,
+                                width: 70,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _heroFallback(item),
+                              )
+                            : _heroFallback(item),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

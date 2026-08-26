@@ -3,7 +3,6 @@ import '../../providers/app_state.dart';
 import '../../screens/customer/category_products_screen.dart';
 import '../../theme/category_catalog.dart';
 import '../../theme/ui_tokens.dart';
-import '../common/app_cached_image.dart';
 
 class HomeCategoryShowcase extends StatelessWidget {
   final AppState state;
@@ -101,15 +100,28 @@ class HomeCategoryShowcase extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Background category photo or emoji container
-                    AppCachedImage(
-                      imageUrl: imageUrl ?? '',
-                      fallbackIcon: icon,
-                      fallbackBgColor: bgColor,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 250,
-                      memCacheHeight: 250,
-                    ),
+                    if (imageUrl != null && imageUrl.isNotEmpty)
+                      Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: bgColor,
+                          alignment: Alignment.center,
+                          child: Text(
+                            icon,
+                            style: const TextStyle(fontSize: 34),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        color: bgColor,
+                        alignment: Alignment.center,
+                        child: Text(
+                          icon,
+                          style: const TextStyle(fontSize: 34),
+                        ),
+                      ),
 
                     // Subtle bottom gradient for depth
                     Positioned.fill(

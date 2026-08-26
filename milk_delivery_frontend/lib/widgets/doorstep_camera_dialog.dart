@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import '../services/image_upload_service.dart';
 import '../theme/ui_tokens.dart';
 import '../theme/ui_text.dart';
-import 'common/app_cached_image.dart';
 
 Future<Uint8List> stampWatermarkOnImageBytes({
   required Uint8List imageBytes,
@@ -257,10 +256,13 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                 children: [
                   // Image
                   Positioned.fill(
-                    child: AppCachedImage(
-                      imageUrl: activePreset.imageUrl,
+                    child: Image.network(
+                      activePreset.imageUrl,
                       fit: BoxFit.cover,
-                      fallbackIcon: '📷',
+                      errorBuilder: (_, __, ___) => Container(
+                        color: UiTone.surfaceMuted,
+                        child: const Center(child: Icon(Icons.broken_image_rounded, color: UiTone.softText)),
+                      ),
                     ),
                   ),
 
