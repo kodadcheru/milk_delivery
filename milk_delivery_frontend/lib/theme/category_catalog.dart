@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Unified per-category presentation metadata.
 ///
-/// Replaces two divergent inline maps that had drifted apart — the home
-/// category grid (`home_category_showcase.dart`) and the category products
-/// screen (`category_products_screen.dart`). The fields below are a superset of
-/// what each surface needs, populated with the exact values each previously
-/// used, so nothing changes visually; the copy and colours simply live in one
-/// place now.
+/// Replaces divergent inline maps across the home category grid
+/// (`home_category_showcase.dart`) and the category products screen
+/// (`category_products_screen.dart`).
 class CategoryMeta {
   /// Uppercase category code, e.g. `MILK`, `WATER_CAN`.
   final String key;
@@ -21,7 +18,7 @@ class CategoryMeta {
   /// Emoji used as the fallback glyph and badge.
   final String icon;
 
-  /// Home grid tile photo; `null` renders the [icon] on [tileBg] instead.
+  /// Home grid tile realistic photo URL.
   final String? image;
 
   /// Home grid tile fallback background.
@@ -65,9 +62,11 @@ const List<String> kHomeCategoryKeys = [
   'WATER_CAN',
   'PANEER',
   'GHEE',
+  'CURD',
+  'BAKERY',
 ];
 
-/// All known categories, keyed by uppercase category code.
+/// All known categories, keyed by uppercase category code with ultra-realistic photography.
 const Map<String, CategoryMeta> kCategoryCatalog = {
   'MILK': CategoryMeta(
     key: 'MILK',
@@ -75,7 +74,7 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     longTitle: 'Fresh Milk & Dairy',
     icon: '🥛',
     image:
-        'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=300&q=80',
+        'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFE6F5F0),
     tileFg: Color(0xFF0D7C66),
     gradient: [Color(0xFF0369A1), Color(0xFF0284C7)],
@@ -89,7 +88,7 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     longTitle: 'Meat & Poultry',
     icon: '🥩',
     image:
-        'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=300&q=80',
+        'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFFDE8E8),
     tileFg: Color(0xFFDC2626),
     gradient: [Color(0xFF991B1B), Color(0xFFDC2626)],
@@ -103,7 +102,7 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     longTitle: 'Farm Fresh Eggs',
     icon: '🥚',
     image:
-        'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=300&q=80',
+        'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFFFF3E6),
     tileFg: Color(0xFFE67E22),
     gradient: [Color(0xFFB45309), Color(0xFFD97706)],
@@ -117,7 +116,7 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     longTitle: 'Pure Water Cans',
     icon: '💧',
     image:
-        'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=300&q=80',
+        'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFE8F2FE),
     tileFg: Color(0xFF2563EB),
     gradient: [Color(0xFF0F766E), Color(0xFF0D9488)],
@@ -131,7 +130,7 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     longTitle: 'Farm Fresh Paneer',
     icon: '🧀',
     image:
-        'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=300&q=80',
+        'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFF0EAFC),
     tileFg: Color(0xFF7C3AED),
     gradient: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
@@ -145,7 +144,7 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     longTitle: 'Pure Desi Ghee & Butter',
     icon: '🧈',
     image:
-        'https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=300&q=80',
+        'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFFEF3C7),
     tileFg: Color(0xFFD97706),
     gradient: [Color(0xFFD97706), Color(0xFFF59E0B)],
@@ -158,6 +157,8 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     shortTitle: 'Set Curd',
     longTitle: 'Natural Set Curd (Dahi)',
     icon: '🥣',
+    image:
+        'https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFE6F5F0),
     tileFg: Color(0xFF0D7C66),
     gradient: [Color(0xFF0D9488), Color(0xFF14B8A6)],
@@ -170,6 +171,8 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
     shortTitle: 'Bakery',
     longTitle: 'Artisanal Breads & Bakery',
     icon: '🍞',
+    image:
+        'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=85',
     tileBg: Color(0xFFFEF3C7),
     tileFg: Color(0xFFB45309),
     gradient: [Color(0xFFB45309), Color(0xFFD97706)],
@@ -179,7 +182,6 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
   ),
 };
 
-/// Metadata for [key], falling back to `MILK` for unknown keys (matches the
-/// original screen's `default:` branch).
+/// Metadata for [key], falling back to `MILK` for unknown keys.
 CategoryMeta categoryMetaFor(String key) =>
     kCategoryCatalog[key.toUpperCase()] ?? kCategoryCatalog['MILK']!;
