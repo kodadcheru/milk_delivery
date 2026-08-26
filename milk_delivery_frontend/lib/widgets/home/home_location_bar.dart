@@ -116,7 +116,8 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, topInset + 6, 16, 18),
+      constraints: const BoxConstraints(minHeight: 280),
+      padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, 32),
       decoration: BoxDecoration(
         color: const Color(0xFF0E784D),
         gradient: !hasCustomBanner
@@ -137,14 +138,14 @@ class _HomeLocationBarState extends State<HomeLocationBar>
               )
             : null,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(34),
         ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0B6D44).withValues(alpha: 0.4),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -358,7 +359,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ],
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 22),
 
           // ── Integrated Top Banner Search Bar (Service-Mobile App Style) ──
           Container(
@@ -418,7 +419,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // ── Storefront Promo Strip (Configured by Admin) ──
           Row(
@@ -459,20 +460,21 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Headline (Configured by Admin)
           Text(
             sf.headline,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 27,
               fontWeight: FontWeight.w900,
               color: Colors.white,
               letterSpacing: -0.5,
+              height: 1.15,
             ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Subtitle + CTA (Configured by Admin)
           Row(
@@ -481,15 +483,16 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                 child: Text(
                   sf.subtitle,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFFDFF7EA),
+                    height: 1.25,
                   ),
                 ),
               ),
               const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(UiRadius.pill),
@@ -505,7 +508,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                   sf.ctaText,
                   style: const TextStyle(
                     color: Color(0xFF0D7C66),
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
