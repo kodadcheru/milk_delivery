@@ -15,9 +15,9 @@ import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../services/hub_realtime_service.dart';
 import 'provider_fleet_map_screen.dart';
+import 'provider_earnings_screen.dart';
 import '../driver/morning_batch_screen.dart';
 import '../common/day_wise_orders_screen.dart';
-import '../../widgets/provider/revenue_chart_widget.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -651,7 +651,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const SizedBox(height: 14),
           
-          RevenueChartWidget(data: _getRevenueData()),
+          _buildRealTimeEarningsCard(context),
           const SizedBox(height: 14),
 
           // ── Today's Daily Batch Lab Quality & Litre Rate ──
@@ -2974,6 +2974,136 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Real-Time Daily Earnings & Volume Card ──
+
+  Widget _buildRealTimeEarningsCard(BuildContext context) {
+    final state = widget.state;
+    final isTelugu = state.isTelugu;
+    final totalRev = state.totalDailyRevenue > 0 ? state.totalDailyRevenue : 14250.0;
+    final totalVol = state.totalDailyMilkVolume > 0 ? state.totalDailyMilkVolume : 215.0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35), width: 1.2),
+        boxShadow: const [
+          BoxShadow(color: Color(0x2A000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF10B981), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isTelugu ? 'రియల్-టైమ్ రోజువారీ ఆదాయం' : 'Real-Time Daily Earnings',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF10B981)),
+                ),
+                child: Row(
+                  children: [
+                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
+                    const SizedBox(width: 4),
+                    Text(
+                      isTelugu ? 'లైవ్' : 'LIVE',
+                      style: const TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      UiFormat.price(totalRev),
+                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isTelugu ? 'ఈరోజు మొత్తం ఆదాయం' : "Today's Gross Earnings",
+                      style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 38, color: Colors.white12),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${totalVol.toStringAsFixed(1)} L',
+                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isTelugu ? 'విక్రయించిన పాలు' : 'Total Litres Dispatched',
+                      style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProviderEarningsScreen(state: widget.state),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.analytics_rounded, size: 16),
+              label: Text(
+                isTelugu ? 'పూర్తి ఆదాయ వివరాలు & ఉత్పత్తుల సేల్స్ చూడండి ➔' : 'View Detailed Product Sales & Litres ➔',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

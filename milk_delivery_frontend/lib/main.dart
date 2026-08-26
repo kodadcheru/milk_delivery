@@ -19,6 +19,7 @@ import 'screens/customer/notifications_screen.dart';
 import 'screens/driver/driver_dashboard_screen.dart';
 import 'screens/driver/driver_profile_tab.dart';
 import 'screens/provider/provider_dashboard_screen.dart';
+import 'screens/provider/provider_earnings_screen.dart';
 import 'screens/provider/provider_profile_tab.dart';
 import 'screens/common/day_wise_orders_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
@@ -359,6 +360,7 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
 
       final providerScreens = [
         ProviderDashboardScreen(state: widget.state),
+        ProviderEarningsScreen(state: widget.state),
         DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER'),
         MorningBatchScreen(
           state: widget.state,
@@ -497,26 +499,34 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
             widget.state.reloadAllData();
           },
           items: [
-            const NextGenNavItem(
+            NextGenNavItem(
               icon: Icons.storefront_outlined,
               activeIcon: Icons.storefront_rounded,
-              label: 'Hub Command',
+              label: widget.state.isTelugu ? 'హబ్ హోమ్' : 'Hub Command',
+            ),
+            NextGenNavItem(
+              icon: Icons.currency_rupee_rounded,
+              activeIcon: Icons.account_balance_wallet_rounded,
+              label: widget.state.isTelugu ? 'ఆదాయం' : 'Earnings',
+              badgeText: widget.state.totalDailyRevenue > 0
+                  ? '₹${widget.state.totalDailyRevenue.toStringAsFixed(0)}'
+                  : null,
             ),
             NextGenNavItem(
               icon: Icons.calendar_month_outlined,
               activeIcon: Icons.calendar_month_rounded,
-              label: 'Day Orders',
+              label: widget.state.isTelugu ? 'ఆర్డర్లు' : 'Day Orders',
               badgeText: activeDeliveriesCount > 0 ? '$activeDeliveriesCount' : null,
             ),
-            const NextGenNavItem(
+            NextGenNavItem(
               icon: Icons.inventory_2_outlined,
               activeIcon: Icons.inventory_2_rounded,
-              label: 'Batch Packing',
+              label: widget.state.isTelugu ? 'ప్యాకింగ్' : 'Batch Packing',
             ),
-            const NextGenNavItem(
+            NextGenNavItem(
               icon: Icons.business_center_outlined,
               activeIcon: Icons.business_center_rounded,
-              label: 'Hub Profile',
+              label: widget.state.isTelugu ? 'ప్రొఫైల్' : 'Hub Profile',
             ),
           ],
         ),
