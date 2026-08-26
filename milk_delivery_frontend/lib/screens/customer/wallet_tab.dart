@@ -254,9 +254,11 @@ class _WalletTabState extends State<WalletTab> {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  const Text(
-                    'AVAILABLE PREPAID MILK BALANCE',
-                    style: TextStyle(color: UiTone.softText, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                  Text(
+                    widget.state.isTelugu
+                        ? 'అందుబాటులో ఉన్న ప్రీపెయిడ్ బ్యాలెన్స్'
+                        : 'AVAILABLE PREPAID MILK BALANCE',
+                    style: const TextStyle(color: UiTone.softText, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8),
                   ),
                   const SizedBox(height: 4),
                   Row(

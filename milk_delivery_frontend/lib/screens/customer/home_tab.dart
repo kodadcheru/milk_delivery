@@ -186,9 +186,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Popular Products',
-                          style: TextStyle(
+                        Text(
+                          widget.state.isTelugu ? 'ప్రజాదరణ పొందిన ఉత్పత్తులు' : 'Popular Products',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: UiTone.ink,
@@ -197,7 +197,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${filteredProducts.length} items available for doorstep delivery',
+                          widget.state.isTelugu
+                              ? '${filteredProducts.length} ఉత్పత్తులు ఉదయం డెలివరీకి సిద్ధంగా ఉన్నాయి'
+                              : '${filteredProducts.length} items available for doorstep delivery',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,

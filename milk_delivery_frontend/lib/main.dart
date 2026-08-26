@@ -666,15 +666,15 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
         selectedIndex: widget.state.currentTabIndex,
         onItemSelected: (idx) => widget.state.setTab(idx),
         items: [
-          const NextGenNavItem(
+          NextGenNavItem(
             icon: Icons.home_outlined,
             activeIcon: Icons.home_rounded,
-            label: 'Home',
+            label: widget.state.tr('home'),
           ),
           NextGenNavItem(
             icon: Icons.autorenew_outlined,
             activeIcon: Icons.autorenew_rounded,
-            label: 'Subs',
+            label: widget.state.isTelugu ? 'సబ్స్' : 'Subs',
             badgeText: widget.state.subscriptions.isNotEmpty
                 ? '${widget.state.subscriptions.length}'
                 : null,
@@ -682,20 +682,20 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
           NextGenNavItem(
             icon: Icons.account_balance_wallet_outlined,
             activeIcon: Icons.account_balance_wallet_rounded,
-            label: 'Wallet',
+            label: widget.state.tr('wallet'),
             badgeText: (widget.state.currentUser?.walletBalance ?? 0) > 0
                 ? '₹${(widget.state.currentUser?.walletBalance ?? 0).toStringAsFixed(0)}'
                 : null,
           ),
-          const NextGenNavItem(
+          NextGenNavItem(
             icon: Icons.receipt_long_outlined,
             activeIcon: Icons.receipt_long_rounded,
-            label: 'Orders',
+            label: widget.state.isTelugu ? 'ఆర్డర్లు' : 'Orders',
           ),
-          const NextGenNavItem(
+          NextGenNavItem(
             icon: Icons.person_outline,
             activeIcon: Icons.person_rounded,
-            label: 'Profile',
+            label: widget.state.tr('profile'),
           ),
         ],
       ),
