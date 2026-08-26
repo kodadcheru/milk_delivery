@@ -210,9 +210,15 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   @override
   Widget build(BuildContext context) {
     final tasks = _orderedTasks;
-    final List<LatLng> routePoints = [_depotLocation, _driverLocation];
-    for (var t in tasks) {
-      routePoints.add(LatLng(t.customerLatitude, t.customerLongitude));
+    final allCompleted = tasks.isNotEmpty && tasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
+
+    final List<LatLng> routePoints = allCompleted
+        ? [_driverLocation, _depotLocation]
+        : [_depotLocation, _driverLocation];
+    if (!allCompleted) {
+      for (var t in tasks) {
+        routePoints.add(LatLng(t.customerLatitude, t.customerLongitude));
+      }
     }
 
     final selectedTask = tasks.isNotEmpty && _selectedTaskIndex < tasks.length
@@ -235,20 +241,35 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Morning Route Map Navigation',
+              allCompleted ? 'Shift Completed • Return to Depot' : 'Morning Route Map Navigation',
               style: UiText.h2.copyWith(fontSize: 16, color: Colors.white),
             ),
             Text(
-              '${tasks.length} Drops • $hubName Sector',
-              style: UiText.label.copyWith(fontSize: 11, color: UiTone.secondary, fontWeight: FontWeight.w600),
+              allCompleted
+                  ? 'All ${tasks.length} Drops Delivered • $hubName'
+                  : '${tasks.length} Drops • $hubName Sector',
+              style: UiText.label.copyWith(
+                fontSize: 11,
+                color: allCompleted ? UiTone.success : UiTone.secondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.map_outlined, color: UiTone.accentBlue),
-            tooltip: 'Open Full Multi-Stop Google Maps Route',
-            onPressed: () => _launchFullMultiStopGoogleMapsRoute(tasks),
+            icon: Icon(
+              allCompleted ? Icons.warehouse_rounded : Icons.map_outlined,
+              color: allCompleted ? UiTone.success : UiTone.accentBlue,
+            ),
+            tooltip: allCompleted ? 'Navigate Return to Depot' : 'Open Full Multi-Stop Google Maps Route',
+            onPressed: () {
+              if (allCompleted) {
+                _launchGoogleMapsNavigation(_depotLocation.latitude, _depotLocation.longitude, hubName);
+              } else {
+                _launchFullMultiStopGoogleMapsRoute(tasks);
+              }
+            },
           ),
           IconButton(
             icon: const Icon(Icons.my_location, color: UiTone.secondary),
@@ -273,10 +294,10 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             mapToolbarEnabled: false,
             polylines: {
               Polyline(
-                polylineId: const PolylineId('driver_route'),
+                polylineId: PolylineId(allCompleted ? 'return_depot_route' : 'driver_route'),
                 points: routePoints,
                 width: 4,
-                color: UiTone.primary,
+                color: allCompleted ? UiTone.success : UiTone.primary,
               ),
             },
             markers: {
@@ -285,14 +306,14 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                 markerId: const MarkerId('depot'),
                 position: _depotLocation,
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
-                infoWindow: const InfoWindow(title: 'Fulfillment Depot Hub'),
+                infoWindow: InfoWindow(title: '🏬 $hubName (Fulfillment Base)'),
               ),
               // 2. Driver Live Location Marker
               Marker(
                 markerId: const MarkerId('driver'),
                 position: _driverLocation,
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-                infoWindow: const InfoWindow(title: 'Your Location (Live)'),
+                infoWindow: const InfoWindow(title: '🛵 Your Live Location'),
               ),
               // 3. Customer Stop Markers
               ...tasks.asMap().entries.map((entry) {
@@ -310,7 +331,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                         : (isSelected ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueRed),
                   ),
                   infoWindow: InfoWindow(
-                    title: 'Stop #${idx + 1}: ${task.customerName}',
+                    title: 'Stop #${idx + 1}: ${task.customerName} ${isDelivered ? "✓ (Delivered)" : ""}',
                     snippet: '${task.subscriptionDetail?.productDetail?.name ?? "Fresh Milk"} - ${task.status}',
                   ),
                   onTap: () {
@@ -333,24 +354,42 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             left: 16,
             right: 16,
             child: UiInsetCard(
-              onTap: () => _launchFullMultiStopGoogleMapsRoute(tasks),
+              onTap: () {
+                if (allCompleted) {
+                  _launchGoogleMapsNavigation(_depotLocation.latitude, _depotLocation.longitude, hubName);
+                } else {
+                  _launchFullMultiStopGoogleMapsRoute(tasks);
+                }
+              },
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               shadow: UiShadow.floating,
+              borderColor: allCompleted ? UiTone.success.withValues(alpha: 0.4) : null,
               child: Row(
                 children: [
-                  const Icon(Icons.map_rounded, color: UiTone.accentBlue, size: 20),
-                  const SizedBox(width: 8),
+                  Icon(
+                    allCompleted ? Icons.check_circle_rounded : Icons.map_rounded,
+                    color: allCompleted ? UiTone.success : UiTone.accentBlue,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'TSP Shortest Path Navigation 🚀',
-                          style: UiText.bodyStrong.copyWith(fontSize: 11, color: UiTone.accentBlue),
+                          allCompleted
+                              ? '🎉 Shift Completed • 100% Drops Delivered!'
+                              : 'TSP Shortest Path Navigation 🚀',
+                          style: UiText.bodyStrong.copyWith(
+                            fontSize: 11.5,
+                            color: allCompleted ? UiTone.success : UiTone.accentBlue,
+                          ),
                         ),
                         Text(
-                          'Saved ${_tspResult.distanceSavedKm.toStringAsFixed(1)} km & ${_tspResult.fuelSavedLiters.toStringAsFixed(2)}L fuel (${tasks.length} Drops)',
+                          allCompleted
+                              ? 'Tap to navigate return to $hubName for crate reconciliation'
+                              : 'Saved ${_tspResult.distanceSavedKm.toStringAsFixed(1)} km & ${_tspResult.fuelSavedLiters.toStringAsFixed(2)}L fuel (${tasks.length} Drops)',
                           style: UiText.body.copyWith(fontSize: 10.5),
                         ),
                       ],
@@ -359,12 +398,18 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: UiTone.successSoft,
+                      color: allCompleted ? UiTone.success : UiTone.successSoft,
                       borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: Text(
-                      '${tasks.where((t) => t.isDelivered).length}/${tasks.length} Done',
-                      style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.success),
+                      allCompleted
+                          ? '100% Done'
+                          : '${tasks.where((t) => t.isDelivered).length}/${tasks.length} Done',
+                      style: UiText.caption.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: allCompleted ? Colors.white : UiTone.success,
+                      ),
                     ),
                   ),
                 ],
@@ -372,8 +417,78 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             ),
           ),
 
-          // ── Bottom Selected Stop Action Card ──
-          if (selectedTask != null)
+          // ── Bottom Card: Shift Completed Return-to-Depot vs Selected Stop ──
+          if (allCompleted)
+            Positioned(
+              bottom: 20,
+              left: 16,
+              right: 16,
+              child: UiInsetCard(
+                padding: const EdgeInsets.all(18),
+                radius: UiRadius.lg,
+                borderColor: UiTone.success.withValues(alpha: 0.4),
+                shadow: UiShadow.floating,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: UiTone.successSoft,
+                            borderRadius: BorderRadius.circular(UiRadius.xs),
+                          ),
+                          child: Text(
+                            'SHIFT COMPLETED',
+                            style: UiText.caption.copyWith(color: UiTone.success, fontWeight: FontWeight.w900, fontSize: 11.5),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'All ${tasks.length} Deliveries Done! 🎉',
+                            style: UiText.bodyStrong.copyWith(fontSize: 15),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'All customer milk bottles safely placed at doorsteps. Please return to $hubName to reconcile empty glass bottles and crates.',
+                      style: UiText.body.copyWith(fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: UiTone.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                        ),
+                        icon: const Icon(Icons.warehouse_rounded, size: 18),
+                        label: Text(
+                          '🏬 Navigate Return to Depot ($hubName)',
+                          style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white),
+                        ),
+                        onPressed: () {
+                          _launchGoogleMapsNavigation(
+                            _depotLocation.latitude,
+                            _depotLocation.longitude,
+                            hubName,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (selectedTask != null)
             Positioned(
               bottom: 20,
               left: 16,

@@ -293,6 +293,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     }).toList();
 
     final allShiftTasks = shiftTasks.isNotEmpty ? shiftTasks : widget.state.deliveries;
+    final isAllCompleted = allShiftTasks.isNotEmpty && allShiftTasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
 
     if (tasksToRoute.isEmpty && allShiftTasks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -303,8 +304,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       );
       return;
     }
-
-    final targetTasks = tasksToRoute.isNotEmpty ? tasksToRoute : allShiftTasks;
 
     // 1. Get driver live GPS position
     double driverLat = widget.state.currentUser?.latitude ?? 17.001734;
@@ -319,11 +318,45 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       driverLng = pos.longitude;
     } catch (_) {}
 
-    // 2. Solve TSP shortest path
     final hub = widget.state.nearestCoveringHub;
+    final hubLat = double.tryParse(hub?['latitude']?.toString() ?? '') ?? 17.001734;
+    final hubLng = double.tryParse(hub?['longitude']?.toString() ?? '') ?? 79.9625;
+    final hubName = hub?['name']?.toString() ?? 'Kodad Depot';
+
+    // If all deliveries are already completed, navigate directly back to Depot!
+    if (isAllCompleted) {
+      final origin = '$driverLat,$driverLng';
+      final destination = '$hubLat,$hubLng';
+      final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving';
+      final uri = Uri.parse(googleMapsUrl);
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+        }
+      } catch (_) {}
+
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => DriverRouteMapScreen(
+              state: widget.state,
+              tasks: allShiftTasks,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    final targetTasks = tasksToRoute.isNotEmpty ? tasksToRoute : allShiftTasks;
+
+    // 2. Solve TSP shortest path
     final hubModel = HubLocationModel(
       id: hub?['hub_code']?.toString() ?? 'HUB-KDD-01',
-      name: hub?['name']?.toString() ?? 'Depot Hub',
+      name: hubName,
       address: hub?['address']?.toString() ?? 'Kodad',
       latitude: driverLat,
       longitude: driverLng,
@@ -619,23 +652,38 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _startDeliveriesWithGoogleMapsTSP(context),
-                      icon: const Icon(Icons.navigation_rounded, size: 18, color: Colors.white),
-                      label: Text(
-                        '🚀 Start Deliveries & Drop TSP Pins in Google Maps',
-                        style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.accentBlue,
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final filterTag = _selectedShift == 'MORNING' ? 'am' : 'pm';
+                      final shiftTasks = tasks.where((t) => t.slotTime.toLowerCase().contains(filterTag)).toList();
+                      final currentShiftTasks = shiftTasks.isNotEmpty ? shiftTasks : tasks;
+                      final isShiftDone = currentShiftTasks.isNotEmpty && currentShiftTasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
+
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _startDeliveriesWithGoogleMapsTSP(context),
+                          icon: Icon(
+                            isShiftDone ? Icons.warehouse_rounded : Icons.navigation_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            isShiftDone
+                                ? '🎉 All Shift Deliveries Done • Return to Depot 🏬'
+                                : '🚀 Start Deliveries & Drop TSP Pins in Google Maps',
+                            style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isShiftDone ? UiTone.primary : UiTone.accentBlue,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
