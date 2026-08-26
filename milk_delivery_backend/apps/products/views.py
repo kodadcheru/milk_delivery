@@ -94,11 +94,18 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         if not cat_obj and cat_name:
             cat_obj = Category.objects.filter(Q(name__iexact=str(cat_name).strip()) | Q(slug__iexact=str(cat_name).strip())).first()
 
-        updated_instance = serializer.save(
-            category=cat_obj.name if cat_obj else (cat_name or serializer.instance.category),
-            category_ref=cat_obj if cat_obj else serializer.instance.category_ref
-        )
-        update_sibling_product_prices(updated_instance)
+        save_kwargs = {}
+        if cat_obj:
+            save_kwargs["category"] = cat_obj.name
+            save_kwargs["category_ref"] = cat_obj
+        elif cat_name is not None and str(cat_name).strip():
+            save_kwargs["category"] = str(cat_name).strip()
+
+        updated_instance = serializer.save(**save_kwargs)
+        try:
+            update_sibling_product_prices(updated_instance)
+        except Exception:
+            pass
 
 
 class HubInventoryListUpdateView(APIView):

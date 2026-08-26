@@ -7023,12 +7023,18 @@
       const catSelect = document.getElementById('editProdCategorySelect');
       const category_id = parseInt(catSelect.value) || null;
       const category = catSelect.options[catSelect.selectedIndex]?.dataset?.name || catSelect.options[catSelect.selectedIndex]?.text?.replace(/^[^\s]+\s+/, '') || '';
-      const price = document.getElementById('editProdPrice').value.trim();
+      const priceRaw = document.getElementById('editProdPrice').value.trim();
+      const price = parseFloat(priceRaw);
       const unitQty = document.getElementById('editProdUnitQty').value.trim();
       const badge = document.getElementById('editProdBadge').value.trim();
       const origin = document.getElementById('editProdOrigin').value.trim();
       const img = document.getElementById('editProdImage').value.trim();
       const desc = document.getElementById('editProdDesc').value.trim();
+
+      if (isNaN(price) || price < 0) {
+        alert('Please enter a valid price.');
+        return;
+      }
 
       try {
         const res = await fetch(`${baseUrl}/products/${id}/`, {
@@ -7200,10 +7206,7 @@
       try {
         const res = await fetch(`${baseUrl}/products/${id}/`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
-          },
+          headers: getAdminHeaders(),
           body: JSON.stringify({ price_per_unit: newPrice })
         });
 
@@ -7214,10 +7217,15 @@
           setTimeout(() => { inputEl.style.borderColor = 'var(--border-color)'; }, 1500);
           loadProducts();
         } else {
-          alert('Could not update price.');
+          let errDetail = 'Server error';
+          try {
+            const err = await res.json();
+            errDetail = err.detail || JSON.stringify(err);
+          } catch (_) {}
+          alert(`Could not update price (${res.status}): ${errDetail}`);
         }
       } catch (e) {
-        alert('Network error while updating price.');
+        alert('Network error while updating price: ' + e.message);
       }
     }
 
@@ -7231,10 +7239,7 @@
             try {
               const res = await fetch(`${baseUrl}/products/${p.id}/`, {
                 method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
-                },
+                headers: getAdminHeaders(),
                 body: JSON.stringify({ price_per_unit: newPrice })
               });
               if (res.ok) count++;
