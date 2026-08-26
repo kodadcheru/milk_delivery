@@ -332,7 +332,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   itemBuilder: (ctx, idx) {
                     final sub = activeSubs[idx];
                     final isPaused = sub.status == 'PAUSED';
-                    final pName = sub.productDetail?.name ?? 'Daily Farm Milk';
+                    final pName = sub.productDetail != null
+                        ? sub.productDetail!.localizedName(widget.state.currentLanguage)
+                        : widget.state.translateProduct('Daily Farm Milk');
                     final pPrice = sub.displayPrice;
                     final pUnitQty = sub.packSize;
                     final itemDailyCost = pPrice * sub.quantity;
@@ -609,7 +611,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
 }
 
   Widget _buildCancelledSubscriptionCard(BuildContext context, SubscriptionModel sub) {
-    final pName = sub.productDetail?.name ?? 'Daily Farm Milk';
+    final pName = sub.productDetail != null
+        ? sub.productDetail!.localizedName(widget.state.currentLanguage)
+        : widget.state.translateProduct('Daily Farm Milk');
     final pPrice = sub.displayPrice;
     final pUnitQty = sub.packSize;
     final itemDailyCost = pPrice * sub.quantity;

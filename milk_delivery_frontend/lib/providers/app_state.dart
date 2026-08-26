@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_translations.dart';
 import '../models/user_model.dart';
 import '../models/customer_address_model.dart';
 import '../models/product_model.dart';
@@ -25,6 +26,36 @@ class AppState extends ChangeNotifier {
   String currentRole = 'CUSTOMER';
   bool isLoading = false;
   String? errorMessage;
+
+  // ── Language & Localization State ──
+  String _currentLanguage = 'en';
+  String get currentLanguage => _currentLanguage;
+  bool get isTelugu => _currentLanguage == 'te';
+
+  String tr(String key) => AppTranslations.tr(key, lang: _currentLanguage);
+  String translateProduct(String name) => AppTranslations.translateProduct(name, lang: _currentLanguage);
+  String translateCategory(String cat) => AppTranslations.translateCategory(cat, lang: _currentLanguage);
+  String translateDescription(String name, String desc) => AppTranslations.translateDescription(name, desc, lang: _currentLanguage);
+
+  Future<void> setLanguage(String langCode) async {
+    _currentLanguage = langCode;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('app_language', langCode);
+    } catch (_) {}
+  }
+
+  Future<void> loadSavedLanguage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('app_language');
+      if (saved != null && (saved == 'en' || saved == 'te')) {
+        _currentLanguage = saved;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
 
   bool isVacationMode = false;
   int currentTabIndex = 0;
@@ -477,7 +508,8 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> initApp() async {
-    // CRITICAL: Load auth token FIRST before anything else
+    // CRITICAL: Load auth token & language FIRST before anything else
+    await loadSavedLanguage();
     final savedToken = await ApiService.initAuthToken();
     
     await loadCustomBannerImage();

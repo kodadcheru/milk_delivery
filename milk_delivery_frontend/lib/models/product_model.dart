@@ -1,3 +1,5 @@
+import '../l10n/app_translations.dart';
+
 class ProductModel {
   final int id;
   final String name;
@@ -36,6 +38,21 @@ class ProductModel {
   });
 
   bool get isOutOfStock => !isAvailable || availableSlots <= 0;
+
+  String localizedName(String lang) {
+    if (lang != 'te') return name;
+    return AppTranslations.translateProduct(name, lang: lang);
+  }
+
+  String localizedDescription(String lang) {
+    if (lang != 'te') return description;
+    return AppTranslations.translateDescription(name, description, lang: lang);
+  }
+
+  String localizedCategory(String lang) {
+    if (lang != 'te') return category;
+    return AppTranslations.translateCategory(category, lang: lang);
+  }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     String nameStr = json['name'] ?? '';

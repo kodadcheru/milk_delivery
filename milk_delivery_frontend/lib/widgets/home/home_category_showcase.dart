@@ -152,17 +152,17 @@ class HomeCategoryShowcase extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Label
+          // Label (Localized)
           Text(
-            cat.shortTitle,
+            state.translateCategory(cat.shortTitle),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: UiTone.softText,
-              height: 1.2,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E293B),
+              height: 1.15,
             ),
           ),
         ],

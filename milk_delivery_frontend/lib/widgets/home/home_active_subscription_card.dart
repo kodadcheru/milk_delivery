@@ -15,7 +15,9 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pName = sub.productDetail?.name ?? 'Daily Farm Fresh Milk';
+    final pName = sub.productDetail != null
+        ? sub.productDetail!.localizedName(state.currentLanguage)
+        : state.translateProduct('Daily Farm Fresh Milk');
     final pPrice = sub.displayPrice;
 
     return Padding(

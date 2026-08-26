@@ -117,9 +117,9 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.name, style: UiText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            Text(item.localizedName(widget.state.currentLanguage), style: UiText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
                             const SizedBox(height: 2),
-                            Text(item.badgeText.isNotEmpty ? item.badgeText : item.category, style: UiText.label),
+                            Text(widget.state.translateCategory(item.badgeText.isNotEmpty ? item.badgeText : item.category), style: UiText.label),
                           ],
                         ),
                       ),

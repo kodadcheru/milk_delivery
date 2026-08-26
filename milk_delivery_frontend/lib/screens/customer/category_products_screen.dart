@@ -83,7 +83,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 Text(meta.icon, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: 8),
                 Text(
-                  meta.longTitle,
+                  widget.state.translateCategory(meta.longTitle),
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                 ),
               ],

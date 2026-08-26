@@ -145,7 +145,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.name, style: UiText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            Text(item.localizedName(widget.state.currentLanguage), style: UiText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
                             const SizedBox(height: 4),
                             // Pack • price (keeps the discount look)
                             Row(

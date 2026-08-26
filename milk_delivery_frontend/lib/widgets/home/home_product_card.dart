@@ -162,9 +162,9 @@ class HomeProductCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Product name
+                        // Product name (Localized)
                         Text(
-                          item.name,
+                          item.localizedName(state.currentLanguage),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
