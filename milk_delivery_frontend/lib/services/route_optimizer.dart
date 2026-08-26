@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../models/delivery_batch_model.dart';
 import '../models/delivery_task_model.dart';
 
@@ -144,18 +145,81 @@ class RouteOptimizer {
     }).toList();
   }
 
-  /// Fetches exact street-snapped road polyline geometry using real-world road networks (OSRM).
-  /// Dynamically traces actual paved streets, turns, and curves with clean fallback.
+  /// Decodes Google's standard compressed Polyline Algorithm Format into LatLng points.
+  static List<LatLng> decodeGooglePolyline(String encoded) {
+    List<LatLng> poly = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      poly.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+    return poly;
+  }
+
+  /// Fetches street-snapped road polyline geometry using official Google Maps Directions API.
+  /// Seamlessly falls back to high-resolution OSRM routing if Google quota is reached or key is restricted.
   static Future<List<LatLng>> fetchRealRoadPolyline(List<LatLng> waypoints) async {
     if (waypoints.length < 2) return waypoints;
 
+    // 1. Primary Engine: Official Google Maps Directions API
     try {
-      // Chunk waypoints if needed to prevent excessively long URLs (OSRM handles up to 25 coordinates cleanly)
+      final origin = '${waypoints.first.latitude.toStringAsFixed(6)},${waypoints.first.longitude.toStringAsFixed(6)}';
+      final destination = '${waypoints.last.latitude.toStringAsFixed(6)},${waypoints.last.longitude.toStringAsFixed(6)}';
+
+      String waypointsParam = '';
+      if (waypoints.length > 2) {
+        final intermediate = waypoints.sublist(1, waypoints.length - 1);
+        final sampled = intermediate.length > 23 ? _sampleWaypoints(intermediate, 23) : intermediate;
+        waypointsParam = '&waypoints=optimize:true|${sampled.map((p) => '${p.latitude.toStringAsFixed(6)},${p.longitude.toStringAsFixed(6)}').join('|')}';
+      }
+
+      final apiKey = AppConfig.googleMapsApiKey;
+      final googleUrl = Uri.parse(
+        'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination$waypointsParam&mode=driving&key=$apiKey',
+      );
+
+      final response = await http.get(googleUrl).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'OK' && data['routes'] != null && data['routes'].isNotEmpty) {
+          final overviewPolyline = data['routes'][0]['overview_polyline'];
+          if (overviewPolyline != null && overviewPolyline['points'] != null) {
+            final decoded = decodeGooglePolyline(overviewPolyline['points'].toString());
+            if (decoded.isNotEmpty) {
+              return decoded;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Dual-Engine Fallback: OSRM Street Network Routing
+    try {
       final sample = waypoints.length > 25 ? _sampleWaypoints(waypoints, 25) : waypoints;
       final coordsString = sample.map((p) => '${p.longitude.toStringAsFixed(6)},${p.latitude.toStringAsFixed(6)}').join(';');
       final url = Uri.parse('https://router.project-osrm.org/route/v1/driving/$coordsString?overview=full&geometries=geojson');
 
-      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['routes'] != null && data['routes'].isNotEmpty) {
