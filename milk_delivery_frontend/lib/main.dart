@@ -25,6 +25,7 @@ import 'screens/common/day_wise_orders_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_profile_tab.dart';
 import 'screens/driver/morning_batch_screen.dart';
+import 'screens/splash/pamba_splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   late final AppState _appState;
   bool _isLoggedIn = false;
   bool _isInitializing = true;
+  bool _showSplash = true;
 
   @override
   void initState() {
@@ -90,21 +92,17 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitializing) {
+    if (_showSplash || _isInitializing) {
       return MaterialApp(
+        title: '${AppConfig.appName} 🥛',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(scaffoldBackgroundColor: UiTone.ink),
-        home: const Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('🥛', style: TextStyle(fontSize: 48)),
-                SizedBox(height: 16),
-                CircularProgressIndicator(color: UiTone.secondary),
-              ],
-            ),
-          ),
+        theme: ThemeData(scaffoldBackgroundColor: const Color(0xFF060911)),
+        home: PambaSplashScreen(
+          onFinish: () {
+            if (mounted) {
+              setState(() => _showSplash = false);
+            }
+          },
         ),
       );
     }
