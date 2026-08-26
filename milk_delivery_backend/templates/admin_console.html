@@ -1311,7 +1311,8 @@
             <div class="section-title"><i class="fa-solid fa-tags" style="color: var(--primary-accent);"></i> Product Categories & Department Hierarchy</div>
             <span style="font-size: 12px; color: var(--text-muted);">Create and manage top-level categories (Milk, Meat, Eggs, Water Cans, Organic Veggies)</span>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-danger" style="background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3);" onclick="clearAllCatalogAndSubscriptions()"><i class="fa-solid fa-trash-can"></i> 🧹 Clear All Catalog & Subscriptions</button>
             <button class="btn btn-primary" onclick="openAddCategoryModal()"><i class="fa-solid fa-plus"></i> Add New Category</button>
             <button class="btn btn-secondary" onclick="loadCategories()"><i class="fa-solid fa-sync"></i> Refresh Categories</button>
           </div>
@@ -6321,6 +6322,30 @@
 
     let rawCategories = [];
     let selectedCategoryFilter = 'ALL';
+
+    async function clearAllCatalogAndSubscriptions() {
+      if (!confirm('⚠️ ARE YOU SURE YOU WANT TO CLEAR EVERYTHING?\n\nThis will permanently delete:\n• All Subscriptions & Vacation Pauses\n• All Delivery Tasks & Live Orders\n• All Products & Hub Inventory\n• All Categories\n\nAre you sure you want to proceed?')) {
+        return;
+      }
+      try {
+        const res = await fetch(`${baseUrl}/admin/clear-catalog/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          alert('✅ ' + data.message);
+          await loadCategories();
+          await loadProducts();
+          await loadSubscriptions();
+          await loadDeliveries();
+        } else {
+          alert('Could not clear catalog. Admin authorization required.');
+        }
+      } catch (e) {
+        alert('Network error while clearing catalog.');
+      }
+    }
 
     async function loadCategories() {
       try {

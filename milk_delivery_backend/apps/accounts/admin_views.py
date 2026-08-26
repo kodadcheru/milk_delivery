@@ -1086,6 +1086,35 @@ class AdminSubscriptionsResetView(APIView):
         })
 
 
+class AdminClearCatalogAndSubscriptionsView(APIView):
+    permission_classes = [IsAdminOrStaff]
+
+    def post(self, request):
+        from apps.subscriptions.models import Subscription, VacationPause
+        from apps.deliveries.models import DeliveryTask, LiveOrder, LiveOrderItem, BottleReturn, DailyMilkBatch
+        from apps.products.models import Product, Category, HubProductInventory
+
+        tasks_count, _ = DeliveryTask.objects.all().delete()
+        pauses_count, _ = VacationPause.objects.all().delete()
+        subs_count, _ = Subscription.objects.all().delete()
+        items_count, _ = LiveOrderItem.objects.all().delete()
+        orders_count, _ = LiveOrder.objects.all().delete()
+        returns_count, _ = BottleReturn.objects.all().delete()
+        batches_count, _ = DailyMilkBatch.objects.all().delete()
+        inv_count, _ = HubProductInventory.objects.all().delete()
+        prod_count, _ = Product.objects.all().delete()
+        cat_count, _ = Category.objects.all().delete()
+
+        return Response({
+            "message": "All categories, products, inventory, subscriptions, and orders cleared cleanly from PostgreSQL.",
+            "deleted_categories": cat_count,
+            "deleted_products": prod_count,
+            "deleted_subscriptions": subs_count,
+            "deleted_orders": orders_count,
+            "deleted_tasks": tasks_count,
+        })
+
+
 class AdminDatabaseCompleteResetView(APIView):
     permission_classes = [IsAdminOrStaff]
 
