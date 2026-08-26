@@ -30,8 +30,8 @@ class AppConfig {
   static const int maxRetryAttempts = 3;
   static const Duration retryDelay = Duration(milliseconds: 600);
 
-  static const String appName = 'MilkDrop Express';
+  static const String appName = 'Pamba';
   static const String appVersion = '1.0.0+1';
   static const String supportPhone = '1800-6455-3767';
-  static const String supportEmail = 'support@milkdrop.com';
+  static const String supportEmail = 'support@pamba.in';
 }

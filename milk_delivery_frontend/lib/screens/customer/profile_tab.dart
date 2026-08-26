@@ -421,9 +421,9 @@ class ProfileTab extends StatelessWidget {
                 const SizedBox(height: 16),
                 
                 // Version Footer
-                const Center(
+                 const Center(
                   child: Text(
-                    'MilkDrop Express v1.0.0 • Farm Fresh Daily 🥛',
+                    'Pamba v1.0.0 • Farm Fresh Daily 🥛',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
                   ),
                 ),

@@ -325,10 +325,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'MilkDrop Express',
+            'Pamba',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 26,
+              fontSize: 28,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.5,
             ),
