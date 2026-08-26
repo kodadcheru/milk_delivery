@@ -526,9 +526,21 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     borderRadius: BorderRadius.circular(UiRadius.md),
                     onTap: item.isOutOfStock ? null : _onSubscribeTap,
                     child: Center(
-                      child: Text(
-                        item.isOutOfStock ? 'Sold Out' : 'Subscribe — ${UiFormat.price(_totalSubscriptionCost)} →',
-                        style: UiText.title.copyWith(color: item.isOutOfStock ? UiText.muted : Colors.white),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.repeat_rounded, color: Colors.white, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            item.isOutOfStock ? 'Sold Out' : 'CONFIRM SUBSCRIPTION • ${UiFormat.price(_totalSubscriptionCost)} / Day →',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

@@ -253,7 +253,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.76,
+          childAspectRatio: 0.71,
           mainAxisSpacing: 18,
           crossAxisSpacing: 14,
         ),

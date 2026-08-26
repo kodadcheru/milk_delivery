@@ -4,6 +4,7 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 import '../buy_once_sheet.dart';
+import '../product_detail_sheet.dart';
 
 /// Product card shared by the home grid and the category products screen.
 ///
@@ -13,9 +14,6 @@ import '../buy_once_sheet.dart';
 class HomeProductCard extends StatelessWidget {
   final AppState state;
   final ProductModel item;
-
-  /// Gold used for the rating star — a brand accent that has no `UiTone` slot.
-  static const Color _ratingGold = Color(0xFFF59E0B);
 
   const HomeProductCard({
     super.key,
@@ -62,11 +60,11 @@ class HomeProductCard extends StatelessWidget {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.85),
-                          Colors.black.withValues(alpha: 0.3),
+                          Colors.black.withValues(alpha: 0.88),
+                          Colors.black.withValues(alpha: 0.35),
                           Colors.transparent,
                         ],
-                        stops: const [0.0, 0.5, 1.0],
+                        stops: const [0.0, 0.55, 1.0],
                       ),
                     ),
                   ),
@@ -79,7 +77,7 @@ class HomeProductCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: Colors.white.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: Text(
@@ -93,33 +91,44 @@ class HomeProductCard extends StatelessWidget {
                   ),
                 ),
 
-                // 4. Top-right rating badge
+                // 4. Top-right prominent Quick Subscribe Badge
                 Positioned(
                   top: 8,
                   right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: UiTone.ink.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(UiRadius.xs),
-                      border: Border.all(
-                        color: _ratingGold.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star_rounded, size: 10, color: _ratingGold),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${item.rating}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
+                  child: GestureDetector(
+                    onTap: () => ProductDetailSheet.show(context, item, state),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0E784D), Color(0xFF044E32)],
                         ),
-                      ],
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                        border: Border.all(color: const Color(0xFF34D399), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.repeat_rounded, size: 11, color: Color(0xFF34D399)),
+                          SizedBox(width: 3),
+                          Text(
+                            'SUBSCRIBE',
+                            style: TextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -194,47 +203,25 @@ class HomeProductCard extends StatelessWidget {
 
                         const SizedBox(height: 6),
 
-                        // Price row + cart control
+                        // Price row + cart / subscribe control
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Price (kept discount look — white on the dark overlay)
+                            // Price
                             Flexible(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    UiFormat.price(item.pricePerUnit),
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      UiFormat.strike(item.pricePerUnit),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white.withValues(alpha: 0.6),
-                                        decoration: TextDecoration.lineThrough,
-                                        decorationColor: Colors.white.withValues(alpha: 0.5),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                UiFormat.price(item.pricePerUnit),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
 
-                            // Cart control: ADD → inline −/N/+ stepper
-                            if (!item.isOutOfStock) _buildCartControl(inCartQty),
+                            // Controls: Subscribe + ADD
+                            if (!item.isOutOfStock) _buildCartControl(context, inCartQty),
                           ],
                         ),
                       ],
@@ -249,26 +236,60 @@ class HomeProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCartControl(int inCartQty) {
+  Widget _buildCartControl(BuildContext context, int inCartQty) {
     if (inCartQty == 0) {
-      return GestureDetector(
-        onTap: () => state.addToCart(item),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(UiRadius.pill),
-          ),
-          child: const Text(
-            'ADD',
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w900,
-              color: UiTone.primary,
-              letterSpacing: 0.4,
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Clear direct Subscribe button
+          GestureDetector(
+            onTap: () => ProductDetailSheet.show(context, item, state),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0E784D),
+                borderRadius: BorderRadius.circular(UiRadius.pill),
+                border: Border.all(color: const Color(0xFF34D399), width: 1),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.repeat_rounded, size: 11, color: Color(0xFF34D399)),
+                  SizedBox(width: 2),
+                  Text(
+                    'SUB',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(width: 4),
+          // ADD button for 1-time order
+          GestureDetector(
+            onTap: () => state.addToCart(item),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(UiRadius.pill),
+              ),
+              child: const Text(
+                'ADD +',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: UiTone.primary,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     }
 

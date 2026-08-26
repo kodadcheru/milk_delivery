@@ -212,22 +212,29 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
-                  // Secondary: subscribe & save
-                  Center(
-                    child: TextButton(
+                  // Secondary: Prominent Subscribe & Save Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0E784D),
+                        side: const BorderSide(color: Color(0xFF10B981), width: 1.8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                        backgroundColor: const Color(0xFFE6F5F0),
+                        elevation: 0,
+                      ),
                       onPressed: _openSubscription,
-                      child: Text.rich(
-                        TextSpan(
-                          style: UiText.label.copyWith(color: UiTone.primary),
-                          children: const [
-                            TextSpan(text: 'Get it every morning — '),
-                            TextSpan(
-                              text: 'Subscribe & save →',
-                              style: TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                          ],
+                      icon: const Icon(Icons.repeat_rounded, size: 20, color: Color(0xFF0E784D)),
+                      label: const Text(
+                        'SUBSCRIBE DAILY / SCHEDULED →',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13.5,
+                          color: Color(0xFF0E784D),
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ),
