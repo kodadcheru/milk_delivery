@@ -16,6 +16,7 @@ import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
 import '../models/service_area_model.dart';
 import '../models/storefront_config_model.dart';
+import '../models/category_model.dart';
 import '../services/api_service.dart';
 import '../services/hub_realtime_service.dart';
 import '../services/location_service.dart';
@@ -220,8 +221,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Products populated from API via fetchProducts() — no hardcoded fallbacks
+  // Products & Categories populated from API via fetchProducts() and fetchCategories()
   List<ProductModel> products = [];
+  List<CategoryModel> categories = [];
   List<SubscriptionModel> subscriptions = [];
   List<WalletTransactionModel> transactions = [];
   List<DeliveryTaskModel> deliveries = [];
@@ -662,11 +664,13 @@ class AppState extends ChangeNotifier {
         ApiService.fetchStorefrontConfig(),
         ApiService.fetchHubInventory(),
         ApiService.fetchDailyMilkBatches(),
+        ApiService.fetchCategories(),
       ]);
 
       storefrontConfig = results[10] as StorefrontConfigModel? ?? const StorefrontConfigModel();
       hubInventory = (results[11] as List<Map<String, dynamic>>?) ?? [];
       dailyMilkBatches = (results[12] as List<Map<String, dynamic>>?) ?? [];
+      categories = (results[13] as List<CategoryModel>?) ?? [];
       
       await loadQualityHistory();
       await loadSavedRatings();

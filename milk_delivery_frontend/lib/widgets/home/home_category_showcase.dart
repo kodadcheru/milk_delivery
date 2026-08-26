@@ -14,18 +14,48 @@ class HomeCategoryShowcase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only show categories that have products OR are core (first 4)
+    // 1. Calculate tile width for 3-column grid
+    final screenWidth = MediaQuery.of(context).size.width;
+    const horizontalPadding = 16.0 * 2;
+    const spacing = 12.0;
+    final tileWidth = (screenWidth - horizontalPadding - spacing * 2) / 3;
+
+    // 2. If categories are loaded from PostgreSQL backend, render them dynamically
+    if (state.categories.isNotEmpty) {
+      final backendCategories = state.categories.where((c) => c.isActive).toList();
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Wrap(
+          spacing: spacing,
+          runSpacing: 16,
+          children: backendCategories.map((bCat) {
+            final catalogMeta = categoryMetaFor(bCat.slug);
+            final effectiveImageUrl = bCat.imageUrl.isNotEmpty ? bCat.imageUrl : catalogMeta.image;
+            final effectiveIcon = bCat.icon.isNotEmpty ? bCat.icon : catalogMeta.icon;
+
+            return SizedBox(
+              width: tileWidth,
+              child: _buildCategoryTile(
+                context: context,
+                categoryKey: bCat.slug,
+                title: bCat.name,
+                icon: effectiveIcon,
+                imageUrl: effectiveImageUrl,
+                bgColor: catalogMeta.tileBg,
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    }
+
+    // 3. Fallback to catalog keys if offline or initial load
     final displayKeys = kHomeCategoryKeys.where((key) {
       final count = state.products.where((p) => p.category == key).length;
       final coreIndex = kHomeCategoryKeys.indexOf(key);
       return coreIndex < 4 || count > 0;
     }).toList();
-
-    // Calculate tile width for 3-column grid
-    final screenWidth = MediaQuery.of(context).size.width;
-    const horizontalPadding = 16.0 * 2;
-    const spacing = 12.0;
-    final tileWidth = (screenWidth - horizontalPadding - spacing * 2) / 3;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -33,25 +63,37 @@ class HomeCategoryShowcase extends StatelessWidget {
         spacing: spacing,
         runSpacing: 16,
         children: displayKeys.map((key) {
+          final cat = categoryMetaFor(key);
           return SizedBox(
             width: tileWidth,
-            child: _buildCategoryTile(context, categoryMetaFor(key)),
+            child: _buildCategoryTile(
+              context: context,
+              categoryKey: cat.key,
+              title: cat.shortTitle,
+              icon: cat.icon,
+              imageUrl: cat.image,
+              bgColor: cat.tileBg,
+            ),
           );
         }).toList(),
       ),
     );
   }
 
-  Widget _buildCategoryTile(BuildContext context, CategoryMeta cat) {
-    final catKey = cat.key;
-    final bgColor = cat.tileBg;
-
+  Widget _buildCategoryTile({
+    required BuildContext context,
+    required String categoryKey,
+    required String title,
+    required String icon,
+    required String? imageUrl,
+    required Color bgColor,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (ctx) => CategoryProductsScreen(categoryKey: catKey, state: state),
+            builder: (ctx) => CategoryProductsScreen(categoryKey: categoryKey, state: state),
           ),
         );
       },
@@ -82,15 +124,15 @@ class HomeCategoryShowcase extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    if (cat.image != null)
+                    if (imageUrl != null && imageUrl.isNotEmpty)
                       Image.network(
-                        cat.image!,
+                        imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: bgColor,
                           alignment: Alignment.center,
                           child: Text(
-                            cat.icon,
+                            icon,
                             style: const TextStyle(fontSize: 34),
                           ),
                         ),
@@ -100,7 +142,7 @@ class HomeCategoryShowcase extends StatelessWidget {
                         color: bgColor,
                         alignment: Alignment.center,
                         child: Text(
-                          cat.icon,
+                          icon,
                           style: const TextStyle(fontSize: 34),
                         ),
                       ),
@@ -139,7 +181,7 @@ class HomeCategoryShowcase extends StatelessWidget {
                           ],
                         ),
                         child: Text(
-                          cat.icon,
+                          icon,
                           style: const TextStyle(fontSize: 14),
                         ),
                       ),
@@ -154,7 +196,7 @@ class HomeCategoryShowcase extends StatelessWidget {
 
           // Label (Localized)
           Text(
-            state.translateCategory(cat.shortTitle),
+            state.translateCategory(title),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,

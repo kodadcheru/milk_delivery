@@ -14,6 +14,7 @@ import '../models/live_order_model.dart';
 import '../models/bottle_return_model.dart';
 import '../models/provider_payout_model.dart';
 import '../models/storefront_config_model.dart';
+import '../models/category_model.dart';
 import 'image_upload_service.dart';
 
 /// Exception type for API errors — screens can catch this to show meaningful messages
@@ -332,6 +333,24 @@ class ApiService {
   }
 
   // ── 4. Products & Categories ──
+  static Future<List<CategoryModel>> fetchCategories() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/categories/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final list = _extractList(jsonDecode(res.body));
+        return list.map((e) => CategoryModel.fromJson(e)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return [];
+  }
+
   static Future<List<ProductModel>> fetchProducts({
     int? page,
     int? pageSize,

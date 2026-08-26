@@ -98,7 +98,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class StorefrontConfigSerializer(serializers.ModelSerializer):
-    banner_image_url = serializers.CharField(source="effective_banner_url", read_only=True)
+    banner_image_url = serializers.SerializerMethodField()
     raw_banner_image_url = serializers.CharField(source="banner_image_url", required=False, allow_blank=True)
 
     class Meta:
@@ -117,4 +117,15 @@ class StorefrontConfigSerializer(serializers.ModelSerializer):
             "is_active",
             "updated_at",
         ]
+
+    def get_banner_image_url(self, obj):
+        request = self.context.get("request")
+        if obj.banner_image:
+            try:
+                if request:
+                    return request.build_absolute_uri(obj.banner_image.url)
+                return obj.banner_image.url
+            except Exception:
+                pass
+        return obj.banner_image_url or "https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80"
 
