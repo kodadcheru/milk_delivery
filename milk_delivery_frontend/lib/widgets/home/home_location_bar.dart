@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/notifications_screen.dart';
 import '../../theme/ui_tokens.dart';
+import '../common/app_cached_image.dart';
 
 class HomeLocationBar extends StatefulWidget {
   final AppState state;
@@ -134,7 +135,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             : null,
         image: hasCustomBanner
             ? DecorationImage(
-                image: NetworkImage(bannerUrl),
+                image: AppCachedImage.provider(bannerUrl, maxWidth: 800, maxHeight: 400),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withValues(alpha: hasAnyText ? 0.52 : 0.28),

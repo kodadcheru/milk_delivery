@@ -11,16 +11,15 @@ from apps.products.serializers import CategorySerializer, ProductSerializer
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
-    queryset = Category.objects.filter(is_active=True).order_by("display_order", "id")
     serializer_class = CategorySerializer
     authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
+        from django.db.models import Count
         include_inactive = self.request.query_params.get("all")
-        if include_inactive == "true":
-            return Category.objects.all().order_by("display_order", "id")
-        return Category.objects.filter(is_active=True).order_by("display_order", "id")
+        qs = Category.objects.all() if include_inactive == "true" else Category.objects.filter(is_active=True)
+        return qs.annotate(items_count_annotated=Count("products")).order_by("display_order", "id")
 
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):

@@ -215,10 +215,16 @@ urlpatterns = [
     path("api/upload/image/", FileUploadView.as_view(), name="image_upload"),
 ]
 
-# Serve media files directly in development and production (with volume mount support)
+# Serve media files directly in development and production with 30-day immutable Cache-Control
 from django.urls import re_path
 from django.views.static import serve
 
+def cached_media_serve(request, path, document_root=None, show_indexes=False):
+    response = serve(request, path, document_root=document_root, show_indexes=show_indexes)
+    if response.status_code == 200:
+        response["Cache-Control"] = "public, max-age=2592000, immutable"
+    return response
+
 urlpatterns += [
-    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    re_path(r"^media/(?P<path>.*)$", cached_media_serve, {"document_root": settings.MEDIA_ROOT}),
 ]

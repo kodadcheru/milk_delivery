@@ -12,6 +12,7 @@ import 'delivery_rating_dialog.dart';
 import 'delivery_chat_sheet.dart';
 import 'order_invoice_sheet.dart';
 import 'doorstep_proof_modal.dart';
+import 'common/app_cached_image.dart';
 
 class BookingDetailSheet extends StatelessWidget {
   final AppState state;
@@ -650,19 +651,13 @@ class BookingDetailSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          ClipRRect(
+          AppCachedImage(
+            imageUrl: proofUrl,
+            height: 140,
+            width: double.infinity,
+            fit: BoxFit.cover,
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              proofUrl,
-              height: 140,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 100,
-                color: UiTone.surfaceMuted,
-                child: const Center(child: Icon(Icons.image_not_supported_rounded, color: UiTone.softText)),
-              ),
-            ),
+            fallbackIcon: '📸',
           ),
         ],
       ),

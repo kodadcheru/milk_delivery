@@ -11,6 +11,7 @@ import '../../widgets/delivery_chat_sheet.dart';
 import '../../widgets/delivery_rating_dialog.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 import '../../widgets/order_invoice_sheet.dart';
+import '../../widgets/common/app_cached_image.dart';
 import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
@@ -631,10 +632,12 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.network(order.proofImageUrl, fit: BoxFit.cover),
-                                    ),
+                                     AppCachedImage(
+                                       imageUrl: order.proofImageUrl,
+                                       fit: BoxFit.cover,
+                                       borderRadius: BorderRadius.circular(12),
+                                       fallbackIcon: '📷',
+                                     ),
                                   ],
                                 ),
                               ),
@@ -915,9 +918,11 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             showDialog(
                               context: context,
                               builder: (_) => Dialog(
-                                child: ClipRRect(
+                                child: AppCachedImage(
+                                  imageUrl: task.proofImageUrl,
+                                  fit: BoxFit.cover,
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(task.proofImageUrl, fit: BoxFit.cover),
+                                  fallbackIcon: '📷',
                                 ),
                               ),
                             );

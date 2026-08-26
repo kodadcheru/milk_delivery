@@ -164,6 +164,44 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
   }
 
+  /// Load cached products & categories from local storage for 0ms instant display
+  Future<void> loadCachedCatalog() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prodsJson = prefs.getString('milkdrop_cached_products');
+      if (prodsJson != null && prodsJson.isNotEmpty) {
+        final List list = jsonDecode(prodsJson);
+        final restored = list.map((j) => ProductModel.fromJson(j as Map<String, dynamic>)).toList();
+        if (restored.isNotEmpty && products.isEmpty) {
+          products = restored;
+        }
+      }
+      final catsJson = prefs.getString('milkdrop_cached_categories');
+      if (catsJson != null && catsJson.isNotEmpty) {
+        final List list = jsonDecode(catsJson);
+        final restored = list.map((j) => CategoryModel.fromJson(j as Map<String, dynamic>)).toList();
+        if (restored.isNotEmpty && categories.isEmpty) {
+          categories = restored;
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Save live products & categories locally for offline/instant boot loading
+  Future<void> _cacheCatalogLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (products.isNotEmpty) {
+        final prodsJson = jsonEncode(products.map((p) => p.toJson()).toList());
+        await prefs.setString('milkdrop_cached_products', prodsJson);
+      }
+      if (categories.isNotEmpty) {
+        final catsJson = jsonEncode(categories.map((c) => c.toJson()).toList());
+        await prefs.setString('milkdrop_cached_categories', catsJson);
+      }
+    } catch (_) {}
+  }
+
   List<ServiceAreaModel> serviceAreas = [];
   ServiceAreaModel selectedServiceArea = ServiceAreaModel.fallbackArea;
   List<Map<String, dynamic>> dailyMilkBatches = [];
@@ -712,6 +750,7 @@ class AppState extends ChangeNotifier {
       if (fetchedProds.isNotEmpty) {
         products = fetchedProds;
       }
+      _cacheCatalogLocally();
       subscriptions = (results[3] as List<SubscriptionModel>?) ?? [];
       deliveries = (results[4] as List<DeliveryTaskModel>?) ?? [];
       liveOrders = (results[5] as List<LiveOrderModel>?) ?? [];

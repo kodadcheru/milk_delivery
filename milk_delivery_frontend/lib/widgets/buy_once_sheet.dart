@@ -7,6 +7,7 @@ import '../services/pack_pricing.dart';
 import '../theme/ui_format.dart';
 import '../theme/ui_text.dart';
 import '../theme/ui_tokens.dart';
+import 'common/app_cached_image.dart';
 import 'product_detail_sheet.dart';
 
 /// Lightweight "buy it once" bottom sheet: pick a pack size + quantity and add
@@ -249,19 +250,14 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
   }
 
   Widget _thumbnail(ProductModel item) {
-    return ClipRRect(
+    return AppCachedImage(
+      imageUrl: item.imageUrl,
+      width: 56,
+      height: 56,
+      fit: BoxFit.cover,
       borderRadius: BorderRadius.circular(UiRadius.sm),
-      child: SizedBox(
-        width: 56,
-        height: 56,
-        child: item.imageUrl.isNotEmpty
-            ? Image.network(
-                item.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _thumbFallback(item),
-              )
-            : _thumbFallback(item),
-      ),
+      fallbackIcon: item.icon,
+      customErrorWidget: _thumbFallback(item),
     );
   }
 

@@ -68,8 +68,9 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   }
 
   Future<void> _checkExistingSession() async {
-    // Load cached addresses and cached role FIRST (instant, zero network latency)
+    // Load cached addresses, catalog, and cached role FIRST (instant, zero network latency)
     await _appState.loadCachedAddresses();
+    await _appState.loadCachedCatalog();
     await _appState.loadCachedUserRole();
     final token = await ApiService.initAuthToken();
     if (token != null && mounted) {
