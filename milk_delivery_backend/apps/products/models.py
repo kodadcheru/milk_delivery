@@ -101,14 +101,15 @@ class StorefrontConfig(models.Model):
         help_text="Direct URL or CDN/S3 URL for top banner image",
     )
     banner_image = models.ImageField(upload_to="storefront_banners/", blank=True, null=True)
-    headline = models.CharField(max_length=200, default="Order by 11PM Tonight →")
+    headline = models.CharField(max_length=200, blank=True, default="Order by 11PM Tonight →")
     subtitle = models.CharField(
         max_length=300,
+        blank=True,
         default="❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub",
     )
-    dispatch_tag = models.CharField(max_length=100, default="MORNING DROP 05:30 AM ☀️")
-    promo_chip = models.CharField(max_length=100, default="🥛 FRESH TODAY")
-    cta_text = models.CharField(max_length=100, default="SUBSCRIBE NOW ➔")
+    dispatch_tag = models.CharField(max_length=100, blank=True, default="MORNING DROP 05:30 AM ☀️")
+    promo_chip = models.CharField(max_length=100, blank=True, default="🥛 FRESH TODAY")
+    cta_text = models.CharField(max_length=100, blank=True, default="SUBSCRIBE NOW ➔")
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 

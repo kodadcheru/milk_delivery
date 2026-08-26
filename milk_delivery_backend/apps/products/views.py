@@ -190,6 +190,7 @@ class HubInventoryListUpdateView(APIView):
 
 
 class StorefrontConfigView(APIView):
+    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -212,6 +213,9 @@ class StorefrontConfigView(APIView):
 
         user = request.user
         if not (user and user.is_authenticated):
+            if hasattr(request, "_request") and hasattr(request._request, "user") and request._request.user.is_authenticated:
+                user = request._request.user
+        if not (user and user.is_authenticated):
             try:
                 auth_res = JWTAuthentication().authenticate(request)
                 if auth_res:
@@ -229,9 +233,7 @@ class StorefrontConfigView(APIView):
         )
 
         if not is_authorized:
-            # Check if superuser token or session
-            if not (request.user and request.user.is_staff):
-                return Response({"detail": "Admin authorization required to update storefront settings."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Admin authorization required to update storefront settings."}, status=status.HTTP_403_FORBIDDEN)
 
         config = StorefrontConfig.get_active()
         banner_url = request.data.get("banner_image_url") or request.data.get("raw_banner_image_url")

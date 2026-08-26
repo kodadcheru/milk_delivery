@@ -6678,11 +6678,11 @@
           const bannerUrlInput = document.getElementById('sfBannerUrl');
           if (bannerUrlInput) {
             bannerUrlInput.value = currentStorefrontConfig.raw_banner_image_url || currentStorefrontConfig.banner_image_url || '';
-            document.getElementById('sfHeadline').value = currentStorefrontConfig.headline || 'Order by 11PM Tonight →';
-            document.getElementById('sfSubtitle').value = currentStorefrontConfig.subtitle || '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub';
-            document.getElementById('sfDispatchTag').value = currentStorefrontConfig.dispatch_tag || 'MORNING DROP 05:30 AM ☀️';
-            document.getElementById('sfPromoChip').value = currentStorefrontConfig.promo_chip || '🥛 FRESH TODAY';
-            document.getElementById('sfCtaText').value = currentStorefrontConfig.cta_text || 'SUBSCRIBE NOW ➔';
+            document.getElementById('sfHeadline').value = currentStorefrontConfig.headline !== null && currentStorefrontConfig.headline !== undefined ? currentStorefrontConfig.headline : '';
+            document.getElementById('sfSubtitle').value = currentStorefrontConfig.subtitle !== null && currentStorefrontConfig.subtitle !== undefined ? currentStorefrontConfig.subtitle : '';
+            document.getElementById('sfDispatchTag').value = currentStorefrontConfig.dispatch_tag !== null && currentStorefrontConfig.dispatch_tag !== undefined ? currentStorefrontConfig.dispatch_tag : '';
+            document.getElementById('sfPromoChip').value = currentStorefrontConfig.promo_chip !== null && currentStorefrontConfig.promo_chip !== undefined ? currentStorefrontConfig.promo_chip : '';
+            document.getElementById('sfCtaText').value = currentStorefrontConfig.cta_text !== null && currentStorefrontConfig.cta_text !== undefined ? currentStorefrontConfig.cta_text : '';
             updateStorefrontLivePreview();
           }
         }
@@ -6716,22 +6716,37 @@
       const urlInput = document.getElementById('sfBannerUrl');
       if (!urlInput) return;
       const url = overrideImgUrl || urlInput.value.trim();
-      const headline = document.getElementById('sfHeadline').value.trim() || 'Order by 11PM Tonight →';
-      const subtitle = document.getElementById('sfSubtitle').value.trim() || '❄️ 4°C Cold Chain • Farm to Doorstep • Kodad Hub';
-      const dispatchTag = document.getElementById('sfDispatchTag').value.trim() || 'MORNING DROP 05:30 AM ☀️';
-      const promoChip = document.getElementById('sfPromoChip').value.trim() || '🥛 FRESH TODAY';
-      const ctaText = document.getElementById('sfCtaText').value.trim() || 'SUBSCRIBE ➔';
+      const headline = document.getElementById('sfHeadline').value;
+      const subtitle = document.getElementById('sfSubtitle').value;
+      const dispatchTag = document.getElementById('sfDispatchTag').value;
+      const promoChip = document.getElementById('sfPromoChip').value;
+      const ctaText = document.getElementById('sfCtaText').value;
 
       const liveHead = document.getElementById('sfLiveHeadline');
-      if (liveHead) liveHead.innerText = headline;
+      if (liveHead) {
+        liveHead.innerText = headline;
+        liveHead.style.display = headline.trim() ? '' : 'none';
+      }
       const liveSub = document.getElementById('sfLiveSubtitle');
-      if (liveSub) liveSub.innerText = subtitle;
+      if (liveSub) {
+        liveSub.innerText = subtitle;
+        liveSub.style.display = subtitle.trim() ? '' : 'none';
+      }
       const liveTag = document.getElementById('sfLiveDispatchTag');
-      if (liveTag) liveTag.innerText = dispatchTag;
+      if (liveTag) {
+        liveTag.innerText = dispatchTag;
+        liveTag.style.display = dispatchTag.trim() ? '' : 'none';
+      }
       const liveChip = document.getElementById('sfLivePromoChip');
-      if (liveChip) liveChip.innerText = promoChip;
+      if (liveChip) {
+        liveChip.innerText = promoChip;
+        liveChip.style.display = promoChip.trim() ? '' : 'none';
+      }
       const liveCta = document.getElementById('sfLiveCta');
-      if (liveCta) liveCta.innerText = ctaText;
+      if (liveCta) {
+        liveCta.innerText = ctaText;
+        liveCta.style.display = ctaText.trim() ? '' : 'none';
+      }
 
       const container = document.getElementById('sfLiveBannerContainer');
       if (container) {
@@ -6783,6 +6798,10 @@
       const headers = {};
       if (token && token !== 'null' && token !== 'undefined') {
         headers['Authorization'] = `Bearer ${token}`;
+      }
+      const csrf = getCookie('csrftoken');
+      if (csrf) {
+        headers['X-CSRFToken'] = csrf;
       }
 
       try {
