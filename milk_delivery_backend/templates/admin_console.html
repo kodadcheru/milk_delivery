@@ -6574,12 +6574,19 @@
 
       const formData = new FormData();
       formData.append('image', file);
-      formData.append('folder', 'products');
+      const isCat = targetInputId.toLowerCase().includes('cat');
+      formData.append('folder', isCat ? 'categories' : 'products');
+
+      const label = fileInput.closest('label');
+      const originalText = label ? label.innerHTML : '';
+      if (label) label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
 
       try {
         const token = localStorage.getItem('milkdrop_admin_token');
         const headers = {};
-        if (token) headers['Authorization'] = 'Bearer ' + token;
+        if (token && token !== 'null' && token !== 'undefined') {
+          headers['Authorization'] = 'Bearer ' + token;
+        }
 
         const res = await fetch(`${baseUrl}/upload/image/`, {
           method: 'POST',
@@ -6595,11 +6602,19 @@
             document.getElementById(previewImgId).src = url;
           }
         } else {
-          alert('Image upload failed. Please verify file format (JPG/PNG/WEBP) or paste direct URL.');
+          let errDetail = 'Please verify file format or network connectivity.';
+          try {
+            const errData = await res.json();
+            errDetail = errData.detail || errData.message || JSON.stringify(errData);
+          } catch (_) {}
+          alert(`Image upload failed (${res.status}): ${errDetail}`);
         }
       } catch (e) {
         console.error('Upload error:', e);
-        alert('Network error while uploading image.');
+        alert('Network error while uploading image: ' + e.message);
+      } finally {
+        if (label) label.innerHTML = originalText;
+        fileInput.value = '';
       }
     }
 

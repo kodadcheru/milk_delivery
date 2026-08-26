@@ -11,13 +11,14 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
-ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic"}
-MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".svg"}
+ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/svg+xml"}
+MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 
 
 class FileUploadView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
