@@ -6351,13 +6351,13 @@
                <div style="position: absolute; top: 6px; left: 6px; width: 34px; height: 34px; border-radius: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; font-size: 18px;">
                  ${c.icon || '🥛'}
                </div>
-               <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}" style="position: absolute; top: 6px; right: 6px;">${c.is_active ? 'Active' : 'Hidden'}</span>
+               <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}" style="position: absolute; top: 6px; right: 6px;">${c.is_active ? 'Active (ON)' : 'Hidden (OFF)'}</span>
              </div>`
           : `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                <div style="font-size: 28px; background: rgba(255,255,255,0.06); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
                  ${c.icon || '🥛'}
                </div>
-               <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}">${c.is_active ? 'Active' : 'Hidden'}</span>
+               <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}">${c.is_active ? 'Active (ON)' : 'Hidden (OFF)'}</span>
              </div>`;
 
         grid.innerHTML += `
@@ -6370,13 +6370,40 @@
                 <i class="fa-solid fa-boxes-stacked"></i> ${c.items_count || 0} Item(s) in this Category
               </div>
             </div>
-            <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-              <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditCategoryModal(${c.id})"><i class="fa-solid fa-pen"></i> Edit</button>
-              <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteCategory(${c.id}, '${c.name.replace("'", "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+            <div style="display: flex; gap: 6px; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; flex-wrap: wrap;">
+              <button class="btn" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 5px; ${c.is_active ? 'background: rgba(16,185,129,0.15); color: #34D399; border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3);'}" onclick="toggleCategoryActive(${c.id}, ${!c.is_active})">
+                <i class="fa-solid ${c.is_active ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size: 13px;"></i> ${c.is_active ? 'ON' : 'OFF'}
+              </button>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditCategoryModal(${c.id})"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteCategory(${c.id}, '${c.name.replace("'", "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+              </div>
             </div>
           </div>
         `;
       });
+    }
+
+    async function toggleCategoryActive(id, newStatus) {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const res = await fetch(`${baseUrl}/categories/${id}/`, {
+          method: 'PATCH',
+          headers: headers,
+          body: JSON.stringify({ is_active: newStatus })
+        });
+        if (res.ok) {
+          await loadCategories();
+          await loadProducts();
+        } else {
+          alert('Could not update category status.');
+        }
+      } catch (e) {
+        alert('Network error updating category status.');
+      }
     }
 
     function renderCategoryFilterPills() {
@@ -6400,7 +6427,25 @@
           </button>
         `;
       });
+
+      const unassignedProducts = rawProducts.filter(p => {
+        if (!p.category_ref && !p.category_id) {
+          const matched = rawCategories.some(c => p.category && (p.category.toLowerCase() === c.name.toLowerCase() || p.category.toLowerCase() === c.slug.toLowerCase()));
+          return !matched;
+        }
+        return false;
+      });
+
+      if (unassignedProducts.length > 0) {
+        const isUnassignedActive = selectedCategoryFilter === 'UNASSIGNED';
+        pillsContainer.innerHTML += `
+          <button class="tab-btn ${isUnassignedActive ? 'active' : ''}" style="padding: 6px 14px; font-size: 12px; border-radius: 20px; background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3);" onclick="filterProductsByCategory('UNASSIGNED')">
+            ⚠️ Unassigned (${unassignedProducts.length})
+          </button>
+        `;
+      }
     }
+
 
     function populateCategoryDropdowns() {
       const addSelect = document.getElementById('prodCategorySelect');
@@ -6731,8 +6776,9 @@
         return;
       }
       prods.forEach(p => {
-        const catName = (p.category_detail && p.category_detail.name) || p.category || 'General';
-        const catIcon = (p.category_detail && p.category_detail.icon) || '📦';
+        const isLinked = !!(p.category_detail || p.category_id);
+        const catName = (p.category_detail && p.category_detail.name) || p.category || 'Unassigned';
+        const catIcon = (p.category_detail && p.category_detail.icon) || (isLinked ? '📦' : '⚠️');
         const imgHtml = p.image_url 
           ? `<img src="${p.image_url}" alt="${p.name}" style="width:48px; height:48px; border-radius:10px; object-fit:cover; border:1px solid var(--border-color); margin-right:12px;" onerror="this.src='https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80'">` 
           : `<div style="width:48px; height:48px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:22px; margin-right:12px;">${catIcon}</div>`;
@@ -6749,7 +6795,11 @@
                 </div>
               </div>
             </td>
-            <td><span class="status-tag status-pending">${catIcon} ${catName}</span></td>
+            <td>
+              <span class="status-tag ${isLinked ? 'status-pending' : 'status-paused'}" style="${!isLinked ? 'background: rgba(245,158,11,0.15); color: #F59E0B; border: 1px solid rgba(245,158,11,0.3);' : ''}">
+                ${catIcon} ${catName}
+              </span>
+            </td>
             <td>
               <div style="display:flex; flex-direction:column; gap:2px;">
                 <div style="display:flex; align-items:center; gap:4px;">
@@ -6784,9 +6834,17 @@
         const catName = ((p.category_detail && p.category_detail.name) || p.category || '').toLowerCase();
         const catSlug = ((p.category_detail && p.category_detail.slug) || '').toLowerCase();
         
-        const matchesCategory = (selectedCategoryFilter === 'ALL') || 
-                                (catName === selectedCategoryFilter.toLowerCase()) || 
-                                (catSlug === selectedCategoryFilter.toLowerCase());
+        let matchesCategory = false;
+        if (selectedCategoryFilter === 'ALL') {
+          matchesCategory = true;
+        } else if (selectedCategoryFilter === 'UNASSIGNED') {
+          const matched = rawCategories.some(c => catName === c.name.toLowerCase() || catSlug === c.slug.toLowerCase());
+          matchesCategory = !p.category_ref && !p.category_id && !matched;
+        } else {
+          matchesCategory = (catName === selectedCategoryFilter.toLowerCase()) || 
+                            (catSlug === selectedCategoryFilter.toLowerCase()) ||
+                            (p.category_detail && p.category_detail.name.toLowerCase() === selectedCategoryFilter.toLowerCase());
+        }
         
         const matchesText = !q || p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)) || catName.includes(q);
 

@@ -63,8 +63,6 @@ class ProductListView(generics.ListCreateAPIView):
                 pass
         if not cat_obj and cat_name:
             cat_obj = Category.objects.filter(Q(name__iexact=str(cat_name).strip()) | Q(slug__iexact=str(cat_name).strip())).first()
-            if not cat_obj and str(cat_name).strip():
-                cat_obj = Category.objects.create(name=str(cat_name).strip())
 
         serializer.save(
             category=cat_obj.name if cat_obj else str(cat_name).strip(),

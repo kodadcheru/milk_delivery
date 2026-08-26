@@ -56,10 +56,9 @@ class Product(models.Model):
             self.category = self.category_ref.name
         elif self.category:
             cat = Category.objects.filter(models.Q(slug__iexact=self.category) | models.Q(name__iexact=self.category)).first()
-            if not cat:
-                cat = Category.objects.create(name=self.category)
-            self.category_ref = cat
-            self.category = cat.name
+            if cat:
+                self.category_ref = cat
+                self.category = cat.name
         super().save(*args, **kwargs)
 
     @property
