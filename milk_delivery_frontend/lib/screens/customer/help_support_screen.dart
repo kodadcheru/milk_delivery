@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/ui_tokens.dart';
 
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/app_config.dart';
 import '../../models/support_chat_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
