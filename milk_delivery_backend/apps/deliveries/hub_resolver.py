@@ -62,11 +62,11 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
                 return best_hub
 
             if not strict:
-                # If no hub within coverage radius, pick closest within 50km max
+                # If no hub within coverage radius, pick closest within 10km max
                 best_distance = float("inf")
                 for hub in hubs:
                     dist = _haversine_km(lat, lon, hub.latitude, hub.longitude)
-                    if dist < best_distance and dist <= 50.0:
+                    if dist < best_distance and dist <= 10.0:
                         best_distance = dist
                         best_hub = hub
                 if best_hub:
