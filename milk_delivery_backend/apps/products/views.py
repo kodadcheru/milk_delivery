@@ -186,8 +186,30 @@ class StorefrontConfigView(APIView):
     def _update_config(self, request):
         from apps.products.models import StorefrontConfig
         from apps.products.serializers import StorefrontConfigSerializer
-        if not (request.user and request.user.is_authenticated and (request.user.is_staff or getattr(request.user, "role", "") in ["ADMIN", "HUB_MANAGER", "PROVIDER"])):
-            return Response({"detail": "Admin authorization required to update storefront settings."}, status=status.HTTP_403_FORBIDDEN)
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+
+        user = request.user
+        if not (user and user.is_authenticated):
+            try:
+                auth_res = JWTAuthentication().authenticate(request)
+                if auth_res:
+                    user = auth_res[0]
+            except Exception:
+                pass
+
+        # Allow if authenticated staff/admin or superuser, or if valid admin session exists
+        is_authorized = bool(
+            user and user.is_authenticated and (
+                user.is_staff or 
+                user.is_superuser or 
+                getattr(user, "role", "") in ["ADMIN", "HUB_MANAGER", "PROVIDER"]
+            )
+        )
+
+        if not is_authorized:
+            # Check if superuser token or session
+            if not (request.user and request.user.is_staff):
+                return Response({"detail": "Admin authorization required to update storefront settings."}, status=status.HTTP_403_FORBIDDEN)
 
         config = StorefrontConfig.get_active()
         banner_url = request.data.get("banner_image_url") or request.data.get("raw_banner_image_url")
