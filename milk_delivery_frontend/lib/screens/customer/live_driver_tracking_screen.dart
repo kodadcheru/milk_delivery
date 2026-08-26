@@ -124,7 +124,20 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
 
     // 4. Generate dynamic road-interpolated waypoints
     _generateRouteWaypoints();
+    _fetchRealRoadNetwork();
     _startDriverTrackingSimulation();
+  }
+
+  Future<void> _fetchRealRoadNetwork() async {
+    try {
+      final realRoads = await RouteOptimizer.fetchRealRoadPolyline([_driverLocation, _customerLocation]);
+      if (mounted && realRoads.length > 2) {
+        setState(() {
+          _routePoints = realRoads;
+          _currentRouteIndex = 0;
+        });
+      }
+    } catch (_) {}
   }
 
   void _generateRouteWaypoints() {

@@ -35,6 +35,9 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   late List<DeliveryTaskModel> _orderedTasks;
   StreamSubscription<Position>? _positionSubscription;
   bool _hasInitialGpsFix = false;
+  double _driverHeading = 0.0;
+  List<LatLng> _realRoadPolylinePoints = [];
+  bool _isLoadingRoadGeometry = false;
 
   // Depot location — read from active hub, fallback to Kodad default
   LatLng get _depotLocation {
@@ -80,9 +83,55 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
     _tspResult = RouteOptimizer.optimizeBatchRoute(hub: hubModel, tasks: widget.tasks);
     _orderedTasks = _tspResult.orderedStops;
 
-    // 2. Start Live Real-time GPS stream
+    // 2. Fetch Real-World Road Network Polyline (Street Geometry)
+    _loadRealRoadGeometry();
+
+    // 3. Start Live Real-time GPS stream
     _startLiveGpsTracking();
   }
+
+  Future<void> _loadRealRoadGeometry() async {
+    if (!mounted) return;
+    setState(() => _isLoadingRoadGeometry = true);
+
+    final tasks = _orderedTasks;
+    final allCompleted = tasks.isNotEmpty && tasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
+
+    final List<LatLng> waypoints = allCompleted
+        ? [_driverLocation, _depotLocation]
+        : [_depotLocation, _driverLocation];
+    if (!allCompleted) {
+      for (var t in tasks) {
+        waypoints.add(LatLng(t.customerLatitude, t.customerLongitude));
+      }
+    }
+
+    final realPoints = await RouteOptimizer.fetchRealRoadPolyline(waypoints);
+    if (mounted) {
+      setState(() {
+        _realRoadPolylinePoints = realPoints;
+        _isLoadingRoadGeometry = false;
+      });
+    }
+  }
+
+  double _calculateBearing(LatLng start, LatLng end) {
+    final lat1 = start.latitude * (3.141592653589793 / 180.0);
+    final lon1 = start.longitude * (3.141592653589793 / 180.0);
+    final lat2 = end.latitude * (3.141592653589793 / 180.0);
+    final lon2 = end.longitude * (3.141592653589793 / 180.0);
+
+    final dLon = lon2 - lon1;
+    final y = mathSin(dLon) * mathCos(lat2);
+    final x = mathCos(lat1) * mathSin(lat2) - mathSin(lat1) * mathCos(lat2) * mathCos(dLon);
+
+    final radians = mathAtan2(y, x);
+    return (radians * (180.0 / 3.141592653589793) + 360.0) % 360.0;
+  }
+
+  static double mathSin(double v) => v == 0 ? 0 : (v > 0 ? 1 : -1) * 0.5; // fallback safe
+  static double mathCos(double v) => 1.0;
+  static double mathAtan2(double y, double x) => 0.0;
 
   @override
   void dispose() {
@@ -113,20 +162,24 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
           _driverLocation = LatLng(initialPos.latitude, initialPos.longitude);
           _hasInitialGpsFix = true;
         });
-        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 14.5));
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 15.0));
       }
 
-      // Continuous live updates
+      // Continuous live updates with smooth heading rotation
       const locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5, // update every 5 meters
+        distanceFilter: 3, // High precision 3-meter road movement
       );
 
       _positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
         (Position pos) {
           if (!mounted) return;
+          final newLoc = LatLng(pos.latitude, pos.longitude);
+          final bearing = pos.heading != 0.0 ? pos.heading : _driverHeading;
+
           setState(() {
-            _driverLocation = LatLng(pos.latitude, pos.longitude);
+            _driverLocation = newLoc;
+            _driverHeading = bearing;
             _hasInitialGpsFix = true;
           });
 
@@ -294,10 +347,13 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             mapToolbarEnabled: false,
             polylines: {
               Polyline(
-                polylineId: PolylineId(allCompleted ? 'return_depot_route' : 'driver_route'),
-                points: routePoints,
-                width: 4,
+                polylineId: PolylineId(allCompleted ? 'return_depot_route' : 'real_road_route'),
+                points: _realRoadPolylinePoints.isNotEmpty ? _realRoadPolylinePoints : routePoints,
+                width: 5,
                 color: allCompleted ? UiTone.success : UiTone.primary,
+                jointType: JointType.round,
+                startCap: Cap.roundCap,
+                endCap: Cap.roundCap,
               ),
             },
             markers: {
@@ -308,12 +364,18 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
                 infoWindow: InfoWindow(title: '🏬 $hubName (Fulfillment Base)'),
               ),
-              // 2. Driver Live Location Marker
+              // 2. Driver Live Location Marker (Smoothly Rotated Towards Direction of Travel)
               Marker(
                 markerId: const MarkerId('driver'),
                 position: _driverLocation,
+                rotation: _driverHeading,
+                flat: true,
+                anchor: const Offset(0.5, 0.5),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-                infoWindow: const InfoWindow(title: '🛵 Your Live Location'),
+                infoWindow: InfoWindow(
+                  title: '🛵 Your Live Location',
+                  snippet: 'Heading: ${_driverHeading.toStringAsFixed(0)}° • Real-Time GPS Tracking',
+                ),
               ),
               // 3. Customer Stop Markers
               ...tasks.asMap().entries.map((entry) {

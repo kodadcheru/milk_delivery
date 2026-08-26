@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import '../models/delivery_batch_model.dart';
 import '../models/delivery_task_model.dart';
 
@@ -139,5 +142,49 @@ class RouteOptimizer {
     return partitions.map((driverStops) {
       return optimizeBatchRoute(hub: hub, tasks: driverStops);
     }).toList();
+  }
+
+  /// Fetches exact street-snapped road polyline geometry using real-world road networks (OSRM).
+  /// Dynamically traces actual paved streets, turns, and curves with clean fallback.
+  static Future<List<LatLng>> fetchRealRoadPolyline(List<LatLng> waypoints) async {
+    if (waypoints.length < 2) return waypoints;
+
+    try {
+      // Chunk waypoints if needed to prevent excessively long URLs (OSRM handles up to 25 coordinates cleanly)
+      final sample = waypoints.length > 25 ? _sampleWaypoints(waypoints, 25) : waypoints;
+      final coordsString = sample.map((p) => '${p.longitude.toStringAsFixed(6)},${p.latitude.toStringAsFixed(6)}').join(';');
+      final url = Uri.parse('https://router.project-osrm.org/route/v1/driving/$coordsString?overview=full&geometries=geojson');
+
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['routes'] != null && data['routes'].isNotEmpty) {
+          final geometry = data['routes'][0]['geometry'];
+          if (geometry != null && geometry['coordinates'] != null) {
+            final List rawCoords = geometry['coordinates'];
+            final roadPoints = rawCoords
+                .map<LatLng>((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
+                .toList();
+            if (roadPoints.isNotEmpty) {
+              return roadPoints;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    return waypoints;
+  }
+
+  static List<LatLng> _sampleWaypoints(List<LatLng> points, int maxCount) {
+    if (points.length <= maxCount) return points;
+    final result = <LatLng>[points.first];
+    final step = (points.length - 2) / (maxCount - 2);
+    for (int i = 1; i < maxCount - 1; i++) {
+      final index = (i * step).round().clamp(1, points.length - 2);
+      result.add(points[index]);
+    }
+    result.add(points.last);
+    return result;
   }
 }
