@@ -107,8 +107,31 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
     final state = widget.state;
-    final city = state.activeAddress?.title ?? (state.activeAddress?.customTag.isNotEmpty == true ? state.activeAddress!.customTag : 'Kodad');
-    final subtitle = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
+    final titleTag = state.activeAddress?.title ?? (state.activeAddress?.customTag.isNotEmpty == true ? state.activeAddress!.customTag : 'Home');
+    
+    // Extract clean, concise area/locality name instead of full raw address string
+    String areaName = '';
+    if (state.activeAddress != null) {
+      final addr = state.activeAddress!;
+      if (addr.landmark.isNotEmpty) {
+        areaName = addr.landmark;
+      } else if (addr.streetAddress.isNotEmpty) {
+        final parts = addr.streetAddress.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        areaName = parts.isNotEmpty ? parts.first : addr.streetAddress;
+      } else if (addr.buildingName.isNotEmpty) {
+        areaName = addr.buildingName;
+      } else if (addr.city.isNotEmpty) {
+        areaName = addr.city;
+      } else {
+        areaName = 'Kodad';
+      }
+    } else if (state.currentDeliveryAddress.isNotEmpty && state.currentDeliveryAddress != 'Select Delivery Location') {
+      final parts = state.currentDeliveryAddress.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      areaName = parts.isNotEmpty ? parts.first : state.currentDeliveryAddress;
+    } else {
+      areaName = 'Select Delivery Area';
+    }
+
     final unreadNotifs = state.unreadNotificationCount;
     final sf = state.storefrontConfig;
 
@@ -122,8 +145,8 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: hasAnyText ? 260 : 160),
-      padding: EdgeInsets.fromLTRB(16, topInset + 8, 16, hasAnyText ? 28 : 18),
+      constraints: BoxConstraints(minHeight: hasAnyText ? 280 : 230),
+      padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, hasAnyText ? 28 : 22),
       decoration: BoxDecoration(
         color: const Color(0xFF0E784D),
         gradient: !hasCustomBanner
@@ -135,10 +158,10 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             : null,
         image: hasCustomBanner
             ? DecorationImage(
-                image: AppCachedImage.provider(bannerUrl, maxWidth: 800, maxHeight: 400),
+                image: AppCachedImage.provider(bannerUrl, maxWidth: 800, maxHeight: 600),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withValues(alpha: hasAnyText ? 0.52 : 0.28),
+                  Colors.black.withValues(alpha: hasAnyText ? 0.45 : 0.22),
                   BlendMode.darken,
                 ),
               )
@@ -245,7 +268,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                               children: [
                                 Flexible(
                                   child: Text(
-                                    city,
+                                    titleTag,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -285,12 +308,12 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                               ],
                             ),
                             Text(
-                              subtitle.length > 36 ? '${subtitle.substring(0, 36)}...' : subtitle,
+                              areaName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                                 color: Color(0xFFDFF7EA),
                               ),
                             ),
@@ -429,7 +452,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
             ),
           ),
 
-          // ── Storefront Promo Strip (Only rendered if text is present) ──
+          if (!hasAnyText) const SizedBox(height: 16),
           if (sf.dispatchTag.trim().isNotEmpty || sf.promoChip.trim().isNotEmpty) ...[
             const SizedBox(height: 20),
             Row(
