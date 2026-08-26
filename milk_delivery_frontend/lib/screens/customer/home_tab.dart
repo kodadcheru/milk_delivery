@@ -9,7 +9,6 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
-import '../../widgets/home/home_promo_carousel.dart';
 import '../../widgets/home/home_active_subscription_card.dart';
 import '../../widgets/home/home_category_showcase.dart';
 import '../../widgets/home/home_product_card.dart';
@@ -33,10 +32,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
-  late final PageController _bannerController;
-  Timer? _bannerTimer;
-  int _currentBannerIndex = 0;
-
   // Staggered entry animation
   late final AnimationController _entryController;
   late final Animation<double> _entryFade;
@@ -45,9 +40,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
   @override
   void initState() {
     super.initState();
-    _bannerController = PageController(viewportFraction: 0.92);
-    _startBannerAutoSlide();
-
     _entryController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -71,23 +63,8 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
     });
   }
 
-  void _startBannerAutoSlide() {
-    _bannerTimer?.cancel();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!mounted || !_bannerController.hasClients) return;
-      final nextIndex = (_currentBannerIndex + 1) % HomePromoCarousel.promos.length;
-      _bannerController.animateToPage(
-        nextIndex,
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeOutCubic,
-      );
-    });
-  }
-
   @override
   void dispose() {
-    _bannerTimer?.cancel();
-    _bannerController.dispose();
     _searchController.dispose();
     _entryController.dispose();
     super.dispose();
@@ -148,31 +125,20 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   ),
                 ),
               ] else ...[
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                // ── Promo Carousel ──
-                SliverToBoxAdapter(
-                  child: HomePromoCarousel(
-                    state: widget.state,
-                    controller: _bannerController,
-                    currentIndex: _currentBannerIndex,
-                    onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
-                  ),
-                ),
-
                 // ── Active Subscription Snapshot ──
                 if (activeSub != null) ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.only(top: 14),
                       child: HomeActiveSubscriptionCard(state: widget.state, sub: activeSub),
                     ),
                   ),
                 ],
 
-                // ── 5. Category Grid ──
+                // ── Category Grid ──
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 18),
+                    padding: const EdgeInsets.only(top: 14),
                     child: HomeCategoryShowcase(
                       state: widget.state,
                     ),
