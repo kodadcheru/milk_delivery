@@ -29,8 +29,11 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and (request.user.is_staff or request.user.is_superuser or getattr(request.user, 'role', '') == 'ADMIN')
-        )
+        user = getattr(request, "user", None)
+        if not (user and user.is_authenticated):
+            # Check underlying HttpRequest user for session authentication
+            if hasattr(request, "_request") and getattr(request._request, "user", None) and request._request.user.is_authenticated:
+                user = request._request.user
+        if user and user.is_authenticated:
+            return bool(user.is_staff or user.is_superuser or getattr(user, 'role', '') in ('ADMIN', 'PROVIDER', 'HUB_MANAGER'))
+        return False

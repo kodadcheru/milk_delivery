@@ -3464,6 +3464,34 @@
     let rawProducts = [];
     let mapInstance = null;
 
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    function getAdminHeaders(extra = {}) {
+      const headers = { 'Content-Type': 'application/json', ...extra };
+      const token = localStorage.getItem('milkdrop_admin_token');
+      if (token && token !== 'null' && token !== 'undefined') {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      const csrf = getCookie('csrftoken');
+      if (csrf) {
+        headers['X-CSRFToken'] = csrf;
+      }
+      return headers;
+    }
+
     // ── Auth Check on Load ──
     async function checkAuth() {
       const today = new Date().toISOString().split('T')[0];
@@ -6902,7 +6930,7 @@
       try {
         const res = await fetch(`${baseUrl}/products/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          headers: getAdminHeaders(),
           body: JSON.stringify({
             name,
             category_id,
@@ -6923,10 +6951,15 @@
           loadCategories();
           alert(`✅ Item '${name}' added to catalog!`);
         } else {
-          alert('Could not save item.');
+          let errDetail = 'Please check required fields.';
+          try {
+            const err = await res.json();
+            errDetail = err.detail || JSON.stringify(err);
+          } catch (_) {}
+          alert(`Could not save item (${res.status}): ${errDetail}`);
         }
       } catch (e) {
-        alert('Network error while saving item.');
+        alert('Network error while saving item: ' + e.message);
       }
     }
 
@@ -6973,7 +7006,7 @@
       try {
         const res = await fetch(`${baseUrl}/products/${id}/`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
+          headers: getAdminHeaders(),
           body: JSON.stringify({
             name,
             category_id,
@@ -6989,14 +7022,19 @@
 
         if (res.ok) {
           closeModal('editProductModal');
-          loadProducts();
-          loadCategories();
+          await loadProducts();
+          await loadCategories();
           alert(`✅ Item '${name}' updated successfully!`);
         } else {
-          alert('Could not update item.');
+          let errDetail = 'Please check your inputs.';
+          try {
+            const err = await res.json();
+            errDetail = err.detail || JSON.stringify(err);
+          } catch (_) {}
+          alert(`Could not update item (${res.status}): ${errDetail}`);
         }
       } catch (e) {
-        alert('Network error while updating item.');
+        alert('Network error while updating item: ' + e.message);
       }
     }
 
@@ -7004,7 +7042,7 @@
       if (!confirm(`Are you sure you want to delete item '${name}' from the catalog?`)) return;
 
       try {
-        const res = await fetch(`${baseUrl}/products/${id}/`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
+        const res = await fetch(`${baseUrl}/products/${id}/`, { method: 'DELETE', headers: getAdminHeaders() });
         if (res.ok) {
           loadProducts();
           loadCategories();
@@ -7017,7 +7055,7 @@
 
     async function toggleProductStock(id) {
       try {
-        const res = await fetch(`${baseUrl}/admin/products/${id}/toggle-stock/`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
+        const res = await fetch(`${baseUrl}/admin/products/${id}/toggle-stock/`, { method: 'POST', headers: getAdminHeaders() });
         if (res.ok) {
           loadProducts();
           loadDashboard();
@@ -7037,10 +7075,7 @@
       try {
         const res = await fetch(`${baseUrl}/products/${id}/`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
-          },
+          headers: getAdminHeaders(),
           body: JSON.stringify({ price_per_unit: newPrice })
         });
 
@@ -7050,10 +7085,15 @@
           inputEl.style.borderColor = '#10B981';
           setTimeout(() => { inputEl.style.borderColor = 'var(--border-color)'; }, 1500);
         } else {
-          alert('Could not update price.');
+          let errDetail = 'Server returned an error.';
+          try {
+            const err = await res.json();
+            errDetail = err.detail || JSON.stringify(err);
+          } catch (_) {}
+          alert(`Could not update price (${res.status}): ${errDetail}`);
         }
       } catch (e) {
-        alert('Network error while updating price.');
+        alert('Network error while updating price: ' + e.message);
       }
     }
 

@@ -1,4 +1,6 @@
 from rest_framework import generics, permissions, status
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
@@ -11,6 +13,7 @@ from apps.products.serializers import CategorySerializer, ProductSerializer
 class CategoryListCreateView(generics.ListCreateAPIView):
     queryset = Category.objects.filter(is_active=True).order_by("display_order", "id")
     serializer_class = CategorySerializer
+    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
@@ -23,11 +26,13 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
 
 class ProductListView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
+    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = StandardResultsSetPagination
 
@@ -73,6 +78,7 @@ class ProductListView(generics.ListCreateAPIView):
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def perform_update(self, serializer):
