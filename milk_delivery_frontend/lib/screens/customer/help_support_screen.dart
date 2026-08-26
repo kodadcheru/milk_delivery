@@ -246,14 +246,14 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   }
 
   Future<void> _callSupportHotline() async {
-    final uri = Uri.parse('tel:180064553767');
+    final uri = Uri.parse('tel:${AppConfig.adminPhone}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
   }
 
   Future<void> _openWhatsAppSupport() async {
-    final uri = Uri.parse('https://wa.me/918919548905?text=Hello%20MilkDrop%20Support,%20I%20need%20help%20with%20my%20delivery.');
+    final uri = Uri.parse('https://wa.me/${AppConfig.adminWhatsApp}?text=Hello%20Pamba%20Support,%20I%20need%20help%20with%20my%20delivery.');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

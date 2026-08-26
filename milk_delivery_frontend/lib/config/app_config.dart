@@ -32,6 +32,8 @@ class AppConfig {
 
   static const String appName = 'Pamba';
   static const String appVersion = '1.0.0+1';
-  static const String supportPhone = '1800-6455-3767';
+  static const String supportPhone = '+91 8919548905';
+  static const String adminPhone = '+91 8919548905';
+  static const String adminWhatsApp = '918919548905';
   static const String supportEmail = 'support@pamba.in';
 }
