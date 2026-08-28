@@ -2543,7 +2543,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Expanded(
+    return SizedBox(
+      width: 96,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
