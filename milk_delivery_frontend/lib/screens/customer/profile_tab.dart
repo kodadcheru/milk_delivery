@@ -553,26 +553,26 @@ void _showEditProfileDialog(
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setSheetState) {
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        final maxHeight = MediaQuery.of(ctx).size.height * 0.88;
         final avatarChar = firstNameCtrl.text.trim().isNotEmpty
             ? firstNameCtrl.text.trim()[0].toUpperCase()
             : 'C';
 
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            boxShadow: [
-              BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, -6)),
-            ],
-          ),
-          padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 24),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Container(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              boxShadow: [
+                BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, -6)),
+              ],
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Top Drag Handle & Close Button
+                const SizedBox(height: 12),
                 Center(
                   child: Container(
                     width: 44,
@@ -583,258 +583,253 @@ void _showEditProfileDialog(
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
-
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE6F5F0),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.person_rounded, color: Color(0xFF0D7C66), size: 22),
-                    ),
-                    const SizedBox(width: 12),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Edit Profile Details',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                        ),
-                        Text(
-                          'Keep your delivery contact details up to date',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 18),
-
-                // 2. Interactive Avatar Preview Header
-                Center(
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
                     children: [
                       Container(
-                        width: 76,
-                        height: 76,
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0D7C66), Color(0xFF059669)],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          color: const Color(0xFFE6F5F0),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(
-                          child: Text(
-                            avatarChar,
-                            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white),
-                          ),
-                        ),
+                        child: const Icon(Icons.person_rounded, color: Color(0xFF0D7C66), size: 22),
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38BDF8),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(Icons.verified, size: 12, color: Colors.white),
+                      const SizedBox(width: 12),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Edit Profile Details',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            'Keep your delivery contact details up to date',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
                       ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // 3. Name Row (First Name & Last Name)
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStyledInput(
-                        controller: firstNameCtrl,
-                        label: 'First Name',
-                        hint: 'e.g. Rahul',
-                        icon: Icons.badge_outlined,
-                        onChanged: (_) => setSheetState(() {}),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStyledInput(
-                        controller: lastNameCtrl,
-                        label: 'Last Name',
-                        hint: 'e.g. Reddy',
-                        icon: Icons.person_outline_rounded,
-                        onChanged: (_) => setSheetState(() {}),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                // 4. Phone Number (Read-only / Verified)
-                _buildStyledInput(
-                  controller: phoneCtrl,
-                  label: 'Phone Number (Primary Contact)',
-                  hint: '+91 9876543210',
-                  icon: Icons.phone_iphone_rounded,
-                  keyboardType: TextInputType.phone,
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6F5F0),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF0D7C66)),
-                        SizedBox(width: 4),
-                        Text(
-                          'OTP Verified',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // 5. Email Address
-                _buildStyledInput(
-                  controller: emailCtrl,
-                  label: 'Email Address (Invoices & Receipts)',
-                  hint: 'name@example.com',
-                  icon: Icons.alternate_email_rounded,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-
-                const SizedBox(height: 16),
-
-                // 6. Preferred Delivery Time Slot Selection
-                const Text(
-                  'Default Morning Delivery Slot ☀️',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    '05:30 AM - 07:00 AM',
-                    '07:00 AM - 08:30 AM',
-                    '05:00 PM - 07:00 PM',
-                  ].map((slot) {
-                    final isSel = selectedSlot == slot;
-                    final isEve = slot.contains('PM');
-                    return GestureDetector(
-                      onTap: () => setSheetState(() => selectedSlot = slot),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: isSel
-                              ? const Color(0xFF0D7C66)
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSel
-                                ? const Color(0xFF0D7C66)
-                                : const Color(0xFFE2E8F0),
+                        Center(
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                width: 76,
+                                height: 76,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF0D7C66), Color(0xFF059669)],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    avatarChar,
+                                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF38BDF8),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(Icons.verified, size: 12, color: Colors.white),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        const SizedBox(height: 20),
+                        Row(
                           children: [
-                            Text(isEve ? '🌙 ' : '☀️ ', style: const TextStyle(fontSize: 12)),
-                            Text(
-                              slot,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: isSel ? Colors.white : const Color(0xFF1E293B),
+                            Expanded(
+                              child: _buildStyledInput(
+                                controller: firstNameCtrl,
+                                label: 'First Name',
+                                hint: 'e.g. Rahul',
+                                icon: Icons.badge_outlined,
+                                onChanged: (_) => setSheetState(() {}),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStyledInput(
+                                controller: lastNameCtrl,
+                                label: 'Last Name',
+                                hint: 'e.g. Reddy',
+                                icon: Icons.person_outline_rounded,
+                                onChanged: (_) => setSheetState(() {}),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 24),
-
-                // 7. Save Details CTA Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final first = firstNameCtrl.text.trim();
-                      final last = lastNameCtrl.text.trim();
-                      final email = emailCtrl.text.trim();
-                      final phone = phoneCtrl.text.trim();
-
-                      if (first.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: Colors.redAccent,
-                            content: Text('⚠️ Please enter your First Name.'),
+                        const SizedBox(height: 14),
+                        _buildStyledInput(
+                          controller: phoneCtrl,
+                          label: 'Phone Number (Primary Contact)',
+                          hint: '+91 9876543210',
+                          icon: Icons.phone_iphone_rounded,
+                          keyboardType: TextInputType.phone,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6F5F0),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF0D7C66)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'OTP Verified',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                        return;
-                      }
+                        ),
+                        const SizedBox(height: 14),
+                        _buildStyledInput(
+                          controller: emailCtrl,
+                          label: 'Email Address (Invoices & Receipts)',
+                          hint: 'name@example.com',
+                          icon: Icons.alternate_email_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Default Morning Delivery Slot ☀️',
+                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            '05:30 AM - 07:00 AM',
+                            '07:00 AM - 08:30 AM',
+                            '05:00 PM - 07:00 PM',
+                          ].map((slot) {
+                            final isSel = selectedSlot == slot;
+                            final isEve = slot.contains('PM');
+                            return GestureDetector(
+                              onTap: () => setSheetState(() => selectedSlot = slot),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: isSel
+                                      ? const Color(0xFF0D7C66)
+                                      : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isSel
+                                        ? const Color(0xFF0D7C66)
+                                        : const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(isEve ? '🌙 ' : '☀️ ', style: const TextStyle(fontSize: 12)),
+                                    Text(
+                                      slot,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSel ? Colors.white : const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final first = firstNameCtrl.text.trim();
+                              final last = lastNameCtrl.text.trim();
+                              final email = emailCtrl.text.trim();
+                              final phone = phoneCtrl.text.trim();
 
-                      await state.updateUserProfile(
-                        firstName: first,
-                        lastName: last,
-                        email: email,
-                        phone: phone,
-                        slotPreference: selectedSlot,
-                      );
+                              if (first.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Colors.redAccent,
+                                    content: Text('⚠️ Please enter your First Name.'),
+                                  ),
+                                );
+                                return;
+                              }
 
-                      if (context.mounted) {
-                        Navigator.pop(ctx);
-                        HapticFeedback.mediumImpact();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: Color(0xFF0D7C66),
-                            content: Text('✅ Profile details updated successfully!'),
+                              await state.updateUserProfile(
+                                firstName: first,
+                                lastName: last,
+                                email: email,
+                                phone: phone,
+                                slotPreference: selectedSlot,
+                              );
+
+                              if (context.mounted) {
+                                Navigator.pop(ctx);
+                                HapticFeedback.mediumImpact();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Color(0xFF0D7C66),
+                                    content: Text('✅ Profile details updated successfully!'),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D7C66),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Save Profile Changes',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_circle_rounded, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Save Profile Changes',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
@@ -911,111 +906,139 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setDialogState) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+      builder: (ctx, setDialogState) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        final maxHeight = MediaQuery.of(ctx).size.height * 0.85;
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Container(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            const SizedBox(height: 16),
-            const Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.schedule_rounded, color: Color(0xFF0D7C66), size: 24),
-                SizedBox(width: 10),
-                Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text('Choose when you want our delivery executive to arrive:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                '05:30 AM - 07:00 AM',
-                '07:00 AM - 08:30 AM',
-                '05:00 PM - 07:00 PM',
-                '06:30 PM - 08:30 PM',
-              ].map((s) {
-                final isSel = selected == s;
-                final isEve = s.toUpperCase().contains('PM');
-                final icon = isEve ? '🌙 ' : '☀️ ';
-                return GestureDetector(
-                  onTap: () {
-                    setDialogState(() {
-                      selected = s;
-                      customCtrl.text = s;
-                    });
-                  },
+                const SizedBox(height: 12),
+                Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    width: 44,
+                    height: 5,
                     decoration: BoxDecoration(
-                      color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0)),
-                    ),
-                    child: Text(
-                      icon + s,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isSel ? Colors.white : const Color(0xFF0F172A),
-                      ),
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            _buildStyledInput(
-              controller: customCtrl,
-              label: 'Or Specify Custom Slot Window',
-              hint: 'e.g. 06:00 AM - 07:30 AM',
-              icon: Icons.edit_calendar_rounded,
-              onChanged: (val) {
-                setDialogState(() {
-                  selected = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
-                });
-              },
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D7C66),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                onPressed: () {
-                  final finalSlot = customCtrl.text.trim().isNotEmpty ? customCtrl.text.trim() : selected;
-                  state.updateUserProfile(slotPreference: finalSlot);
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⏱️ Preferred slot saved: $finalSlot')),
-                  );
-                },
-                child: const Text('Save Slot Preference', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-              ),
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule_rounded, color: Color(0xFF0D7C66), size: 24),
+                      SizedBox(width: 10),
+                      Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Choose when you want our delivery executive to arrive:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            '05:30 AM - 07:00 AM',
+                            '07:00 AM - 08:30 AM',
+                            '05:00 PM - 07:00 PM',
+                            '06:30 PM - 08:30 PM',
+                          ].map((s) {
+                            final isSel = selected == s;
+                            final isEve = s.toUpperCase().contains('PM');
+                            final icon = isEve ? '🌙 ' : '☀️ ';
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() {
+                                  selected = s;
+                                  customCtrl.text = s;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: isSel ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0)),
+                                ),
+                                child: Text(
+                                  icon + s,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSel ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildStyledInput(
+                          controller: customCtrl,
+                          label: 'Or Specify Custom Slot Window',
+                          hint: 'e.g. 06:00 AM - 07:30 AM',
+                          icon: Icons.edit_calendar_rounded,
+                          onChanged: (val) {
+                            setDialogState(() {
+                              selected = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D7C66),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            onPressed: () {
+                              final finalSlot = customCtrl.text.trim().isNotEmpty ? customCtrl.text.trim() : selected;
+                              state.updateUserProfile(slotPreference: finalSlot);
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⏱️ Preferred slot saved: $finalSlot')),
+                              );
+                            },
+                            child: const Text('Save Slot Preference', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     ),
   );
 }
