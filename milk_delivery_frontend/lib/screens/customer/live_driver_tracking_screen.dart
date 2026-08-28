@@ -14,6 +14,8 @@ import '../../theme/ui_text.dart';
 import '../../widgets/delivery_chat_sheet.dart';
 import 'help_support_screen.dart';
 
+import '../../services/api_service.dart';
+
 class LiveDriverTrackingScreen extends StatefulWidget {
   final AppState state;
   final LiveOrderModel? liveOrder;
@@ -44,21 +46,24 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   GoogleMapController? _mapController;
   late final AnimationController _pulseAnimController;
   late final Animation<double> _pulseAnimation;
+  AnimationController? _markerAnimController;
+  Animation<double>? _markerAnimation;
 
   // Customer doorstep coordinates
   late LatLng _customerLocation;
 
   // Driver moving coordinates
   late LatLng _driverLocation;
+  double _driverBearing = 0.0;
 
   // Route polyline coordinates simulating real road path
-  late List<LatLng> _routePoints;
-  int _currentRouteIndex = 0;
-  Timer? _driverMovementTimer;
+  List<LatLng> _routePoints = [];
+  Timer? _liveGpsTimer;
 
   int _etaMinutes = 12;
   double _distanceKm = 2.1;
   bool _isTrafficEnabled = false;
+  String _driverStatusText = 'On the way';
 
   @override
   void initState() {
@@ -73,7 +78,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
     );
 
-    // 1. Dynamically resolve Customer Doorstep    // Hardcoded to Kodad coordinates
+    // 1. Dynamically resolve Customer Doorstep (Real address coordinates)
     double custLat = 17.001734;
     double custLon = 79.9625;
 
@@ -95,9 +100,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     }
     _customerLocation = LatLng(custLat, custLon);
 
-    // 2. Dynamically resolve Location Hub / Driver Starting GPS Coordinates
-    double originLat = custLat - 0.015;
-    double originLon = custLon - 0.018;
+    // 2. Dynamically resolve Driver / Hub Starting Location
+    double originLat = custLat - 0.008;
+    double originLon = custLon - 0.009;
 
     if (widget.subscriptionTask?.driverDetail?.latitude != null && widget.subscriptionTask!.driverDetail!.latitude != 0) {
       originLat = widget.subscriptionTask!.driverDetail!.latitude;
@@ -122,90 +127,140 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     );
     _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
 
-    // 4. Generate dynamic road-interpolated waypoints
-    _generateRouteWaypoints();
+    // 4. Load initial real road polyline
+    _routePoints = [_driverLocation, _customerLocation];
     _fetchRealRoadNetwork();
-    _startDriverTrackingSimulation();
+
+    // 5. Start real-time live GPS polling
+    _fetchLiveDriverGps();
+    _liveGpsTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchLiveDriverGps());
+  }
+
+  Future<void> _fetchLiveDriverGps() async {
+    if (!mounted) return;
+
+    final orderId = widget.liveOrder?.id ?? widget.subscriptionTask?.id.toString();
+    final driverId = widget.subscriptionTask?.driverId ?? widget.subscriptionTask?.driverDetail?.id;
+
+    final locData = await ApiService.fetchDriverLiveLocation(
+      orderId: orderId,
+      driverId: driverId,
+    );
+
+    if (locData != null && mounted) {
+      final lat = (locData['latitude'] is num)
+          ? (locData['latitude'] as num).toDouble()
+          : double.tryParse(locData['latitude']?.toString() ?? '');
+      final lng = (locData['longitude'] is num)
+          ? (locData['longitude'] as num).toDouble()
+          : double.tryParse(locData['longitude']?.toString() ?? '');
+
+      if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+        final newPos = LatLng(lat, lng);
+        final distanceMoved = RouteOptimizer.calculateDistanceKm(
+          _driverLocation.latitude,
+          _driverLocation.longitude,
+          lat,
+          lng,
+        );
+
+        if (distanceMoved > 0.003) {
+          _animateDriverMarkerTo(newPos);
+          final remainingKm = RouteOptimizer.calculateDistanceKm(
+            lat,
+            lng,
+            _customerLocation.latitude,
+            _customerLocation.longitude,
+          );
+
+          setState(() {
+            _distanceKm = remainingKm;
+            _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
+            if (locData['driver_status'] != null) {
+              _driverStatusText = locData['driver_status'].toString();
+            }
+          });
+
+          if (distanceMoved > 0.03) {
+            _fetchRealRoadNetwork();
+          }
+        }
+      }
+    }
+  }
+
+  void _animateDriverMarkerTo(LatLng newPosition) {
+    final bearing = _calculateBearing(_driverLocation, newPosition);
+    final startPos = _driverLocation;
+
+    _markerAnimController?.dispose();
+    _markerAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _markerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _markerAnimController!, curve: Curves.easeInOut),
+    )..addListener(() {
+        if (!mounted) return;
+        final t = _markerAnimation?.value ?? 1.0;
+        final curLat = startPos.latitude + (newPosition.latitude - startPos.latitude) * t;
+        final curLng = startPos.longitude + (newPosition.longitude - startPos.longitude) * t;
+        setState(() {
+          _driverLocation = LatLng(curLat, curLng);
+          if (bearing != 0.0) _driverBearing = bearing;
+        });
+      });
+
+    _markerAnimController!.forward();
+  }
+
+  double _calculateBearing(LatLng start, LatLng end) {
+    final lat1 = start.latitude * pi / 180.0;
+    final lon1 = start.longitude * pi / 180.0;
+    final lat2 = end.latitude * pi / 180.0;
+    final lon2 = end.longitude * pi / 180.0;
+
+    final dLon = lon2 - lon1;
+    final y = sin(dLon) * cos(lat2);
+    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
+
+    final radians = atan2(y, x);
+    return (radians * 180.0 / pi + 360.0) % 360.0;
   }
 
   Future<void> _fetchRealRoadNetwork() async {
     try {
       final realRoads = await RouteOptimizer.fetchRealRoadPolyline([_driverLocation, _customerLocation]);
-      if (mounted && realRoads.length > 2) {
+      if (mounted && realRoads.length > 1) {
         setState(() {
           _routePoints = realRoads;
-          _currentRouteIndex = 0;
         });
       }
     } catch (_) {}
   }
 
-  void _generateRouteWaypoints() {
-    final start = _driverLocation;
-    final end = _customerLocation;
-    const steps = 12;
-    final points = <LatLng>[start];
-
-    final deltaLat = (end.latitude - start.latitude) / steps;
-    final deltaLon = (end.longitude - start.longitude) / steps;
-
-    for (int i = 1; i < steps; i++) {
-      // Introduce subtle curvature mimicking urban road grid
-      final curve = sin(i * pi / steps) * 0.0015;
-      points.add(
-        LatLng(
-          start.latitude + (deltaLat * i) + curve,
-          start.longitude + (deltaLon * i) - (curve * 0.4),
-        ),
-      );
-    }
-    points.add(end);
-    _routePoints = points;
-  }
-
-  void _startDriverTrackingSimulation() {
-    _driverMovementTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!mounted) return;
-
-      if (_currentRouteIndex < _routePoints.length - 1) {
-        setState(() {
-          _currentRouteIndex++;
-          _driverLocation = _routePoints[_currentRouteIndex];
-          _distanceKm = RouteOptimizer.calculateDistanceKm(
-            _driverLocation.latitude,
-            _driverLocation.longitude,
-            _customerLocation.latitude,
-            _customerLocation.longitude,
-          );
-          _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
-        });
-
-        final centerLat = (_driverLocation.latitude + _customerLocation.latitude) / 2;
-        final centerLon = (_driverLocation.longitude + _customerLocation.longitude) / 2;
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngZoom(LatLng(centerLat, centerLon), 15.2),
-        );
-      } else {
-        setState(() {
-          _distanceKm = 0.0;
-          _etaMinutes = 1;
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
-    _driverMovementTimer?.cancel();
+    _liveGpsTimer?.cancel();
+    _markerAnimController?.dispose();
     _pulseAnimController.dispose();
     super.dispose();
   }
 
   void _centerMap() {
-    final centerLat = (_driverLocation.latitude + _customerLocation.latitude) / 2;
-    final centerLon = (_driverLocation.longitude + _customerLocation.longitude) / 2;
+    if (_mapController == null) return;
+    final southWestLat = min(_driverLocation.latitude, _customerLocation.latitude) - 0.003;
+    final southWestLon = min(_driverLocation.longitude, _customerLocation.longitude) - 0.003;
+    final northEastLat = max(_driverLocation.latitude, _customerLocation.latitude) + 0.003;
+    final northEastLon = max(_driverLocation.longitude, _customerLocation.longitude) + 0.003;
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(southWestLat, southWestLon),
+      northeast: LatLng(northEastLat, northEastLon),
+    );
     _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(LatLng(centerLat, centerLon), 15.2),
+      CameraUpdate.newLatLngBounds(bounds, 70),
     );
   }
 
@@ -295,8 +350,14 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
               Marker(
                 markerId: const MarkerId('driver'),
                 position: _driverLocation,
+                rotation: _driverBearing,
+                flat: true,
+                anchor: const Offset(0.5, 0.5),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-                infoWindow: InfoWindow(title: '🛵 $driverName', snippet: 'On the way'),
+                infoWindow: InfoWindow(
+                  title: '🛵 $driverName',
+                  snippet: '$_driverStatusText • $_etaMinutes mins (${_distanceKm.toStringAsFixed(1)} km)',
+                ),
               ),
             },
             polylines: {

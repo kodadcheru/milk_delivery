@@ -870,6 +870,24 @@ class ApiService {
     return false;
   }
 
+  static Future<Map<String, dynamic>?> fetchDriverLiveLocation({String? orderId, int? driverId}) async {
+    try {
+      final target = orderId?.trim().isNotEmpty == true
+          ? orderId!.trim()
+          : (driverId != null ? driverId.toString() : 'active');
+      final res = await _executeWithRetry(() => http.get(
+            Uri.parse('$baseUrl/driver/location/$target/'),
+            headers: _headers,
+          ));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
+
   static Future<bool> updateHubDetails({
     required String hubCode,
     String? name,

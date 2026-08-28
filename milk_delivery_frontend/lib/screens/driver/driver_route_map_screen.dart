@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -116,22 +117,18 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   }
 
   double _calculateBearing(LatLng start, LatLng end) {
-    final lat1 = start.latitude * (3.141592653589793 / 180.0);
-    final lon1 = start.longitude * (3.141592653589793 / 180.0);
-    final lat2 = end.latitude * (3.141592653589793 / 180.0);
-    final lon2 = end.longitude * (3.141592653589793 / 180.0);
+    final lat1 = start.latitude * (pi / 180.0);
+    final lon1 = start.longitude * (pi / 180.0);
+    final lat2 = end.latitude * (pi / 180.0);
+    final lon2 = end.longitude * (pi / 180.0);
 
     final dLon = lon2 - lon1;
-    final y = mathSin(dLon) * mathCos(lat2);
-    final x = mathCos(lat1) * mathSin(lat2) - mathSin(lat1) * mathCos(lat2) * mathCos(dLon);
+    final y = sin(dLon) * cos(lat2);
+    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
 
-    final radians = mathAtan2(y, x);
-    return (radians * (180.0 / 3.141592653589793) + 360.0) % 360.0;
+    final radians = atan2(y, x);
+    return (radians * (180.0 / pi) + 360.0) % 360.0;
   }
-
-  static double mathSin(double v) => v == 0 ? 0 : (v > 0 ? 1 : -1) * 0.5; // fallback safe
-  static double mathCos(double v) => 1.0;
-  static double mathAtan2(double y, double x) => 0.0;
 
   @override
   void dispose() {

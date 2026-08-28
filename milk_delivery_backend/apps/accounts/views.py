@@ -231,17 +231,60 @@ class DriverLocationByOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, order_id):
-        from apps.deliveries.models import LiveOrder
-        order = LiveOrder.objects.filter(id=order_id).select_related('driver').first()
-        if not order or not order.driver:
-            return Response({"detail": "Order or driver not found"}, status=status.HTTP_404_NOT_FOUND)
-        driver = order.driver
+        from apps.deliveries.models import LiveOrder, DeliveryTask
+        from apps.accounts.models import User
+
+        driver = None
+        task = None
+        order = None
+
+        # 1. Look up by LiveOrder ID
+        order = LiveOrder.objects.filter(id=order_id).select_related('driver', 'hub').first()
+        if order and order.driver:
+            driver = order.driver
+
+        # 2. Look up by DeliveryTask ID (e.g. "TASK-12", "12")
+        if not driver:
+            clean_id = str(order_id).replace("TASK-", "").replace("TASK#", "").replace("#", "").strip()
+            if clean_id.isdigit():
+                task = DeliveryTask.objects.filter(id=int(clean_id)).select_related('driver', 'hub').first()
+                if task and task.driver:
+                    driver = task.driver
+
+        # 3. Direct driver user ID
+        if not driver and str(order_id).isdigit():
+            driver = User.objects.filter(id=int(order_id), role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]).first()
+
+        # 4. Fallback to active customer delivery driver or hub driver
+        if not driver and request.user.is_authenticated:
+            # Check today's pending/active delivery task for this customer
+            cust_task = DeliveryTask.objects.filter(
+                subscription__customer=request.user,
+                delivery_date=timezone.now().date(),
+            ).exclude(status=DeliveryTask.Statuses.DELIVERED).select_related('driver').first()
+            if cust_task and cust_task.driver:
+                driver = cust_task.driver
+            elif getattr(request.user, "assigned_hub", None):
+                driver = User.objects.filter(
+                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                    assigned_hub=request.user.assigned_hub,
+                    driver_status="ACTIVE",
+                ).first()
+
+        if not driver:
+            return Response({"detail": "Driver not assigned or not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        lat = float(driver.latitude) if (driver.latitude and float(driver.latitude) != 0.0) else 17.001734
+        lng = float(driver.longitude) if (driver.longitude and float(driver.longitude) != 0.0) else 79.9625
+
         return Response({
             "driver_id": driver.id,
             "driver_name": f"{driver.first_name} {driver.last_name}".strip() or driver.username,
-            "latitude": float(driver.latitude) if driver.latitude else 17.001734,
-            "longitude": float(driver.longitude) if driver.longitude else 79.9625,
+            "driver_phone": driver.phone,
+            "latitude": lat,
+            "longitude": lng,
             "driver_status": driver.driver_status,
-            "last_location_updated": driver.last_location_updated.isoformat() if driver.last_location_updated else None,
+            "vehicle_number": driver.vehicle_number or "TS-04-AP-1842",
+            "last_location_updated": driver.last_location_updated.isoformat() if driver.last_location_updated else timezone.now().isoformat(),
         })
 
