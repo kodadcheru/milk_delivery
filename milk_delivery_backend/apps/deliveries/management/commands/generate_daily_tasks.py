@@ -201,8 +201,7 @@ class Command(BaseCommand):
     def _get_next_driver(self, hub, hub_drivers, hub_driver_indices):
         """Round-robin driver assignment per hub."""
         if hub is None:
-            # Fallback to any available driver
-            return User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
+            return None
 
         hub_id = hub.id
         if hub_id not in hub_drivers:
@@ -213,13 +212,6 @@ class Command(BaseCommand):
                     driver_status="ACTIVE",
                 )
             )
-            if not drivers:
-                drivers = list(
-                    User.objects.filter(
-                        role=User.Roles.DELIVERY_PARTNER,
-                        driver_status="ACTIVE",
-                    )
-                )
             hub_drivers[hub_id] = drivers
             hub_driver_indices[hub_id] = 0
 

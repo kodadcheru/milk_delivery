@@ -34,13 +34,11 @@ class ExpressOrderListCreateView(APIView):
             elif user.role in [User.Roles.DRIVER, "DRIVER", User.Roles.DELIVERY_PARTNER]:
                 from django.db.models import Q
                 if getattr(user, "assigned_hub", None):
-                    orders = orders.filter(
-                        Q(driver=user) |
-                        Q(driver__isnull=True, hub=user.assigned_hub) |
-                        Q(driver__isnull=True, hub__isnull=True)
+                    orders = orders.filter(hub=user.assigned_hub).filter(
+                        Q(driver=user) | Q(driver__isnull=True)
                     )
                 else:
-                    orders = orders.filter(Q(driver=user) | Q(driver__isnull=True))
+                    orders = orders.filter(driver=user)
             elif not user.is_superuser and getattr(user, 'assigned_hub', None):
                 orders = orders.filter(hub=user.assigned_hub)
 
@@ -224,12 +222,13 @@ class ExpressOrderListCreateView(APIView):
                 notification_type=Notification.Types.DELIVERY,
             )
 
-            hub_driver = User.objects.filter(
-                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
-                assigned_hub=active_hub,
-            ).first() or User.objects.filter(
-                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]
-            ).first()
+            hub_driver = None
+            if active_hub:
+                hub_driver = User.objects.filter(
+                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                    assigned_hub=active_hub,
+                    driver_status="ACTIVE",
+                ).first()
             
             order.driver = hub_driver
             order.save(update_fields=['driver'])

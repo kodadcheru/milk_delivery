@@ -47,13 +47,9 @@ class DeliveryTaskListView(generics.ListAPIView):
             return qs
         elif user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
             if getattr(user, "assigned_hub", None):
-                return qs.filter(
-                    Q(driver=user) |
-                    Q(driver__isnull=True, hub=user.assigned_hub) |
-                    Q(driver__isnull=True, subscription__hub=user.assigned_hub) |
-                    Q(driver__isnull=True, hub__isnull=True)
-                )
-            return qs.filter(Q(driver=user) | Q(driver__isnull=True))
+                hub_filter = Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(order__hub=user.assigned_hub)
+                return qs.filter(hub_filter).filter(Q(driver=user) | Q(driver__isnull=True))
+            return qs.filter(driver=user)
         elif user.role == "CUSTOMER":
             return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
         # Admin/staff see all
@@ -74,6 +70,15 @@ class DeliveryTaskCompleteView(APIView):
         # Authorization: only assigned driver or staff can complete, or auto-claim unassigned task
         if task.driver and task.driver != request.user and not request.user.is_staff:
             return Response({"detail": "Only the assigned driver can complete this delivery."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Strict Hub Check for Delivery Partner
+        if request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER") and getattr(request.user, "assigned_hub", None):
+            task_hub = task.hub or (task.subscription.hub if task.subscription else None) or (task.order.hub if task.order else None)
+            if task_hub and task_hub != request.user.assigned_hub:
+                return Response({
+                    "detail": f"You are strictly assigned to {request.user.assigned_hub.name} and cannot complete deliveries for {task_hub.name}."
+                }, status=status.HTTP_403_FORBIDDEN)
+
         if not task.driver and request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
             task.driver = request.user
 
@@ -659,7 +664,7 @@ class GenerateTodayTasksView(APIView):
 
     def _get_next_driver(self, hub, hub_drivers, hub_driver_indices):
         if hub is None:
-            return User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
+            return None
 
         hub_id = hub.id
         if hub_id not in hub_drivers:
@@ -670,13 +675,6 @@ class GenerateTodayTasksView(APIView):
                     driver_status="ACTIVE",
                 )
             )
-            if not drivers:
-                drivers = list(
-                    User.objects.filter(
-                        role=User.Roles.DELIVERY_PARTNER,
-                        driver_status="ACTIVE",
-                    )
-                )
             hub_drivers[hub_id] = drivers
             hub_driver_indices[hub_id] = 0
 

@@ -33,7 +33,9 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             elif getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER"):
                 return qs
             elif getattr(user, "role", "") in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
-                return qs
+                if getattr(user, "assigned_hub", None):
+                    return qs.filter(hub=user.assigned_hub)
+                return qs.none()
 
         if customer_id:
             return qs.filter(customer_id=customer_id)
@@ -156,12 +158,13 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
 
         # Auto-create initial DeliveryTask so customer & driver immediately see morning delivery
         try:
-            hub_driver = User.objects.filter(
-                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
-                assigned_hub=hub,
-            ).first() or User.objects.filter(
-                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]
-            ).first()
+            hub_driver = None
+            if hub:
+                hub_driver = User.objects.filter(
+                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                    assigned_hub=hub,
+                    driver_status="ACTIVE",
+                ).first()
 
             DeliveryTask.objects.get_or_create(
                 subscription=sub,

@@ -68,7 +68,15 @@ class AppState extends ChangeNotifier {
   Timer? _providerHeartbeatTimer;
   String get activeHubCode {
     if (currentUser != null && currentUser!.assignedHub != null) {
-      return currentUser!.assignedHub.toString();
+      final targetId = currentUser!.assignedHub;
+      final match = locationHubs.firstWhere(
+        (h) => h['id'] == targetId || h['pk'] == targetId || h['hub_code'] == targetId.toString(),
+        orElse: () => <String, dynamic>{},
+      );
+      if (match.isNotEmpty && match['hub_code'] != null) {
+        return match['hub_code'].toString();
+      }
+      return targetId.toString();
     }
     return locationHubs.isNotEmpty ? (locationHubs.first['hub_code'] ?? locationHubs.first['id'] ?? 'HUB-KDD-01').toString() : 'HUB-KDD-01';
   }

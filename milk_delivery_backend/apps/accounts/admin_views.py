@@ -1479,7 +1479,13 @@ class AdminSubscriptionCreateView(APIView):
         )
 
         # Automatically schedule first delivery task
-        driver = User.objects.filter(role=User.Roles.DELIVERY_PARTNER, assigned_hub=hub).first() or User.objects.filter(role=User.Roles.DELIVERY_PARTNER).first()
+        driver = None
+        if hub:
+            driver = User.objects.filter(
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                assigned_hub=hub,
+                driver_status="ACTIVE",
+            ).first()
         DeliveryTask.objects.create(
             subscription=sub,
             hub=hub,
@@ -1890,6 +1896,13 @@ class AdminDeliveryReassignView(APIView):
             driver = User.objects.filter(pk=driver_id, role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]).first()
             if not driver:
                 return Response({"detail": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Strict Hub Validation
+            task_hub = task.hub or (task.subscription.hub if task.subscription else None) or (task.order.hub if task.order else None)
+            if task_hub and driver.assigned_hub and driver.assigned_hub != task_hub:
+                return Response({
+                    "detail": f"Driver {driver.first_name or driver.username} is strictly assigned to {driver.assigned_hub.name} and cannot be assigned to a delivery in {task_hub.name}."
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         old_driver = f"{task.driver.first_name} {task.driver.last_name}".strip() if task.driver else "Unassigned"
         task.driver = driver
