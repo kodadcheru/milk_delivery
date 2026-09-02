@@ -15,17 +15,6 @@ class HomeLocationSheet {
     List<Map<String, dynamic>> searchResults = [];
     bool isSearching = false;
     bool isLocating = false;
-
-    const popularLocalities = <String>[
-      'Gandhi Nagar, Kodad',
-      'Azad Nagar, Kodad',
-      'Huzurnagar Road, Kodad',
-      'Ranga Reddy Colony, Kodad',
-      'Khammam Road, Kodad',
-      'Madhapur, Hyderabad',
-      'Gachibowli, Hyderabad',
-    ];
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -532,61 +521,6 @@ class HomeLocationSheet {
                     ),
                   ),
                   const Divider(height: 16),
-                ] else ...[
-                  // Popular Localities Quick Selector
-                  const Text(
-                    'POPULAR LOCALITIES IN HUB',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF64748B),
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: popularLocalities.map((loc) {
-                      return InkWell(
-                        onTap: () {
-                          state.updateDeliveryLocation(loc, 17.001734, 79.962500);
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: UiTone.primary,
-                              content: Text('📍 Delivery location set to: $loc'),
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.location_city_rounded, size: 13, color: UiTone.primary),
-                              const SizedBox(width: 5),
-                              Text(
-                                loc,
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF334155),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 14),
                 ],
 
                 // ── 5. Service Area Check Button ──
