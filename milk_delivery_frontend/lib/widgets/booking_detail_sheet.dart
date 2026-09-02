@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../config/app_config.dart';
 import '../models/delivery_task_model.dart';
 import '../models/live_order_model.dart';
 import '../providers/app_state.dart';
@@ -50,16 +51,73 @@ class BookingDetailSheet extends StatelessWidget {
       showForSubscription(context, state, task);
 
   void _callPhone(BuildContext context, String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cleanPhone.isEmpty) {
+    HapticFeedback.lightImpact();
+    String target = phone.trim();
+    final bool isFallback = target.isEmpty;
+    if (isFallback) {
+      target = AppConfig.supportPhone;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Delivery partner phone number not available')),
+        const SnackBar(
+          backgroundColor: Color(0xFF0D7C66),
+          content: Text('🛵 Partner is being dispatched. Connecting you to Depot Support...'),
+          duration: Duration(seconds: 2),
+        ),
       );
-      return;
     }
+    final cleanPhone = target.replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$cleanPhone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open phone dialer for $target')),
+        );
+      }
+    }
+  }
+
+  void _openWhatsApp(
+    BuildContext context, {
+    required String phone,
+    required String driverName,
+    required String orderId,
+    required String address,
+  }) async {
+    HapticFeedback.lightImpact();
+    String rawPhone = phone.trim();
+    final bool isFallback = rawPhone.isEmpty;
+    if (isFallback) {
+      rawPhone = AppConfig.adminWhatsApp;
+    }
+    String clean = rawPhone.replaceAll(RegExp(r'\D'), '');
+    if (clean.length == 10) {
+      clean = '91$clean';
+    } else if (clean.startsWith('0') && clean.length == 11) {
+      clean = '91${clean.substring(1)}';
+    }
+
+    final message = isFallback
+        ? 'Hi Pamba Support, I need assistance with my Express Order #$orderId scheduled for delivery to: $address.'
+        : 'Hi $driverName, I am tracking my MilkDrop Express Order #$orderId. Please deliver to: $address. Thank you!';
+
+    final encoded = Uri.encodeComponent(message);
+    final waUri = Uri.parse('https://wa.me/$clean?text=$encoded');
+    try {
+      final launched = await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        final altUri = Uri.parse('https://api.whatsapp.com/send?phone=$clean&text=$encoded');
+        await launchUrl(altUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open WhatsApp. Please ensure WhatsApp is installed.')),
+        );
+      }
     }
   }
 
@@ -214,7 +272,7 @@ class BookingDetailSheet extends StatelessWidget {
                 const SizedBox(height: 14),
 
                 // ── 2. Assigned Driver Partner Card ──
-                _buildDriverPartnerCard(context, driverName, driverPhone, isDriverAssigned, isExpress, orderId),
+                _buildDriverPartnerCard(context, driverName, driverPhone, isDriverAssigned, isExpress, orderId, displayAddress),
 
                 const SizedBox(height: 14),
 
@@ -403,6 +461,7 @@ class BookingDetailSheet extends StatelessWidget {
     bool isDriverAssigned,
     bool isExpress,
     String orderId,
+    String deliveryAddress,
   ) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -412,78 +471,123 @@ class BookingDetailSheet extends StatelessWidget {
         border: Border.all(color: UiTone.surfaceBorder),
         boxShadow: UiShadow.card,
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Center(
-              child: Icon(Icons.delivery_dining_rounded, color: Color(0xFF0D7C66), size: 26),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Center(
+                  child: Icon(Icons.delivery_dining_rounded, color: Color(0xFF0D7C66), size: 26),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: Text(
-                        driverName,
-                        style: UiText.bodyStrong.copyWith(fontSize: 13.5),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            driverName,
+                            style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.verified_rounded, color: Color(0xFF0D7C66), size: 14),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.verified_rounded, color: Color(0xFF0D7C66), size: 14),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
+                        const SizedBox(width: 3),
+                        Text(
+                          isDriverAssigned ? '4.9 ★ • Electric Scooter Fleet' : 'Auto-Dispatch • Central MilkDrop Fleet',
+                          style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
-                    const SizedBox(width: 3),
-                    Text(
-                      '4.9 ★ • Electric Scooter Fleet',
-                      style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          if (isDriverAssigned) ...[
-            IconButton.filledTonal(
-              onPressed: () => _callPhone(context, driverPhone),
-              icon: const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF0D7C66)),
-              style: IconButton.styleFrom(backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1)),
-              tooltip: 'Call Driver',
-            ),
-            const SizedBox(width: 6),
-            IconButton.filledTonal(
-              onPressed: () {
-                DeliveryChatSheet.show(
-                  context,
-                  taskId: subscriptionTask?.id,
-                  orderId: isExpress ? liveOrder?.id : null,
-                  driverName: driverName,
-                  driverPhone: driverPhone,
-                  customerName: state.currentUser?.name ?? 'Customer',
-                  customerPhone: state.currentUser?.phone ?? '',
-                  orderTitle: 'Order $orderId',
-                  deliveryAddress: isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress,
-                );
-              },
-              icon: const Icon(Icons.forum_rounded, size: 16, color: Color(0xFF0D7C66)),
-              style: IconButton.styleFrom(backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1)),
-              tooltip: 'Live In-App Chat',
-            ),
-          ],
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: UiTone.surfaceBorder),
+          const SizedBox(height: 10),
+
+          // 1-Click Call, In-App Chat & WhatsApp Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _callPhone(context, driverPhone),
+                  icon: const Icon(Icons.phone_in_talk_rounded, size: 15, color: Color(0xFF0D7C66)),
+                  label: const Text('Call', style: TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w800, fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    side: const BorderSide(color: Color(0xFF0D7C66), width: 1.3),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    DeliveryChatSheet.show(
+                      context,
+                      taskId: subscriptionTask?.id,
+                      orderId: isExpress ? liveOrder?.id : null,
+                      driverName: driverName,
+                      driverPhone: driverPhone,
+                      customerName: state.currentUser?.name ?? 'Customer',
+                      customerPhone: state.currentUser?.phone ?? '',
+                      orderTitle: 'Order $orderId',
+                      deliveryAddress: isExpress ? liveOrder!.deliveryAddress : subscriptionTask!.deliveryAddress,
+                    );
+                  },
+                  icon: const Icon(Icons.forum_rounded, size: 15, color: Colors.white),
+                  label: const Text('Live Chat', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UiTone.primaryDark,
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _openWhatsApp(
+                    context,
+                    phone: driverPhone,
+                    driverName: driverName,
+                    orderId: orderId,
+                    address: deliveryAddress,
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15, color: Colors.white),
+                  label: const Text('WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../config/app_config.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
@@ -265,36 +266,82 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   }
 
   void _callDriver() async {
-    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
-    if (phone.isEmpty) return;
-    final cleanPhone = phone.replaceAll(' ', '');
-    final uri = Uri.parse('tel:$cleanPhone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
+    HapticFeedback.lightImpact();
+    final phone = widget.driverPhone.isNotEmpty
+        ? widget.driverPhone
+        : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
+
+    String targetPhone = phone.trim();
+    final bool isFallback = targetPhone.isEmpty;
+    if (isFallback) {
+      targetPhone = AppConfig.supportPhone;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: UiTone.primary, content: Text('📞 Dialing: $phone')),
+          const SnackBar(
+            backgroundColor: UiTone.primary,
+            content: Text('🛵 Partner is being dispatched. Connecting you to Depot Support...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+
+    final cleanPhone = targetPhone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri.parse('tel:$cleanPhone');
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text('Could not open phone dialer for $targetPhone')),
         );
       }
     }
   }
 
   void _sendWhatsAppMessage() async {
-    final phone = widget.driverPhone.isNotEmpty ? widget.driverPhone : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
-    if (phone.isEmpty) return;
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final dName = widget.driverName.isNotEmpty ? widget.driverName : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner');
-    final msg = Uri.encodeComponent(
-      'Hi $dName, I am tracking my MilkDrop order. Please deliver to: ${widget.deliveryAddress}. Thank you!',
-    );
-    final uri = Uri.parse('https://wa.me/$cleanPhone?text=$msg');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    HapticFeedback.lightImpact();
+    final phone = widget.driverPhone.isNotEmpty
+        ? widget.driverPhone
+        : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
+
+    String rawPhone = phone.trim();
+    final bool isFallback = rawPhone.isEmpty;
+    if (isFallback) {
+      rawPhone = AppConfig.adminWhatsApp;
+    }
+
+    String cleanPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length == 10) {
+      cleanPhone = '91$cleanPhone';
+    } else if (cleanPhone.startsWith('0') && cleanPhone.length == 11) {
+      cleanPhone = '91${cleanPhone.substring(1)}';
+    }
+
+    final dName = widget.driverName.isNotEmpty
+        ? widget.driverName
+        : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner');
+    final orderId = widget.liveOrder?.id ?? (widget.subscriptionTask != null ? '#${widget.subscriptionTask!.id}' : '');
+
+    final msgText = isFallback
+        ? 'Hi Pamba Support, I need assistance with my Express Order $orderId. Delivery Address: ${widget.deliveryAddress}.'
+        : 'Hi $dName, I am tracking my MilkDrop Express Order $orderId. Please deliver to: ${widget.deliveryAddress}. Thank you!';
+
+    final encodedMsg = Uri.encodeComponent(msgText);
+    final uri = Uri.parse('https://wa.me/$cleanPhone?text=$encodedMsg');
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        final altUri = Uri.parse('https://api.whatsapp.com/send?phone=$cleanPhone&text=$encodedMsg');
+        await launchUrl(altUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch WhatsApp.')),
+          const SnackBar(content: Text('Could not launch WhatsApp. Please ensure WhatsApp is installed.')),
         );
       }
     }
@@ -708,8 +755,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                       context,
                                       taskId: widget.subscriptionTask?.id,
                                       orderId: widget.liveOrder?.id,
-                                      driverName: driverName,
-                                      driverPhone: widget.driverPhone,
+                                      driverName: driverName.isNotEmpty ? driverName : 'Delivery Partner',
+                                      driverPhone: widget.driverPhone.isNotEmpty ? widget.driverPhone : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? ''),
                                       customerName: widget.state.currentUser?.name ?? 'Customer',
                                       customerPhone: widget.state.currentUser?.phone ?? '',
                                       orderTitle: widget.orderTitle,

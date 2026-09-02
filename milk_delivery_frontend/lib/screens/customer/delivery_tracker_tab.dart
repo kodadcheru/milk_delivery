@@ -7,6 +7,8 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
+import '../../config/app_config.dart';
+import '../../widgets/delivery_chat_sheet.dart';
 import '../../widgets/delivery_rating_dialog.dart';
 import '../../widgets/order_invoice_sheet.dart';
 import '../../widgets/booking_detail_sheet.dart';
@@ -603,16 +605,67 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             ),
                           ),
                         ),
-                        if (order.driverPhone.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66)),
-                            onPressed: () => launchUrl(Uri.parse('tel:${order.driverPhone}')),
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                            ),
+                        const SizedBox(width: 6),
+                        IconButton(
+                          icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66), size: 18),
+                          tooltip: 'Call Driver / Support',
+                          onPressed: () async {
+                            HapticFeedback.lightImpact();
+                            final target = order.driverPhone.isNotEmpty ? order.driverPhone : AppConfig.supportPhone;
+                            final clean = target.replaceAll(RegExp(r'[^0-9+]'), '');
+                            final uri = Uri.parse('tel:$clean');
+                            try {
+                              final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              if (!ok) await launchUrl(uri);
+                            } catch (_) {}
+                          },
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1),
                           ),
-                        ],
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.forum_rounded, color: Color(0xFF0F172A), size: 18),
+                          tooltip: 'Live Chat',
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            DeliveryChatSheet.show(
+                              context,
+                              orderId: order.id,
+                              driverName: order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner',
+                              driverPhone: order.driverPhone,
+                              customerName: widget.state.currentUser?.name ?? 'Customer',
+                              customerPhone: widget.state.currentUser?.phone ?? '',
+                              orderTitle: 'Express Order ${order.id}',
+                              deliveryAddress: order.deliveryAddress,
+                            );
+                          },
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF25D366), size: 18),
+                          tooltip: 'WhatsApp',
+                          onPressed: () async {
+                            HapticFeedback.lightImpact();
+                            String rawPhone = order.driverPhone.isNotEmpty ? order.driverPhone : AppConfig.adminWhatsApp;
+                            String clean = rawPhone.replaceAll(RegExp(r'\D'), '');
+                            if (clean.length == 10) clean = '91$clean';
+                            final msg = 'Hi, I need assistance with my Express Order #${order.id}. Delivery Address: ${order.deliveryAddress}.';
+                            final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}');
+                            try {
+                              final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              if (!ok) {
+                                await launchUrl(Uri.parse('https://api.whatsapp.com/send?phone=$clean&text=${Uri.encodeComponent(msg)}'), mode: LaunchMode.externalApplication);
+                              }
+                            } catch (_) {}
+                          },
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366).withValues(alpha: 0.12),
+                          ),
+                        ),
                       ] else if (isDelivered) ...[
                         Expanded(
                           child: ElevatedButton.icon(

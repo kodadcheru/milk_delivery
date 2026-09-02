@@ -83,15 +83,15 @@ class DeliveryChatSendView(APIView):
                 # Find customer user
                 if task_obj and task_obj.user:
                     recipient_user = task_obj.user
-                elif order_obj and order_obj.user:
-                    recipient_user = order_obj.user
+                elif order_obj and getattr(order_obj, "customer", None):
+                    recipient_user = order_obj.customer
                 elif sender_phone:
                     # Look up by task customer phone
                     cust_phone = ""
                     if task_obj and hasattr(task_obj, "customer_phone"):
                         cust_phone = task_obj.customer_phone
-                    elif order_obj and hasattr(order_obj, "customer_phone"):
-                        cust_phone = order_obj.customer_phone
+                    elif order_obj and getattr(order_obj, "customer", None) and order_obj.customer.phone:
+                        cust_phone = order_obj.customer.phone
                     if cust_phone:
                         clean_p = cust_phone.replace("+91", "").strip()
                         recipient_user = User.objects.filter(phone__icontains=clean_p).first()
@@ -109,9 +109,10 @@ class DeliveryChatSendView(APIView):
                 # Find driver user
                 if task_obj and task_obj.driver:
                     recipient_user = task_obj.driver
-                elif order_obj and order_obj.driver_phone:
-                    clean_dp = order_obj.driver_phone.replace("+91", "").strip()
-                    recipient_user = User.objects.filter(phone__icontains=clean_dp).first()
+                elif order_obj and getattr(order_obj, "driver", None):
+                    recipient_user = order_obj.driver
+                elif order_obj and getattr(order_obj, "hub", None) and getattr(order_obj.hub, "manager", None):
+                    recipient_user = order_obj.hub.manager
 
                 if recipient_user:
                     Notification.objects.create(
