@@ -14,190 +14,6 @@ class LocationService {
   static final Map<String, Map<String, dynamic>> _reverseCache = {};
   static final Map<String, List<Map<String, dynamic>>> _searchCache = {};
 
-  // Curated Directory of Known Service Localities & Hubs (Zero-Latency Offline Fallback)
-  static final List<Map<String, dynamic>> _knownLocalities = [
-    {
-      'title': 'Gandhi Nagar',
-      'short_title': 'Gandhi Nagar',
-      'subtitle': 'Azad Nagar, Kodad, Telangana 508206',
-      'display_name': 'Gandhi Nagar, Kodad, Telangana 508206',
-      'short_address': 'Gandhi Nagar, Kodad',
-      'full_address': 'Gandhi Nagar, Azad Nagar, Kodad, Telangana 508206',
-      'summary_address': 'Gandhi Nagar, Kodad',
-      'road': 'Gandhi Nagar Road',
-      'suburb': 'Azad Nagar',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.00382,
-      'lon': 79.95830,
-    },
-    {
-      'title': 'Azad Nagar',
-      'short_title': 'Azad Nagar',
-      'subtitle': 'Kodad, Telangana 508206',
-      'display_name': 'Azad Nagar, Kodad, Telangana 508206',
-      'short_address': 'Azad Nagar, Kodad',
-      'full_address': 'Azad Nagar, Kodad, Telangana 508206',
-      'summary_address': 'Azad Nagar, Kodad',
-      'road': 'Azad Road',
-      'suburb': 'Azad Nagar',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.00173,
-      'lon': 79.95540,
-    },
-    {
-      'title': 'Huzurnagar Road',
-      'short_title': 'Huzurnagar Road',
-      'subtitle': 'Kodad, Telangana 508206',
-      'display_name': 'Huzurnagar Road, Kodad, Telangana 508206',
-      'short_address': 'Huzurnagar Road, Kodad',
-      'full_address': 'Huzurnagar Road, Kodad, Telangana 508206',
-      'summary_address': 'Huzurnagar Road, Kodad',
-      'road': 'Huzurnagar Main Road',
-      'suburb': 'Huzurnagar Bypass',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.00650,
-      'lon': 79.96720,
-    },
-    {
-      'title': 'Balaji Nagar',
-      'short_title': 'Balaji Nagar',
-      'subtitle': 'Kodad, Telangana 508206',
-      'display_name': 'Balaji Nagar, Kodad, Telangana 508206',
-      'short_address': 'Balaji Nagar, Kodad',
-      'full_address': 'Balaji Nagar, Kodad, Telangana 508206',
-      'summary_address': 'Balaji Nagar, Kodad',
-      'road': 'Balaji Temple Road',
-      'suburb': 'Balaji Nagar',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 16.99820,
-      'lon': 79.96540,
-    },
-    {
-      'title': 'Dwaraka Nagar',
-      'short_title': 'Dwaraka Nagar',
-      'subtitle': 'Kodad, Telangana 508206',
-      'display_name': 'Dwaraka Nagar, Kodad, Telangana 508206',
-      'short_address': 'Dwaraka Nagar, Kodad',
-      'full_address': 'Dwaraka Nagar, Kodad, Telangana 508206',
-      'summary_address': 'Dwaraka Nagar, Kodad',
-      'road': 'Dwaraka Nagar 1st Line',
-      'suburb': 'Dwaraka Nagar',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.00410,
-      'lon': 79.96910,
-    },
-    {
-      'title': 'Ranga Theatre Road',
-      'short_title': 'Ranga Theatre Road',
-      'subtitle': 'Cinema Street, Kodad, Telangana 508206',
-      'display_name': 'Ranga Theatre Road, Kodad, Telangana 508206',
-      'short_address': 'Ranga Theatre Road, Kodad',
-      'full_address': 'Ranga Theatre Road, Cinema Street, Kodad, Telangana 508206',
-      'summary_address': 'Ranga Theatre Road, Kodad',
-      'road': 'Cinema Road',
-      'suburb': 'Old Town',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.00050,
-      'lon': 79.96100,
-    },
-    {
-      'title': 'RTC Bus Stand Area',
-      'short_title': 'RTC Bus Stand',
-      'subtitle': 'Main Cross Roads, Kodad, Telangana 508206',
-      'display_name': 'RTC Bus Stand Area, Kodad, Telangana 508206',
-      'short_address': 'RTC Bus Stand, Kodad',
-      'full_address': 'RTC Bus Stand Area, Main Cross Roads, Kodad, Telangana 508206',
-      'summary_address': 'RTC Bus Stand, Kodad',
-      'road': 'Bus Stand Road',
-      'suburb': 'Central Depot',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.00280,
-      'lon': 79.96420,
-    },
-    {
-      'title': 'Khammam Road',
-      'short_title': 'Khammam Road',
-      'subtitle': 'Near Bypass, Kodad, Telangana 508206',
-      'display_name': 'Khammam Road, Kodad, Telangana 508206',
-      'short_address': 'Khammam Road, Kodad',
-      'full_address': 'Khammam Road, Near Bypass, Kodad, Telangana 508206',
-      'summary_address': 'Khammam Road, Kodad',
-      'road': 'SH 2 Highway',
-      'suburb': 'North Kodad',
-      'city': 'Kodad',
-      'postcode': '508206',
-      'lat': 17.01200,
-      'lon': 79.96200,
-    },
-    {
-      'title': 'Suryapet Central',
-      'short_title': 'Suryapet Central',
-      'subtitle': 'Clock Tower, Suryapet, Telangana 508213',
-      'display_name': 'Clock Tower, Suryapet, Telangana 508213',
-      'short_address': 'Suryapet Central',
-      'full_address': 'Clock Tower Road, Suryapet, Telangana 508213',
-      'summary_address': 'Suryapet Central',
-      'road': 'Clock Tower Road',
-      'suburb': 'Main Bazaar',
-      'city': 'Suryapet',
-      'postcode': '508213',
-      'lat': 17.14390,
-      'lon': 79.62390,
-    },
-    {
-      'title': 'Khammam Central',
-      'short_title': 'Khammam Central',
-      'subtitle': 'Wyra Road, Khammam, Telangana 507001',
-      'display_name': 'Wyra Road, Khammam, Telangana 507001',
-      'short_address': 'Khammam Central',
-      'full_address': 'Wyra Road, Khammam, Telangana 507001',
-      'summary_address': 'Khammam Central',
-      'road': 'Wyra Road',
-      'suburb': 'City Center',
-      'city': 'Khammam',
-      'postcode': '507001',
-      'lat': 17.24730,
-      'lon': 80.15140,
-    },
-    {
-      'title': 'Gachibowli',
-      'short_title': 'Gachibowli',
-      'subtitle': 'Financial District, Hyderabad, Telangana 500032',
-      'display_name': 'Gachibowli, Hyderabad, Telangana 500032',
-      'short_address': 'Gachibowli, Hyderabad',
-      'full_address': 'Gachibowli, Financial District, Hyderabad, Telangana 500032',
-      'summary_address': 'Gachibowli, Hyderabad',
-      'road': 'Old Mumbai Highway',
-      'suburb': 'Gachibowli',
-      'city': 'Hyderabad',
-      'postcode': '500032',
-      'lat': 17.4401,
-      'lon': 78.3489,
-    },
-    {
-      'title': 'Madhapur',
-      'short_title': 'Madhapur',
-      'subtitle': 'Hitec City, Hyderabad, Telangana 500081',
-      'display_name': 'Madhapur, Hyderabad, Telangana 500081',
-      'short_address': 'Madhapur, Hyderabad',
-      'full_address': 'Madhapur, Hitec City, Hyderabad, Telangana 500081',
-      'summary_address': 'Madhapur, Hyderabad',
-      'road': 'Hitec City Main Road',
-      'suburb': 'Madhapur',
-      'city': 'Hyderabad',
-      'postcode': '500081',
-      'lat': 17.4483,
-      'lon': 78.3915,
-    },
-  ];
-
   /// High-Precision Google Maps Reverse Geocoding (< 5-10m Accuracy)
   static Future<Map<String, dynamic>?> reverseGeocode(double lat, double lon) async {
     final cacheKey = '${lat.toStringAsFixed(5)},${lon.toStringAsFixed(5)}';
@@ -319,16 +135,7 @@ class LocationService {
 
     final list = <Map<String, dynamic>>[];
 
-    // 1. Instant match against known local hubs and Telangana localities
-    final localMatches = _knownLocalities.where((loc) {
-      final t = (loc['title'] ?? '').toString().toLowerCase();
-      final s = (loc['subtitle'] ?? '').toString().toLowerCase();
-      final c = (loc['city'] ?? '').toString().toLowerCase();
-      return t.contains(normQuery) || s.contains(normQuery) || c.contains(normQuery);
-    }).toList();
-    list.addAll(localMatches);
-
-    // 2. Google Maps Geocoding API for exact coordinates
+    // Google Maps Geocoding API for exact coordinates
     if (googleMapsApiKey.isNotEmpty) {
       try {
         final encoded = Uri.encodeComponent('$query, India');
@@ -363,7 +170,6 @@ class LocationService {
 
               final title = suburb.isNotEmpty ? suburb : (road.isNotEmpty ? road : formatted.split(',').first);
 
-              // Avoid duplicate if already matched locally
               if (!list.any((item) => (item['title'] == title || item['full_address'] == formatted))) {
                 list.add({
                   'title': title,
@@ -438,16 +244,7 @@ class LocationService {
 
     final results = <Map<String, dynamic>>[];
 
-    // 1. Match local known directory first
-    final localMatches = _knownLocalities.where((loc) {
-      final t = (loc['title'] ?? '').toString().toLowerCase();
-      final s = (loc['subtitle'] ?? '').toString().toLowerCase();
-      final c = (loc['city'] ?? '').toString().toLowerCase();
-      return t.contains(norm) || s.contains(norm) || c.contains(norm);
-    }).toList();
-    results.addAll(localMatches);
-
-    // 2. Google Places Autocomplete API
+    // Google Places Autocomplete API
     if (googleMapsApiKey.isNotEmpty) {
       try {
         final encoded = Uri.encodeComponent(query);
@@ -484,7 +281,7 @@ class LocationService {
       } catch (_) {}
     }
 
-    // 3. Fallback to geocoding if nothing found
+    // Fallback to geocoding if autocomplete returns empty
     if (results.isEmpty) {
       return searchPlaces(query);
     }
