@@ -1669,5 +1669,32 @@ class ApiService {
     }
     return false;
   }
+
+  // ── 23. Coverage Expansion Request ──
+  static Future<bool> submitCoverageRequest({
+    String? city,
+    String? areaName,
+    double? latitude,
+    double? longitude,
+    String? phone,
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/coverage-request/'),
+            headers: _headers,
+            body: jsonEncode({
+              'city': city ?? 'Kodad',
+              'area_name': areaName ?? '',
+              if (latitude != null) 'latitude': latitude,
+              if (longitude != null) 'longitude': longitude,
+              if (phone != null && phone.isNotEmpty) 'phone': phone,
+            }),
+          ));
+      return res.statusCode == 200 || res.statusCode == 201;
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return false;
+  }
 }
 

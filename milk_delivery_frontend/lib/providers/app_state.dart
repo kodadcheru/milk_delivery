@@ -275,10 +275,28 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    return nearest ?? locationHubs.first; // Fallback to first hub
+    return nearest; // Strictly returns null if customer is outside all hub radii!
   }
 
+  /// Whether current customer coordinates fall within any active hub delivery radius
   bool get isLocationCovered => nearestCoveringHub != null;
+
+  /// Active operational hub fallback for app metadata
+  Map<String, dynamic> get primaryHub => nearestCoveringHub ?? (locationHubs.isNotEmpty ? locationHubs.first : <String, dynamic>{});
+
+  /// Submit customer coverage expansion request to backend
+  Future<bool> requestCoverageExpansion({String? phone}) async {
+    final city = currentCityOrTown;
+    final area = activeAddress?.summaryAddress ?? currentDeliveryAddress;
+    final targetPhone = phone ?? currentUser?.phone;
+    return await ApiService.submitCoverageRequest(
+      city: city,
+      areaName: area,
+      latitude: currentLat,
+      longitude: currentLon,
+      phone: targetPhone,
+    );
+  }
 
   void selectServiceArea(ServiceAreaModel area) {
     selectedServiceArea = area;

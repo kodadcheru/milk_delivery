@@ -116,6 +116,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                 ),
               ),
 
+              // ── Out-of-Coverage Notification Banner ──
               if (!widget.state.isLocationCovered) ...[
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 SliverToBoxAdapter(
@@ -124,72 +125,100 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                     onSelectZoneTap: () => HomeLocationSheet.show(context, widget.state),
                   ),
                 ),
-              ] else ...[
-                // ── Active Subscription Snapshot ──
-                if (activeSub != null) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 14),
-                      child: HomeActiveSubscriptionCard(state: widget.state, sub: activeSub),
-                    ),
-                  ),
-                ],
+              ],
 
-                // ── Category Grid ──
+              // ── Active Subscription Snapshot (only when in service zone) ──
+              if (widget.state.isLocationCovered && activeSub != null) ...[
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 14),
-                    child: HomeCategoryShowcase(
-                      state: widget.state,
-                    ),
-                  ),
-                ),
-
-                // ── 6. Section Title: Popular Products ──
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 22, 16, 4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.state.isTelugu ? 'ప్రజాదరణ పొందిన ఉత్పత్తులు' : 'Popular Products',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: UiTone.ink,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.state.isTelugu
-                              ? '${filteredProducts.length} ఉత్పత్తులు ఉదయం డెలివరీకి సిద్ధంగా ఉన్నాయి'
-                              : '${filteredProducts.length} items available for doorstep delivery',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-                // ── 7. Product Grid (ALL products) ──
-                _buildProductGrid(filteredProducts),
-
-                // ── 8. Trust Assurance Strip ──
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 24),
-                    child: HomeTrustAssuranceStrip(),
+                    child: HomeActiveSubscriptionCard(state: widget.state, sub: activeSub),
                   ),
                 ),
               ],
+
+              // ── Category Grid (Desaturated when out of coverage) ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: HomeCategoryShowcase(
+                    state: widget.state,
+                  ),
+                ),
+              ),
+
+              // ── Section Title: Popular Products ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 22, 16, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            widget.state.isTelugu ? 'ప్రజాదరణ పొందిన ఉత్పత్తులు' : 'Popular Products',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: UiTone.ink,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          if (!widget.state.isLocationCovered) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                              ),
+                              child: const Text(
+                                'OUT OF ZONE',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        !widget.state.isLocationCovered
+                            ? (widget.state.isTelugu
+                                ? 'ఉత్పత్తుల కేటలాగ్ బ్రౌజ్ చేయండి • ప్రస్తుత ప్రాంతంలో డెలివరీ లేదు'
+                                : 'Browsing dairy catalog • Doorstep delivery unavailable in current area')
+                            : (widget.state.isTelugu
+                                ? '${filteredProducts.length} ఉత్పత్తులు ఉదయం డెలివరీకి సిద్ధంగా ఉన్నాయి'
+                                : '${filteredProducts.length} items available for doorstep delivery'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: !widget.state.isLocationCovered ? const Color(0xFF94A3B8) : Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+              // ── Product Grid (Greyed out when out of coverage) ──
+              _buildProductGrid(filteredProducts),
+
+              // ── Trust Assurance Strip ──
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: HomeTrustAssuranceStrip(),
+                ),
+              ),
 
               // Bottom spacer
               const SliverToBoxAdapter(child: SizedBox(height: 100)),

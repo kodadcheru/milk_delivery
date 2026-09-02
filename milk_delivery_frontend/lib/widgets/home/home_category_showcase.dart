@@ -29,8 +29,9 @@ class HomeCategoryShowcase extends StatelessWidget {
     const horizontalPadding = 16.0 * 2;
     const spacing = 12.0;
     final tileWidth = (screenWidth - horizontalPadding - spacing * 2) / 3;
+    final isCovered = state.isLocationCovered;
 
-    return Padding(
+    Widget content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Wrap(
         spacing: spacing,
@@ -54,6 +55,23 @@ class HomeCategoryShowcase extends StatelessWidget {
         }).toList(),
       ),
     );
+
+    if (!isCovered) {
+      content = Opacity(
+        opacity: 0.78,
+        child: ColorFiltered(
+          colorFilter: const ColorFilter.matrix(<double>[
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0,      0,      0,      1, 0,
+          ]),
+          child: content,
+        ),
+      );
+    }
+
+    return content;
   }
 
   Widget _buildCategoryTile({

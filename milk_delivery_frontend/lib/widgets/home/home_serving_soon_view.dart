@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../theme/ui_tokens.dart';
 
-class HomeServingSoonView extends StatelessWidget {
+class HomeServingSoonView extends StatefulWidget {
   final AppState state;
   final VoidCallback onSelectZoneTap;
 
@@ -13,74 +13,90 @@ class HomeServingSoonView extends StatelessWidget {
   });
 
   @override
+  State<HomeServingSoonView> createState() => _HomeServingSoonViewState();
+}
+
+class _HomeServingSoonViewState extends State<HomeServingSoonView> {
+  bool _isSubmitting = false;
+  bool _hasRequested = false;
+
+  @override
   Widget build(BuildContext context) {
-    final areaName = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
+    final areaName = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
+    final cityOrTown = widget.state.currentCityOrTown;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      padding: const EdgeInsets.all(22),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: UiTone.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: UiTone.surfaceBorder),
-        boxShadow: UiShadow.card,
+        border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
               color: Color(0xFFFEF3C7),
               shape: BoxShape.circle,
             ),
-            child: const Text('🚚', style: TextStyle(fontSize: 48)),
+            child: const Text('🚚', style: TextStyle(fontSize: 40)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           const Text(
-            'We are Serving Soon in Your Area!',
+            'We are Serving Soon in Your Area! 🚀',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
               color: UiTone.ink,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'We haven\'t expanded doorstep 06:00 AM delivery to "$areaName" yet. Our active hubs currently serve a 5.0 km radius.',
+            'Doorstep 05:30 AM delivery is not yet operational at "$areaName". You can still browse our products below, or select an active hub zone.',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Operational Hub Badges
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: UiTone.shellBackground,
+              color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(UiRadius.md),
-              border: Border.all(color: UiTone.surfaceBorder),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   '📍 Active Operational Delivery Hubs:',
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
                 ),
-                const SizedBox(height: 8),
-                if (state.locationHubs.isNotEmpty)
-                  ...state.locationHubs.map(
+                const SizedBox(height: 6),
+                if (widget.state.locationHubs.isNotEmpty)
+                  ...widget.state.locationHubs.map(
                     (h) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.only(bottom: 3),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle_rounded, size: 14, color: UiTone.secondary),
+                          const Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              '${h['name']} (${double.tryParse(h['coverage_radius_km']?.toString() ?? '5.0') ?? 5.0} km Radius)',
+                              '${h['name']} (${double.tryParse(h['coverage_radius_km']?.toString() ?? '8.5') ?? 8.5} km Radius)',
                               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
                             ),
                           ),
@@ -91,10 +107,10 @@ class HomeServingSoonView extends StatelessWidget {
                 else
                   const Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 14, color: UiTone.secondary),
+                      Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
                       SizedBox(width: 6),
                       Text(
-                        'Central Operations Hub (5.0 km Radius)',
+                        'Kodad Central Operations Hub (8.5 km Radius)',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
                       ),
                     ],
@@ -103,66 +119,116 @@ class HomeServingSoonView extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
 
+          // ── Select Zone Action ──
           InkWell(
             key: const ValueKey('select_zone_btn'),
-            onTap: onSelectZoneTap,
+            onTap: widget.onSelectZoneTap,
             borderRadius: BorderRadius.circular(14),
             child: Container(
               width: double.infinity,
-              height: 48,
+              height: 46,
               decoration: BoxDecoration(
                 color: UiTone.primary,
                 borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: UiTone.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               alignment: Alignment.center,
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.location_on_rounded, size: 18, color: UiTone.surface),
+                  Icon(Icons.location_on_rounded, size: 16, color: Colors.white),
                   SizedBox(width: 8),
                   Text(
-                    '📍 Select Active Service Zone',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.surface),
+                    '📍 Switch to Operational Hub Area',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 10),
-          InkWell(
-            key: const ValueKey('notify_me_btn'),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: UiTone.primary,
-                  content: Text('🔔 Thanks! We recorded your pincode interest and will notify you when MilkDrop launches here.'),
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: double.infinity,
-              height: 48,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: UiTone.primary),
-              ),
-              alignment: Alignment.center,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.notifications_active_rounded, size: 16, color: UiTone.primary),
-                  SizedBox(width: 8),
-                  Text(
-                    'Notify Me When MilkDrop Launches',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: UiTone.primary),
+
+          // ── Notify Me / Expansion Request Button (Service-Mobile Pattern) ──
+          _hasRequested
+              ? Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
                   ),
-                ],
-              ),
-            ),
-          ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Interest Recorded! We\'ll notify you when early morning drops start here.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF166534)),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : InkWell(
+                  key: const ValueKey('notify_me_btn'),
+                  onTap: _isSubmitting
+                      ? null
+                      : () async {
+                          setState(() => _isSubmitting = true);
+                          await widget.state.requestCoverageExpansion();
+                          if (mounted) {
+                            setState(() {
+                              _isSubmitting = false;
+                              _hasRequested = true;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: UiTone.primary,
+                                content: Text('🔔 Thanks! We recorded your interest for $cityOrTown.'),
+                              ),
+                            );
+                          }
+                        },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: double.infinity,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: UiTone.primary, width: 1.3),
+                    ),
+                    alignment: Alignment.center,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.notifications_active_rounded, size: 16, color: UiTone.primary),
+                              SizedBox(width: 8),
+                              Text(
+                                'Notify Me When Delivery Launches Here',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: UiTone.primary),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
         ],
       ),
     );

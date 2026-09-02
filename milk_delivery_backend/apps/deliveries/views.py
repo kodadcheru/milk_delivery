@@ -1086,3 +1086,40 @@ class DeliveryRatingSubmitView(APIView):
             "feedback": feedback,
             "tags": tags,
         }, status=status.HTTP_200_OK)
+
+
+class CoverageExpansionRequestView(APIView):
+    """
+    Submit customer interest for delivery coverage expansion.
+    POST /api/deliveries/coverage-request/
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from apps.deliveries.models import CoverageExpansionRequest
+        user = request.user if request.user.is_authenticated else None
+        phone = request.data.get("phone", "").strip()
+        city = request.data.get("city", "Kodad").strip()
+        area_name = request.data.get("area_name", "").strip()
+        lat = request.data.get("latitude")
+        lon = request.data.get("longitude")
+
+        if not phone and user and hasattr(user, "phone"):
+            phone = user.phone or ""
+
+        req = CoverageExpansionRequest.objects.create(
+            user=user,
+            phone=phone,
+            city=city,
+            area_name=area_name,
+            latitude=float(lat) if lat is not None else None,
+            longitude=float(lon) if lon is not None else None,
+        )
+
+        return Response({
+            "status": "success",
+            "message": f"Interest recorded for {area_name or city}! We will notify you when early morning milk delivery launches here.",
+            "id": req.id,
+            "city": req.city,
+            "area_name": req.area_name,
+        }, status=status.HTTP_201_CREATED)

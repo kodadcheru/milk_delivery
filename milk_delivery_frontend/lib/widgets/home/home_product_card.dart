@@ -5,6 +5,7 @@ import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 import '../buy_once_sheet.dart';
 import '../product_detail_sheet.dart';
+import 'home_location_sheet.dart';
 
 /// Product card shared by the home grid and the category products screen.
 ///
@@ -23,9 +24,10 @@ class HomeProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCovered = state.isLocationCovered;
     final inCartQty = state.cartQtyOf(item);
 
-    return Container(
+    Widget card = Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(UiRadius.lg),
@@ -36,7 +38,9 @@ class HomeProductCard extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => BuyOnceSheet.show(context, item, state),
+            onTap: isCovered
+                ? () => BuyOnceSheet.show(context, item, state)
+                : () => _showOutOfZoneSheet(context),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -92,20 +96,28 @@ class HomeProductCard extends StatelessWidget {
                   ),
                 ),
 
-                // 4. Top-right prominent Quick Subscribe Badge
+                // 4. Top-right prominent Quick Subscribe / Out of Zone Badge
                 Positioned(
                   top: 8,
                   right: 8,
                   child: GestureDetector(
-                    onTap: () => ProductDetailSheet.show(context, item, state),
+                    onTap: isCovered
+                        ? () => ProductDetailSheet.show(context, item, state)
+                        : () => _showOutOfZoneSheet(context),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0E784D), Color(0xFF044E32)],
-                        ),
+                        color: isCovered ? null : const Color(0xFF334155),
+                        gradient: isCovered
+                            ? const LinearGradient(
+                                colors: [Color(0xFF0E784D), Color(0xFF044E32)],
+                              )
+                            : null,
                         borderRadius: BorderRadius.circular(UiRadius.pill),
-                        border: Border.all(color: const Color(0xFF34D399), width: 1.2),
+                        border: Border.all(
+                          color: isCovered ? const Color(0xFF34D399) : const Color(0xFF64748B),
+                          width: 1.2,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.3),
@@ -114,14 +126,18 @@ class HomeProductCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.repeat_rounded, size: 11, color: Color(0xFF34D399)),
-                          SizedBox(width: 3),
+                          Icon(
+                            isCovered ? Icons.repeat_rounded : Icons.location_off_rounded,
+                            size: 11,
+                            color: isCovered ? const Color(0xFF34D399) : const Color(0xFFCBD5E1),
+                          ),
+                          const SizedBox(width: 3),
                           Text(
-                            'SUBSCRIBE',
-                            style: TextStyle(
+                            isCovered ? 'SUBSCRIBE' : 'OUT OF ZONE',
+                            style: const TextStyle(
                               fontSize: 8.5,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
@@ -235,9 +251,53 @@ class HomeProductCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (!isCovered) {
+      card = ColorFiltered(
+        colorFilter: const ColorFilter.matrix(<double>[
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0,      0,      0,      0.82, 0,
+        ]),
+        child: card,
+      );
+    }
+
+    return card;
   }
 
   Widget _buildCartControl(BuildContext context, int inCartQty) {
+    if (!state.isLocationCovered) {
+      return GestureDetector(
+        onTap: () => _showOutOfZoneSheet(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(UiRadius.pill),
+            border: Border.all(color: const Color(0xFF64748B), width: 0.8),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.location_off_rounded, size: 10, color: Color(0xFFCBD5E1)),
+              SizedBox(width: 4),
+              Text(
+                'UNAVAILABLE',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFFE2E8F0),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (inCartQty == 0) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -369,6 +429,99 @@ class HomeProductCard extends StatelessWidget {
         child: Text(
           item.icon,
           style: const TextStyle(fontSize: 44),
+        ),
+      ),
+    );
+  }
+
+  void _showOutOfZoneSheet(BuildContext context) {
+    final hubName = state.primaryHub['name'] ?? 'Kodad Hub';
+    final radius = state.primaryHub['coverage_radius_km'] ?? '8.5';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEF3C7),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.location_off_rounded, color: Color(0xFFD97706), size: 36),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '${item.name} is Unavailable in Current Area',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Our daily early morning (05:30 AM) delivery is active within the $hubName service zone ($radius km radius). You can switch your delivery location to an operational area, or submit interest to request expansion.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.45),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  HomeLocationSheet.show(context, state);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: UiTone.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.location_on_rounded, size: 18),
+                label: const Text('📍 Switch Delivery Location', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await state.requestCoverageExpansion();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: UiTone.primary,
+                        content: Text('🔔 Interest recorded for ${state.currentCityOrTown}! We will notify you.'),
+                      ),
+                    );
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: UiTone.primary, width: 1.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.notifications_active_rounded, size: 16, color: UiTone.primary),
+                label: const Text('Notify Me When We Launch Here', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: UiTone.primary)),
+              ),
+            ),
+          ],
         ),
       ),
     );
