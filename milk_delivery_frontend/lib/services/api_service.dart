@@ -713,11 +713,12 @@ class ApiService {
     return false;
   }
 
-  static Future<Map<String, dynamic>?> rebalanceHubDeliveries(String hubCode) async {
+  static Future<Map<String, dynamic>?> rebalanceHubDeliveries(String hubCode, {int? driverCount}) async {
     try {
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/admin/hubs/$hubCode/rebalance/'),
             headers: _headers,
+            body: driverCount != null ? jsonEncode({'driver_count': driverCount}) : null,
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return jsonDecode(res.body) as Map<String, dynamic>;

@@ -34,7 +34,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   int _selectedFilter = 0; // 0: All, 1: Active Subs, 2: Express, 3: Fleet, 4: Capacity, 5: Broadcasts, 6: Payouts, 7: Paused, 8: Bottles
   String _selectedShift = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-selects EVENING after 12 PM, MORNING after 12 AM
   String _searchQuery = '';
-  int _activeDriverCount = 4;
+  int _activeDriverCount = 0; // Synced with associated drivers for this hub
   List<Map<String, dynamic>> _hubInventory = [];
   List<Map<String, dynamic>> _liveFleet = [];
   Timer? _hubRealtimeTimer;
@@ -71,11 +71,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   void _loadLiveFleet() async {
-    final fleet = await ApiService.fetchFleet();
-    if (mounted && fleet.isNotEmpty) {
+    final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
+    final hubId = activeHub?['id'] as int?;
+    final fleet = await ApiService.fetchFleet(hubId: hubId);
+    if (mounted) {
       setState(() {
         _liveFleet = fleet;
-        _activeDriverCount = fleet.length;
+        final totalAssociated = fleet.length;
+        if (totalAssociated == 0) {
+          _activeDriverCount = 0;
+        } else if (_activeDriverCount > totalAssociated || _activeDriverCount == 0) {
+          _activeDriverCount = totalAssociated;
+        }
       });
     }
   }
@@ -937,7 +944,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Active Boys Today:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Active Boys Today:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                          const SizedBox(height: 2),
+                          Text(
+                            _liveFleet.isEmpty
+                                ? 'No drivers associated yet'
+                                : 'Max: ${_liveFleet.length} associated with hub',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: _liveFleet.isEmpty ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF1F5F9),
@@ -956,8 +979,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               child: Text('$_activeDriverCount Boys', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.add, size: 16, color: Color(0xFF0D7C66)),
-                              onPressed: _activeDriverCount < 20 ? () => setState(() => _activeDriverCount++) : null,
+                              icon: Icon(
+                                Icons.add,
+                                size: 16,
+                                color: _activeDriverCount < _liveFleet.length ? const Color(0xFF0D7C66) : const Color(0xFF94A3B8),
+                              ),
+                              onPressed: _activeDriverCount < _liveFleet.length
+                                  ? () => setState(() => _activeDriverCount++)
+                                  : () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: const Color(0xFF0F172A),
+                                          content: Text(
+                                            _liveFleet.isEmpty
+                                                ? '⚠️ No delivery partners are associated with this hub yet. Onboard drivers first.'
+                                                : '⚠️ Cannot increase beyond ${_liveFleet.length} drivers. Only ${_liveFleet.length} delivery partners are associated with this hub.',
+                                          ),
+                                          duration: const Duration(seconds: 3),
+                                        ),
+                                      );
+                                    },
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                             ),
@@ -1227,42 +1268,27 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
-  Widget _buildShiftChip(String shiftKey, String label) {
-    final selected = _selectedShift == shiftKey;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedShift = shiftKey),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 7),
-          decoration: BoxDecoration(
-            color: selected ? (shiftKey == 'EVENING' ? const Color(0xFF7C3AED) : (shiftKey == 'MORNING' ? const Color(0xFF0D7C66) : UiTone.primary)) : Colors.transparent,
-            borderRadius: BorderRadius.circular(UiRadius.xs),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: UiText.caption.copyWith(
-              color: selected ? Colors.white : UiTone.softText,
-              fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _handleAutoBalanceFleet() async {
+    if (_activeDriverCount == 0 || _liveFleet.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFF0F172A),
+          content: Text('⚠️ No delivery drivers associated with this hub yet. Onboard drivers first.'),
+        ),
+      );
+      return;
+    }
+
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
     final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-KDD-01') : 'HUB-KDD-01';
 
-    final res = await widget.state.autoBalanceHubDeliveries(hubCode);
+    final res = await widget.state.autoBalanceHubDeliveries(hubCode, _activeDriverCount);
     if (mounted) {
       if (res != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: UiTone.accentBlue,
-            content: Text(res['message'] ?? '⚡ Fleet automatically balanced across active delivery boys!'),
+            content: Text(res['message'] ?? '⚡ Fleet automatically balanced across $_activeDriverCount active delivery boys!'),
           ),
         );
         setState(() {});

@@ -1536,6 +1536,16 @@ class AdminHubRebalanceView(APIView):
         if not active_drivers:
             return Response({"detail": f"No drivers assigned to hub {hub.name}. Assign drivers first."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Cap active_drivers to requested driver_count if specified, without exceeding total associated
+        raw_driver_count = request.data.get("driver_count") or request.query_params.get("driver_count")
+        if raw_driver_count:
+            try:
+                requested_cnt = int(raw_driver_count)
+                if 0 < requested_cnt <= len(active_drivers):
+                    active_drivers = active_drivers[:requested_cnt]
+            except (ValueError, TypeError):
+                pass
+
         from datetime import date
         tasks = list(DeliveryTask.objects.filter(hub=hub, status=DeliveryTask.Statuses.PENDING))
         if not tasks:

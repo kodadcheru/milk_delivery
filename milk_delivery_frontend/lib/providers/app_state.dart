@@ -713,9 +713,9 @@ class AppState extends ChangeNotifier {
   }
 
 
-  Future<Map<String, dynamic>?> autoBalanceHubDeliveries([String? hubCode]) async {
+  Future<Map<String, dynamic>?> autoBalanceHubDeliveries([String? hubCode, int? driverCount]) async {
     final targetHub = hubCode ?? activeHubCode;
-    final res = await ApiService.rebalanceHubDeliveries(targetHub);
+    final res = await ApiService.rebalanceHubDeliveries(targetHub, driverCount: driverCount);
     if (res != null) {
       await reloadAllData(silent: true);
     }
