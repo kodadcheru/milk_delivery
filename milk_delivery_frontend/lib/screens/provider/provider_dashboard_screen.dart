@@ -29,6 +29,8 @@ class ProviderDashboardScreen extends StatefulWidget {
 }
 
 class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
+  int _hubCommandTab = 0; // 0: Live Tasks, 1: Fleet & Balancer, 2: Batch & Bottles
+  String _taskStatusFilter = 'ALL'; // ALL, PENDING, DELIVERED, EXPRESS
   int _selectedFilter = 0; // 0: All, 1: Active Subs, 2: Express, 3: Fleet, 4: Capacity, 5: Broadcasts, 6: Payouts, 7: Paused, 8: Bottles
   String _selectedShift = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-selects EVENING after 12 PM, MORNING after 12 AM
   String _searchQuery = '';
@@ -505,507 +507,653 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final hubName = activeHub != null ? (activeHub['name'] ?? 'Central Dairy Depot') : 'Central Dairy Depot';
     final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-01') : 'HUB-01';
 
-    final uniqueCustomers = tasks.map((t) => t.customerName).toSet().length;
     final activeFleetCount = _liveFleet.length;
+    final shiftTotal = filteredTasks.length + filteredExpress.length;
+    final shiftDelivered = filteredTasks.where((t) => t.status == 'DELIVERED' || t.status == 'COMPLETED').length +
+        filteredExpress.where((o) => o.status == 'DELIVERED').length;
+    final progressVal = shiftTotal > 0 ? (shiftDelivered / shiftTotal).clamp(0.0, 1.0) : 0.0;
+    final pendingCount = shiftTotal - shiftDelivered;
+
+    // Filter tasks based on _taskStatusFilter
+    final displayedTasks = filteredTasks.where((t) {
+      final isDelivered = t.status == 'DELIVERED' || t.status == 'COMPLETED';
+      if (_taskStatusFilter == 'PENDING') return !isDelivered;
+      if (_taskStatusFilter == 'DELIVERED') return isDelivered;
+      if (_taskStatusFilter == 'EXPRESS') return false;
+      return true;
+    }).toList();
+
+    final displayedExpress = filteredExpress.where((ord) {
+      final isDelivered = ord.status == 'DELIVERED';
+      if (_taskStatusFilter == 'PENDING') return !isDelivered;
+      if (_taskStatusFilter == 'DELIVERED') return isDelivered;
+      return true;
+    }).toList();
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── 1. Hero Hub Header Card ──
-          UiHeroCard(
-            child: Column(
+          // ── 1. Shift Selector Bar (Morning vs Evening) ──
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(UiRadius.pill),
+            ),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedShift = 'MORNING'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: _selectedShift == 'MORNING' ? const Color(0xFF0D7C66) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                        boxShadow: _selectedShift == 'MORNING'
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      alignment: Alignment.center,
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          UiHeroGlass(
-                            padding: const EdgeInsets.all(10),
-                            child: const Text('🏬',
-                                style: TextStyle(fontSize: 22)),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  hubName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: UiText.h2.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                Text(
-                                  'Operating Zone • ID #$hubCode',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: UiText.label.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
+                          const Text('☀️ ', style: TextStyle(fontSize: 13)),
+                          Text(
+                            'Morning Drop (5:30 AM)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: _selectedShift == 'MORNING' ? Colors.white : const Color(0xFF64748B),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const UiHeroPill(label: 'LIVE HUB', icon: Icons.circle),
-                  ],
+                  ),
                 ),
-                Divider(
-                    color: Colors.white.withValues(alpha: 0.24), height: 22),
-                Row(
-                  children: [
-                    Expanded(
-                      child: UiStatTile(
-                        onDark: true,
-                        align: CrossAxisAlignment.center,
-                        value: uniqueCustomers > 0
-                            ? '$uniqueCustomers'
-                            : '${tasks.length}',
-                        label: 'Families',
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedShift = 'EVENING'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: _selectedShift == 'EVENING' ? const Color(0xFF7C3AED) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                        boxShadow: _selectedShift == 'EVENING'
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 28,
-                        color: Colors.white.withValues(alpha: 0.24)),
-                    Expanded(
-                      child: UiStatTile(
-                        onDark: true,
-                        align: CrossAxisAlignment.center,
-                        value: totalLitres.toStringAsFixed(0),
-                        label: 'Litres / Day',
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 28,
-                        color: Colors.white.withValues(alpha: 0.24)),
-                    Expanded(
-                      child: UiStatTile(
-                        onDark: true,
-                        align: CrossAxisAlignment.center,
-                        value: '$activeFleetCount',
-                        label: 'Drivers',
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 28,
-                        color: Colors.white.withValues(alpha: 0.24)),
-                    Expanded(
-                      child: UiStatTile(
-                        onDark: true,
-                        align: CrossAxisAlignment.center,
-                        value: (totalLitres / 12).ceil().toString(),
-                        label: 'Crates',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => ProviderFleetMapScreen(
-                            state: widget.state,
-                            fleetDrivers: _liveFleet,
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('🌙 ', style: TextStyle(fontSize: 13)),
+                          Text(
+                            'Evening Drop (5:00 PM)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: _selectedShift == 'EVENING' ? Colors.white : const Color(0xFF64748B),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.radar_rounded, size: 16),
-                    label: const Text(
-                        'Live Fleet Radar & Depot Coverage Map 🗺️',
-                        style:
-                            TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: UiTone.primary,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(UiRadius.md)),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          
-          _buildRealTimeEarningsCard(context),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // ── Today's Daily Batch Lab Quality & Litre Rate ──
-          _buildDailyBatchLabCard(context),
-          const SizedBox(height: 14),
-
-          // ── Quick Command Shortcuts Grid (6 Hub Actions) ──
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _quickCommand(
-                  icon: Icons.calendar_month_rounded,
-                  accent: const Color(0xFF10B981),
-                  title: 'Day Orders',
-                  subtitle: 'AM/PM shifts',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER'),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                _quickCommand(
-                  icon: Icons.inventory_rounded,
-                  accent: UiTone.accentBlue,
-                  title: 'Batch Packing',
-                  subtitle: 'Crate manifest',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              MorningBatchScreen(state: widget.state)),
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                _quickCommand(
-                  icon: Icons.autorenew_rounded,
-                  accent: UiTone.accentBlue,
-                  title: 'Gen Tasks',
-                  subtitle: 'Create batch',
-                  onTap: () => _showBatchLabQualityDialog(context,
-                      isGeneratingDeliveries: true),
-                ),
-                const SizedBox(width: 8),
-                _quickCommand(
-                  icon: Icons.tune_rounded,
-                  accent: UiTone.primary,
-                  title: 'Daily Slots',
-                  subtitle: 'Limits & stock',
-                  onTap: () => _openManageCapacitySlotsDialog(context),
-                ),
-                const SizedBox(width: 8),
-                _quickCommand(
-                  icon: Icons.campaign_rounded,
-                  accent: UiTone.warning,
-                  title: 'Broadcast',
-                  subtitle: 'Push alerts',
-                  onTap: () => _showBroadcastDialog(context),
-                ),
-                const SizedBox(width: 8),
-                _quickCommand(
-                  icon: Icons.account_balance_wallet_rounded,
-                  accent: UiTone.primary,
-                  title: '${UiFormat.price(netEarnings)} Pay',
-                  subtitle: 'Settlement',
-                  onTap: () => _withdrawEarnings(context, netEarnings),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // ── Generate Today's Delivery Tasks ──
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton.icon(
-              onPressed: () => _showBatchLabQualityDialog(context, isGeneratingDeliveries: true),
-              icon: const Icon(Icons.auto_fix_high_rounded, size: 18, color: Colors.white),
-              label: Text(
-                "Generate Today's Delivery Tasks ⚡",
-                style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 13, color: UiTone.surface),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: UiTone.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // ── Equal Load Balancer & Delivery Boys Configurator ──
+          // ── 2. Operational Shift Cockpit Card ──
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: UiTone.surface,
-              borderRadius: BorderRadius.circular(UiRadius.lg),
-              border: Border.all(color: UiTone.surfaceBorder),
-              boxShadow: UiShadow.card,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Hub ID & Status Row
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const Text('⚖️', style: TextStyle(fontSize: 20)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Equal Load Balancer & Fleet Dispatch',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: UiText.title.copyWith(fontSize: 13),
-                                ),
-                                Text(
-                                  'Auto-partitions hub orders equally across active boys',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: UiText.caption.copyWith(
-                                      color: UiTone.primary,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ],
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text('🏬', style: TextStyle(fontSize: 16)),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hubName,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
                             ),
+                            Text(
+                              'Depot Zone • ID #$hubCode',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(width: 5, height: 5, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'LIVE HUB',
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF10B981)),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                          color: UiTone.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(UiRadius.pill)),
-                      child: Text('EQUAL LOAD',
-                          style: UiText.caption.copyWith(
-                              color: UiTone.primary,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 9)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Shift Progress Bar & Counter
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Shift Dispatch Progress',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.8)),
+                    ),
+                    Text(
+                      '$shiftDelivered of $shiftTotal Delivered (${(progressVal * 100).toInt()}%)',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF34D399)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Delivery Boys Input Stepper
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: UiTone.surfaceMuted,
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    border: Border.all(color: UiTone.surfaceBorder),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progressVal,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
+                ),
+                const SizedBox(height: 14),
+
+                // Telemetry 3-Stat Pill Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Active Delivery Boys Today:',
-                                style: UiText.bodyStrong
-                                    .copyWith(fontSize: 12.5)),
-                            Text('Hub operator input for shift partitioning',
-                                style: UiText.caption),
+                            Text('VOLUME', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white.withValues(alpha: 0.5))),
+                            const SizedBox(height: 2),
+                            Text('${totalLitres.toStringAsFixed(0)} Litres', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.white)),
                           ],
                         ),
                       ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline,
-                                color: UiTone.softText, size: 22),
-                            onPressed: _activeDriverCount > 1
-                                ? () => setState(() => _activeDriverCount--)
-                                : null,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text('$_activeDriverCount Boys',
-                                style: UiText.bodyStrong.copyWith(
-                                    color: UiTone.primary,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 13.5)),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline,
-                                color: UiTone.primary, size: 22),
-                            onPressed: _activeDriverCount < 10
-                                ? () => setState(() => _activeDriverCount++)
-                                : null,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Equal Partition Telemetry
-                Row(
-                  children: [
+                    ),
+                    const SizedBox(width: 6),
                     Expanded(
-                      child: UiStatTile(
-                        align: CrossAxisAlignment.center,
-                        value: '${tasks.length}',
-                        label: 'Hub Orders',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('FLEET', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white.withValues(alpha: 0.5))),
+                            const SizedBox(height: 2),
+                            Text('$activeFleetCount Drivers', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.white)),
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                        width: 1, height: 26, color: UiTone.surfaceBorder),
+                    const SizedBox(width: 6),
                     Expanded(
-                      child: UiStatTile(
-                        align: CrossAxisAlignment.center,
-                        value:
-                            '${(tasks.length / _activeDriverCount).ceil()}',
-                        label: 'Per Driver ⚖️',
-                      ),
-                    ),
-                    Container(
-                        width: 1, height: 26, color: UiTone.surfaceBorder),
-                    Expanded(
-                      child: UiStatTile(
-                        align: CrossAxisAlignment.center,
-                        value: _activeDriverCount > 0 
-                            ? '~${(totalLitres / _activeDriverCount).toStringAsFixed(0)}L'
-                            : '0L',
-                        label: 'Load / Driver',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('BALANCE ⚖️', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white.withValues(alpha: 0.5))),
+                            const SizedBox(height: 2),
+                            Text('${(shiftTotal / (_activeDriverCount > 0 ? _activeDriverCount : 1)).ceil()} drops', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.white)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
+                const SizedBox(height: 14),
 
-          // ── 3. Integrated Search Bar ──
-          Container(
-            decoration: BoxDecoration(
-              color: UiTone.surface,
-              borderRadius: BorderRadius.circular(UiRadius.md),
-              border: Border.all(color: UiTone.surfaceBorder),
-              boxShadow: UiShadow.card,
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 12),
-                const Icon(Icons.search_rounded, color: UiTone.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                    style: UiText.body.copyWith(
-                        color: UiTone.ink, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      hintText: 'Search customer, apartment, or mobile...',
-                      hintStyle: UiText.body.copyWith(color: UiText.muted),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 12),
+                // Primary Action Button: Generate Tasks & Dispatch
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showBatchLabQualityDialog(context, isGeneratingDeliveries: true),
+                    icon: const Icon(Icons.auto_fix_high_rounded, size: 16, color: Colors.white),
+                    label: const Text(
+                      'Generate Shift Tasks & Dispatch 🚀',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.2),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D7C66),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
                     ),
                   ),
                 ),
-                if (_searchQuery.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.clear_rounded,
-                        size: 18, color: UiTone.softText),
-                    onPressed: () => setState(() => _searchQuery = ''),
-                  ),
               ],
             ),
           ),
           const SizedBox(height: 14),
 
-          // ── 4. Filter Tabs Carousel ──
-          Builder(
-            builder: (context) {
-              // Chip positions map to non-sequential filter values.
-              const filterValues = [0, 1, 7, 2, 3, 4, 8, 5, 6];
-              final selPos = filterValues.indexOf(_selectedFilter);
-              return UiFilterChipBar(
-                selectedIndex: selPos < 0 ? 0 : selPos,
-                onSelected: (pos) =>
-                    setState(() => _selectedFilter = filterValues[pos]),
-                labels: const [
-                  '⚡ Upcoming Orders',
-                  '✅ Active Subs',
-                  '⏸️ Paused Subs',
-                  '⚡ Express Orders',
-                  '🛵 Fleet Status',
-                  '📦 Crates & Stock',
-                  '🍼 Bottles Returned',
-                  '📢 Alerts Broadcasted',
-                  '💰 Bank Payouts',
-                ],
-                counts: [
-                  filteredTasks.length + liveOrders.length,
-                  activeSubs.length,
-                  pausedSubs.length,
-                  liveOrders.length,
-                  _liveFleet.length,
-                  0,
-                  _bottleReturns.length,
-                  _broadcastAlerts.length,
-                  _payoutHistory.length,
-                ],
-              );
-            },
+          // ── 3. Hub Command 3-Tab Segmented Switcher ──
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                _hubCommandTabButton(0, '📋 Live Tasks', '$shiftTotal'),
+                _hubCommandTabButton(1, '🛵 Fleet & Dispatch', '$activeFleetCount'),
+                _hubCommandTabButton(2, '🥛 Batch & Inventory', 'Quality'),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // ── 5. Content Section Based on Filter ──
-          if (_selectedFilter == 8) ...[
-            _buildBottleReturnsSection(),
-          ] else if (_selectedFilter == 6) ...[
-            _buildPayoutLedgerSection(),
-          ] else if (_selectedFilter == 5) ...[
-            _buildBroadcastAlertsSection(),
-          ] else if (_selectedFilter == 4) ...[
-            _buildInventoryCratesSection(),
-          ] else if (_selectedFilter == 3) ...[
+          // ── 4. Active Tab Content Section ──
+          if (_hubCommandTab == 0) ...[
+            // Tab 0: Live Tasks & Orders
+            // Search Bar
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 12),
+                  const Icon(Icons.search_rounded, color: UiTone.primary, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      decoration: const InputDecoration(
+                        hintText: 'Search customer, phone, or address...',
+                        hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                      ),
+                    ),
+                  ),
+                  if (_searchQuery.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                      onPressed: () => setState(() => _searchQuery = ''),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Sub-Filter Pills (All, Pending, Delivered, Express, Active Subs, Paused)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _taskFilterPill('ALL', 'All ($shiftTotal)'),
+                  const SizedBox(width: 6),
+                  _taskFilterPill('PENDING', 'Pending ($pendingCount)'),
+                  const SizedBox(width: 6),
+                  _taskFilterPill('DELIVERED', 'Delivered ($shiftDelivered)'),
+                  const SizedBox(width: 6),
+                  _taskFilterPill('EXPRESS', 'Express ⚡ (${filteredExpress.length})'),
+                  const SizedBox(width: 6),
+                  _taskFilterPill('ACTIVE_SUBS', 'Active Subs (${activeSubs.length})'),
+                  const SizedBox(width: 6),
+                  _taskFilterPill('PAUSED_SUBS', 'Paused (${pausedSubs.length})'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Order Cards List
+            if (_taskStatusFilter == 'ACTIVE_SUBS')
+              _buildSubscriptionListSection('✅ Active Subscriptions', activeSubs, 'ACTIVE')
+            else if (_taskStatusFilter == 'PAUSED_SUBS')
+              _buildSubscriptionListSection('⏸️ Paused Subscriptions', pausedSubs, 'PAUSED')
+            else if (_taskStatusFilter == 'EXPRESS')
+              _buildExpressOnlySection(displayedExpress)
+            else
+              _buildOrdersRosterSection(displayedTasks, displayedExpress),
+          ] else if (_hubCommandTab == 1) ...[
+            // Tab 1: Fleet & Dispatch
+            // Equal Load Balancer Stepper Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Text('⚖️ ', style: TextStyle(fontSize: 16)),
+                          Text('Equal Load Balancer', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                        ],
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => _handleAutoBalanceFleet(),
+                        icon: const Icon(Icons.bolt_rounded, size: 14, color: Colors.white),
+                        label: const Text('Auto-Balance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D7C66),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Active Boys Today:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(UiRadius.pill),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 16, color: Color(0xFF475569)),
+                              onPressed: _activeDriverCount > 1 ? () => setState(() => _activeDriverCount--) : null,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Text('$_activeDriverCount Boys', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 16, color: Color(0xFF0D7C66)),
+                              onPressed: _activeDriverCount < 20 ? () => setState(() => _activeDriverCount++) : null,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Live Fleet Radar Button
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (ctx) => ProviderFleetMapScreen(
+                        state: widget.state,
+                        fleetDrivers: _liveFleet,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.radar_rounded, size: 16),
+                label: const Text(
+                  'Open Live Fleet Radar & Route Map 🗺️',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E293B),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Driver Roster
             _buildFleetDriversSection(),
-          ] else if (_selectedFilter == 7) ...[
-            _buildSubscriptionListSection('⏸️ Paused Subscriptions', pausedSubs, 'PAUSED'),
-          ] else if (_selectedFilter == 1) ...[
-            _buildSubscriptionListSection('✅ Active Subscriptions', activeSubs, 'ACTIVE'),
-          ] else if (_selectedFilter == 2) ...[
-            _buildExpressOnlySection(filteredExpress),
           ] else ...[
-            _buildOrdersRosterSection(filteredTasks, filteredExpress),
+            // Tab 2: Batch Quality & Inventory
+            _buildDailyBatchLabCard(context),
+            const SizedBox(height: 14),
+
+            // Quick Hub Admin Actions Grid
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _quickCommand(
+                    icon: Icons.inventory_2_rounded,
+                    accent: const Color(0xFF0D7C66),
+                    title: 'Batch Packing',
+                    subtitle: 'Crate manifest',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => MorningBatchScreen(state: widget.state)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _quickCommand(
+                    icon: Icons.calendar_month_rounded,
+                    accent: const Color(0xFF3B82F6),
+                    title: 'Day Calendar',
+                    subtitle: 'AM/PM orders',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => DayWiseOrdersScreen(state: widget.state, role: 'PROVIDER')),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _quickCommand(
+                    icon: Icons.tune_rounded,
+                    accent: UiTone.primary,
+                    title: 'Daily Slots',
+                    subtitle: 'Limits & stock',
+                    onTap: () => _openManageCapacitySlotsDialog(context),
+                  ),
+                  const SizedBox(width: 8),
+                  _quickCommand(
+                    icon: Icons.campaign_rounded,
+                    accent: UiTone.warning,
+                    title: 'Broadcast',
+                    subtitle: 'Push alerts',
+                    onTap: () => _showBroadcastDialog(context),
+                  ),
+                  const SizedBox(width: 8),
+                  _quickCommand(
+                    icon: Icons.account_balance_wallet_rounded,
+                    accent: const Color(0xFF10B981),
+                    title: 'Settlement',
+                    subtitle: 'Bank payout',
+                    onTap: () => _withdrawEarnings(context, netEarnings),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            _buildInventoryCratesSection(),
+            const SizedBox(height: 14),
+
+            _buildBottleReturnsSection(),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 30),
         ],
+      ),
+    );
+  }
+
+  Widget _hubCommandTabButton(int tabIdx, String label, String badge) {
+    final selected = _hubCommandTab == tabIdx;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _hubCommandTab = tabIdx),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: selected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                ),
+              ),
+              if (badge.isNotEmpty) ...[
+                const SizedBox(width: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: selected ? const Color(0xFF0D7C66) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(UiRadius.pill),
+                  ),
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                      color: selected ? Colors.white : const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _taskFilterPill(String filterKey, String label) {
+    final selected = _taskStatusFilter == filterKey;
+    return GestureDetector(
+      onTap: () => setState(() => _taskStatusFilter = filterKey),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF0D7C66) : Colors.white,
+          borderRadius: BorderRadius.circular(UiRadius.pill),
+          border: Border.all(
+            color: selected ? const Color(0xFF0D7C66) : const Color(0xFFCBD5E1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            color: selected ? Colors.white : const Color(0xFF334155),
+          ),
+        ),
       ),
     );
   }
@@ -1052,33 +1200,29 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         ),
         const SizedBox(height: 10),
 
-        // Shift Toggle Chips
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: UiTone.shellBackground,
-            borderRadius: BorderRadius.circular(UiRadius.sm),
-            border: Border.all(color: UiTone.surfaceBorder),
-          ),
-          child: Row(
-            children: [
-              _buildShiftChip('MORNING', '☀️ Morning (AM)'),
-              const SizedBox(width: 4),
-              _buildShiftChip('EVENING', '🌙 Evening (PM)'),
-              const SizedBox(width: 4),
-              _buildShiftChip('ALL', 'All Shifts'),
-            ],
-          ),
-        ),
-
-        // Express Orders First
-        if (_selectedFilter == 0 || _selectedFilter == 2)
+        // Express Orders
+        if (_taskStatusFilter != 'DELIVERED')
           ...express.map((ord) => _buildExpressOrderCard(ord)),
 
         // Daily Subscriptions
-        if (_selectedFilter == 0 || _selectedFilter == 1)
-          ...subscriptions.map((task) => _buildSubscriptionCustomerCard(task)),
+        ...subscriptions.map((task) => _buildSubscriptionCustomerCard(task)),
+
+        if (subscriptions.isEmpty && express.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 36),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 36),
+                  SizedBox(height: 8),
+                  Text(
+                    'No orders in this filter',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }

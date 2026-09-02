@@ -501,7 +501,7 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
             NextGenNavItem(
               icon: Icons.storefront_outlined,
               activeIcon: Icons.storefront_rounded,
-              label: widget.state.isTelugu ? 'హబ్ హోమ్' : 'Hub Command',
+              label: widget.state.isTelugu ? 'హబ్ కాక్‌పిట్' : 'Hub Cockpit',
             ),
             NextGenNavItem(
               icon: Icons.currency_rupee_rounded,
