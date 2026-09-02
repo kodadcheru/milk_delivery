@@ -875,6 +875,17 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                           const SizedBox(height: 10),
                           Builder(
                             builder: (context) {
+                              final firstItem = widget.liveOrder?.items.isNotEmpty == true ? widget.liveOrder!.items.first : null;
+                              final backendBadges = firstItem?.product.trackingBadges;
+                              if (backendBadges != null && backendBadges.isNotEmpty) {
+                                return Row(
+                                  children: backendBadges.map((b) => Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: _buildLabBadge(b['label'] ?? '', b['value'] ?? ''),
+                                  )).toList(),
+                                );
+                              }
+
                               final titleLower = (widget.liveOrder?.items.map((i) => i.product.name).join(' ') ?? widget.orderTitle).toLowerCase();
                               final isMeat = titleLower.contains('meat') || titleLower.contains('chicken') || titleLower.contains('mutton') || titleLower.contains('fish');
                               final isEggs = !isMeat && titleLower.contains('egg');

@@ -35,6 +35,10 @@ class CategorySerializer(serializers.ModelSerializer):
             "icon",
             "image_url",
             "description",
+            "subtitle",
+            "quality_badge_title",
+            "quality_specs",
+            "tracking_badges",
             "display_order",
             "is_active",
             "items_count",
@@ -55,6 +59,10 @@ class ProductSerializer(serializers.ModelSerializer):
     category_icon = serializers.CharField(read_only=True)
     available_slots = serializers.SerializerMethodField()
     daily_capacity_slots = serializers.SerializerMethodField()
+    resolved_subtitle = serializers.CharField(read_only=True)
+    resolved_quality_badge_title = serializers.CharField(read_only=True)
+    resolved_quality_specs = serializers.JSONField(read_only=True)
+    resolved_tracking_badges = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Product
@@ -78,6 +86,14 @@ class ProductSerializer(serializers.ModelSerializer):
             "is_available",
             "available_slots",
             "daily_capacity_slots",
+            "subtitle",
+            "quality_badge_title",
+            "quality_specs",
+            "tracking_badges",
+            "resolved_subtitle",
+            "resolved_quality_badge_title",
+            "resolved_quality_specs",
+            "resolved_tracking_badges",
             "created_at",
         ]
 

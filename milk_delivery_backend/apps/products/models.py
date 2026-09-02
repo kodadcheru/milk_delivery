@@ -10,6 +10,10 @@ class Category(models.Model):
     description = models.TextField(blank=True, default="")
     display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    subtitle = models.CharField(max_length=150, blank=True, default="", help_text="Subtitle displayed in mobile app (e.g. Fresh & Tender • 100% Antibiotic-Free)")
+    quality_badge_title = models.CharField(max_length=150, blank=True, default="", help_text="Purity badge header (e.g. FSSAI Certified • 100% Antibiotic-Free)")
+    quality_specs = models.JSONField(blank=True, default=dict, help_text="Quality specifications key-values shown in expandable card")
+    tracking_badges = models.JSONField(blank=True, default=list, help_text="Tracking status badges shown on live driver tracking screen")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -49,6 +53,10 @@ class Product(models.Model):
     farm_origin = models.CharField(max_length=120, blank=True, default="Heritage Source, Hyderabad")
     rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal("4.9"))
     is_available = models.BooleanField(default=True)
+    subtitle = models.CharField(max_length=150, blank=True, default="", help_text="Product-specific subtitle override (falls back to category subtitle if blank)")
+    quality_badge_title = models.CharField(max_length=150, blank=True, default="", help_text="Product-specific badge title override (falls back to category badge if blank)")
+    quality_specs = models.JSONField(blank=True, default=dict, help_text="Product-specific quality specs override (dict, falls back to category if empty)")
+    tracking_badges = models.JSONField(blank=True, default=list, help_text="Product-specific tracking badges override (list of dicts, falls back to category if empty)")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -59,7 +67,7 @@ class Product(models.Model):
             if cat:
                 self.category_ref = cat
                 self.category = cat.name
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     @property
     def category_name(self):
@@ -68,6 +76,30 @@ class Product(models.Model):
     @property
     def category_icon(self):
         return self.category_ref.icon if self.category_ref else "🥛"
+
+    @property
+    def resolved_subtitle(self):
+        if self.subtitle:
+            return self.subtitle
+        return self.category_ref.subtitle if self.category_ref and self.category_ref.subtitle else ""
+
+    @property
+    def resolved_quality_badge_title(self):
+        if self.quality_badge_title:
+            return self.quality_badge_title
+        return self.category_ref.quality_badge_title if self.category_ref and self.category_ref.quality_badge_title else ""
+
+    @property
+    def resolved_quality_specs(self):
+        if self.quality_specs:
+            return self.quality_specs
+        return self.category_ref.quality_specs if self.category_ref and self.category_ref.quality_specs else {}
+
+    @property
+    def resolved_tracking_badges(self):
+        if self.tracking_badges:
+            return self.tracking_badges
+        return self.category_ref.tracking_badges if self.category_ref and self.category_ref.tracking_badges else []
 
     def __str__(self):
         return f"{self.name} ({self.category_name}) - ₹{self.price_per_unit} / {self.unit_quantity}"

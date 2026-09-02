@@ -18,6 +18,10 @@ class ProductModel {
   final int dailyCapacitySlots;
   final double rating;
   final String icon;
+  final String subtitle;
+  final String qualityBadgeTitle;
+  final Map<String, String> qualitySpecs;
+  final List<Map<String, String>> trackingBadges;
 
   ProductModel({
     required this.id,
@@ -37,6 +41,10 @@ class ProductModel {
     this.dailyCapacitySlots = 100,
     this.rating = 4.9,
     this.icon = '🥛',
+    this.subtitle = '',
+    this.qualityBadgeTitle = '',
+    this.qualitySpecs = const {},
+    this.trackingBadges = const [],
   });
 
   bool get isOutOfStock => !isAvailable || availableSlots <= 0;
@@ -81,6 +89,8 @@ class ProductModel {
     }
     return 'Fresh & Verified • Daily Doorstep Delivery';
   }
+
+  String get displaySubtitle => subtitle.isNotEmpty ? subtitle : categorySubtitle;
 
   String localizedName(String lang) {
     if (lang != 'te') return name;
@@ -137,6 +147,42 @@ class ProductModel {
       imgUrl = catDetail['image_url'].toString();
     }
 
+    final String sub = json['resolved_subtitle']?.toString() ??
+        json['subtitle']?.toString() ??
+        (catDetail != null ? catDetail['subtitle']?.toString() ?? '' : '');
+
+    final String badgeTitle = json['resolved_quality_badge_title']?.toString() ??
+        json['quality_badge_title']?.toString() ??
+        (catDetail != null ? catDetail['quality_badge_title']?.toString() ?? '' : '');
+
+    final Map<String, String> specs = {};
+    final rawSpecs = json['resolved_quality_specs'] ??
+        json['quality_specs'] ??
+        (catDetail != null ? catDetail['quality_specs'] : null);
+    if (rawSpecs is Map) {
+      rawSpecs.forEach((k, v) {
+        if (k != null && v != null) {
+          specs[k.toString()] = v.toString();
+        }
+      });
+    }
+
+    final List<Map<String, String>> trackingList = [];
+    final rawTracking = json['resolved_tracking_badges'] ??
+        json['tracking_badges'] ??
+        (catDetail != null ? catDetail['tracking_badges'] : null);
+    if (rawTracking is List) {
+      for (final item in rawTracking) {
+        if (item is Map) {
+          final l = item['label']?.toString() ?? '';
+          final val = item['value']?.toString() ?? '';
+          if (l.isNotEmpty && val.isNotEmpty) {
+            trackingList.add({'label': l, 'value': val});
+          }
+        }
+      }
+    }
+
     return ProductModel(
       id: json['id'] ?? 0,
       categoryId: catId,
@@ -155,6 +201,10 @@ class ProductModel {
       dailyCapacitySlots: json['daily_capacity_slots'] ?? 100,
       rating: double.tryParse(json['rating']?.toString() ?? '4.9') ?? 4.9,
       icon: resolvedIcon,
+      subtitle: sub,
+      qualityBadgeTitle: badgeTitle,
+      qualitySpecs: specs,
+      trackingBadges: trackingList,
     );
   }
 

@@ -398,7 +398,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                             ),
                             const SizedBox(width: 3),
                             Text(
-                              item.categorySubtitle,
+                              item.displaySubtitle,
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
@@ -1424,6 +1424,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
 
     // ── 1. Meat & Poultry Quality Card ──
     if (p.isMeat) {
+      final badgeTitle = p.qualityBadgeTitle.isNotEmpty ? p.qualityBadgeTitle : 'FSSAI Certified • 100% Antibiotic-Free • <4°C Chilled';
+      final specs = p.qualitySpecs.isNotEmpty
+          ? p.qualitySpecs
+          : {
+              'Transit Safety': 'Chilled 0–4°C Vacuum Packed',
+              'Chemicals & Growth Promoters': 'Zero (100% Lab Tested)',
+            };
+
       return GestureDetector(
         onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
         child: Container(
@@ -1438,10 +1446,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               Row(
                 children: [
                   const Text('🥩 ', style: TextStyle(fontSize: 12)),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'FSSAI Certified • 100% Antibiotic-Free • <4°C Chilled',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF991B1B)),
+                      badgeTitle,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF991B1B)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -1452,21 +1460,22 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 const SizedBox(height: 6),
                 const Divider(height: 1, color: Color(0xFFFECACA)),
                 const SizedBox(height: 6),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Transit Safety:', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
-                    Text('Chilled 0–4°C Vacuum Packed', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Chemicals & Growth Promoters:', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
-                    Text('Zero (100% Lab Tested)', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ],
-                ),
+                ...specs.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${entry.key}:', style: const TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
+                          Flexible(
+                            child: Text(
+                              entry.value,
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
               ],
             ],
           ),
@@ -1476,6 +1485,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
 
     // ── 2. Eggs Quality Card ──
     if (p.isEggs) {
+      final badgeTitle = p.qualityBadgeTitle.isNotEmpty ? p.qualityBadgeTitle : 'Farm Fresh • Daily Graded • 0% Broken Guarantee';
+      final specs = p.qualitySpecs.isNotEmpty
+          ? p.qualitySpecs
+          : {
+              'Farm Standards': 'Bio-Secure Hen Farms',
+              'Hen Diet & Feed': '100% Vegetarian Natural Grain',
+            };
+
       return GestureDetector(
         onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
         child: Container(
@@ -1490,10 +1507,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               Row(
                 children: [
                   const Text('🥚 ', style: TextStyle(fontSize: 12)),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Farm Fresh • Daily Graded • 0% Broken Guarantee',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                      badgeTitle,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -1504,21 +1521,22 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 const SizedBox(height: 6),
                 const Divider(height: 1, color: Color(0xFFFDE68A)),
                 const SizedBox(height: 6),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Farm Standards:', style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E))),
-                    Text('Bio-Secure Hen Farms', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Hen Diet & Feed:', style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E))),
-                    Text('100% Vegetarian Natural Grain', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ],
-                ),
+                ...specs.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${entry.key}:', style: const TextStyle(fontSize: 10.5, color: Color(0xFF92400E))),
+                          Flexible(
+                            child: Text(
+                              entry.value,
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
               ],
             ],
           ),
@@ -1528,6 +1546,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
 
     // ── 3. Water Cans Quality Card ──
     if (p.isWater) {
+      final badgeTitle = p.qualityBadgeTitle.isNotEmpty ? p.qualityBadgeTitle : 'Multi-Stage Purified • Tested Balanced TDS • Sealed Can';
+      final specs = p.qualitySpecs.isNotEmpty
+          ? p.qualitySpecs
+          : {
+              'Purification Method': 'RO + UV + Ozonation Treated',
+              'Packaging & Safety': 'Food-Grade BPA-Free Sanitized Can',
+            };
+
       return GestureDetector(
         onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
         child: Container(
@@ -1542,10 +1568,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               Row(
                 children: [
                   const Text('💧 ', style: TextStyle(fontSize: 12)),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Multi-Stage Purified • Tested Balanced TDS • Sealed Can',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF075985)),
+                      badgeTitle,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF075985)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -1556,21 +1582,22 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 const SizedBox(height: 6),
                 const Divider(height: 1, color: Color(0xFFBAE6FD)),
                 const SizedBox(height: 6),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Purification Method:', style: TextStyle(fontSize: 10.5, color: Color(0xFF075985))),
-                    Text('RO + UV + Ozonation Treated', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Packaging & Safety:', style: TextStyle(fontSize: 10.5, color: Color(0xFF075985))),
-                    Text('Food-Grade BPA-Free Sanitized Can', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  ],
-                ),
+                ...specs.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${entry.key}:', style: const TextStyle(fontSize: 10.5, color: Color(0xFF075985))),
+                          Flexible(
+                            child: Text(
+                              entry.value,
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
               ],
             ],
           ),

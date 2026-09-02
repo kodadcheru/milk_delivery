@@ -272,6 +272,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
   Widget _buildPurityBadge(ProductModel item) {
     // ── 1. Meat & Poultry ──
     if (item.isMeat) {
+      final badgeText = item.qualityBadgeTitle.isNotEmpty ? item.qualityBadgeTitle : 'FSSAI Certified • 100% Antibiotic-Free • Vacuum Packed';
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -285,7 +286,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                'FSSAI Certified • 100% Antibiotic-Free • Vacuum Packed',
+                badgeText,
                 style: UiText.caption.copyWith(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -302,6 +303,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
 
     // ── 2. Eggs ──
     if (item.isEggs) {
+      final badgeText = item.qualityBadgeTitle.isNotEmpty ? item.qualityBadgeTitle : 'Farm Fresh • Daily Graded • Zero Broken Guarantee';
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -315,7 +317,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                'Farm Fresh • Daily Graded • Zero Broken Guarantee',
+                badgeText,
                 style: UiText.caption.copyWith(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -332,6 +334,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
 
     // ── 3. Water Cans ──
     if (item.isWater) {
+      final badgeText = item.qualityBadgeTitle.isNotEmpty ? item.qualityBadgeTitle : 'Multi-Stage RO+UV Purified • Balanced TDS • Sealed Can';
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -345,7 +348,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                'Multi-Stage RO+UV Purified • Balanced TDS • Sealed Can',
+                badgeText,
                 style: UiText.caption.copyWith(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
