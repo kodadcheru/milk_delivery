@@ -54,7 +54,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   void initState() {
     super.initState();
     _loadAllHubData();
-    _hubRealtimeTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadAllHubData());
+    // Streamlined 20-second heartbeat to avoid database query churn
+    _hubRealtimeTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!mounted) return;
+      if (_hubCommandTab == 1) {
+        _loadLiveFleet();
+      } else if (_hubCommandTab == 2) {
+        _loadBottleReturns();
+      } else {
+        _loadHubInventory();
+      }
+    });
   }
 
   @override
@@ -62,8 +72,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     _hubRealtimeTimer?.cancel();
     super.dispose();
   }
-
-
 
   void _loadAllHubData() {
     _loadLiveFleet();
@@ -1123,7 +1131,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final selected = _hubCommandTab == tabIdx;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _hubCommandTab = tabIdx),
+        onTap: () {
+          setState(() => _hubCommandTab = tabIdx);
+          if (tabIdx == 1) _loadLiveFleet();
+          if (tabIdx == 2) { _loadBottleReturns(); _loadPayouts(); }
+          if (tabIdx == 0) _loadHubInventory();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
