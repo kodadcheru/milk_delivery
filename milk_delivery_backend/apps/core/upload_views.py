@@ -17,8 +17,7 @@ MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 
 
 class FileUploadView(APIView):
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
@@ -29,6 +28,20 @@ class FileUploadView(APIView):
         folder = folder.replace("/", "").replace("\\", "").replace("..", "").strip()
         if not folder:
             folder = "proofs"
+
+        # Role-based folder write protection: only staff/admin/managers can write to store assets
+        if folder in ("banners", "products", "marketing", "config"):
+            user = request.user
+            is_manager_or_admin = (
+                user.is_staff
+                or user.is_superuser
+                or getattr(user, "role", "") in ("ADMIN", "PROVIDER", "HUB_MANAGER")
+            )
+            if not is_manager_or_admin:
+                return Response(
+                    {"detail": f"You do not have permission to upload assets to the '{folder}' directory."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
         # Ensure media proofs directory exists
         proofs_dir = Path(settings.MEDIA_ROOT) / folder

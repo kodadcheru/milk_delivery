@@ -331,6 +331,13 @@ class BottleReturnListCreateView(APIView):
         from apps.products.models import Product
 
         user = request.user
+        # Strict role restriction: Only delivery partners, hub managers, or admins can record bottle deposits
+        if getattr(user, "role", "") == User.Roles.CUSTOMER and not (user.is_staff or user.is_superuser):
+            return Response(
+                {"detail": "Customers cannot record bottle deposits. Only delivery partners or hub managers can record bottle deposits."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         customer_id = request.data.get("customer_id")
         product_id = request.data.get("product_id")
         quantity = int(request.data.get("quantity", 1))
@@ -363,15 +370,42 @@ class BottleReturnUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrHubManager]
 
     def patch(self, request, pk):
-        """Mark a bottle return as RETURNED or LOST."""
+        """Mark a bottle return as RETURNED or LOST with strict role and hub authorization."""
         from apps.deliveries.models import BottleReturn
+
+        user = request.user
+        is_manager_or_admin = (
+            user.is_staff
+            or user.is_superuser
+            or getattr(user, "role", "") in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER")
+        )
+        if not is_manager_or_admin:
+            return Response(
+                {"detail": "Only hub managers or platform administrators can verify and refund bottle returns."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         bottle = BottleReturn.objects.filter(pk=pk).first()
         if not bottle:
             return Response({"detail": "Bottle return record not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Hub Scoping: ensure hub manager can only refund bottles for their assigned hub
+        if not (user.is_staff or user.is_superuser):
+            if bottle.hub and user.assigned_hub and bottle.hub != user.assigned_hub:
+                return Response(
+                    {"detail": f"You are assigned to {user.assigned_hub.name} and cannot manage bottle returns for {bottle.hub.name}."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
         new_status = request.data.get("status")
         if new_status and new_status in dict(BottleReturn.Statuses.choices):
+            # Prevent duplicate refund attacks
+            if bottle.status == BottleReturn.Statuses.RETURNED:
+                return Response(
+                    {"detail": "This bottle deposit has already been refunded and finalized."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             bottle.status = new_status
             if new_status == BottleReturn.Statuses.RETURNED:
                 bottle.returned_date = date.today()
@@ -439,15 +473,50 @@ class ProviderPayoutListCreateView(APIView):
         return Response(payouts_data)
 
     def post(self, request):
-        """Request / trigger instant payout settlement for hub manager."""
+        """Request / trigger instant payout settlement for hub manager with strict role and hub validation."""
         from apps.deliveries.models import ProviderPayout, LocationHub, DeliveryTask
         from datetime import date
         from django.utils import timezone
         import random
 
         user = request.user
-        hub = getattr(user, "assigned_hub", None) or LocationHub.objects.first()
+        # Strict role restriction: Only hub managers or platform administrators can request payouts
+        is_manager_or_admin = (
+            user.is_staff
+            or user.is_superuser
+            or getattr(user, "role", "") in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER")
+        )
+        if not is_manager_or_admin:
+            return Response(
+                {"detail": "Only hub managers or platform administrators can request payout settlements."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Hub Scoping: ensure user is associated with a valid hub
+        hub = getattr(user, "assigned_hub", None)
+        if not hub and (user.is_staff or user.is_superuser):
+            hub_id = request.data.get("hub_id") or request.data.get("hub")
+            if hub_id:
+                hub = LocationHub.objects.filter(pk=hub_id).first()
+            if not hub:
+                hub = LocationHub.objects.first()
+
+        if not hub:
+            return Response(
+                {"detail": "You must be assigned to an active location hub to generate a provider payout."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         amount_req = request.data.get("amount")
+        if amount_req is not None:
+            try:
+                parsed_amount = Decimal(str(amount_req))
+                if parsed_amount <= Decimal("0"):
+                    return Response({"detail": "Payout amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception:
+                return Response({"detail": "Invalid payout amount format."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            parsed_amount = None
 
         today = date.today()
         period_start = today.replace(day=1)
@@ -455,22 +524,27 @@ class ProviderPayoutListCreateView(APIView):
 
         # Calculate actual completed deliveries for this hub
         completed_tasks = DeliveryTask.objects.filter(
-            status=DeliveryTask.Statuses.DELIVERED
+            status=DeliveryTask.Statuses.DELIVERED,
+            hub=hub,
         )
-        if hub:
-            completed_tasks = completed_tasks.filter(hub=hub)
 
-        deliv_count = completed_tasks.count() or 12
+        deliv_count = completed_tasks.count()
         tot_rev = Decimal("0.00")
         for t in completed_tasks:
             if t.subscription and t.subscription.product:
                 tot_rev += Decimal(str(t.subscription.product.price_per_unit)) * t.subscription.quantity
 
-        if tot_rev == Decimal("0.00"):
-            tot_rev = Decimal(str(amount_req or "4500.00"))
+        net_payout = parsed_amount if parsed_amount is not None else tot_rev
+        if net_payout <= Decimal("0"):
+            net_payout = Decimal("4500.00") if (user.is_staff or user.is_superuser) else Decimal("0.00")
 
-        net_payout = Decimal(str(amount_req)) if amount_req else tot_rev
-        ref_code = f"PAY-HYD-{random.randint(1000, 9999)}"
+        if net_payout <= Decimal("0"):
+            return Response(
+                {"detail": "No completed deliveries found to settle in this period, and no payout amount specified."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ref_code = f"PAY-{getattr(hub, 'hub_code', 'HUB')}-{random.randint(1000, 9999)}"
 
         payout = ProviderPayout.objects.create(
             hub=hub,
