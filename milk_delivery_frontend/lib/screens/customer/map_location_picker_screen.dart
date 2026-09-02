@@ -72,20 +72,22 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     final data = await LocationService.reverseGeocode(lat, lon);
     if (!mounted) return;
 
+    final hubCity = widget.state.primaryHub?.city ?? 'Kodad';
+
     if (data != null) {
       setState(() {
         _lastGeocodedData = data;
-        _shortAddress = data['short_address'] ?? 'Road No. 36, Jubilee Hills';
+        _shortAddress = data['short_address'] ?? data['title'] ?? 'Doorstep Drop';
         _fullAddress = data['full_address'] ?? '';
-        _areaCity = '${data['suburb'] ?? 'Jubilee Hills'}, ${data['city'] ?? 'Hyderabad'}';
+        _areaCity = '${data['suburb'] ?? 'Local Sector'}, ${data['city'] ?? hubCity}';
         _isGeocoding = false;
       });
       AppTheme.hapticSuccess();
     } else {
       setState(() {
         _lastGeocodedData = null;
-        _shortAddress = 'Jubilee Hills, Hyderabad';
-        _areaCity = 'Hyderabad, Telangana';
+        _shortAddress = 'Doorstep Delivery Point, $hubCity';
+        _areaCity = '$hubCity, Telangana';
         _isGeocoding = false;
       });
     }
@@ -117,24 +119,46 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     if (mounted) setState(() => _isLocating = false);
   }
 
-  Future<void> _searchPlaces(String query) async {
-    if (query.trim().isEmpty) {
-      setState(() => _searchResults = []);
+  void _searchPlaces(String query) {
+    _debounceTimer?.cancel();
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
       return;
     }
     setState(() => _isSearching = true);
-    final results = await LocationService.searchPlaces(query);
-    if (mounted) {
-      setState(() {
-        _searchResults = results;
-        _isSearching = false;
-      });
-    }
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      final results = await LocationService.fetchPlaceSuggestions(trimmed);
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _isSearching = false;
+        });
+      }
+    });
   }
 
-  void _selectSearchResult(Map<String, dynamic> place) {
-    final lat = place['lat'] as double;
-    final lon = place['lon'] as double;
+  Future<void> _selectSearchResult(Map<String, dynamic> place) async {
+    double lat = double.tryParse(place['lat']?.toString() ?? '') ?? 0.0;
+    double lon = double.tryParse(place['lon']?.toString() ?? '') ?? 0.0;
+
+    // If coordinates are missing, resolve from place_id
+    if ((lat == 0.0 || lon == 0.0) && place['place_id'] != null && (place['place_id'] as String).isNotEmpty) {
+      final details = await LocationService.fetchPlaceDetails(place['place_id']);
+      if (details != null) {
+        lat = double.tryParse(details['lat']?.toString() ?? '') ?? lat;
+        lon = double.tryParse(details['lon']?.toString() ?? '') ?? lon;
+      }
+    }
+
+    if (lat == 0.0 || lon == 0.0) {
+      lat = widget.state.currentLat;
+      lon = widget.state.currentLon;
+    }
+
     _currentCenter = LatLng(lat, lon);
     _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_currentCenter, 16.5));
     _searchController.clear();
@@ -400,11 +424,11 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
                           return ListTile(
                             leading: const Icon(Icons.place_outlined, color: UiTone.primary),
                             title: Text(
-                              place['short_title'] ?? '',
+                              (place['title'] ?? place['short_title'] ?? place['name'] ?? place['short_address'] ?? 'Location Point').toString(),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                             subtitle: Text(
-                              place['display_name'] ?? '',
+                              (place['subtitle'] ?? place['display_name'] ?? place['full_address'] ?? '').toString(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: Colors.grey[600], fontSize: 11),

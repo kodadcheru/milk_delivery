@@ -488,27 +488,44 @@ class HomeLocationSheet {
                             child: const Icon(Icons.place_rounded, color: UiTone.primary, size: 16),
                           ),
                           title: Text(
-                            item['title'] ?? item['short_title'] ?? item['display_name'] ?? '',
+                            (item['title'] ?? item['short_title'] ?? item['name'] ?? item['short_address'] ?? 'Location Point').toString(),
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                           ),
                           subtitle: Text(
-                            item['subtitle'] ?? item['full_address'] ?? item['display_name'] ?? '',
+                            (item['subtitle'] ?? item['display_name'] ?? item['full_address'] ?? '').toString(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 11, color: Colors.grey),
                           ),
-                          onTap: () {
-                            final lat = double.tryParse(item['lat']?.toString() ?? '17.001734') ?? 17.001734;
-                            final lon = double.tryParse(item['lon']?.toString() ?? '79.9625') ?? 79.9625;
-                            final chosenAddr = item['full_address'] ?? item['title'] ?? 'Custom Address';
+                          onTap: () async {
+                            double lat = double.tryParse(item['lat']?.toString() ?? '') ?? 0.0;
+                            double lon = double.tryParse(item['lon']?.toString() ?? '') ?? 0.0;
+                            String chosenAddr = (item['full_address'] ?? item['display_name'] ?? item['title'] ?? 'Custom Address').toString();
+
+                            if ((lat == 0.0 || lon == 0.0) && item['place_id'] != null && (item['place_id'] as String).isNotEmpty) {
+                              final details = await LocationService.fetchPlaceDetails(item['place_id']);
+                              if (details != null) {
+                                lat = double.tryParse(details['lat']?.toString() ?? '') ?? lat;
+                                lon = double.tryParse(details['lon']?.toString() ?? '') ?? lon;
+                                chosenAddr = details['full_address'] ?? chosenAddr;
+                              }
+                            }
+
+                            if (lat == 0.0 || lon == 0.0) {
+                              lat = state.currentLat;
+                              lon = state.currentLon;
+                            }
+
                             state.updateDeliveryLocation(chosenAddr, lat, lon);
-                            Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: UiTone.primary,
-                                content: Text('📍 Delivery address updated to: $chosenAddr'),
-                              ),
-                            );
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: UiTone.primary,
+                                  content: Text('📍 Delivery address updated to: $chosenAddr'),
+                                ),
+                              );
+                            }
                           },
                         );
                       },
