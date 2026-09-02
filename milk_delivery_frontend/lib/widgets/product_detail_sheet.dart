@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
-import '../screens/customer/subscription_address_selection_screen.dart';
+import '../screens/customer/subscription_success_screen.dart';
 import '../services/pack_pricing.dart';
 import '../theme/ui_format.dart';
-import '../theme/ui_text.dart';
 import '../theme/ui_tokens.dart';
+import 'home/home_location_sheet.dart';
 
-enum SubscriptionPlanType { weekly, monthly }
-
-/// Full subscription builder: pack size → quantity + frequency → duration →
-/// plan summary → **Subscribe →** (into the address flow).
-///
-/// This sheet is subscription-only. A one-time buyer uses [BuyOnceSheet]
-/// instead; that sheet offers a "Subscribe & save" hand-off into this one, so
-/// there is no longer a "Buy Once" escape hatch to reach here.
+/// Clean 3-Step Subscription Builder Micro-Flow:
+/// Step 1: Pack Size & Quantity (What & How Much)
+/// Step 2: Schedule & Delivery Shift (When)
+/// Step 3: Duration, Address & Review (Where & Confirmation)
 class ProductDetailSheet extends StatefulWidget {
   final ProductModel product;
   final AppState state;
 
-  const ProductDetailSheet({super.key, required this.product, required this.state});
+  const ProductDetailSheet({
+    super.key,
+    required this.product,
+    required this.state,
+  });
 
   static void show(BuildContext context, ProductModel product, AppState state) {
     showModalBottomSheet(
@@ -35,20 +35,39 @@ class ProductDetailSheet extends StatefulWidget {
 }
 
 class _ProductDetailSheetState extends State<ProductDetailSheet> {
+  int _currentStep = 0; // 0, 1, 2
+  late final PageController _pageController;
+
+  // ── Step 1: Pack & Quantity ──
   int _qty = 1;
-  String _schedule = 'DAILY'; // DAILY, ALTERNATE, WEEKDAYS
-  SubscriptionPlanType _planType = SubscriptionPlanType.weekly;
-  int _selectedWeeks = 1; // 1, 2, 3 weeks
-  int _selectedMonths = 1; // 1, 2, 3 months
   String _selectedPackSize = '1 Litre';
+  bool _isBadgeExpanded = false;
+
+  // ── Step 2: Frequency & Slot ──
+  String _schedule = 'DAILY'; // DAILY, ALTERNATE, CUSTOM
+  final Set<int> _customDays = {1, 2, 3, 4, 5, 6, 7}; // 1=Mon, 7=Sun
   int _selectedShift = 0; // 0: Morning, 1: Evening
   String _selectedSlot = '05:30 AM - 07:00 AM';
-  bool _isBadgeExpanded = false;
+
+  // ── Step 3: Duration, Start Date, Address & Drop Note ──
+  DateTime _startDate = DateTime.now().add(const Duration(days: 1));
+  int _durationDays = 30; // 15, 30, 60
+  String _dropPreference = 'Ring Bell 🔔';
+  final TextEditingController _instructionsController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _selectedPackSize = PackPricing.defaultSizeFor(widget.product);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _instructionsController.dispose();
+    super.dispose();
   }
 
   List<String> get _availablePackSizes => PackPricing.sizesFor(widget.product);
@@ -57,487 +76,628 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
       PackPricing.effectiveUnitPrice(widget.product.pricePerUnit, _selectedPackSize);
 
   int get _totalDeliveryDays {
-    int totalCalendarDays;
-    if (_planType == SubscriptionPlanType.weekly) {
-      totalCalendarDays = _selectedWeeks * 7;
-    } else {
-      totalCalendarDays = _selectedMonths * 30;
-    }
-
     if (_schedule == 'DAILY') {
-      return totalCalendarDays;
+      return _durationDays;
     } else if (_schedule == 'ALTERNATE') {
-      return (totalCalendarDays / 2).ceil();
+      return (_durationDays / 2).ceil();
     } else {
-      return ((totalCalendarDays / 7) * 5).round().clamp(1, totalCalendarDays);
+      int count = 0;
+      for (int i = 0; i < _durationDays; i++) {
+        final d = _startDate.add(Duration(days: i));
+        if (_customDays.contains(d.weekday)) {
+          count++;
+        }
+      }
+      return count.clamp(1, _durationDays);
     }
   }
 
   double get _singleDeliveryCost => _effectiveUnitPrice * _qty;
-
   double get _totalSubscriptionCost => _singleDeliveryCost * _totalDeliveryDays;
 
-  String get _durationLabel {
-    if (_planType == SubscriptionPlanType.weekly) {
-      return '$_selectedWeeks ${_selectedWeeks == 1 ? "Week" : "Weeks"}';
-    } else {
-      return '$_selectedMonths ${_selectedMonths == 1 ? "Month" : "Months"}';
-    }
+  String get _formattedStartDate {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}';
   }
 
-  String get _formattedTomorrowDate {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[tomorrow.month - 1]} ${tomorrow.day}, ${tomorrow.year}';
+  void _goToStep(int step) {
+    setState(() => _currentStep = step);
+    _pageController.animateToPage(
+      step,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.product;
+    return AnimatedBuilder(
+      animation: widget.state,
+      builder: (context, _) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.78,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // ── Top Header & Step Progress Indicator ──
+              _buildTopHeader(),
 
+              // ── 3-Step Swipeable/Navigable PageView ──
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(), // Controlled via buttons
+                  children: [
+                    _buildStep1PackAndQty(),
+                    _buildStep2ScheduleAndSlot(),
+                    _buildStep3DurationAndAddress(),
+                  ],
+                ),
+              ),
+
+              // ── Bottom Fixed Action Bar ──
+              _buildBottomBar(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // ── HEADER & STEPPER ──
+  // ─────────────────────────────────────────────────────────
+  Widget _buildTopHeader() {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
       decoration: const BoxDecoration(
-        color: UiTone.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl)),
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
       ),
       child: Column(
         children: [
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: UiTone.surfaceBorder,
-                        borderRadius: BorderRadius.circular(UiRadius.pill),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 1. Hero (compact)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Product image
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(UiRadius.sm),
-                        child: item.imageUrl.isNotEmpty
-                            ? Image.network(
-                                item.imageUrl,
-                                height: 70,
-                                width: 70,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _heroFallback(item),
-                              )
-                            : _heroFallback(item),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.localizedName(widget.state.currentLanguage), style: UiText.h2, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            const SizedBox(height: 4),
-                            // Pack • price (keeps the discount look)
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text('$_selectedPackSize • ', style: UiText.body),
-                                Text(UiFormat.price(_effectiveUnitPrice), style: UiText.bodyStrong),
-                                const SizedBox(width: 6),
-                                Text(UiFormat.strike(_effectiveUnitPrice), style: UiText.priceStrike),
-                              ],
-                            ),
-                            if (item.category == 'MILK') ...[
-                              const SizedBox(height: 8),
-                              _trustBadge(),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 2. Pack size selector
-                  _sectionHeader(Icons.straighten, 'Pack Size'),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _availablePackSizes.map((size) {
-                      final isSelected = _selectedPackSize == size;
-                      return ChoiceChip(
-                        label: Text(
-                          size,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                            color: isSelected ? Colors.white : UiTone.ink,
-                          ),
-                        ),
-                        selected: isSelected,
-                        onSelected: (val) => setState(() => _selectedPackSize = size),
-                        selectedColor: UiTone.primary,
-                        backgroundColor: UiTone.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                          side: BorderSide(color: isSelected ? UiTone.primary : UiTone.surfaceBorder),
-                        ),
-                        showCheckmark: false,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 3. Quantity + Frequency
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Quantity
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionHeader(Icons.shopping_basket_outlined, 'Quantity'),
-                            const SizedBox(height: 10),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: UiTone.surface,
-                                borderRadius: BorderRadius.circular(UiRadius.sm),
-                                border: Border.all(color: UiTone.surfaceBorder),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.remove, size: 18, color: _qty > 1 ? UiTone.primary : UiTone.surfaceBorder),
-                                    onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                                  ),
-                                  Text('$_qty', style: UiText.bodyStrong),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 18, color: UiTone.primary),
-                                    onPressed: () => setState(() => _qty++),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Frequency
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionHeader(Icons.event_repeat, 'Frequency'),
-                            const SizedBox(height: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildCompactChoice('DAILY', 'Daily', _schedule),
-                                const SizedBox(height: 6),
-                                _buildCompactChoice('ALTERNATE', 'Alternate', _schedule),
-                                const SizedBox(height: 6),
-                                _buildCompactChoice('WEEKDAYS', 'Mon - Fri', _schedule),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 4. Plan duration
-                  _sectionHeader(Icons.calendar_month_outlined, 'Duration'),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _planType = SubscriptionPlanType.weekly),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _planType == SubscriptionPlanType.weekly ? UiTone.primary : UiTone.surface,
-                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(UiRadius.xs)),
-                              border: Border.all(color: _planType == SubscriptionPlanType.weekly ? UiTone.primary : UiTone.surfaceBorder),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Weekly',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: _planType == SubscriptionPlanType.weekly ? Colors.white : UiTone.softText,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _planType = SubscriptionPlanType.monthly),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _planType == SubscriptionPlanType.monthly ? UiTone.primary : UiTone.surface,
-                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(UiRadius.xs)),
-                              border: Border.all(color: _planType == SubscriptionPlanType.monthly ? UiTone.primary : UiTone.surfaceBorder),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Monthly',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: _planType == SubscriptionPlanType.monthly ? Colors.white : UiTone.softText,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: _planType == SubscriptionPlanType.weekly
-                        ? [1, 2, 3].map((w) => _buildDurationChip('$w Wk', _selectedWeeks == w, () => setState(() => _selectedWeeks = w))).toList()
-                        : [1, 2, 3].map((m) => _buildDurationChip('$m Mo', _selectedMonths == m, () => setState(() => _selectedMonths = m))).toList(),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 4b. Preferred Delivery Shift & Slot (Morning / Evening)
-                  _sectionHeader(Icons.access_time_filled_rounded, 'Delivery Slot & Shift'),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: UiTone.surfaceMuted,
-                      borderRadius: BorderRadius.circular(UiRadius.pill),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedShift = 0;
-                                _selectedSlot = '05:30 AM - 07:00 AM';
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 7),
-                              decoration: BoxDecoration(
-                                color: _selectedShift == 0 ? UiTone.primary : Colors.transparent,
-                                borderRadius: BorderRadius.circular(UiRadius.pill),
-                              ),
-                              alignment: Alignment.center,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text('☀️ ', style: TextStyle(fontSize: 12)),
-                                  Text(
-                                    'Morning Drop',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: _selectedShift == 0 ? Colors.white : UiTone.softText,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedShift = 1;
-                                _selectedSlot = '05:00 PM - 07:00 PM';
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 7),
-                              decoration: BoxDecoration(
-                                color: _selectedShift == 1 ? const Color(0xFF7C3AED) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(UiRadius.pill),
-                              ),
-                              alignment: Alignment.center,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text('🌙 ', style: TextStyle(fontSize: 12)),
-                                  Text(
-                                    'Evening Drop',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: _selectedShift == 1 ? Colors.white : UiTone.softText,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: _selectedShift == 0
-                        ? [
-                            Expanded(
-                              child: _buildSlotChip(
-                                '05:30 AM - 07:00 AM',
-                                '⚡ Early Morning',
-                                '05:30 - 07:00 AM',
-                                _selectedSlot == '05:30 AM - 07:00 AM',
-                                () => setState(() => _selectedSlot = '05:30 AM - 07:00 AM'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSlotChip(
-                                '07:00 AM - 08:30 AM',
-                                '🌅 Standard',
-                                '07:00 - 08:30 AM',
-                                _selectedSlot == '07:00 AM - 08:30 AM',
-                                () => setState(() => _selectedSlot = '07:00 AM - 08:30 AM'),
-                              ),
-                            ),
-                          ]
-                        : [
-                            Expanded(
-                              child: _buildSlotChip(
-                                '05:00 PM - 07:00 PM',
-                                '🌇 Early Evening',
-                                '05:00 - 07:00 PM',
-                                _selectedSlot == '05:00 PM - 07:00 PM',
-                                () => setState(() => _selectedSlot = '05:00 PM - 07:00 PM'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSlotChip(
-                                '06:30 PM - 08:30 PM',
-                                '🌙 Standard',
-                                '06:30 - 08:30 PM',
-                                _selectedSlot == '06:30 PM - 08:30 PM',
-                                () => setState(() => _selectedSlot = '06:30 PM - 08:30 PM'),
-                              ),
-                            ),
-                          ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 5. Plan summary card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: UiTone.primarySoft,
-                      borderRadius: BorderRadius.circular(UiRadius.md),
-                      border: Border.all(color: UiTone.primary.withValues(alpha: 0.2)),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Starts $_formattedTomorrowDate', style: UiText.bodyStrong.copyWith(fontSize: 12)),
-                                const SizedBox(height: 4),
-                                Text('$_totalDeliveryDays Deliveries', style: UiText.label.copyWith(color: UiTone.primary, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text('${UiFormat.price(_singleDeliveryCost)}/day', style: UiText.label.copyWith(color: UiTone.softText)),
-                                const SizedBox(height: 4),
-                                Text('${UiFormat.price(_totalSubscriptionCost)} total', style: UiText.h2.copyWith(fontSize: 16)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Divider(height: 1, color: UiTone.successSoft),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.wallet, size: 14, color: UiTone.success),
-                            const SizedBox(width: 6),
-                            Text('Prepaid from wallet • Cancel anytime', style: UiText.caption.copyWith(color: UiTone.primaryDark)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+          // Drag handle
+          Center(
+            child: Container(
+              width: 42,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(UiRadius.pill),
               ),
             ),
           ),
+          const SizedBox(height: 14),
 
-          // 6. Bottom CTA bar — subscribe only
+          // Title row with close button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _currentStep == 0
+                        ? '1. Select Pack & Quantity'
+                        : _currentStep == 1
+                            ? '2. Choose Delivery Schedule'
+                            : '3. Duration & Confirm',
+                    style: const TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Step ${_currentStep + 1} of 3 • Dairy Subscription',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                borderRadius: BorderRadius.circular(UiRadius.pill),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Progress Step Indicators
+          Row(
+            children: [
+              _stepPill(0, 'Pack & Qty', Icons.shopping_basket_rounded),
+              _stepConnector(0),
+              _stepPill(1, 'Schedule', Icons.calendar_today_rounded),
+              _stepConnector(1),
+              _stepPill(2, 'Confirm', Icons.check_circle_rounded),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepPill(int index, String label, IconData icon) {
+    final isActive = _currentStep >= index;
+    final isCurrent = _currentStep == index;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          // Allow going backwards to completed steps
+          if (_currentStep > index) {
+            _goToStep(index);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: isCurrent
+                ? UiTone.primary.withValues(alpha: 0.12)
+                : isActive
+                    ? const Color(0xFFECFDF5)
+                    : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(UiRadius.sm),
+            border: Border.all(
+              color: isCurrent
+                  ? UiTone.primary
+                  : isActive
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFE2E8F0),
+              width: isCurrent ? 1.4 : 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 13,
+                color: isCurrent
+                    ? UiTone.primary
+                    : isActive
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFF94A3B8),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                  color: isCurrent
+                      ? UiTone.primary
+                      : isActive
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFF94A3B8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _stepConnector(int index) {
+    final isDone = _currentStep > index;
+    return Container(
+      width: 10,
+      height: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      color: isDone ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // ── STEP 1: PACK & QUANTITY (WHAT) ──
+  // ─────────────────────────────────────────────────────────
+  Widget _buildStep1PackAndQty() {
+    final item = widget.product;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Compact Product Hero
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: UiTone.surface,
-              boxShadow: [
-                BoxShadow(color: UiTone.ink.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4)),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: item.imageUrl.isNotEmpty
+                      ? Image.network(
+                          item.imageUrl,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, error, stackTrace) => _heroFallback(item),
+                        )
+                      : _heroFallback(item),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.localizedName(widget.state.currentLanguage),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Text(
+                            '$_selectedPackSize • ',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                          ),
+                          Text(
+                            UiFormat.price(_effectiveUnitPrice),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: UiTone.primary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified_rounded, size: 11, color: Color(0xFF10B981)),
+                            SizedBox(width: 3),
+                            Text(
+                              'Pure Cow Dairy • 05:30 AM Farm Fresh',
+                              style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: item.isOutOfStock ? null : UiGradient.primary,
-                  color: item.isOutOfStock ? UiTone.surfaceMuted : null,
-                  borderRadius: BorderRadius.circular(UiRadius.md),
-                  boxShadow: item.isOutOfStock ? null : UiShadow.glowPrimary,
+          ),
+
+          if (item.category == 'MILK') ...[
+            const SizedBox(height: 12),
+            _trustBadge(),
+          ],
+
+          const SizedBox(height: 20),
+
+          // 2. Select Pack Size
+          const Row(
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 16, color: Color(0xFF0F172A)),
+              SizedBox(width: 6),
+              Text('Choose Pack Size', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: _availablePackSizes.map((size) {
+              final isSelected = _selectedPackSize == size;
+              final priceForSize = PackPricing.effectiveUnitPrice(item.pricePerUnit, size);
+              final isRecommended = size.contains('1');
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedPackSize = size),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? UiTone.primarySoft : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? UiTone.primary : const Color(0xFFE2E8F0),
+                        width: isSelected ? 1.8 : 1.0,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: UiTone.primary.withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      children: [
+                        if (isRecommended)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: UiTone.primary,
+                              borderRadius: BorderRadius.circular(UiRadius.pill),
+                            ),
+                            child: const Text(
+                              'POPULAR ⭐',
+                              style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                          ),
+                        Text(
+                          size,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                            color: isSelected ? UiTone.primaryDark : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          UiFormat.price(priceForSize),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? UiTone.primary : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(UiRadius.md),
-                    onTap: item.isOutOfStock ? null : _onSubscribeTap,
-                    child: Center(
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 3. Daily Quantity Stepper
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Daily Delivery Quantity',
+                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_qty * (double.tryParse(_selectedPackSize.split(' ').first) ?? 1.0)} Litres each delivery',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(UiRadius.pill),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.remove, size: 18, color: _qty > 1 ? UiTone.primary : const Color(0xFFCBD5E1)),
+                        onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '$_qty',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add, size: 18, color: UiTone.primary),
+                        onPressed: () => setState(() => _qty++),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // Daily Rate Snapshot
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFA7F3D0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF10B981)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Estimated Daily Cost:',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF065F46)),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${UiFormat.price(_singleDeliveryCost)} / day',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF047857)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // ── STEP 2: SCHEDULE & TIME SLOT (WHEN) ──
+  // ─────────────────────────────────────────────────────────
+  Widget _buildStep2ScheduleAndSlot() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Frequency Section
+          const Row(
+            children: [
+              Icon(Icons.event_repeat_rounded, size: 16, color: Color(0xFF0F172A)),
+              SizedBox(width: 6),
+              Text('How Often Do You Need It?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Frequency Options (Cards)
+          _frequencyOptionCard(
+            key: 'DAILY',
+            title: 'Everyday (Daily)',
+            subtitle: 'Fresh milk delivered 7 days a week',
+            badge: 'MOST POPULAR 🌟',
+          ),
+          const SizedBox(height: 8),
+          _frequencyOptionCard(
+            key: 'ALTERNATE',
+            title: 'Alternate Days',
+            subtitle: 'Delivered every 2nd day (Mon, Wed, Fri...)',
+          ),
+          const SizedBox(height: 8),
+          _frequencyOptionCard(
+            key: 'CUSTOM',
+            title: 'Custom Days of Week',
+            subtitle: 'Choose specific days (e.g. Weekends only)',
+          ),
+
+          // Custom Days Selector (Revealed if CUSTOM selected)
+          if (_schedule == 'CUSTOM') ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Select delivery days:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF334155))),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _dayBubble(1, 'M'),
+                      _dayBubble(2, 'T'),
+                      _dayBubble(3, 'W'),
+                      _dayBubble(4, 'T'),
+                      _dayBubble(5, 'F'),
+                      _dayBubble(6, 'S'),
+                      _dayBubble(7, 'S'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Shift & Slot Section
+          const Row(
+            children: [
+              Icon(Icons.access_time_filled_rounded, size: 16, color: Color(0xFF0F172A)),
+              SizedBox(width: 6),
+              Text('Preferred Delivery Shift & Slot', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Shift Switcher
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(UiRadius.pill),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedShift = 0;
+                        _selectedSlot = '05:30 AM - 07:00 AM';
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _selectedShift == 0 ? UiTone.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                      ),
+                      alignment: Alignment.center,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.repeat_rounded, color: Colors.white, size: 20),
-                          const SizedBox(width: 8),
+                          const Text('☀️ ', style: TextStyle(fontSize: 12)),
                           Text(
-                            item.isOutOfStock ? 'Sold Out' : 'CONFIRM SUBSCRIPTION • ${UiFormat.price(_totalSubscriptionCost)} / Day →',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.4,
+                            'Morning Drop',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _selectedShift == 0 ? Colors.white : const Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -545,6 +705,619 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ),
                   ),
                 ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedShift = 1;
+                        _selectedSlot = '05:00 PM - 07:00 PM';
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _selectedShift == 1 ? const Color(0xFF7C3AED) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('🌙 ', style: TextStyle(fontSize: 12)),
+                          Text(
+                            'Evening Drop',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _selectedShift == 1 ? Colors.white : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Slots Available
+          Row(
+            children: _selectedShift == 0
+                ? [
+                    Expanded(
+                      child: _slotSelectionChip(
+                        '05:30 AM - 07:00 AM',
+                        '⚡ Early Morning',
+                        '05:30 - 07:00 AM',
+                        _selectedSlot == '05:30 AM - 07:00 AM',
+                        () => setState(() => _selectedSlot = '05:30 AM - 07:00 AM'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _slotSelectionChip(
+                        '07:00 AM - 08:30 AM',
+                        '🌅 Standard',
+                        '07:00 - 08:30 AM',
+                        _selectedSlot == '07:00 AM - 08:30 AM',
+                        () => setState(() => _selectedSlot = '07:00 AM - 08:30 AM'),
+                      ),
+                    ),
+                  ]
+                : [
+                    Expanded(
+                      child: _slotSelectionChip(
+                        '05:00 PM - 07:00 PM',
+                        '🌇 Early Evening',
+                        '05:00 - 07:00 PM',
+                        _selectedSlot == '05:00 PM - 07:00 PM',
+                        () => setState(() => _selectedSlot = '05:00 PM - 07:00 PM'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _slotSelectionChip(
+                        '06:30 PM - 08:30 PM',
+                        '🌙 Standard',
+                        '06:30 - 08:30 PM',
+                        _selectedSlot == '06:30 PM - 08:30 PM',
+                        () => setState(() => _selectedSlot = '06:30 PM - 08:30 PM'),
+                      ),
+                    ),
+                  ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _frequencyOptionCard({
+    required String key,
+    required String title,
+    required String subtitle,
+    String? badge,
+  }) {
+    final isSelected = _schedule == key;
+
+    return GestureDetector(
+      onTap: () => setState(() => _schedule = key),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? UiTone.primarySoft : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? UiTone.primary : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+              size: 20,
+              color: isSelected ? UiTone.primary : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                          color: isSelected ? UiTone.primaryDark : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      if (badge != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: UiTone.primary,
+                            borderRadius: BorderRadius.circular(UiRadius.pill),
+                          ),
+                          child: Text(
+                            badge,
+                            style: const TextStyle(fontSize: 7.5, fontWeight: FontWeight.w900, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dayBubble(int dayNum, String label) {
+    final isSelected = _customDays.contains(dayNum);
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            if (_customDays.length > 1) {
+              _customDays.remove(dayNum);
+            }
+          } else {
+            _customDays.add(dayNum);
+          }
+        });
+      },
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: isSelected ? UiTone.primary : Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: UiTone.primary.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: isSelected ? Colors.white : const Color(0xFF334155),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _slotSelectionChip(String val, String title, String subtitle, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? UiTone.primarySoft : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? UiTone.primary : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.6 : 1.0,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? UiTone.primaryDark : const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? UiTone.primary : const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // ── STEP 3: DURATION, ADDRESS & CONFIRM (WHERE & REVIEW) ──
+  // ─────────────────────────────────────────────────────────
+  Widget _buildStep3DurationAndAddress() {
+    final activeAddr = widget.state.activeAddress;
+    final displayAddr = activeAddr?.summaryAddress ?? widget.state.currentDeliveryAddress;
+    final currentUser = widget.state.currentUser;
+    final walletBal = currentUser?.walletBalance ?? 0.0;
+    final hasEnoughBalance = walletBal >= _singleDeliveryCost * 3; // At least 3 days buffer
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Start Date & Plan Duration
+          Row(
+            children: [
+              // Start Date Pill
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _startDate,
+                      firstDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(const Duration(days: 30)),
+                    );
+                    if (picked != null) {
+                      setState(() => _startDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Starts On', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.bolt_rounded, size: 13, color: Color(0xFF10B981)),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                _formattedStartDate,
+                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Duration Dropdown Chips
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Duration', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.repeat_rounded, size: 13, color: UiTone.primary),
+                          const SizedBox(width: 3),
+                          Text(
+                            '$_durationDays Days Plan',
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Duration Pills (15, 30, 60 days)
+          Row(
+            children: [15, 30, 60].map((d) {
+              final isSel = _durationDays == d;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _durationDays = d),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSel ? UiTone.primary : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$d Days',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: isSel ? Colors.white : const Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 18),
+
+          // 2. Delivery Doorstep Address
+          const Row(
+            children: [
+              Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF0F172A)),
+              SizedBox(width: 6),
+              Text('Delivery Address', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFECFDF5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(activeAddr?.icon ?? '🏠', style: const TextStyle(fontSize: 16)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activeAddr?.title ?? 'Doorstep Address',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        displayAddr,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.3),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    HomeLocationSheet.show(context, widget.state);
+                  },
+                  child: const Text(
+                    'Change ▾',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: UiTone.primary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 3. Doorstep Instructions (1-tap chips)
+          const Text('Doorstep Preference:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF334155))),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              _dropPrefChip('🔔 Ring Bell'),
+              const SizedBox(width: 6),
+              _dropPrefChip('🔕 Don\'t Ring'),
+              const SizedBox(width: 6),
+              _dropPrefChip('🛍️ In Milk Bag'),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          // 4. Payment & Wallet Summary Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$_totalDeliveryDays deliveries × ${UiFormat.price(_singleDeliveryCost)}',
+                      style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+                    ),
+                    Text(
+                      UiFormat.price(_totalSubscriptionCost),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF10B981)),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Wallet: ${UiFormat.price(walletBal)}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                        ),
+                      ],
+                    ),
+                    if (hasEnoughBalance)
+                      const Text('Ready for Drop ✅', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF10B981)))
+                    else
+                      Text(
+                        'Recharge ${UiFormat.price((_singleDeliveryCost * 3) - walletBal)} recommended',
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dropPrefChip(String label) {
+    final isSelected = _dropPreference == label;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _dropPreference = label),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected ? UiTone.primary.withValues(alpha: 0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? UiTone.primaryDark : const Color(0xFF475569),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // ── BOTTOM ACTION BAR ──
+  // ─────────────────────────────────────────────────────────
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Back button (Only visible on Steps 2 and 3)
+          if (_currentStep > 0) ...[
+            InkWell(
+              onTap: () => _goToStep(_currentStep - 1),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                alignment: Alignment.center,
+                child: const Row(
+                  children: [
+                    Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF475569)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Back',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
+
+          // Primary Forward / Confirm Button
+          Expanded(
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _onPrimaryActionTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: UiTone.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _currentStep == 0
+                                ? 'Next: Choose Schedule →'
+                                : _currentStep == 1
+                                    ? 'Next: Review & Address →'
+                                    : 'CONFIRM • ${UiFormat.price(_singleDeliveryCost)}/day',
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, letterSpacing: 0.2),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -553,20 +1326,74 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     );
   }
 
-  Widget _heroFallback(ProductModel item) => Container(
-        height: 70,
-        width: 70,
-        color: UiTone.primarySoft,
-        alignment: Alignment.center,
-        child: Text(item.icon, style: const TextStyle(fontSize: 32)),
+  void _onPrimaryActionTap() {
+    if (_currentStep < 2) {
+      _goToStep(_currentStep + 1);
+    } else {
+      _submitSubscription();
+    }
+  }
+
+  Future<void> _submitSubscription() async {
+    setState(() => _isSubmitting = true);
+
+    try {
+      final customProduct = widget.product.copyWith(
+        pricePerUnit: _effectiveUnitPrice,
+        unitQuantity: _selectedPackSize,
       );
 
-  Widget _sectionHeader(IconData icon, String label) => Row(
-        children: [
-          Icon(icon, size: 16, color: UiTone.ink),
-          const SizedBox(width: 6),
-          Text(label, style: UiText.bodyStrong),
-        ],
+      final targetAddress = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
+
+      await widget.state.createNewSubscription(
+        customProduct,
+        _qty,
+        _schedule,
+        deliverySlot: _selectedSlot,
+        deliveryAddress: targetAddress,
+        deliveryInstructions: _dropPreference,
+        packSize: _selectedPackSize,
+      );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      // Dismiss the bottom sheet
+      Navigator.of(context).pop();
+
+      // Show the celebration success screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (c) => SubscriptionSuccessScreen(
+            productName: widget.product.name,
+            packSize: _selectedPackSize,
+            quantity: _qty,
+            schedule: _schedule,
+            slot: _selectedSlot,
+            address: targetAddress,
+            totalCost: _totalSubscriptionCost,
+            state: widget.state,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          content: Text('❌ Subscription failed: ${e.toString().replaceAll('Exception: ', '')}'),
+        ),
+      );
+    }
+  }
+
+  Widget _heroFallback(ProductModel item) => Container(
+        height: 64,
+        width: 64,
+        color: UiTone.primarySoft,
+        alignment: Alignment.center,
+        child: Text(item.icon, style: const TextStyle(fontSize: 28)),
       );
 
   Widget _trustBadge() {
@@ -587,201 +1414,52 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     final snfVal = activeBatch != null ? '${activeBatch['snf_percentage']}%' : (nameLower.contains('buffalo') ? '9.0%' : '8.5%');
     final waterVal = activeBatch != null ? '${activeBatch['water_percentage']}%' : '0.0%';
     final tempVal = activeBatch != null ? '${activeBatch['temperature_celsius']}°C' : '3.8°C';
-    final batchCode = activeBatch != null ? (activeBatch['batch_code'] ?? 'BATCH-CERT-01') : 'BATCH-CERT-01';
-    final certNote = activeBatch != null ? (activeBatch['quality_certificate_note'] ?? 'FSSAI Certified • Passed 24 Purity Checks') : 'FSSAI Certified • Passed 24 Purity Checks';
 
     return GestureDetector(
       onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: UiTone.primarySoft,
-          borderRadius: BorderRadius.circular(UiRadius.xs),
-          border: Border.all(color: UiTone.primary.withValues(alpha: 0.25)),
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFBBF7D0)),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 const Text('🔬 ', style: TextStyle(fontSize: 12)),
                 Expanded(
                   child: Text(
-                    'Today\'s Certified Lab Batch • $fatVal Fat • $waterVal Water',
-                    style: UiText.caption.copyWith(color: UiTone.primaryDark, fontWeight: FontWeight.w900, fontSize: 11),
+                    'Certified Daily Batch • $fatVal Fat • $waterVal Water • $tempVal',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF166534)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 16, color: UiTone.primary),
+                Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, size: 16, color: const Color(0xFF166534)),
               ],
             ),
             if (_isBadgeExpanded) ...[
-              const SizedBox(height: 8),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('🥛 Solid Not Fat (SNF):', style: UiText.caption.copyWith(color: UiTone.softText)),
-                  Text(snfVal, style: UiText.caption.copyWith(color: UiTone.ink, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('❄️ Chilling Temperature:', style: UiText.caption.copyWith(color: UiTone.softText)),
-                  Text(tempVal, style: UiText.caption.copyWith(color: UiTone.ink, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('🏷️ Batch ID:', style: UiText.caption.copyWith(color: UiTone.softText)),
-                  Text(batchCode, style: UiText.caption.copyWith(color: UiTone.primary, fontWeight: FontWeight.w800)),
-                ],
-              ),
               const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                  border: Border.all(color: UiTone.primary.withValues(alpha: 0.15)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.verified_rounded, size: 12, color: UiTone.primary),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        certNote,
-                        style: UiText.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: UiTone.primary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+              const Divider(height: 1, color: Color(0xFFBBF7D0)),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Solid Not Fat (SNF):', style: TextStyle(fontSize: 10.5, color: Color(0xFF166534))),
+                  Text(snfVal, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Chilling Temp:', style: TextStyle(fontSize: 10.5, color: Color(0xFF166534))),
+                  Text(tempVal, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                ],
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompactChoice(String val, String label, String currentVal) {
-    final isSelected = currentVal == val;
-    return GestureDetector(
-      onTap: () => setState(() => _schedule = val),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary : UiTone.surface,
-          borderRadius: BorderRadius.circular(UiRadius.xs),
-          border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : UiTone.ink,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDurationChip(String label, bool isSelected, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? UiTone.primary : UiTone.surface,
-            borderRadius: BorderRadius.circular(UiRadius.xs),
-            border: Border.all(color: isSelected ? UiTone.primary : UiTone.surfaceBorder),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : UiTone.ink,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSlotChip(String val, String title, String subtitle, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primarySoft : UiTone.surface,
-          borderRadius: BorderRadius.circular(UiRadius.xs),
-          border: Border.all(
-            color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? UiTone.primaryDark : UiTone.ink,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 10,
-                color: isSelected ? UiTone.primary : UiTone.softText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onSubscribeTap() {
-    final customProduct = widget.product.copyWith(
-      pricePerUnit: _effectiveUnitPrice,
-      unitQuantity: _selectedPackSize,
-    );
-
-    // CRITICAL UX FIX: Do NOT pop the sheet. Push on top.
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (c) => SubscriptionAddressSelectionScreen(
-          product: customProduct,
-          quantity: _qty,
-          schedule: _schedule,
-          packSize: _selectedPackSize,
-          timeSlot: _selectedSlot,
-          durationLabel: _durationLabel,
-          totalDeliveryDays: _totalDeliveryDays,
-          singleDeliveryCost: _singleDeliveryCost,
-          totalCost: _totalSubscriptionCost,
-          deliveryInstructions: '', // removed from this screen
-          state: widget.state,
         ),
       ),
     );
