@@ -179,4 +179,82 @@ class LocationService {
 
     return [];
   }
+
+  /// Extracts a clean, concise City or Town name (e.g. 'Kodad', 'Hyderabad', 'Suryapet')
+  static String extractCityOrTown(String? raw, {String fallback = 'Kodad'}) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    final clean = raw.trim();
+    if (clean.toLowerCase().contains('kodad')) return 'Kodad';
+    if (clean.toLowerCase().contains('hyderabad')) return 'Hyderabad';
+    if (clean.toLowerCase().contains('suryapet')) return 'Suryapet';
+    if (clean.toLowerCase().contains('khammam')) return 'Khammam';
+    if (clean.toLowerCase().contains('vijayawada')) return 'Vijayawada';
+    if (clean.toLowerCase().contains('nalgonda')) return 'Nalgonda';
+
+    final parts = clean.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    if (parts.isNotEmpty) {
+      for (final p in parts) {
+        final lower = p.toLowerCase();
+        if (!p.contains(RegExp(r'\d')) &&
+            p.length <= 24 &&
+            !lower.contains('road') &&
+            !lower.contains('colony') &&
+            !lower.contains('nagar') &&
+            !lower.contains('street') &&
+            !lower.contains('flat') &&
+            !lower.contains('house') &&
+            !lower.contains('lane') &&
+            !lower.contains('door')) {
+          return p;
+        }
+      }
+      return parts.first;
+    }
+    return fallback;
+  }
+
+  /// Fast debounced place autocomplete suggestions
+  static Future<List<Map<String, dynamic>>> fetchPlaceSuggestions(String query) async {
+    final norm = query.trim().toLowerCase();
+    if (norm.isEmpty) return [];
+
+    if (_searchCache.containsKey('sug_$norm')) {
+      return _searchCache['sug_$norm']!;
+    }
+
+    if (googleMapsApiKey.isNotEmpty) {
+      try {
+        final encoded = Uri.encodeComponent(query);
+        final url = Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$encoded&components=country:in&key=$googleMapsApiKey',
+        );
+        final res = await http.get(url).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body);
+          if (data['status'] == 'OK' && (data['predictions'] as List).isNotEmpty) {
+            final List preds = data['predictions'];
+            final results = <Map<String, dynamic>>[];
+            for (var p in preds.take(6)) {
+              final structured = p['structured_formatting'] ?? {};
+              final mainText = structured['main_text'] ?? p['description']?.toString().split(',').first ?? '';
+              final secondaryText = structured['secondary_text'] ?? p['description'] ?? '';
+              results.add({
+                'title': mainText.toString(),
+                'subtitle': secondaryText.toString(),
+                'place_id': p['place_id']?.toString() ?? '',
+                'full_address': p['description']?.toString() ?? '',
+                'short_address': mainText.toString(),
+              });
+            }
+            if (results.isNotEmpty) {
+              _searchCache['sug_$norm'] = results;
+              return results;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    return searchPlaces(query);
+  }
 }

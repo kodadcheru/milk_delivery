@@ -106,9 +106,9 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
     final state = widget.state;
-    final titleTag = state.activeAddress?.title ?? (state.activeAddress?.customTag.isNotEmpty == true ? state.activeAddress!.customTag : 'Home');
+    final cityOrTown = state.currentCityOrTown;
     
-    // Extract clean, concise area/locality name instead of full raw address string
+    // Extract clean, concise area/locality name
     String areaName = '';
     if (state.activeAddress != null) {
       final addr = state.activeAddress!;
@@ -119,17 +119,17 @@ class _HomeLocationBarState extends State<HomeLocationBar>
         areaName = parts.isNotEmpty ? parts.first : addr.streetAddress;
       } else if (addr.buildingName.isNotEmpty) {
         areaName = addr.buildingName;
-      } else if (addr.city.isNotEmpty) {
-        areaName = addr.city;
-      } else {
-        areaName = 'Kodad';
+      } else if (addr.title.isNotEmpty && addr.title != 'Home' && addr.title != 'Work') {
+        areaName = addr.title;
       }
     } else if (state.currentDeliveryAddress.isNotEmpty && state.currentDeliveryAddress != 'Select Delivery Location') {
       final parts = state.currentDeliveryAddress.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
       areaName = parts.isNotEmpty ? parts.first : state.currentDeliveryAddress;
-    } else {
-      areaName = 'Select Delivery Area';
     }
+
+    final subtitleText = areaName.isNotEmpty && areaName.toLowerCase() != cityOrTown.toLowerCase()
+        ? '$areaName • ⚡ 5:30 AM Drop'
+        : '$cityOrTown Central Hub • ⚡ 5:30 AM Drop';
 
     final unreadNotifs = state.unreadNotificationCount;
     final sf = state.storefrontConfig;
@@ -261,19 +261,20 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                               ],
                             ),
                             const SizedBox(height: 1),
-                            // Main Locality Name & Subtitle
+                            // Main City or Town & Change Pill (Service-Mobile Style)
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Flexible(
                                   child: Text(
-                                    titleTag,
+                                    cityOrTown,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 15,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w900,
                                       color: Colors.white,
+                                      letterSpacing: -0.3,
                                     ),
                                   ),
                                 ),
@@ -307,11 +308,11 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                               ],
                             ),
                             Text(
-                              areaName,
+                              subtitleText,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFFDFF7EA),
                               ),
@@ -350,10 +351,17 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.white,
-                          size: 22,
+                        AnimatedBuilder(
+                          animation: _bellController,
+                          builder: (context, child) => Transform.rotate(
+                            angle: _bellAnimation.value,
+                            child: child,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
                         if (unreadNotifs > 0)
                           Positioned(

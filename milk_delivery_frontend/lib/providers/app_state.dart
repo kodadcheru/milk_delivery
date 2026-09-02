@@ -88,9 +88,30 @@ class AppState extends ChangeNotifier {
   bool isDetectingLocation = false;
   bool hasLocationPermission = false;
   bool hasNotificationPermission = false;
+  bool isManualLocationOverride = false;
 
   List<CustomerAddressModel> savedAddresses = [];
   CustomerAddressModel? activeAddress;
+
+  /// Returns the clean, concise City or Town name (e.g. 'Kodad', 'Hyderabad', 'Suryapet')
+  String get currentCityOrTown {
+    if (activeAddress != null) {
+      if (activeAddress!.city.isNotEmpty) {
+        return LocationService.extractCityOrTown(activeAddress!.city, fallback: 'Kodad');
+      }
+      return LocationService.extractCityOrTown(activeAddress!.summaryAddress, fallback: 'Kodad');
+    }
+    if (currentUser?.city != null && currentUser!.city.isNotEmpty) {
+      return LocationService.extractCityOrTown(currentUser!.city, fallback: 'Kodad');
+    }
+    if (currentDeliveryAddress.isNotEmpty && currentDeliveryAddress != 'Select Delivery Location') {
+      return LocationService.extractCityOrTown(currentDeliveryAddress, fallback: 'Kodad');
+    }
+    if (serviceAreas.isNotEmpty && serviceAreas.first.city.isNotEmpty) {
+      return LocationService.extractCityOrTown(serviceAreas.first.city, fallback: 'Kodad');
+    }
+    return 'Kodad';
+  }
 
   // ── Address Cache Keys (Zepto/Swiggy pattern) ──
   static const _kCachedAddresses = 'cached_addresses';
@@ -608,6 +629,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateDeliveryLocation(String newAddress, double lat, double lon) async {
+    isManualLocationOverride = true;
     currentDeliveryAddress = newAddress;
     currentLat = lat;
     currentLon = lon;
@@ -870,6 +892,7 @@ class AppState extends ChangeNotifier {
 
   void selectActiveAddress(CustomerAddressModel addr) {
     HapticFeedback.lightImpact();
+    isManualLocationOverride = true;
     activeAddress = addr;
     currentDeliveryAddress = addr.summaryAddress;
     currentLat = addr.latitude;
