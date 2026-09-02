@@ -311,7 +311,7 @@ class BookingDetailSheet extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(statusIcon, color: Colors.white, size: 24),
+                child: Icon(statusIcon, color: accentColor, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(

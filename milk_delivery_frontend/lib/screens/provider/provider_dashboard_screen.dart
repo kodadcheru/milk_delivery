@@ -2203,6 +2203,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     ),
                   );
                 }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: const Color(0xFFDC2626),
+                      content: Text('❌ Failed to onboard partner: ${ApiService.lastError ?? "Driver with this phone may already exist."}'),
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Onboard Partner'),

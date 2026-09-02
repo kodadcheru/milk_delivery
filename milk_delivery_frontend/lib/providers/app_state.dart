@@ -777,8 +777,8 @@ class AppState extends ChangeNotifier {
       }
 
       final addrs = results[1] as List<CustomerAddressModel>? ?? [];
-      savedAddresses = addrs;
       if (addrs.isNotEmpty) {
+        savedAddresses = addrs;
         if (activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
           activeAddress = addrs.firstWhere((a) => a.id == activeAddress!.id);
         } else {
@@ -788,11 +788,17 @@ class AppState extends ChangeNotifier {
         currentDeliveryAddress = activeAddress!.summaryAddress;
         currentLat = activeAddress!.latitude;
         currentLon = activeAddress!.longitude;
-      } else {
-        activeAddress = null;
-        currentDeliveryAddress = 'Select Delivery Location';
+        _cacheAddressesLocally();
+      } else if (savedAddresses.isNotEmpty) {
+        // Network returned empty or timed out: preserve existing cached addresses in memory!
+        if (activeAddress == null) {
+          final defaultAddr = savedAddresses.firstWhere((a) => a.isDefault, orElse: () => savedAddresses.first);
+          activeAddress = defaultAddr;
+          currentDeliveryAddress = defaultAddr.summaryAddress;
+          currentLat = defaultAddr.latitude;
+          currentLon = defaultAddr.longitude;
+        }
       }
-      _cacheAddressesLocally();
 
       final fetchedProds = (results[2] as List<ProductModel>?) ?? [];
       if (fetchedProds.isNotEmpty) {
@@ -883,8 +889,8 @@ class AppState extends ChangeNotifier {
         customerId: currentUser?.id,
         phone: currentUser?.phone,
       );
-      savedAddresses = addrs;
       if (addrs.isNotEmpty) {
+        savedAddresses = addrs;
         // Keep the currently active address if it still exists in the fetched list
         if (activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
           final matched = addrs.firstWhere((a) => a.id == activeAddress!.id);
@@ -899,11 +905,8 @@ class AppState extends ChangeNotifier {
           currentLat = defaultAddr.latitude;
           currentLon = defaultAddr.longitude;
         }
-      } else {
-        activeAddress = null;
-        currentDeliveryAddress = 'Select Delivery Location';
+        _cacheAddressesLocally(); // Persist to local storage
       }
-      _cacheAddressesLocally(); // Persist to local storage
     } catch (_) {}
     notifyListeners();
   }
@@ -1123,6 +1126,11 @@ class AppState extends ChangeNotifier {
   Future<void> markAllNotificationsRead() async {
     await ApiService.markAllNotificationsRead();
     notifications = notifications.map((n) => n.copyWith(isRead: true)).toList();
+    notifyListeners();
+  }
+
+  void dismissNotification(int id) {
+    notifications.removeWhere((n) => n.id == id);
     notifyListeners();
   }
 

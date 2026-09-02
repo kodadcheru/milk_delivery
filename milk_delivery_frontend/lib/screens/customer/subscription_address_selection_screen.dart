@@ -605,8 +605,7 @@ class _SubscriptionAddressSelectionScreenState
                                 InkWell(
                                   onTap: () {
                                     Navigator.of(context).popUntil((route) => route.isFirst);
-                                    widget.state.currentTabIndex = 2; // Wallet tab
-                                    widget.state.notifyListeners();
+                                    widget.state.setTab(2); // Wallet tab
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

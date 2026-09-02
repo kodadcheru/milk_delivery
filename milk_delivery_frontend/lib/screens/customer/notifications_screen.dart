@@ -310,8 +310,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
       ),
       onDismissed: (direction) {
-        widget.state.notifications.removeWhere((n) => n.id == item.id);
-        widget.state.notifyListeners();
+        widget.state.dismissNotification(item.id);
       },
       child: GestureDetector(
         onTap: () {
