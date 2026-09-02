@@ -218,6 +218,122 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     );
   }
 
+  void _showSkipReasonSheet(BuildContext context, DoorstepGroup group) {
+    String selectedReason = '🚪 Door Locked / Unreachable';
+    final customNoteController = TextEditingController();
+
+    final reasons = [
+      '🚪 Door Locked / Unreachable',
+      '🧳 Milk Box / Bag Missing',
+      '🐕 Guard Dog on Premise',
+      '📍 Wrong Address / Unreachable',
+      '🥛 Pack Damaged / Leaking',
+      '✍️ Other Custom Reason',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.lg)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.skip_next_rounded, color: UiTone.error, size: 22),
+                  const SizedBox(width: 8),
+                  Text('Skip Delivery Stop', style: UiText.h2.copyWith(fontWeight: FontWeight.w900, color: const Color(0xFF0F172A))),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Please select why ${group.customerName}\'s drop could not be completed. The customer will be notified.',
+                style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: reasons.map((r) {
+                  final isSel = selectedReason == r;
+                  return ChoiceChip(
+                    label: Text(r, style: TextStyle(fontSize: 12, fontWeight: isSel ? FontWeight.w800 : FontWeight.w500, color: isSel ? Colors.white : const Color(0xFF0F172A))),
+                    selected: isSel,
+                    selectedColor: UiTone.error,
+                    backgroundColor: UiTone.shellBackground,
+                    onSelected: (val) {
+                      if (val) setSheetState(() => selectedReason = r);
+                    },
+                  );
+                }).toList(),
+              ),
+              if (selectedReason.contains('Custom')) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: customNoteController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter specific reason or doorstep issue...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final finalReason = selectedReason.contains('Custom') && customNoteController.text.trim().isNotEmpty
+                        ? customNoteController.text.trim()
+                        : selectedReason;
+                    Navigator.pop(ctx);
+                    for (final t in group.tasks) {
+                      widget.state.markDeliverySkipped(t.id, reason: finalReason);
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: UiTone.error,
+                        content: Text('Stop skipped: $finalReason. Customer notified.'),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UiTone.error,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                  ),
+                  child: const Text('Confirm Skip & Notify Customer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _handleCompleteExpressOrder(BuildContext context, LiveOrderModel order) {
     final otpController = TextEditingController();
 
@@ -239,6 +355,29 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Text('Customer: ${order.customerName.isNotEmpty ? order.customerName : "Customer"}', style: UiText.bodyStrong.copyWith(fontSize: 13)),
             const SizedBox(height: 4),
             Text('Address: ${order.deliveryAddress}', style: UiText.body.copyWith(fontSize: 12)),
+            if (order.isCod) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: UiTone.warningSoft,
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                  border: Border.all(color: UiTone.warning.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.payments_rounded, color: UiTone.warning, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '💵 CASH ON DELIVERY: Collect ₹${order.totalAmount.toStringAsFixed(0)} cash at doorstep!',
+                        style: UiText.caption.copyWith(color: UiTone.warning, fontWeight: FontWeight.bold, fontSize: 11.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 14),
             Text('Enter 4-Digit Customer OTP:', style: UiText.bodyStrong.copyWith(fontSize: 12)),
             const SizedBox(height: 6),
@@ -264,7 +403,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: UiTone.primary,
-                    content: Text('🎉 Express Order ${order.id} Delivered Successfully!'),
+                    content: Text('🎉 Express Order ${order.id} Delivered Successfully!${order.isCod ? " ₹${order.totalAmount.toStringAsFixed(0)} cash collected." : ""}'),
                   ),
                 );
               } else {
@@ -744,6 +883,42 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           valueColor: const AlwaysStoppedAnimation<Color>(UiTone.primary),
                         ),
                       ),
+                      Builder(
+                        builder: (context) {
+                          final codCashCollected = tasks.where((t) => t.isCod && t.cashCollected).fold<double>(0.0, (s, t) => s + t.cashAmount)
+                              + expressOrders.where((o) => o.isCod && o.cashCollected).fold<double>(0.0, (s, o) => s + o.totalAmount);
+                          final codPending = tasks.where((t) => t.isCod && !t.cashCollected && t.status != 'SKIPPED').fold<double>(0.0, (s, t) => s + t.cashAmount)
+                              + expressOrders.where((o) => o.isCod && !o.cashCollected && o.status != 'CANCELLED').fold<double>(0.0, (s, o) => s + o.totalAmount);
+
+                          if (codCashCollected == 0 && codPending == 0) return const SizedBox.shrink();
+
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: UiTone.warningSoft,
+                                borderRadius: BorderRadius.circular(UiRadius.sm),
+                                border: Border.all(color: UiTone.warning.withValues(alpha: 0.25)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.payments_rounded, color: UiTone.warning, size: 16),
+                                      const SizedBox(width: 6),
+                                      Text('Cash in Hand: ₹${codCashCollected.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontWeight: FontWeight.w900, fontSize: 12)),
+                                    ],
+                                  ),
+                                  if (codPending > 0)
+                                    Text('To Collect: ₹${codPending.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ],
@@ -1143,14 +1318,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   child: SizedBox(
                     height: 44,
                     child: OutlinedButton(
-                      onPressed: () {
-                        for (final t in group.tasks) {
-                          widget.state.markDeliverySkipped(t.id);
-                        }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Doorstep marked as skipped.')),
-                        );
-                      },
+                      onPressed: () => _showSkipReasonSheet(context, group),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: UiTone.error,
                         side: BorderSide(color: UiTone.error.withValues(alpha: 0.35)),
@@ -1241,6 +1409,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
                     child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
                   ),
+                  if (order.isCod) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                    ),
+                  ],
                 ],
               ),
               Container(

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from datetime import date
@@ -125,6 +126,9 @@ class DeliveryTask(models.Model):
     slot_time = models.CharField(max_length=50, default="05:30 AM - 07:00 AM")
     status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.PENDING)
     failure_reason = models.CharField(max_length=255, blank=True, default='')
+    is_cod = models.BooleanField(default=False)
+    cash_collected = models.BooleanField(default=False)
+    cash_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     proof_image_url = models.URLField(blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
 
@@ -211,6 +215,10 @@ class LiveOrder(models.Model):
     delivery_longitude = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
     delivery_otp = models.CharField(max_length=10, default="")
     payment_status = models.CharField(max_length=50, default="PENDING")
+    payment_method = models.CharField(max_length=20, default="WALLET", choices=[("WALLET", "Wallet Auto-Debit"), ("UPI", "Instant UPI / Pay"), ("COD", "Cash on Delivery")])
+    is_cod = models.BooleanField(default=False)
+    cash_collected = models.BooleanField(default=False)
+    cash_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     proof_image_url = models.URLField(blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -374,4 +382,26 @@ class DeliveryChatMessage(models.Model):
 
     def __str__(self):
         return f"[{self.channel_key}] {self.sender_role} ({self.sender_name}): {self.text[:30]}"
+
+
+class DeliveryRating(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="delivery_ratings")
+    order = models.ForeignKey(LiveOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name="ratings")
+    task = models.ForeignKey(DeliveryTask, on_delete=models.SET_NULL, null=True, blank=True, related_name="ratings")
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="driver_ratings")
+    rating = models.PositiveSmallIntegerField(default=5)
+    feedback = models.TextField(blank=True, default="")
+    tags = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["driver", "-created_at"], name="deliv_rate_driver_idx"),
+            models.Index(fields=["order", "-created_at"], name="deliv_rate_order_idx"),
+        ]
+
+    def __str__(self):
+        return f"Rating {self.rating}★ for {self.driver or self.order or self.task} by {self.user}"
+
 

@@ -57,6 +57,21 @@ class DeliveryTaskListView(generics.ListAPIView):
             return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
         return qs
 
+    def list(self, request, *args, **kwargs):
+        req_date = self.request.query_params.get("date", None)
+        if req_date:
+            try:
+                from datetime import datetime as _dt, date as _d, timedelta as _td
+                f_date = _dt.strptime(req_date, '%Y-%m-%d').date()
+                if f_date in (_d.today(), _d.today() + _td(days=1)):
+                    # Self-heal: auto-generate if active subscriptions exist but 0 tasks for this date
+                    if not DeliveryTask.objects.filter(delivery_date=f_date).exists():
+                        from apps.deliveries.task_generator import generate_daily_tasks_for_date
+                        generate_daily_tasks_for_date(target_date=f_date)
+            except Exception:
+                pass
+        return super().list(request, *args, **kwargs)
+
 
 class DeliveryTaskCompleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -87,10 +102,13 @@ class DeliveryTaskCompleteView(APIView):
             return Response({"detail": "This delivery has already been completed."}, status=status.HTTP_409_CONFLICT)
 
         proof_url = request.data.get("proof_image_url", "")
+        cash_collected = request.data.get("cash_collected", True)
 
         task.status = DeliveryTask.Statuses.DELIVERED
         task.proof_image_url = proof_url
         task.delivered_at = timezone.now()
+        if task.is_cod or (task.order and getattr(task.order, "is_cod", False)):
+            task.cash_collected = bool(cash_collected)
         task.save()
 
         # Update linked LiveOrder if express order task
@@ -99,6 +117,10 @@ class DeliveryTaskCompleteView(APIView):
             task.order.delivered_at = timezone.now()
             if proof_url:
                 task.order.proof_image_url = proof_url
+            if getattr(task.order, "is_cod", False):
+                task.order.cash_collected = bool(cash_collected)
+                if cash_collected:
+                    task.order.payment_status = "PAID (Cash Collected)"
             task.order.save()
 
         # Deduct wallet balance for subscription deliveries
@@ -175,6 +197,18 @@ class DeliveryTaskSkipView(APIView):
             task.status = DeliveryTask.Statuses.SKIPPED
             
         task.save()
+
+        # Notify customer about skipped drop with exact reason
+        if task.target_customer:
+            try:
+                Notification.objects.create(
+                    user=task.target_customer,
+                    title="⚠️ Morning Drop Skipped",
+                    message=f"Delivery #{task.id} could not be completed: {reason or 'Delivery partner skipped stop'}. Next drop will resume as scheduled.",
+                    notification_type=Notification.Types.DELIVERY,
+                )
+            except Exception:
+                pass
 
         try:
             from apps.core.consumers import broadcast_hub_event
@@ -1064,27 +1098,74 @@ class QualityHistoryView(APIView):
 
 class DeliveryRatingSubmitView(APIView):
     """
-    Submit customer delivery rating and feedback.
+    Submit customer delivery rating and feedback. Persists to DeliveryRating table.
     POST /api/deliveries/rate/
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        from apps.deliveries.models import DeliveryRating, LiveOrder, DeliveryTask
         order_id = request.data.get("order_id")
         task_id = request.data.get("task_id")
         rating = int(request.data.get("rating", 5))
+        rating = max(1, min(5, rating))
         feedback = request.data.get("feedback", "").strip()
         tags = request.data.get("tags", [])
+        if not isinstance(tags, list):
+            tags = []
 
-        # Store in Redis/DB for real-time aggregation
+        user = request.user if request.user.is_authenticated else None
+        order = LiveOrder.objects.filter(id=order_id).first() if order_id else None
+        task = DeliveryTask.objects.filter(id=task_id).first() if task_id else None
+
+        driver = None
+        if order and order.driver:
+            driver = order.driver
+        elif task and task.driver:
+            driver = task.driver
+
+        rating_obj = DeliveryRating.objects.create(
+            user=user,
+            order=order,
+            task=task,
+            driver=driver,
+            rating=rating,
+            feedback=feedback,
+            tags=tags,
+        )
+
         return Response({
             "status": "success",
-            "message": "Thank you! Delivery rating submitted successfully.",
-            "order_id": order_id,
-            "task_id": task_id,
-            "rating": rating,
-            "feedback": feedback,
-            "tags": tags,
+            "message": "Thank you! Delivery rating recorded successfully.",
+            "id": rating_obj.id,
+            "rating": rating_obj.rating,
+            "driver": driver.username if driver else None,
+        }, status=status.HTTP_201_CREATED)
+
+
+class AutoDispatchDailyTasksView(APIView):
+    """
+    Idempotent automated nightly task generator.
+    POST /api/deliveries/auto-dispatch-daily-tasks/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from apps.deliveries.task_generator import generate_daily_tasks_for_date
+        target_date = request.data.get("date")
+        shift = request.data.get("shift", "all")
+        hub_code = request.data.get("hub_code")
+
+        target_hub = None
+        if hub_code:
+            from apps.deliveries.models import LocationHub
+            target_hub = LocationHub.objects.filter(hub_code=hub_code).first()
+
+        result = generate_daily_tasks_for_date(target_date=target_date, target_hub=target_hub, shift=shift)
+        return Response({
+            "status": "success",
+            "message": f"Generated {result['created']} tasks, skipped {result['skipped']}.",
+            **result,
         }, status=status.HTTP_200_OK)
 
 

@@ -1451,13 +1451,13 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> markDeliverySkipped(int taskId) async {
-    bool ok = await ApiService.skipDelivery(taskId);
+  Future<void> markDeliverySkipped(int taskId, {String? reason}) async {
+    bool ok = await ApiService.skipDelivery(taskId, reason: reason);
     if (ok) {
       await reloadAllData();
     } else {
       deliveries = deliveries.map((d) {
-        if (d.id == taskId) return d.copyWith(status: 'SKIPPED');
+        if (d.id == taskId) return d.copyWith(status: 'SKIPPED', failureReason: reason);
         return d;
       }).toList();
       notifyListeners();

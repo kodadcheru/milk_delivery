@@ -59,6 +59,10 @@ class LiveOrderModel {
   final String deliveryType;
   final int etaMinutes;
   final String? estimatedDeliveryTime;
+  final String paymentMethod;
+  final bool isCod;
+  final bool cashCollected;
+  final double cashAmount;
 
   LiveOrderModel({
     required this.id,
@@ -89,6 +93,10 @@ class LiveOrderModel {
     this.deliveryType = 'SCHEDULED',
     this.etaMinutes = 0,
     this.estimatedDeliveryTime,
+    this.paymentMethod = 'WALLET',
+    this.isCod = false,
+    this.cashCollected = false,
+    this.cashAmount = 0.0,
   });
 
   int get totalItemCount => items.fold(0, (sum, i) => sum + i.quantity);
@@ -108,6 +116,10 @@ class LiveOrderModel {
     int? etaMinutes,
     String? estimatedDeliveryTime,
     String? driverVehicle,
+    String? paymentMethod,
+    bool? isCod,
+    bool? cashCollected,
+    double? cashAmount,
   }) {
     return LiveOrderModel(
       id: id,
@@ -138,6 +150,10 @@ class LiveOrderModel {
       deliveryType: deliveryType ?? this.deliveryType,
       etaMinutes: etaMinutes ?? this.etaMinutes,
       estimatedDeliveryTime: estimatedDeliveryTime ?? this.estimatedDeliveryTime,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      isCod: isCod ?? this.isCod,
+      cashCollected: cashCollected ?? this.cashCollected,
+      cashAmount: cashAmount ?? this.cashAmount,
     );
   }
 
@@ -176,6 +192,10 @@ class LiveOrderModel {
       deliveryType: json['delivery_type'] ?? 'SCHEDULED',
       etaMinutes: json['eta_minutes'] ?? 0,
       estimatedDeliveryTime: json['estimated_delivery_time']?.toString(),
+      paymentMethod: json['payment_method']?.toString() ?? 'WALLET',
+      isCod: json['is_cod'] == true,
+      cashCollected: json['cash_collected'] == true,
+      cashAmount: double.tryParse(json['cash_amount']?.toString() ?? '0') ?? 0.0,
     );
   }
 }

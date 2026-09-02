@@ -71,6 +71,10 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "delivery_date",
             "slot_time",
             "status",
+            "failure_reason",
+            "is_cod",
+            "cash_collected",
+            "cash_amount",
             "proof_image_url",
             "delivered_at",
         ]
@@ -308,6 +312,10 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "delivery_longitude",
             "delivery_otp",
             "payment_status",
+            "payment_method",
+            "is_cod",
+            "cash_collected",
+            "cash_amount",
             "proof_image_url",
             "delivered_at",
             "created_at",
@@ -394,3 +402,11 @@ class LiveOrderSerializer(serializers.ModelSerializer):
     def get_temperature_celsius(self, obj):
         batch = self._get_batch(obj)
         return float(batch.temperature_celsius) if batch else 3.8
+
+
+class DeliveryRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.deliveries.models import DeliveryRating
+        model = DeliveryRating
+        fields = "__all__"
+

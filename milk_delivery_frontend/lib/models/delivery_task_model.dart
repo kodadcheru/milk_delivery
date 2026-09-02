@@ -29,6 +29,10 @@ class DeliveryTaskModel {
   final double batchPricePerLitre;
   final String batchCode;
   final double temperatureCelsius;
+  final String failureReason;
+  final bool isCod;
+  final bool cashCollected;
+  final double cashAmount;
 
   DeliveryTaskModel({
     required this.id,
@@ -58,6 +62,10 @@ class DeliveryTaskModel {
     this.batchPricePerLitre = 68.0,
     this.batchCode = 'BATCH-TODAY-01',
     this.temperatureCelsius = 3.8,
+    this.failureReason = '',
+    this.isCod = false,
+    this.cashCollected = false,
+    this.cashAmount = 0.0,
   });
 
   String get displayProductName => (subscriptionDetail?.productDetail?.name.isNotEmpty == true)
@@ -144,6 +152,10 @@ class DeliveryTaskModel {
       batchPricePerLitre: parsedBatchPrice,
       batchCode: parsedBatchCode,
       temperatureCelsius: parsedTemp,
+      failureReason: json['failure_reason']?.toString() ?? '',
+      isCod: json['is_cod'] == true,
+      cashCollected: json['cash_collected'] == true,
+      cashAmount: double.tryParse(json['cash_amount']?.toString() ?? '0') ?? 0.0,
     );
   }
 
@@ -157,6 +169,10 @@ class DeliveryTaskModel {
     double? batchPricePerLitre,
     String? batchCode,
     double? temperatureCelsius,
+    String? failureReason,
+    bool? isCod,
+    bool? cashCollected,
+    double? cashAmount,
   }) {
     return DeliveryTaskModel(
       id: id,
@@ -186,6 +202,10 @@ class DeliveryTaskModel {
       batchPricePerLitre: batchPricePerLitre ?? this.batchPricePerLitre,
       batchCode: batchCode ?? this.batchCode,
       temperatureCelsius: temperatureCelsius ?? this.temperatureCelsius,
+      failureReason: failureReason ?? this.failureReason,
+      isCod: isCod ?? this.isCod,
+      cashCollected: cashCollected ?? this.cashCollected,
+      cashAmount: cashAmount ?? this.cashAmount,
     );
   }
 

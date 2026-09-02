@@ -661,9 +661,13 @@ class ApiService {
     return false;
   }
 
-  static Future<bool> skipDelivery(int taskId) async {
+  static Future<bool> skipDelivery(int taskId, {String? reason}) async {
     try {
-      final res = await _executeWithRetry(() => http.post(Uri.parse('$baseUrl/deliveries/$taskId/skip/'), headers: _headers));
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/$taskId/skip/'),
+            headers: _headers,
+            body: jsonEncode({if (reason != null && reason.isNotEmpty) 'reason': reason}),
+          ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {

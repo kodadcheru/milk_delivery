@@ -244,10 +244,32 @@ class ExpressOrderListCreateView(APIView):
         if not parsed_items:
             return Response({"detail": "Invalid products in order payload."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user.wallet_balance < total_amount:
+        # 1. Inventory & Capacity Enforcement
+        from apps.products.models import HubProductInventory
+        if active_hub:
+            for item in parsed_items:
+                prod = item["product"]
+                qty = item["quantity"]
+                inv = HubProductInventory.objects.filter(hub=active_hub, product=prod).first()
+                if inv and (not inv.is_available or inv.available_slots < qty):
+                    return Response(
+                        {
+                            "error": f"Insufficient stock for '{prod.name}' at {active_hub.name}. Only {inv.available_slots} unit(s) left.",
+                            "detail": f"Product '{prod.name}' is out of stock for this slot. Please choose fewer quantities or check back tomorrow.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+        # 2. Payment Method Handling (Wallet vs COD)
+        payment_method = request.data.get("payment_method", "WALLET").upper()
+        if payment_method not in ("WALLET", "UPI", "COD"):
+            payment_method = "WALLET"
+        is_cod = (payment_method == "COD")
+
+        if not is_cod and user.wallet_balance < total_amount:
             shortfall = total_amount - user.wallet_balance
             return Response(
-                {"detail": f"Insufficient wallet balance (Current: ₹{user.wallet_balance}). Please top up ₹{shortfall:.2f} to confirm order."},
+                {"detail": f"Insufficient wallet balance (Current: ₹{user.wallet_balance}). Please top up ₹{shortfall:.2f} or choose Cash on Delivery."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -268,7 +290,11 @@ class ExpressOrderListCreateView(APIView):
                 delivery_latitude=delivery_lat,
                 delivery_longitude=delivery_lon,
                 delivery_otp=str(random.randint(1000, 9999)),
-                payment_status="PAID (Prepaid Wallet)",
+                payment_status="PENDING (Cash on Delivery)" if is_cod else "PAID (Prepaid Wallet)",
+                payment_method=payment_method,
+                is_cod=is_cod,
+                cash_amount=total_amount if is_cod else Decimal("0.00"),
+                cash_collected=False,
             )
 
             for item in parsed_items:
@@ -278,21 +304,27 @@ class ExpressOrderListCreateView(APIView):
                     quantity=item["quantity"],
                     unit_price=item["unit_price"],
                 )
+                # Atomically book slots in HubProductInventory
+                if active_hub:
+                    HubProductInventory.objects.filter(hub=active_hub, product=item["product"]).update(
+                        booked_slots=F("booked_slots") + item["quantity"]
+                    )
 
-            User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") - total_amount)
-            user.refresh_from_db(fields=["wallet_balance"])
+            if not is_cod:
+                User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") - total_amount)
+                user.refresh_from_db(fields=["wallet_balance"])
 
-            WalletTransaction.objects.create(
-                user=user,
-                amount=total_amount,
-                transaction_type=WalletTransaction.Types.DEBIT,
-                description=f"Express Order {order_id} ({len(parsed_items)} items)",
-            )
+                WalletTransaction.objects.create(
+                    user=user,
+                    amount=total_amount,
+                    transaction_type=WalletTransaction.Types.DEBIT,
+                    description=f"Express Order {order_id} ({len(parsed_items)} items)",
+                )
 
             Notification.objects.create(
                 user=user,
-                title=f"⚡ Express Order {order_id} Dispatched!",
-                message=f"Your order with {len(parsed_items)} item(s) is scheduled for {delivery_slot}. ETA morning drop.",
+                title=f"⚡ Express Order {order_id} Confirmed!",
+                message=f"Your order with {len(parsed_items)} item(s) is scheduled for {delivery_slot}. {'Payment: Cash on Delivery (₹' + str(total_amount) + ')' if is_cod else 'Payment: Prepaid Wallet'}.",
                 notification_type=Notification.Types.DELIVERY,
             )
 
@@ -305,6 +337,9 @@ class ExpressOrderListCreateView(APIView):
                 delivery_date=delivery_date,
                 slot_time=delivery_slot,
                 status=DeliveryTask.Statuses.PENDING,
+                is_cod=is_cod,
+                cash_amount=total_amount if is_cod else Decimal("0.00"),
+                cash_collected=False,
             )
 
             if hub_driver:
