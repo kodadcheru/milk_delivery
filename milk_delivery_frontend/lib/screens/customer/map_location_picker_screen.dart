@@ -72,7 +72,7 @@ class _MapLocationPickerScreenState extends State<MapLocationPickerScreen> with 
     final data = await LocationService.reverseGeocode(lat, lon);
     if (!mounted) return;
 
-    final hubCity = widget.state.primaryHub?.city ?? 'Kodad';
+    final hubCity = widget.state.primaryHub['city'] ?? 'Kodad';
 
     if (data != null) {
       setState(() {
