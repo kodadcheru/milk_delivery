@@ -41,6 +41,47 @@ class ProductModel {
 
   bool get isOutOfStock => !isAvailable || availableSlots <= 0;
 
+  bool get isMeat {
+    final c = category.toUpperCase();
+    final n = name.toLowerCase();
+    return c.contains('MEAT') || c.contains('POULTRY') ||
+        n.contains('chicken') || n.contains('mutton') || n.contains('meat') ||
+        n.contains('fish') || n.contains('prawn');
+  }
+
+  bool get isEggs {
+    final c = category.toUpperCase();
+    final n = name.toLowerCase();
+    return c.contains('EGG') || n.contains('egg');
+  }
+
+  bool get isWater {
+    final c = category.toUpperCase();
+    final n = name.toLowerCase();
+    return c.contains('WATER') || n.contains('water') || n.contains('can') || n.contains('dispenser');
+  }
+
+  bool get isDairy {
+    if (isMeat || isEggs || isWater) return false;
+    final c = category.toUpperCase();
+    final n = name.toLowerCase();
+    return c.contains('MILK') || c.contains('DAIRY') || c.contains('GHEE') ||
+        c.contains('PANEER') || c.contains('CURD') ||
+        n.contains('milk') || n.contains('ghee') || n.contains('paneer') ||
+        n.contains('curd') || n.contains('butter') || n.contains('dahi');
+  }
+
+  String get categorySubtitle {
+    if (isMeat) return 'Fresh & Tender • 100% Antibiotic-Free';
+    if (isEggs) return 'Free-Range & Healthy • Daily Farm Sourced';
+    if (isWater) return '100% RO Purified • Sealed Hygienic Can';
+    if (isDairy) {
+      if (name.toLowerCase().contains('buffalo')) return 'Pure Buffalo Dairy • 05:30 AM Farm Fresh';
+      return 'Pure Cow Dairy • 05:30 AM Farm Fresh';
+    }
+    return 'Fresh & Verified • Daily Doorstep Delivery';
+  }
+
   String localizedName(String lang) {
     if (lang != 'te') return name;
     return AppTranslations.translateProduct(name, lang: lang);

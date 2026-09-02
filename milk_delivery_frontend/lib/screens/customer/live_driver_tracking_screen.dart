@@ -873,16 +873,68 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _buildLabBadge('FAT', '4.5%'),
-                              const SizedBox(width: 8),
-                              _buildLabBadge('SNF', '8.8%'),
-                              const SizedBox(width: 8),
-                              _buildLabBadge('TEMP', '4°C ❄️'),
-                              const SizedBox(width: 8),
-                              _buildLabBadge('SEAL', 'FSSAI ✅'),
-                            ],
+                          Builder(
+                            builder: (context) {
+                              final titleLower = (widget.liveOrder?.items.map((i) => i.product.name).join(' ') ?? widget.orderTitle).toLowerCase();
+                              final isMeat = titleLower.contains('meat') || titleLower.contains('chicken') || titleLower.contains('mutton') || titleLower.contains('fish');
+                              final isEggs = !isMeat && titleLower.contains('egg');
+                              final isWater = !isMeat && !isEggs && (titleLower.contains('water') || titleLower.contains('can') || titleLower.contains('dispenser'));
+
+                              if (isMeat) {
+                                return Row(
+                                  children: [
+                                    _buildLabBadge('TYPE', 'Fresh Cut'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('SAFETY', 'Antibiotic-0'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('TEMP', '4°C ❄️'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('SEAL', 'FSSAI ✅'),
+                                  ],
+                                );
+                              }
+
+                              if (isEggs) {
+                                return Row(
+                                  children: [
+                                    _buildLabBadge('GRADE', 'Farm Fresh'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('FEED', '100% Grain'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('DAMAGE', '0% Guarantee'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('SEAL', 'Inspected ✅'),
+                                  ],
+                                );
+                              }
+
+                              if (isWater) {
+                                return Row(
+                                  children: [
+                                    _buildLabBadge('PURITY', 'RO + UV'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('TDS', 'Balanced'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('CAN', 'BPA-Free'),
+                                    const SizedBox(width: 8),
+                                    _buildLabBadge('SEAL', 'Sealed ✅'),
+                                  ],
+                                );
+                              }
+
+                              // Default Dairy Badges
+                              return Row(
+                                children: [
+                                  _buildLabBadge('FAT', '4.5%'),
+                                  const SizedBox(width: 8),
+                                  _buildLabBadge('SNF', '8.8%'),
+                                  const SizedBox(width: 8),
+                                  _buildLabBadge('TEMP', '4°C ❄️'),
+                                  const SizedBox(width: 8),
+                                  _buildLabBadge('SEAL', 'FSSAI ✅'),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),

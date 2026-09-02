@@ -131,10 +131,8 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                     ],
                   ),
 
-                  if (item.category == 'MILK' || item.name.toLowerCase().contains('milk')) ...[
-                    const SizedBox(height: 12),
-                    _buildPurityBadge(item),
-                  ],
+                  const SizedBox(height: 12),
+                  _buildPurityBadge(item),
 
                   const SizedBox(height: 16),
 
@@ -272,6 +270,97 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
       );
 
   Widget _buildPurityBadge(ProductModel item) {
+    // ── 1. Meat & Poultry ──
+    if (item.isMeat) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(UiRadius.xs),
+          border: Border.all(color: const Color(0xFFFECACA)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.health_and_safety_outlined, size: 14, color: Color(0xFFDC2626)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'FSSAI Certified • 100% Antibiotic-Free • Vacuum Packed',
+                style: UiText.caption.copyWith(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF991B1B),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── 2. Eggs ──
+    if (item.isEggs) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(UiRadius.xs),
+          border: Border.all(color: const Color(0xFFFDE68A)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.egg_outlined, size: 14, color: Color(0xFFD97706)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Farm Fresh • Daily Graded • Zero Broken Guarantee',
+                style: UiText.caption.copyWith(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF92400E),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── 3. Water Cans ──
+    if (item.isWater) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F9FF),
+          borderRadius: BorderRadius.circular(UiRadius.xs),
+          border: Border.all(color: const Color(0xFFBAE6FD)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.water_drop_outlined, size: 14, color: Color(0xFF0284C7)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Multi-Stage RO+UV Purified • Balanced TDS • Sealed Can',
+                style: UiText.caption.copyWith(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF075985),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── 4. Dairy / Milk (Default) ──
     final nameLower = item.name.toLowerCase();
     Map<String, dynamic>? activeBatch;
     final batches = widget.state.dailyMilkBatches;

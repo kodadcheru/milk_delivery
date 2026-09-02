@@ -370,18 +370,42 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFECFDF5),
+                          color: item.isMeat
+                              ? const Color(0xFFFEF2F2)
+                              : (item.isWater
+                                  ? const Color(0xFFF0F9FF)
+                                  : (item.isEggs ? const Color(0xFFFFFBEB) : const Color(0xFFECFDF5))),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                          border: Border.all(
+                            color: item.isMeat
+                                ? const Color(0xFFFECACA)
+                                : (item.isWater
+                                    ? const Color(0xFFBAE6FD)
+                                    : (item.isEggs ? const Color(0xFFFDE68A) : const Color(0xFFA7F3D0))),
+                          ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.verified_rounded, size: 11, color: Color(0xFF10B981)),
-                            SizedBox(width: 3),
+                            Icon(
+                              item.isMeat
+                                  ? Icons.health_and_safety_outlined
+                                  : (item.isWater ? Icons.water_drop_outlined : (item.isEggs ? Icons.egg_outlined : Icons.verified_rounded)),
+                              size: 11,
+                              color: item.isMeat
+                                  ? const Color(0xFFDC2626)
+                                  : (item.isWater ? const Color(0xFF0284C7) : (item.isEggs ? const Color(0xFFD97706) : const Color(0xFF10B981))),
+                            ),
+                            const SizedBox(width: 3),
                             Text(
-                              'Pure Cow Dairy • 05:30 AM Farm Fresh',
-                              style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
+                              item.categorySubtitle,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: item.isMeat
+                                    ? const Color(0xFF991B1B)
+                                    : (item.isWater ? const Color(0xFF075985) : (item.isEggs ? const Color(0xFF92400E) : const Color(0xFF065F46))),
+                              ),
                             ),
                           ],
                         ),
@@ -393,10 +417,8 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
             ),
           ),
 
-          if (item.category == 'MILK') ...[
-            const SizedBox(height: 12),
-            _trustBadge(),
-          ],
+          const SizedBox(height: 12),
+          _trustBadge(),
 
           const SizedBox(height: 20),
 
@@ -1397,7 +1419,166 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
       );
 
   Widget _trustBadge() {
-    final nameLower = widget.product.name.toLowerCase();
+    final p = widget.product;
+    final nameLower = p.name.toLowerCase();
+
+    // ── 1. Meat & Poultry Quality Card ──
+    if (p.isMeat) {
+      return GestureDetector(
+        onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF2F2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFECACA)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Text('🥩 ', style: TextStyle(fontSize: 12)),
+                  const Expanded(
+                    child: Text(
+                      'FSSAI Certified • 100% Antibiotic-Free • <4°C Chilled',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF991B1B)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, size: 16, color: const Color(0xFF991B1B)),
+                ],
+              ),
+              if (_isBadgeExpanded) ...[
+                const SizedBox(height: 6),
+                const Divider(height: 1, color: Color(0xFFFECACA)),
+                const SizedBox(height: 6),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Transit Safety:', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
+                    Text('Chilled 0–4°C Vacuum Packed', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Chemicals & Growth Promoters:', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
+                    Text('Zero (100% Lab Tested)', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── 2. Eggs Quality Card ──
+    if (p.isEggs) {
+      return GestureDetector(
+        onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBEB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFDE68A)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Text('🥚 ', style: TextStyle(fontSize: 12)),
+                  const Expanded(
+                    child: Text(
+                      'Farm Fresh • Daily Graded • 0% Broken Guarantee',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, size: 16, color: const Color(0xFF92400E)),
+                ],
+              ),
+              if (_isBadgeExpanded) ...[
+                const SizedBox(height: 6),
+                const Divider(height: 1, color: Color(0xFFFDE68A)),
+                const SizedBox(height: 6),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Farm Standards:', style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E))),
+                    Text('Bio-Secure Hen Farms', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Hen Diet & Feed:', style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E))),
+                    Text('100% Vegetarian Natural Grain', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── 3. Water Cans Quality Card ──
+    if (p.isWater) {
+      return GestureDetector(
+        onTap: () => setState(() => _isBadgeExpanded = !_isBadgeExpanded),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F9FF),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFBAE6FD)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Text('💧 ', style: TextStyle(fontSize: 12)),
+                  const Expanded(
+                    child: Text(
+                      'Multi-Stage Purified • Tested Balanced TDS • Sealed Can',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF075985)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(_isBadgeExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, size: 16, color: const Color(0xFF075985)),
+                ],
+              ),
+              if (_isBadgeExpanded) ...[
+                const SizedBox(height: 6),
+                const Divider(height: 1, color: Color(0xFFBAE6FD)),
+                const SizedBox(height: 6),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Purification Method:', style: TextStyle(fontSize: 10.5, color: Color(0xFF075985))),
+                    Text('RO + UV + Ozonation Treated', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Packaging & Safety:', style: TextStyle(fontSize: 10.5, color: Color(0xFF075985))),
+                    Text('Food-Grade BPA-Free Sanitized Can', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── 4. Dairy / Milk Products (Default) ──
     Map<String, dynamic>? activeBatch;
     final batches = widget.state.dailyMilkBatches;
     if (batches.isNotEmpty) {

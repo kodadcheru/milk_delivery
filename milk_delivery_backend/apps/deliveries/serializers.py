@@ -219,7 +219,15 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             obj._cached_batch = batch
         return obj._cached_batch
 
+    def _is_dairy(self, obj):
+        prod = self.get_product_name(obj).lower()
+        if any(x in prod for x in ["meat", "chicken", "mutton", "poultry", "egg", "water", "can", "fish", "prawn"]):
+            return False
+        return any(x in prod for x in ["milk", "dairy", "ghee", "paneer", "curd", "butter", "a2", "buffalo", "cow"])
+
     def get_fat_percentage(self, obj):
+        if not self._is_dairy(obj):
+            return 0.0
         batch = self._get_batch(obj)
         if batch:
             return float(batch.fat_percentage)
@@ -227,6 +235,8 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         return 6.8 if "buffalo" in prod else (4.5 if "a2" in prod or "desi" in prod else 4.2)
 
     def get_snf_percentage(self, obj):
+        if not self._is_dairy(obj):
+            return 0.0
         batch = self._get_batch(obj)
         if batch:
             return float(batch.snf_percentage)
@@ -234,6 +244,8 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         return 9.0 if "buffalo" in prod else 8.5
 
     def get_water_percentage(self, obj):
+        if not self._is_dairy(obj):
+            return 0.0
         batch = self._get_batch(obj)
         if batch:
             return float(batch.water_percentage)
@@ -379,15 +391,37 @@ class LiveOrderSerializer(serializers.ModelSerializer):
                 obj._cached_batch = DailyMilkBatch.objects.filter(hub=obj.hub, batch_date=obj.delivery_date).first()
         return obj._cached_batch
 
+    def _is_dairy_order(self, obj):
+        if not hasattr(obj, "_cached_is_dairy"):
+            has_dairy = False
+            for it in obj.items.all():
+                p_name = (it.product.name if it.product else "").lower()
+                p_cat = (it.product.category if it.product else "").lower()
+                if any(x in p_cat for x in ["meat", "poultry", "egg", "water"]):
+                    continue
+                if any(x in p_name for x in ["meat", "chicken", "mutton", "egg", "water", "can", "fish", "prawn"]):
+                    continue
+                if any(x in p_cat for x in ["milk", "dairy", "ghee", "paneer", "curd"]) or any(x in p_name for x in ["milk", "ghee", "paneer", "curd", "butter", "a2", "buffalo"]):
+                    has_dairy = True
+                    break
+            obj._cached_is_dairy = has_dairy
+        return obj._cached_is_dairy
+
     def get_fat_percentage(self, obj):
+        if not self._is_dairy_order(obj):
+            return 0.0
         batch = self._get_batch(obj)
         return float(batch.fat_percentage) if batch else 6.8
 
     def get_snf_percentage(self, obj):
+        if not self._is_dairy_order(obj):
+            return 0.0
         batch = self._get_batch(obj)
         return float(batch.snf_percentage) if batch else 9.0
 
     def get_water_percentage(self, obj):
+        if not self._is_dairy_order(obj):
+            return 0.0
         batch = self._get_batch(obj)
         return float(batch.water_percentage) if batch else 0.0
 
