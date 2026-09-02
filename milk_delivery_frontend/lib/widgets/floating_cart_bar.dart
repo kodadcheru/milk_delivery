@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../providers/app_state.dart';
 import 'home/home_location_sheet.dart';
 import '../theme/ui_tokens.dart';
-import '../services/api_service.dart';
 
 
 class FloatingCartBar extends StatelessWidget {
@@ -120,8 +120,8 @@ class FloatingCartBar extends StatelessWidget {
   }
 
   void _showCheckoutSheet(BuildContext context) {
-    DateTime selectedDate = DateTime.now(); // Default Today
-    String slot = '05:30 AM - 07:00 AM';
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 1)); // Locked to Tomorrow for Express Schedule
+    String slot = '06:00 AM - 08:00 AM';
     final slotController = TextEditingController(text: slot);
     String _deliveryMode = 'INSTANT';
 
@@ -132,17 +132,6 @@ class FloatingCartBar extends StatelessWidget {
       return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
     }
 
-    String formatDateBadge(DateTime d) {
-      final now = DateTime.now();
-      final diff = DateTime(d.year, d.month, d.day).difference(DateTime(now.year, now.month, now.day)).inDays;
-      if (diff == 0) return 'Today';
-      if (diff == 1) return 'Tomorrow';
-      if (diff == 2) return 'Day After';
-      return weekdayNames[d.weekday - 1];
-    }
-
-    List<Map<String, dynamic>>? slotsData;
-    bool hasFetchedSlots = false;
     bool _isSubmitting = false;
 
     showModalBottomSheet(
@@ -152,15 +141,6 @@ class FloatingCartBar extends StatelessWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          if (!hasFetchedSlots) {
-            hasFetchedSlots = true;
-            Future<void> fetchSlots() async {
-              final slots = await ApiService.fetchSlotAvailability();
-              if (ctx.mounted) setSheetState(() => slotsData = slots);
-            }
-            fetchSlots();
-          }
-
           final items = state.cartProductsList;
           final total = state.totalCartPrice;
 
@@ -238,7 +218,12 @@ class FloatingCartBar extends StatelessWidget {
                                 ),
                                 Expanded(
                                   child: InkWell(
-                                    onTap: () => setSheetState(() => _deliveryMode = 'SCHEDULED'),
+                                    onTap: () => setSheetState(() {
+                                      _deliveryMode = 'SCHEDULED';
+                                      selectedDate = DateTime.now().add(const Duration(days: 1));
+                                      slot = '06:00 AM - 08:00 AM';
+                                      slotController.text = slot;
+                                    }),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 10),
                                       decoration: BoxDecoration(
@@ -373,187 +358,249 @@ class FloatingCartBar extends StatelessWidget {
                           const SizedBox(height: 14),
 
                           if (_deliveryMode == 'SCHEDULED') ...[
-                            // ── 1. Select Scheduled Delivery Date ──
+                            // ── 1. Scheduled Delivery Date (Locked to Tomorrow) ──
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  '1. Select Delivery Date 📅:',
+                                  '1. Scheduled Delivery Date 📅:',
                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
                                 ),
-                                InkWell(
-                                  onTap: () async {
-                                    final today = DateTime.now();
-                                    final initDate = selectedDate.isBefore(today) ? today : selectedDate;
-                                    final picked = await showDatePicker(
-                                      context: ctx,
-                                      initialDate: initDate,
-                                      firstDate: today,
-                                      lastDate: DateTime.now().add(const Duration(days: 14)),
-                                      builder: (context, child) {
-                                        return Theme(
-                                          data: Theme.of(context).copyWith(
-                                            colorScheme: const ColorScheme.light(
-                                              primary: UiTone.primary,
-                                              onPrimary: Colors.white,
-                                              onSurface: UiTone.ink,
-                                            ),
-                                          ),
-                                          child: child!,
-                                        );
-                                      },
-                                    );
-                                    if (picked != null) {
-                                      setSheetState(() => selectedDate = picked);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: UiTone.primary.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(UiRadius.xs),
-                                    ),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.calendar_month_rounded, size: 14, color: UiTone.primary),
-                                        SizedBox(width: 4),
-                                        Text('Custom Date', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
-                                      ],
-                                    ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: UiTone.primary.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.lock_clock_rounded, size: 13, color: UiTone.primary),
+                                      SizedBox(width: 4),
+                                      Text('Tomorrow Only', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.primary)),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
 
-                            // Horizontal Date Selection Cards
-                            SizedBox(
-                              height: 62,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: 5,
-                                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                                itemBuilder: (context, idx) {
-                                  final date = DateTime.now().add(Duration(days: idx));
-                                  final isSelected = selectedDate.year == date.year && selectedDate.month == date.month && selectedDate.day == date.day;
+                            // Dedicated Tomorrow Card
+                            Builder(
+                              builder: (context) {
+                                final tomorrow = DateTime.now().add(const Duration(days: 1));
+                                selectedDate = tomorrow; // Enforce Tomorrow
 
-                                  return InkWell(
-                                    onTap: () => setSheetState(() => selectedDate = date),
-                                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                                    child: Container(
-                                      width: 82,
-                                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? UiTone.primary : UiTone.surfaceMuted,
-                                        borderRadius: BorderRadius.circular(UiRadius.sm),
-                                        border: Border.all(
-                                          color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
-                                          width: isSelected ? 2 : 1,
+                                return Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: UiTone.surface,
+                                    borderRadius: BorderRadius.circular(UiRadius.md),
+                                    border: Border.all(color: UiTone.primary, width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: UiTone.primary.withValues(alpha: 0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: UiTone.primary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                        boxShadow: isSelected
-                                            ? [BoxShadow(color: UiTone.primary.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))]
-                                            : [],
+                                        alignment: Alignment.center,
+                                        child: const Icon(Icons.event_available_rounded, color: UiTone.primary, size: 24),
                                       ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            formatDateBadge(date),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: isSelected ? Colors.white70 : const Color(0xFF64748B),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Tomorrow (${weekdayNames[tomorrow.weekday - 1]})',
+                                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.ink),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Text('⚡ NEXT-DAY DROP', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9, fontWeight: FontWeight.w900)),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            '${date.day} ${monthNames[date.month - 1]}',
-                                            style: TextStyle(
-                                              fontSize: 12.5,
-                                              fontWeight: FontWeight.w900,
-                                              color: isSelected ? Colors.white : UiTone.ink,
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '${tomorrow.day} ${monthNames[tomorrow.month - 1]} ${tomorrow.year} • Farm fresh delivery guaranteed',
+                                              style: TextStyle(color: Colors.grey[600], fontSize: 11.5),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
+                                      const Icon(Icons.check_circle_rounded, color: UiTone.primary, size: 22),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 16),
 
-                            // ── 2. Delivery Slot Preference (Typable + Presets) ──
+                            // ── 2. Delivery Time Slot (3 Slots: Morning, Afternoon, Evening) ──
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('2. Delivery Time Slot ⏰:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink)),
-                                Text('Typable & Customizable', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.teal[700])),
+                                const Text(
+                                  '2. Delivery Time Slot ⏰:',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                                  ),
+                                  child: Text(
+                                    '3 Slots Available',
+                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            if (slotsData == null)
-                              const SizedBox(height: 40, child: Center(child: CircularProgressIndicator()))
-                            else
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: slotsData!.map((slotMap) {
-                                  final slotName = slotMap['name']?.toString() ?? slotMap['time_range']?.toString() ?? '';
-                                  final isEvening = slotName.toUpperCase().contains('PM') || slotName.toUpperCase().contains('EVENING');
-                                  final icon = isEvening ? '🌙 ' : '☀️ ';
-                                  final available = slotMap['available_capacity'] ?? slotMap['available'] ?? 0;
-                                  final max = slotMap['max_capacity'] ?? 0;
-                                  final isFull = slotMap['is_full'] == true;
-                                  final isCutoff = slotMap['is_cutoff_passed'] == true;
-                                  
-                                  return ChoiceChip(
-                                    label: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(icon + slotName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                                        if (isFull)
-                                          const Text('FULL', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.bold))
-                                        else if (isCutoff)
-                                          const Text('CLOSED', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold))
-                                        else
-                                          Text('$available/$max left', style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                                      ],
-                                    ),
-                                    selected: slot == slotName,
-                                    selectedColor: isEvening ? const Color(0xFFEDE9FE) : UiTone.primarySoft,
-                                    onSelected: (isFull || isCutoff) ? null : (val) {
-                                      setSheetState(() {
-                                        slot = slotName;
-                                        slotController.text = slotName;
-                                      });
-                                    },
-                                  );
-                                }).toList(),
-                              ),
                             const SizedBox(height: 8),
-                            // Typable Slot Input
-                            TextField(
-                              controller: slotController,
-                              onChanged: (val) {
-                                setSheetState(() {
-                                  slot = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
-                                });
+
+                            // 3 Slots Selector
+                            Builder(
+                              builder: (context) {
+                                final expressSlots = [
+                                  {
+                                    'id': 'MORNING',
+                                    'title': 'Morning',
+                                    'time': '06:00 AM - 08:00 AM',
+                                    'icon': '☀️',
+                                    'tag': 'Fresh Drop',
+                                    'color': const Color(0xFF0D7C66),
+                                  },
+                                  {
+                                    'id': 'AFTERNOON',
+                                    'title': 'Afternoon',
+                                    'time': '12:00 PM - 02:00 PM',
+                                    'icon': '🌤️',
+                                    'tag': 'Midday',
+                                    'color': const Color(0xFFD97706),
+                                  },
+                                  {
+                                    'id': 'EVENING',
+                                    'title': 'Evening',
+                                    'time': '06:00 PM - 08:00 PM',
+                                    'icon': '🌙',
+                                    'tag': 'Night Batch',
+                                    'color': const Color(0xFF7C3AED),
+                                  },
+                                ];
+
+                                return Row(
+                                  children: expressSlots.map((s) {
+                                    final slotTime = s['time'] as String;
+                                    final isSelected = slot == slotTime;
+                                    final slotColor = s['color'] as Color;
+
+                                    return Expanded(
+                                      child: InkWell(
+                                        onTap: () {
+                                          HapticFeedback.selectionClick();
+                                          setSheetState(() {
+                                            slot = slotTime;
+                                            slotController.text = slotTime;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(14),
+                                        child: Container(
+                                          margin: EdgeInsets.only(
+                                            right: s['id'] != 'EVENING' ? 8 : 0,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                          decoration: BoxDecoration(
+                                            color: isSelected ? slotColor.withValues(alpha: 0.1) : UiTone.surfaceMuted,
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(
+                                              color: isSelected ? slotColor : const Color(0xFFCBD5E1),
+                                              width: isSelected ? 2 : 1,
+                                            ),
+                                            boxShadow: isSelected
+                                                ? [
+                                                    BoxShadow(
+                                                      color: slotColor.withValues(alpha: 0.15),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ]
+                                                : [],
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(s['icon'] as String, style: const TextStyle(fontSize: 22)),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                s['title'] as String,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12.5,
+                                                  color: isSelected ? slotColor : UiTone.ink,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                slotTime.split(' - ').first,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 10,
+                                                  color: isSelected ? slotColor : Colors.grey[700],
+                                                ),
+                                              ),
+                                              Text(
+                                                'to ${slotTime.split(" - ").last}',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  color: isSelected ? slotColor.withValues(alpha: 0.8) : Colors.grey[500],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected ? slotColor : Colors.grey[300],
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  s['tag'] as String,
+                                                  style: TextStyle(
+                                                    color: isSelected ? Colors.white : Colors.grey[700],
+                                                    fontSize: 8,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                );
                               },
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: UiTone.ink),
-                              decoration: InputDecoration(
-                                labelText: 'Or type custom slot (e.g. 06:00 AM - 07:30 AM)',
-                                labelStyle: TextStyle(color: Colors.grey[600], fontSize: 11),
-                                prefixIcon: const Icon(Icons.edit_calendar_rounded, size: 16, color: UiTone.primary),
-                                filled: true,
-                                fillColor: UiTone.shellBackground,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.surfaceBorder)),
-                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: UiTone.primary, width: 1.5)),
-                              ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 16),
                           ],
 
                           // ── Delivery Location Strip ──

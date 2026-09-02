@@ -34,6 +34,9 @@ class BookingDetailSheet extends StatelessWidget {
     );
   }
 
+  static void showForLiveOrder(BuildContext context, AppState state, LiveOrderModel order) =>
+      showForExpressOrder(context, state, order);
+
   static void showForSubscription(BuildContext context, AppState state, DeliveryTaskModel task) {
     showModalBottomSheet(
       context: context,
@@ -42,6 +45,9 @@ class BookingDetailSheet extends StatelessWidget {
       builder: (ctx) => BookingDetailSheet(state: state, subscriptionTask: task),
     );
   }
+
+  static void showForSubscriptionTask(BuildContext context, AppState state, DeliveryTaskModel task) =>
+      showForSubscription(context, state, task);
 
   void _callPhone(BuildContext context, String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
@@ -100,7 +106,7 @@ class BookingDetailSheet extends StatelessWidget {
     final rawDate = isExpress ? liveOrder!.deliveryDate : subscriptionTask!.deliveryDate;
     final displayDate = rawDate.isNotEmpty ? rawDate : 'Today, ${DateTime.now().day}/${DateTime.now().month}';
     final otp = isExpress ? liveOrder!.deliveryOtp : (subscriptionTask?.id != null ? '${(subscriptionTask!.id * 73) % 9000 + 1000}' : '4821');
-    final proofUrl = isExpress ? '' : (subscriptionTask?.proofImageUrl ?? '');
+    final proofUrl = isExpress ? (liveOrder?.proofImageUrl ?? '') : (subscriptionTask?.proofImageUrl ?? '');
 
     // Price calculation
     double totalAmount = 0.0;
@@ -562,7 +568,7 @@ class BookingDetailSheet extends StatelessWidget {
                           color: UiTone.surfaceMuted,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Center(child: Text('🥛', style: TextStyle(fontSize: 16))),
+                        child: Center(child: Text(item.product.icon.isNotEmpty ? item.product.icon : '🥛', style: const TextStyle(fontSize: 16))),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -570,7 +576,10 @@ class BookingDetailSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(item.product.name, style: UiText.bodyStrong.copyWith(fontSize: 12.5)),
-                            Text('Qty: ${item.quantity} × ${UiFormat.price(item.unitPrice)}', style: UiText.caption.copyWith(fontSize: 11)),
+                            Text(
+                              'Qty: ${item.quantity}${item.product.unitQuantity.isNotEmpty ? " (${item.product.unitQuantity})" : ""} × ${UiFormat.price(item.unitPrice)}',
+                              style: UiText.caption.copyWith(fontSize: 11),
+                            ),
                           ],
                         ),
                       ),

@@ -7,10 +7,9 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
-import '../../widgets/delivery_chat_sheet.dart';
 import '../../widgets/delivery_rating_dialog.dart';
-import '../../widgets/doorstep_camera_dialog.dart';
 import '../../widgets/order_invoice_sheet.dart';
+import '../../widgets/booking_detail_sheet.dart';
 import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
@@ -413,242 +412,284 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       statusText = isTelugu ? 'డెలివరీ భాగస్వామి దారిలో ఉన్నారు' : 'OUT FOR DELIVERY';
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        BookingDetailSheet.showForLiveOrder(context, widget.state, order);
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: UiTone.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '#${order.id}',
-                        style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 11),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      order.deliverySlot,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
                       Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: UiTone.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '#${order.id}',
+                          style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 11),
+                        ),
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 8),
                       Text(
-                        statusText,
-                        style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                        order.deliverySlot,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Items Preview
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...order.items.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(item.product.icon, style: const TextStyle(fontSize: 20)),
-                        const SizedBox(width: 10),
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          statusText,
+                          style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Items Preview
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...order.items.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          Text(item.product.icon, style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${widget.state.translateProduct(item.product.name)} x ${item.quantity}',
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            UiFormat.price(item.totalPrice),
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const Divider(height: 20),
+
+                  // Total & Address
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            order.deliveryAddress.length > 25
+                                ? '${order.deliveryAddress.substring(0, 25)}...'
+                                : order.deliveryAddress,
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            isTelugu ? 'మొత్తం: ' : 'Total: ',
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                          ),
+                          Text(
+                            UiFormat.price(order.totalAmount),
+                            style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 15),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      if (isOutForDelivery || isPlaced) ...[
                         Expanded(
-                          child: Text(
-                            '${widget.state.translateProduct(item.product.name)} x ${item.quantity}',
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              BookingDetailSheet.showForLiveOrder(context, widget.state, order);
+                            },
+                            icon: const Icon(Icons.receipt_long_rounded, size: 16),
+                            label: Text(isTelugu ? 'ఆర్డర్ షీట్ 📄' : 'Order Sheet 📄'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF0F172A),
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
                           ),
                         ),
-                        Text(
-                          UiFormat.price(item.totalPrice),
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const Divider(height: 20),
-
-                // Total & Address
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          order.deliveryAddress.length > 25
-                              ? '${order.deliveryAddress.substring(0, 25)}...'
-                              : order.deliveryAddress,
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          isTelugu ? 'మొత్తం: ' : 'Total: ',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                        ),
-                        Text(
-                          UiFormat.price(order.totalAmount),
-                          style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 15),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    if (isOutForDelivery || isPlaced) ...[
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => LiveDriverTrackingScreen(
-                                  state: widget.state,
-                                  liveOrder: order,
-                                  orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
-                                  deliveryAddress: order.deliveryAddress,
-                                  driverName: order.driverName,
-                                  driverPhone: order.driverPhone,
-                                  deliveryOtp: order.deliveryOtp,
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.directions_bike_rounded, size: 16),
-                          label: Text(isTelugu ? 'లైవ్ ట్రాకింగ్ 🛵' : 'Live Map Track 🛵'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: UiTone.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                        ),
-                      ),
-                      if (order.driverPhone.isNotEmpty) ...[
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66)),
-                          onPressed: () => launchUrl(Uri.parse('tel:${order.driverPhone}')),
-                          style: IconButton.styleFrom(
-                            backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-                          ),
-                        ),
-                      ],
-                    ] else if (isDelivered) ...[
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => OrderInvoiceSheet(
-                                order: order,
-                                orderId: order.id,
-                                orderDate: order.deliveryDate,
-                                slotTime: order.deliverySlot,
-                                address: order.deliveryAddress,
-                                totalAmount: order.totalAmount,
-                                customerName: order.customerName,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.receipt_rounded, size: 16),
-                          label: Text(isTelugu ? 'రశీదు / ఇన్వాయిస్' : 'Invoice 📄'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: UiTone.primary,
-                            side: BorderSide(color: UiTone.primary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                      if (order.proofImageUrl.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
-                          tooltip: 'View Proof',
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => Dialog(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                     ClipRRect(
-                                       borderRadius: BorderRadius.circular(12),
-                                       child: Image.network(order.proofImageUrl, fit: BoxFit.cover),
-                                     ),
-                                  ],
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => LiveDriverTrackingScreen(
+                                    state: widget.state,
+                                    liveOrder: order,
+                                    orderTitle: order.items.isNotEmpty ? order.items.first.product.name : 'Express Order',
+                                    deliveryAddress: order.deliveryAddress,
+                                    driverName: order.driverName,
+                                    driverPhone: order.driverPhone,
+                                    deliveryOtp: order.deliveryOtp,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                            icon: const Icon(Icons.directions_bike_rounded, size: 16),
+                            label: Text(isTelugu ? 'లైవ్ ట్రాకింగ్ 🛵' : 'Live Map Track 🛵'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: UiTone.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
                         ),
+                        if (order.driverPhone.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66)),
+                            onPressed: () => launchUrl(Uri.parse('tel:${order.driverPhone}')),
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+                            ),
+                          ),
+                        ],
+                      ] else if (isDelivered) ...[
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              BookingDetailSheet.showForLiveOrder(context, widget.state, order);
+                            },
+                            icon: const Icon(Icons.receipt_long_rounded, size: 16),
+                            label: Text(isTelugu ? 'ఆర్డర్ షీట్ 📄' : 'Order Sheet 📄'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D7C66),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => OrderInvoiceSheet(
+                                  order: order,
+                                  orderId: order.id,
+                                  orderDate: order.deliveryDate,
+                                  slotTime: order.deliverySlot,
+                                  address: order.deliveryAddress,
+                                  totalAmount: order.totalAmount,
+                                  customerName: order.customerName,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.receipt_rounded, size: 16),
+                            label: Text(isTelugu ? 'రశీదు / ఇన్వాయిస్' : 'Invoice 📄'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: UiTone.primary,
+                              side: BorderSide(color: UiTone.primary),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                        if (order.proofImageUrl.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
+                            tooltip: 'View Proof',
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => Dialog(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                       ClipRRect(
+                                         borderRadius: BorderRadius.circular(12),
+                                         child: Image.network(order.proofImageUrl, fit: BoxFit.cover),
+                                       ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -719,218 +760,260 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final statusColor = _getStatusColor(task.status);
     final pName = task.productName.isNotEmpty ? task.productName : 'Fresh Cow Milk';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        BookingDetailSheet.showForSubscriptionTask(context, widget.state, task);
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'TASK #${task.id}',
+                          style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w900, fontSize: 11),
+                        ),
                       ),
-                      child: Text(
-                        'TASK #${task.id}',
-                        style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w900, fontSize: 11),
+                      const SizedBox(width: 8),
+                      Text(
+                        task.slotTime,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      task.slotTime,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    ],
                   ),
-                  child: Text(
-                    isDelivered ? (isTelugu ? 'పూర్తయింది' : 'DELIVERED') : task.status,
-                    style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      isDelivered ? (isTelugu ? 'పూర్తయింది' : 'DELIVERED') : task.status,
+                      style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: UiTone.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: UiTone.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text('🥛', style: TextStyle(fontSize: 24)),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text('🥛', style: TextStyle(fontSize: 24)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.state.translateProduct(pName),
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${task.packSize.isNotEmpty ? task.packSize : "1 Litre"} • ${task.quantity} Packs',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        UiFormat.price(task.pricePerUnit * task.quantity),
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20),
+
+                  // Address & Route
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
                         children: [
+                          const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                          const SizedBox(width: 4),
                           Text(
-                            widget.state.translateProduct(pName),
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${task.packSize.isNotEmpty ? task.packSize : "1 Litre"} • ${task.quantity} Packs',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5),
+                            task.deliveryAddress.length > 25
+                                ? '${task.deliveryAddress.substring(0, 25)}...'
+                                : task.deliveryAddress,
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
                           ),
                         ],
                       ),
-                    ),
-                    Text(
-                      UiFormat.price(task.pricePerUnit * task.quantity),
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
-                    ),
-                  ],
-                ),
-                const Divider(height: 20),
-
-                // Address & Route
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
+                      if (task.driverDetail != null)
                         Text(
-                          task.deliveryAddress.length > 25
-                              ? '${task.deliveryAddress.substring(0, 25)}...'
-                              : task.deliveryAddress,
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                          '🛵 ${task.driverDetail!.fullName}',
+                          style: TextStyle(color: Colors.grey.shade700, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
-                      ],
-                    ),
-                    if (task.driverDetail != null)
-                      Text(
-                        '🛵 ${task.driverDetail!.fullName}',
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 14),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
 
-                // Action Buttons
-                Row(
-                  children: [
-                    if (!isDelivered) ...[
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => LiveDriverTrackingScreen(
-                                  state: widget.state,
-                                  subscriptionTask: task,
-                                  orderTitle: pName,
-                                  deliveryAddress: task.deliveryAddress,
-                                  driverName: task.driverDetail?.fullName ?? 'Assigned Hero',
-                                  driverPhone: task.driverDetail?.phone ?? '',
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.directions_bike_rounded, size: 16),
-                          label: Text(isTelugu ? 'లైవ్ ట్రాకింగ్ 🛵' : 'Live Map Track 🛵'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: UiTone.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                  // Action Buttons
+                  Row(
+                    children: [
+                      if (!isDelivered) ...[
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              BookingDetailSheet.showForSubscriptionTask(context, widget.state, task);
+                            },
+                            icon: const Icon(Icons.receipt_long_rounded, size: 15),
+                            label: Text(isTelugu ? 'వివరాలు 📄' : 'Order Sheet 📄'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF0F172A),
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
                           ),
                         ),
-                      ),
-                    ] else ...[
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => DeliveryRatingDialog(
-                                state: widget.state,
-                                productName: pName,
-                                driverName: task.driverDetail?.fullName ?? 'Delivery Hero',
-                                deliveryDate: task.deliveryDate,
-                                taskId: task.id,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.star_outline_rounded, size: 16),
-                          label: Text(isTelugu ? 'రేటింగ్ ఇవ్వండి' : 'Rate Delivery ⭐'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: UiTone.primary,
-                            side: BorderSide(color: UiTone.primary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                      if (task.proofImageUrl.isNotEmpty) ...[
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
-                          tooltip: 'Doorstep Proof',
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => Dialog(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(task.proofImageUrl, fit: BoxFit.cover),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => LiveDriverTrackingScreen(
+                                    state: widget.state,
+                                    subscriptionTask: task,
+                                    orderTitle: pName,
+                                    deliveryAddress: task.deliveryAddress,
+                                    driverName: task.driverDetail?.fullName ?? 'Assigned Hero',
+                                    driverPhone: task.driverDetail?.phone ?? '',
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                            icon: const Icon(Icons.directions_bike_rounded, size: 16),
+                            label: Text(isTelugu ? 'లైవ్ ట్రాకింగ్ 🛵' : 'Live Map Track 🛵'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: UiTone.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
                         ),
+                      ] else ...[
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              BookingDetailSheet.showForSubscriptionTask(context, widget.state, task);
+                            },
+                            icon: const Icon(Icons.receipt_long_rounded, size: 15),
+                            label: Text(isTelugu ? 'వివరాలు 📄' : 'Order Sheet 📄'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D7C66),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => DeliveryRatingDialog(
+                                  state: widget.state,
+                                  productName: pName,
+                                  driverName: task.driverDetail?.fullName ?? 'Delivery Hero',
+                                  deliveryDate: task.deliveryDate,
+                                  taskId: task.id,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.star_outline_rounded, size: 16),
+                            label: Text(isTelugu ? 'రేటింగ్ ఇవ్వండి' : 'Rate Delivery ⭐'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: UiTone.primary,
+                              side: BorderSide(color: UiTone.primary),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                        if (task.proofImageUrl.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
+                            tooltip: 'Doorstep Proof',
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => Dialog(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(task.proofImageUrl, fit: BoxFit.cover),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

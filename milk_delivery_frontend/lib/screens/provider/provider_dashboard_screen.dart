@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_format.dart';
@@ -18,6 +19,7 @@ import 'provider_fleet_map_screen.dart';
 import 'provider_earnings_screen.dart';
 import '../driver/morning_batch_screen.dart';
 import '../common/day_wise_orders_screen.dart';
+import '../../widgets/booking_detail_sheet.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -2045,84 +2047,100 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget _buildExpressOrderCard(LiveOrderModel ord) {
     final isDelivered = ord.status == 'DELIVERED';
 
-    return UiInsetCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      shadow: UiShadow.card,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(color: UiTone.accentBlue.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                    child: Text(ord.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11)),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: UiTone.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(UiRadius.xs)),
-                    child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isDelivered ? UiTone.secondary.withValues(alpha: 0.15) : UiTone.warning.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        BookingDetailSheet.showForLiveOrder(context, widget.state, ord);
+      },
+      borderRadius: BorderRadius.circular(UiRadius.md),
+      child: UiInsetCard(
+        margin: const EdgeInsets.only(bottom: 12),
+        shadow: UiShadow.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(color: UiTone.accentBlue.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text(ord.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11)),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: UiTone.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  isDelivered ? 'DELIVERED ✅' : 'OUT FOR DELIVERY 🛵',
-                  style: UiText.caption.copyWith(
-                    color: isDelivered ? UiTone.primary : UiTone.warning,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isDelivered ? UiTone.secondary.withValues(alpha: 0.15) : UiTone.warning.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(UiRadius.xs),
+                  ),
+                  child: Text(
+                    isDelivered ? 'DELIVERED ✅' : 'OUT FOR DELIVERY 🛵',
+                    style: UiText.caption.copyWith(
+                      color: isDelivered ? UiTone.primary : UiTone.warning,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+              ],
+            ),
+            const SizedBox(height: 8),
 
-          Text(
-            'Items: ${ord.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}',
-            style: UiText.bodyStrong.copyWith(fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: (ord.deliverySlot.toUpperCase().contains('PM') || ord.deliverySlot.toUpperCase().contains('EVENING'))
-                  ? const Color(0xFF7C3AED).withValues(alpha: 0.12)
-                  : const Color(0xFF0D7C66).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(4),
+            Text(
+              'Items: ${ord.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}',
+              style: UiText.bodyStrong.copyWith(fontSize: 12),
             ),
-            child: Text(
-              '📅 ${ord.deliveryDate.isNotEmpty ? ord.deliveryDate : "Today"} • ${(ord.deliverySlot.toUpperCase().contains("PM") || ord.deliverySlot.toUpperCase().contains("EVENING")) ? "🌙 Evening Shift" : "☀️ Morning Shift"} • Slot: ${ord.deliverySlot}',
-              style: UiText.caption.copyWith(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w800,
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
                 color: (ord.deliverySlot.toUpperCase().contains('PM') || ord.deliverySlot.toUpperCase().contains('EVENING'))
-                    ? const Color(0xFF7C3AED)
-                    : const Color(0xFF0D7C66),
+                    ? const Color(0xFF7C3AED).withValues(alpha: 0.12)
+                    : const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '📅 ${ord.deliveryDate.isNotEmpty ? ord.deliveryDate : "Today"} • ${(ord.deliverySlot.toUpperCase().contains("PM") || ord.deliverySlot.toUpperCase().contains("EVENING")) ? "🌙 Evening Shift" : "☀️ Morning Shift"} • Slot: ${ord.deliverySlot}',
+                style: UiText.caption.copyWith(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: (ord.deliverySlot.toUpperCase().contains('PM') || ord.deliverySlot.toUpperCase().contains('EVENING'))
+                      ? const Color(0xFF7C3AED)
+                      : const Color(0xFF0D7C66),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text('Delivery to: ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 11)),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Order Total: ${UiFormat.price(ord.totalAmount)}', style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w900, color: UiTone.primary, fontSize: 12.5)),
-              Text('OTP: ${ord.deliveryOtp}', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.accentBlue)),
-            ],
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text('Delivery to: ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 11)),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Order Total: ${UiFormat.price(ord.totalAmount)}', style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w900, color: UiTone.primary, fontSize: 12.5)),
+                Text('OTP: ${ord.deliveryOtp}', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.accentBlue)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text('Tap to view order sheet 📄', style: UiText.caption.copyWith(color: UiTone.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right_rounded, size: 14, color: UiTone.primary),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
