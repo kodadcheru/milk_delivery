@@ -274,6 +274,7 @@ class LiveOrderSerializer(serializers.ModelSerializer):
     customer_phone = serializers.SerializerMethodField()
     driver_name = serializers.SerializerMethodField()
     driver_phone = serializers.SerializerMethodField()
+    driver_vehicle = serializers.SerializerMethodField()
     fat_percentage = serializers.SerializerMethodField()
     snf_percentage = serializers.SerializerMethodField()
     water_percentage = serializers.SerializerMethodField()
@@ -296,6 +297,7 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "driver",
             "driver_name",
             "driver_phone",
+            "driver_vehicle",
             "order_type",
             "status",
             "total_amount",
@@ -333,15 +335,32 @@ class LiveOrderSerializer(serializers.ModelSerializer):
         return obj.customer.phone if obj.customer else ""
 
     def get_driver_name(self, obj):
+        if not obj.driver and (obj.hub or getattr(obj.customer, 'assigned_hub', None)):
+            try:
+                from apps.deliveries.order_views import auto_assign_hub_driver
+                auto_assign_hub_driver(obj)
+            except Exception:
+                pass
         if obj.driver:
             name = f"{obj.driver.first_name} {obj.driver.last_name}".strip()
             return name if name else obj.driver.username
         if obj.hub:
-            return f"Assigned to {obj.hub.name} Fleet"
-        return "Assigning Delivery Partner..."
+            return f"{obj.hub.name} Delivery Partner"
+        return "Delivery Partner"
 
     def get_driver_phone(self, obj):
+        if not obj.driver and (obj.hub or getattr(obj.customer, 'assigned_hub', None)):
+            try:
+                from apps.deliveries.order_views import auto_assign_hub_driver
+                auto_assign_hub_driver(obj)
+            except Exception:
+                pass
         return obj.driver.phone if obj.driver else ""
+
+    def get_driver_vehicle(self, obj):
+        if obj.driver and getattr(obj.driver, "vehicle_number", None) and obj.driver.vehicle_number:
+            return obj.driver.vehicle_number
+        return "Electric Scooter (TS 09 EB 4092)"
 
     def _get_batch(self, obj):
         from apps.deliveries.models import DailyMilkBatch

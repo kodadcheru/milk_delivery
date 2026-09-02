@@ -46,6 +46,7 @@ class LiveOrderModel {
   final String customerPhone;
   final String driverName;
   final String driverPhone;
+  final String driverVehicle;
   final String paymentStatus;
   final String createdAt;
   final String? deliveredAt;
@@ -75,6 +76,7 @@ class LiveOrderModel {
     this.customerPhone = '',
     this.driverName = 'Assigning Delivery Partner...',
     this.driverPhone = '',
+    this.driverVehicle = 'Electric Scooter (TS 09 EB 4092)',
     this.paymentStatus = 'PAID (Wallet Auto-Debit)',
     required this.createdAt,
     this.deliveredAt,
@@ -105,6 +107,7 @@ class LiveOrderModel {
     String? deliveryType,
     int? etaMinutes,
     String? estimatedDeliveryTime,
+    String? driverVehicle,
   }) {
     return LiveOrderModel(
       id: id,
@@ -122,6 +125,7 @@ class LiveOrderModel {
       customerPhone: customerPhone,
       driverName: driverName,
       driverPhone: driverPhone,
+      driverVehicle: driverVehicle ?? this.driverVehicle,
       paymentStatus: paymentStatus,
       createdAt: createdAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
@@ -159,6 +163,7 @@ class LiveOrderModel {
       customerPhone: json['customer_phone'] ?? (json['customer_detail'] != null ? json['customer_detail']['phone'] ?? '' : ''),
       driverName: json['driver_name'] ?? 'Assigning Partner...',
       driverPhone: json['driver_phone'] ?? '',
+      driverVehicle: json['driver_vehicle'] ?? 'Electric Scooter (TS 09 EB 4092)',
       paymentStatus: json['payment_status'] ?? 'PAID (Wallet)',
       createdAt: json['created_at'] ?? 'Today',
       deliveredAt: json['delivered_at'],

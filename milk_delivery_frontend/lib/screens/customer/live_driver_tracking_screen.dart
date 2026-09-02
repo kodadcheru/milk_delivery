@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../config/app_config.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
 import '../../providers/app_state.dart';
@@ -271,22 +270,20 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         ? widget.driverPhone
         : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
 
-    String targetPhone = phone.trim();
-    final bool isFallback = targetPhone.isEmpty;
-    if (isFallback) {
-      targetPhone = AppConfig.supportPhone;
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (cleanPhone.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: UiTone.primary,
-            content: Text('🛵 Partner is being dispatched. Connecting you to Depot Support...'),
+            backgroundColor: Colors.orange,
+            content: Text('Delivery partner contact number is not available yet.'),
             duration: Duration(seconds: 2),
           ),
         );
       }
+      return;
     }
 
-    final cleanPhone = targetPhone.replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$cleanPhone');
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -296,7 +293,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text('Could not open phone dialer for $targetPhone')),
+          SnackBar(backgroundColor: Colors.red, content: Text('Could not open phone dialer for $phone')),
         );
       }
     }
@@ -308,13 +305,20 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         ? widget.driverPhone
         : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
 
-    String rawPhone = phone.trim();
-    final bool isFallback = rawPhone.isEmpty;
-    if (isFallback) {
-      rawPhone = AppConfig.adminWhatsApp;
+    String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.orange,
+            content: Text('Delivery partner WhatsApp number is not available yet.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
     }
 
-    String cleanPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
     if (cleanPhone.length == 10) {
       cleanPhone = '91$cleanPhone';
     } else if (cleanPhone.startsWith('0') && cleanPhone.length == 11) {
@@ -326,10 +330,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner');
     final orderId = widget.liveOrder?.id ?? (widget.subscriptionTask != null ? '#${widget.subscriptionTask!.id}' : '');
 
-    final msgText = isFallback
-        ? 'Hi Pamba Support, I need assistance with my Express Order $orderId. Delivery Address: ${widget.deliveryAddress}.'
-        : 'Hi $dName, I am tracking my MilkDrop Express Order $orderId. Please deliver to: ${widget.deliveryAddress}. Thank you!';
-
+    final msgText = 'Hi $dName, I am tracking my MilkDrop Express Order $orderId. Please deliver to: ${widget.deliveryAddress}. Thank you!';
     final encodedMsg = Uri.encodeComponent(msgText);
     final uri = Uri.parse('https://wa.me/$cleanPhone?text=$encodedMsg');
     try {
@@ -717,13 +718,23 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                     const SizedBox(height: 3),
                                     Row(
                                       children: [
-                                        const Icon(Icons.star_rounded, color: Colors.amber, size: 15),
+                                        const Icon(Icons.phone_outlined, size: 12, color: UiTone.softText),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          widget.driverPhone.isNotEmpty ? widget.driverPhone : (widget.liveOrder?.driverPhone.isNotEmpty == true ? widget.liveOrder!.driverPhone : 'Assigned Partner'),
+                                          style: UiText.caption.copyWith(fontSize: 11.5, color: const Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
                                         const SizedBox(width: 3),
-                                        Text('4.9 (1,240 drops) • 🛵 EV Scooter', style: UiText.caption.copyWith(fontSize: 11.5, color: UiTone.softText)),
+                                        Text('4.9 ★', style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                     const SizedBox(height: 2),
-                                    Text('Reg: TS 09 EQ 4821 • FSSAI Certified', style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.w700)),
+                                    Text(
+                                      '🛵 ${widget.liveOrder?.driverVehicle ?? "Electric Scooter (TS 09 EB 4092)"} • Hub Delivery Partner',
+                                      style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.w700),
+                                    ),
                                   ],
                                 ),
                               ),

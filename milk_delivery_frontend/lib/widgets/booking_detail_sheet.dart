@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../config/app_config.dart';
 import '../models/delivery_task_model.dart';
 import '../models/live_order_model.dart';
 import '../providers/app_state.dart';
@@ -52,19 +51,17 @@ class BookingDetailSheet extends StatelessWidget {
 
   void _callPhone(BuildContext context, String phone) async {
     HapticFeedback.lightImpact();
-    String target = phone.trim();
-    final bool isFallback = target.isEmpty;
-    if (isFallback) {
-      target = AppConfig.supportPhone;
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (cleanPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          backgroundColor: Color(0xFF0D7C66),
-          content: Text('🛵 Partner is being dispatched. Connecting you to Depot Support...'),
+          backgroundColor: Colors.orange,
+          content: Text('Delivery partner phone number is not available yet.'),
           duration: Duration(seconds: 2),
         ),
       );
+      return;
     }
-    final cleanPhone = target.replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$cleanPhone');
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -74,7 +71,7 @@ class BookingDetailSheet extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open phone dialer for $target')),
+          SnackBar(content: Text('Could not open phone dialer for $phone')),
         );
       }
     }
@@ -88,22 +85,24 @@ class BookingDetailSheet extends StatelessWidget {
     required String address,
   }) async {
     HapticFeedback.lightImpact();
-    String rawPhone = phone.trim();
-    final bool isFallback = rawPhone.isEmpty;
-    if (isFallback) {
-      rawPhone = AppConfig.adminWhatsApp;
+    String clean = phone.replaceAll(RegExp(r'\D'), '');
+    if (clean.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text('Delivery partner WhatsApp number is not available yet.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
     }
-    String clean = rawPhone.replaceAll(RegExp(r'\D'), '');
     if (clean.length == 10) {
       clean = '91$clean';
     } else if (clean.startsWith('0') && clean.length == 11) {
       clean = '91${clean.substring(1)}';
     }
 
-    final message = isFallback
-        ? 'Hi Pamba Support, I need assistance with my Express Order #$orderId scheduled for delivery to: $address.'
-        : 'Hi $driverName, I am tracking my MilkDrop Express Order #$orderId. Please deliver to: $address. Thank you!';
-
+    final message = 'Hi $driverName, I am tracking my MilkDrop Express Order #$orderId. Please deliver to: $address. Thank you!';
     final encoded = Uri.encodeComponent(message);
     final waUri = Uri.parse('https://wa.me/$clean?text=$encoded');
     try {
@@ -496,21 +495,39 @@ class BookingDetailSheet extends StatelessWidget {
                         Flexible(
                           child: Text(
                             driverName,
-                            style: UiText.bodyStrong.copyWith(fontSize: 13.5),
+                            style: UiText.bodyStrong.copyWith(fontSize: 14),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.verified_rounded, color: Color(0xFF0D7C66), size: 14),
+                        const Icon(Icons.verified_rounded, color: Color(0xFF0D7C66), size: 15),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone_outlined, size: 12, color: UiTone.softText),
+                        const SizedBox(width: 4),
+                        Text(
+                          driverPhone.isNotEmpty ? driverPhone : 'Live Chat Active',
+                          style: UiText.caption.copyWith(color: const Color(0xFF0F172A), fontSize: 11.5, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
+                        const SizedBox(width: 3),
+                        Text(
+                          '4.9 ★',
+                          style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
-                        const SizedBox(width: 3),
+                        const Icon(Icons.electric_moped_rounded, size: 13, color: Color(0xFF0D7C66)),
+                        const SizedBox(width: 4),
                         Text(
-                          isDriverAssigned ? '4.9 ★ • Electric Scooter Fleet' : 'Auto-Dispatch • Central MilkDrop Fleet',
+                          isExpress ? (liveOrder?.driverVehicle ?? 'Electric Scooter Fleet') : 'MilkDrop Morning Fleet',
                           style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
                         ),
                       ],

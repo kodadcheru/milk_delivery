@@ -7,7 +7,6 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
-import '../../config/app_config.dart';
 import '../../widgets/delivery_chat_sheet.dart';
 import '../../widgets/delivery_rating_dialog.dart';
 import '../../widgets/order_invoice_sheet.dart';
@@ -556,6 +555,36 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   ),
                   const SizedBox(height: 14),
 
+                  // Assigned Delivery Partner Snippet
+                  if (order.driverName.isNotEmpty && order.driverName != 'Assigning Partner...') ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D7C66).withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF0D7C66).withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.delivery_dining_rounded, size: 16, color: Color(0xFF0D7C66)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${order.driverName} • ${order.driverPhone.isNotEmpty ? order.driverPhone : "Hub Partner"}',
+                              style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 11.5, fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            order.driverVehicle.isNotEmpty ? order.driverVehicle.split(' ').first : 'Scooter',
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 10.5, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // Action Buttons
                   Row(
                     children: [
@@ -608,11 +637,20 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         const SizedBox(width: 6),
                         IconButton(
                           icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66), size: 18),
-                          tooltip: 'Call Driver / Support',
+                          tooltip: 'Call Delivery Partner',
                           onPressed: () async {
                             HapticFeedback.lightImpact();
-                            final target = order.driverPhone.isNotEmpty ? order.driverPhone : AppConfig.supportPhone;
-                            final clean = target.replaceAll(RegExp(r'[^0-9+]'), '');
+                            final clean = order.driverPhone.replaceAll(RegExp(r'[^0-9+]'), '');
+                            if (clean.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  backgroundColor: Colors.orange,
+                                  content: Text('Delivery partner phone number is not available yet.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                              return;
+                            }
                             final uri = Uri.parse('tel:$clean');
                             try {
                               final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -647,13 +685,28 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         const SizedBox(width: 4),
                         IconButton(
                           icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF25D366), size: 18),
-                          tooltip: 'WhatsApp',
+                          tooltip: 'WhatsApp Delivery Partner',
                           onPressed: () async {
                             HapticFeedback.lightImpact();
-                            String rawPhone = order.driverPhone.isNotEmpty ? order.driverPhone : AppConfig.adminWhatsApp;
-                            String clean = rawPhone.replaceAll(RegExp(r'\D'), '');
-                            if (clean.length == 10) clean = '91$clean';
-                            final msg = 'Hi, I need assistance with my Express Order #${order.id}. Delivery Address: ${order.deliveryAddress}.';
+                            String clean = order.driverPhone.replaceAll(RegExp(r'\D'), '');
+                            if (clean.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  backgroundColor: Colors.orange,
+                                  content: Text('Delivery partner WhatsApp number is not available yet.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                              return;
+                            }
+                            if (clean.length == 10) {
+                              clean = '91$clean';
+                            } else if (clean.startsWith('0') && clean.length == 11) {
+                              clean = '91${clean.substring(1)}';
+                            }
+
+                            final dName = order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner';
+                            final msg = 'Hi $dName, I am tracking my MilkDrop Express Order #${order.id}. Please deliver to: ${order.deliveryAddress}. Thank you!';
                             final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}');
                             try {
                               final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
