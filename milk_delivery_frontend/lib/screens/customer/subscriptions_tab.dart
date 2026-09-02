@@ -6,8 +6,6 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
-import '../../widgets/delivery_calendar_view.dart';
-import '../../widgets/subscriptions/interactive_week_scrubber.dart';
 
 class SubscriptionsTab extends StatefulWidget {
   final AppState state;
@@ -21,7 +19,6 @@ class SubscriptionsTab extends StatefulWidget {
 class _SubscriptionsTabState extends State<SubscriptionsTab> {
   late Timer _timer;
   String _countdownStr = '';
-  DateTime _selectedDate = DateTime.now();
 
   int _selectedSegment = 0; // 0 = Active, 1 = Cancelled
 
@@ -216,15 +213,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── 2. Interactive Week Delivery Scrubber & Calendar ──
-                InteractiveWeekScrubber(
-                  selectedDate: _selectedDate,
-                  onDateSelected: (date) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedDate = date);
-                  },
-                ),
-                const SizedBox(height: 16),
+
 
                 // ── 3. Active vs Cancelled Segmented Filter ──
                 Container(
@@ -457,54 +446,26 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
           ),
           if (!isCancelled) ...[
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      HapticFeedback.mediumImpact();
-                      await widget.state.toggleSubscriptionStatus(sub.id);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: isPaused ? UiTone.primary : Colors.orange.shade800,
-                      side: BorderSide(color: isPaused ? UiTone.primary : Colors.orange.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    child: Text(
-                      isPaused
-                          ? (isTelugu ? 'పునఃప్రారంభించండి' : 'Resume Plan ▶')
-                          : (isTelugu ? 'విరామం ఇవ్వండి' : 'Pause Plan ⏸'),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                    ),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () async {
+                  HapticFeedback.mediumImpact();
+                  await widget.state.toggleSubscriptionStatus(sub.id);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isPaused ? UiTone.primary : Colors.orange.shade800,
+                  side: BorderSide(color: isPaused ? UiTone.primary : Colors.orange.shade300),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => DeliveryCalendarView(
-                          state: widget.state,
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: UiTone.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    child: Text(
-                      isTelugu ? 'క్యాలెండర్ & పరిమాణం' : 'Calendar & Qty 📅',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                    ),
-                  ),
+                child: Text(
+                  isPaused
+                      ? (isTelugu ? 'పునఃప్రారంభించండి' : 'Resume Plan ▶')
+                      : (isTelugu ? 'విరామం ఇవ్వండి' : 'Pause Plan ⏸'),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                 ),
-              ],
+              ),
             ),
           ],
         ],
