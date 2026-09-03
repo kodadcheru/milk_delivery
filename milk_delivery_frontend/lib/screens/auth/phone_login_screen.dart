@@ -120,16 +120,33 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   // Step 1: Send OTP
   void _handleSendOTP() async {
-    final phoneText = _phoneController.text.trim();
-    if (phoneText.length < 10) {
+    final rawText = _phoneController.text.trim();
+    final digitsOnly = rawText.replaceAll(RegExp(r'\D'), '');
+
+    String clean10 = digitsOnly;
+    if (digitsOnly.length == 12 && digitsOnly.startsWith('91')) {
+      clean10 = digitsOnly.substring(2);
+    } else if (digitsOnly.length > 10) {
+      clean10 = digitsOnly.substring(digitsOnly.length - 10);
+    }
+
+    final phoneRegex = RegExp(r'^[6-9]\d{9}$');
+    if (!phoneRegex.hasMatch(clean10)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid 10-digit mobile number')),
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          content: Text(
+            widget.state.isTelugu
+                ? 'దయచేసి 6, 7, 8 లేదా 9 తో ప్రారంభమయ్యే సరైన 10 అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి'
+                : 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9',
+          ),
+        ),
       );
       return;
     }
 
     setState(() => _isLoading = true);
-    _phoneNumber = phoneText.startsWith('+91') ? phoneText : '+91 $phoneText';
+    _phoneNumber = '+91 $clean10';
 
     final res = await ApiService.sendOTP(_phoneNumber);
     setState(() => _isLoading = false);
@@ -204,11 +221,35 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
 
-    if (name.isEmpty) {
+    if (name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your Full Name')),
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          content: Text(
+            widget.state.isTelugu
+                ? 'దయచేసి మీ పూర్తి పేరును నమోదు చేయండి (కనీసం 2 అక్షరాలు)'
+                : 'Please enter your Full Name (at least 2 characters)',
+          ),
+        ),
       );
       return;
+    }
+
+    if (email.isNotEmpty) {
+      final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+      if (!emailRegex.hasMatch(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red.shade700,
+            content: Text(
+              widget.state.isTelugu
+                  ? 'దయచేసి సరైన ఈమెయిల్ చిరునామాను నమోదు చేయండి (ఉదా: name@example.com)'
+                  : 'Please enter a valid email address (e.g. name@example.com)',
+            ),
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isLoading = true);

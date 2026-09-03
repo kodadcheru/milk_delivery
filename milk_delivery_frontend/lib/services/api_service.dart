@@ -642,10 +642,10 @@ class ApiService {
     try {
       final queryParams = <String, String>{};
       if (page != null) queryParams['page'] = page.toString();
-      if (pageSize != null) queryParams['page_size'] = pageSize.toString();
-      final dateParam = date ?? '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}';
-      queryParams['date'] = dateParam;
-      if (hubCode != null) queryParams['hub_code'] = hubCode;
+      if (date != null && date.trim().isNotEmpty) {
+        queryParams['date'] = date.trim();
+      }
+      if (hubCode != null && hubCode.isNotEmpty) queryParams['hub_code'] = hubCode;
 
       final uri = Uri.parse('$baseUrl/deliveries/').replace(
         queryParameters: queryParams.isNotEmpty ? queryParams : null,

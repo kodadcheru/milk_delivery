@@ -1,6 +1,9 @@
 from decimal import Decimal
 from datetime import date
+import re
 import uuid
+from django.core.validators import validate_email as django_validate_email
+from django.core.exceptions import ValidationError
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +14,34 @@ from apps.accounts.serializers import UserSerializer
 from apps.products.models import Product
 from apps.subscriptions.models import Subscription
 from apps.deliveries.models import DeliveryTask
+
+
+def _clean_and_validate_indian_phone(phone_raw: str):
+    """
+    Validates and extracts a 10-digit Indian mobile number.
+    Returns (formatted_phone, last_10, error_message).
+    If valid: ("+91 9876543210", "9876543210", None)
+    If invalid: (None, None, "error description")
+    """
+    if not phone_raw or not str(phone_raw).strip():
+        return None, None, "Phone number is required."
+
+    clean_digits = "".join(filter(str.isdigit, str(phone_raw)))
+
+    # If phone has 12 digits and starts with 91 (e.g. +91 9876543210)
+    if len(clean_digits) == 12 and clean_digits.startswith("91"):
+        last_10 = clean_digits[2:]
+    elif len(clean_digits) == 10:
+        last_10 = clean_digits
+    elif len(clean_digits) > 10:
+        last_10 = clean_digits[-10:]
+    else:
+        return None, None, "Please enter a valid 10-digit mobile number."
+
+    if not re.match(r"^[6-9]\d{9}$", last_10):
+        return None, None, "Invalid mobile number. Must be a valid 10-digit Indian number starting with 6, 7, 8, or 9."
+
+    return f"+91 {last_10}", last_10, None
 
 
 def _get_or_create_staff_user_if_applicable(phone_last_10):
@@ -84,15 +115,12 @@ class SendOTPView(APIView):
 
     def post(self, request):
         phone = request.data.get("phone", "").strip()
-        if not phone:
-            return Response({"detail": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        clean_digits = "".join(filter(str.isdigit, phone))
-        last_10 = clean_digits[-10:] if len(clean_digits) >= 10 else clean_digits
+        formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
+        if err:
+            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
 
         _get_or_create_staff_user_if_applicable(last_10)
 
-        formatted_phone = f"+91 {last_10}" if len(last_10) == 10 else phone
         is_existing = (
             User.objects.filter(phone=phone).exists()
             or User.objects.filter(phone=formatted_phone).exists()
@@ -123,8 +151,9 @@ class VerifyOTPView(APIView):
         if not phone or not otp:
             return Response({"detail": "Phone and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        clean_digits = "".join(filter(str.isdigit, phone))
-        last_10 = clean_digits[-10:] if len(clean_digits) >= 10 else clean_digits
+        formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
+        if err:
+            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
 
         if otp != "1234":
             return Response({"detail": "Invalid OTP code. Use test OTP '1234'."}, status=status.HTTP_400_BAD_REQUEST)
@@ -179,9 +208,22 @@ class RegisterMobileUserView(APIView):
         if not phone or not first_name:
             return Response({"detail": "Phone and Name are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        clean_digits = "".join(filter(str.isdigit, phone))
-        last_10 = clean_digits[-10:] if len(clean_digits) >= 10 else clean_digits
-        formatted_phone = f"+91 {last_10}" if len(last_10) == 10 else phone
+        if len(first_name) < 2:
+            return Response({"detail": "Full Name must be at least 2 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+
+        formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
+        if err:
+            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Email validation & duplicate check
+        if email:
+            try:
+                django_validate_email(email)
+            except ValidationError:
+                return Response({"detail": "Please enter a valid email address (e.g. name@example.com)."}, status=status.HTTP_400_BAD_REQUEST)
+
+            if User.objects.filter(email__iexact=email).exists():
+                return Response({"detail": "An account with this email address already exists. Please log in or use a different email."}, status=status.HTTP_400_BAD_REQUEST)
 
         if (
             User.objects.filter(phone=phone).exists()

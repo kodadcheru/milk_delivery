@@ -13,6 +13,7 @@ import '../../theme/ui_tokens.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 import '../../widgets/driver_delivery_chat_sheet.dart';
+import '../../widgets/driver_order_details_sheet.dart';
 import '../common/day_wise_orders_screen.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
@@ -564,8 +565,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
     final completedCount = shiftTasks.where((t) => t.status == 'DELIVERED').length;
     final pendingCount = shiftTasks.where((t) => t.status == 'PENDING').length;
-    final totalStops = shiftTasks.length;
-    final progressPct = totalStops > 0 ? (completedCount / totalStops) : 0.0;
+    final pendingExpressCount = expressOrders.where((o) => o.status != 'DELIVERED' && o.status != 'CANCELLED').length;
+    final completedExpressCount = expressOrders.where((o) => o.status == 'DELIVERED').length;
+    final totalPendingCount = pendingCount + pendingExpressCount;
+    final totalCompletedCount = completedCount + completedExpressCount;
+    final totalAllStops = shiftTasks.length + expressOrders.length;
+    final progressPct = totalAllStops > 0 ? (totalCompletedCount / totalAllStops) : 0.0;
 
     // 2. Filter shiftTasks by status tab and search query
     List<DeliveryTaskModel> filteredTasks = shiftTasks.where((t) {
@@ -849,9 +854,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMetricItem('Total Stops', '$totalStops', Icons.local_shipping_outlined, UiTone.accentBlue, UiTone.infoSoft),
-                      _buildMetricItem('Pending', '$pendingCount', Icons.pending_actions_rounded, UiTone.warning, UiTone.warningSoft),
-                      _buildMetricItem('Delivered', '$completedCount', Icons.check_circle_outline_rounded, UiTone.success, UiTone.successSoft),
+                      _buildMetricItem('Total Stops', '$totalAllStops', Icons.local_shipping_outlined, UiTone.accentBlue, UiTone.infoSoft),
+                      _buildMetricItem('Pending', '$totalPendingCount', Icons.pending_actions_rounded, UiTone.warning, UiTone.warningSoft),
+                      _buildMetricItem('Delivered', '$totalCompletedCount', Icons.check_circle_outline_rounded, UiTone.success, UiTone.successSoft),
                       _buildMetricItem('Shift Zone', hubName.split(' ').first, Icons.warehouse_rounded, UiTone.primary, UiTone.primarySoft),
                     ],
                   ),
@@ -864,7 +869,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${_selectedShift == "EVENING" ? "Evening" : "Morning"} Route Completion: $completedCount of $totalStops Stops',
+                            '${_selectedShift == "EVENING" ? "Evening" : "Morning"} Route Completion: $totalCompletedCount of $totalAllStops Stops',
                             style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.w700, color: UiTone.softText),
                           ),
                           Text(
@@ -960,8 +965,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
             // ── 4. Filter Chips Carousel ──
             UiFilterChipBar(
-              labels: const ['⚡ Upcoming', '⏳ Pending', '✅ Delivered', '⚡ Express Orders'],
-              counts: [pendingCount, pendingCount, completedCount, expressOrders.length],
+              labels: const ['⚡ Upcoming', '⏳ Pending', '✅ Delivered', '⚡ Express'],
+              counts: [totalPendingCount, totalPendingCount, totalCompletedCount, expressOrders.length],
               selectedIndex: _selectedFilterIndex,
               onSelected: (i) => setState(() => _selectedFilterIndex = i),
             ),
@@ -970,7 +975,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             // ── 5. Express Instant Orders (when filter 0 or 3) ──
             if ((_selectedFilterIndex == 0 || _selectedFilterIndex == 3) && expressOrders.isNotEmpty) ...[
               UiSectionHeader(
-                title: '⚡ Priority Express Orders (30-Min SLA)',
+                title: '⚡ Priority Express',
                 padding: const EdgeInsets.only(bottom: 12),
                 action: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1378,102 +1383,161 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     );
   }
 
+  String _cleanAddress(String raw) {
+    if (raw.trim().isEmpty || raw == 'Doorstep Delivery Location') {
+      return 'Main Road / Colony Doorstep, Kodad';
+    }
+    final cleaned = raw
+        .replaceAll(RegExp(r'^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4},?\s*'), '')
+        .replaceAll(RegExp(r',\s*[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}'), '')
+        .trim();
+    return cleaned.isNotEmpty ? cleaned : raw;
+  }
+
   Widget _buildExpressOrderCard(LiveOrderModel order) {
     final isDelivered = order.status == 'DELIVERED';
+    final cleanAddr = _cleanAddress(order.deliveryAddress);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: UiTone.surface,
-        borderRadius: BorderRadius.circular(UiRadius.lg),
-        border: Border.all(color: UiTone.error.withValues(alpha: 0.3), width: 1.2),
-        boxShadow: UiShadow.card,
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: UiTone.infoSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                    child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                    child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
-                  ),
-                  if (order.isCod) ...[
+    return InkWell(
+      onTap: () => DriverOrderDetailsSheet.show(context, widget.state, order),
+      borderRadius: BorderRadius.circular(UiRadius.lg),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: UiTone.surface,
+          borderRadius: BorderRadius.circular(UiRadius.lg),
+          border: Border.all(color: UiTone.error.withValues(alpha: 0.3), width: 1.2),
+          boxShadow: UiShadow.card,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: UiTone.infoSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
+                    ),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                      child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                      decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                      child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
                     ),
+                    if (order.isCod) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                decoration: BoxDecoration(
-                  color: isDelivered ? UiTone.successSoft : UiTone.warningSoft,
-                  borderRadius: BorderRadius.circular(UiRadius.xs),
                 ),
-                child: Text(
-                  isDelivered ? 'DELIVERED ✅' : 'PICKUP READY 🛵',
-                  style: UiText.caption.copyWith(
-                    color: isDelivered ? UiTone.success : UiTone.warning,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: isDelivered ? UiTone.successSoft : UiTone.warningSoft,
+                        borderRadius: BorderRadius.circular(UiRadius.xs),
+                      ),
+                      child: Text(
+                        isDelivered ? 'DELIVERED ✅' : 'PICKUP READY 🛵',
+                        style: UiText.caption.copyWith(
+                          color: isDelivered ? UiTone.success : UiTone.warning,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, size: 18, color: UiTone.softText),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text('📍 ${order.deliveryAddress}', maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w700, fontSize: 12.5)),
-          const SizedBox(height: 4),
-          Text('Items: ${order.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5)),
-          const SizedBox(height: 12),
-
-          if (!isDelivered)
+              ],
+            ),
+            const SizedBox(height: 10),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text('📍 ', style: TextStyle(fontSize: 13)),
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _callCustomer(context, order.customerPhone),
-                    icon: const Icon(Icons.phone, size: 14),
-                    label: Text('Call Customer', style: UiText.label.copyWith(fontSize: 11.5, color: UiTone.primary)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: UiTone.primary,
-                      side: const BorderSide(color: UiTone.primary),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _handleCompleteExpressOrder(context, order),
-                    icon: const Icon(Icons.pin_rounded, size: 14),
-                    label: Text('Verify OTP & Deliver', style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: UiTone.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                    ),
+                  child: Text(
+                    cleanAddr,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w700, fontSize: 12.5, height: 1.3),
                   ),
                 ),
               ],
             ),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              'Items: ${order.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5),
+            ),
+            const SizedBox(height: 12),
+
+            if (!isDelivered)
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _callCustomer(context, order.customerPhone),
+                      icon: const Icon(Icons.phone, size: 13),
+                      label: Text('Call', style: UiText.label.copyWith(fontSize: 11, color: UiTone.primary)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: UiTone.primary,
+                        side: const BorderSide(color: UiTone.primary),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    flex: 3,
+                    child: OutlinedButton.icon(
+                      onPressed: () => DriverOrderDetailsSheet.launchMapsNavigation(order.deliveryLatitude, order.deliveryLongitude),
+                      icon: const Icon(Icons.navigation_rounded, size: 13, color: Color(0xFF0D7C66)),
+                      label: const Text('Map 🗺️', style: TextStyle(fontSize: 11, color: Color(0xFF0D7C66), fontWeight: FontWeight.w800)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0D7C66),
+                        side: const BorderSide(color: Color(0xFF0D7C66)),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    flex: 5,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _handleCompleteExpressOrder(context, order),
+                      icon: const Icon(Icons.pin_rounded, size: 13),
+                      label: Text('Verify OTP & Deliver', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

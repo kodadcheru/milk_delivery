@@ -63,13 +63,26 @@ class CustomerAddressModel {
   }
 
   String get summaryAddress {
-    if (formattedAddress.isNotEmpty) return formattedAddress;
+    final plusCodeRegex = RegExp(r'^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}$');
+    if (formattedAddress.isNotEmpty) {
+      final clean = formattedAddress
+          .replaceAll(RegExp(r'^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4},?\s*'), '')
+          .replaceAll(RegExp(r',\s*[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}'), '')
+          .trim();
+      if (clean.isNotEmpty) return clean;
+    }
     final parts = <String>[];
-    if (flatHouseNo.isNotEmpty) parts.add(flatHouseNo);
-    if (buildingName.isNotEmpty) parts.add(buildingName);
-    if (streetAddress.isNotEmpty) parts.add(streetAddress);
+    if (flatHouseNo.isNotEmpty && !plusCodeRegex.hasMatch(flatHouseNo)) parts.add(flatHouseNo);
+    if (buildingName.isNotEmpty && !plusCodeRegex.hasMatch(buildingName)) parts.add(buildingName);
+    if (streetAddress.isNotEmpty) {
+      final cleanStreet = streetAddress
+          .replaceAll(RegExp(r'^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4},?\s*'), '')
+          .replaceAll(RegExp(r',\s*[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}'), '')
+          .trim();
+      if (cleanStreet.isNotEmpty) parts.add(cleanStreet);
+    }
     if (landmark.isNotEmpty) parts.add('Near $landmark');
-    return parts.isNotEmpty ? parts.join(', ') : streetAddress;
+    return parts.isNotEmpty ? parts.join(', ') : (streetAddress.isNotEmpty ? streetAddress : 'Main Road, Kodad');
   }
 
   factory CustomerAddressModel.fromJson(Map<String, dynamic> json) {
@@ -78,16 +91,28 @@ class CustomerAddressModel {
     String street = json['street_address']?.toString() ?? '';
     final String rawFormatted = json['formatted_address']?.toString() ?? '';
 
+    // Clean raw Plus Codes like 2X27+P3X from flat/building
+    final plusCodeRegex = RegExp(r'^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}$');
+    if (plusCodeRegex.hasMatch(flat)) {
+      flat = '';
+    }
+    if (plusCodeRegex.hasMatch(building)) {
+      building = '';
+    }
+
     // Service-Mobile Resilient String Fallback: If discrete fields are blank, split CSV
     if (flat.isEmpty && building.isEmpty && street.isNotEmpty && street.contains(',')) {
       final parts = street.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      if (parts.length >= 3) {
-        flat = parts[0];
-        building = parts[1];
-        street = parts.sublist(2).join(', ');
-      } else if (parts.length == 2) {
-        flat = parts[0];
-        street = parts[1];
+      final cleanParts = parts.where((p) => !plusCodeRegex.hasMatch(p)).toList();
+      if (cleanParts.length >= 3) {
+        flat = cleanParts[0];
+        building = cleanParts[1];
+        street = cleanParts.sublist(2).join(', ');
+      } else if (cleanParts.length == 2) {
+        flat = cleanParts[0];
+        street = cleanParts[1];
+      } else if (cleanParts.length == 1) {
+        street = cleanParts[0];
       }
     }
 

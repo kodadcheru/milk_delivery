@@ -208,7 +208,9 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
     if (widget.state.currentRole == 'DRIVER') {
       final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
       final hubName = activeHub != null ? (activeHub['name'] ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
-      final pendingCount = widget.state.deliveries.where((d) => d.status == "PENDING").length;
+      final pendingDeliveries = widget.state.deliveries.where((d) => d.status == "PENDING").length;
+      final pendingExpress = widget.state.liveOrders.where((o) => o.status != 'DELIVERED' && o.status != 'CANCELLED').length;
+      final pendingCount = pendingDeliveries + pendingExpress;
 
       final driverScreens = [
         DriverDashboardScreen(state: widget.state),

@@ -42,6 +42,7 @@ class FullLifecycleE2ETestCase(TestCase):
         self.client = APIClient()
         self.today = datetime.date.today()
         self.unique_suffix = uuid.uuid4().hex[:6]
+        self.unique_digits = f"{int(uuid.uuid4().int % 90000) + 10000}"
 
         # 0. Base Infrastructure Setup (Hub, ServiceArea, Category, Product)
         self.hub = LocationHub.objects.filter(hub_code="HUB-KDD-01").first()
@@ -111,7 +112,7 @@ class FullLifecycleE2ETestCase(TestCase):
         ).first()
 
         if not self.driver_user:
-            self.driver_phone = f"+91 98480{self.unique_suffix[:5]}"
+            self.driver_phone = f"+91 98480{self.unique_digits}"
             self.driver_user = User.objects.create(
                 username=f"driver_{self.unique_suffix}",
                 phone=self.driver_phone,
@@ -133,7 +134,7 @@ class FullLifecycleE2ETestCase(TestCase):
         # Hub Manager phone matching self.hub.manager_phone
         self.manager_phone = self.hub.manager_phone or "+91 8885199878"
 
-        self.customer_phone = f"+91 91234{self.unique_suffix[:5]}"
+        self.customer_phone = f"+91 91234{self.unique_digits}"
         self.customer_id = None
         self.created_order_id = None
         self.created_sub_id = None

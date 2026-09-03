@@ -68,20 +68,29 @@ class LocationService {
               }
             }
 
+            final String cleanFullAddr = fullAddr
+                .replaceAll(RegExp(r'^[A-Z0-9]{4,8}\+[A-Z0-9]{2,4},?\s*'), '')
+                .replaceAll(RegExp(r',\s*[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}'), '')
+                .trim();
+
             final String suburb = [subLocality2, subLocality1].where((s) => s.isNotEmpty).join(', ');
             final String shortAddr = building.isNotEmpty
                 ? (suburb.isNotEmpty ? '$building, $suburb' : '$building, $city')
                 : (road.isNotEmpty
                     ? (suburb.isNotEmpty ? '$road, $suburb' : '$road, $city')
-                    : (suburb.isNotEmpty ? '$suburb, $city' : fullAddr.split(',').take(2).join(',')));
+                    : (suburb.isNotEmpty
+                        ? '$suburb, $city'
+                        : (cleanFullAddr.isNotEmpty
+                            ? cleanFullAddr.split(',').take(2).join(',')
+                            : 'Main Road, $city')));
 
-            final finalShort = shortAddr.isNotEmpty ? shortAddr : fullAddr;
+            final finalShort = shortAddr.isNotEmpty ? shortAddr : (cleanFullAddr.isNotEmpty ? cleanFullAddr : fullAddr);
             final result = {
               'title': finalShort.split(',').first.trim(),
               'short_title': finalShort.split(',').first.trim(),
               'name': finalShort.split(',').first.trim(),
-              'subtitle': fullAddr,
-              'display_name': fullAddr,
+              'subtitle': cleanFullAddr.isNotEmpty ? cleanFullAddr : fullAddr,
+              'display_name': cleanFullAddr.isNotEmpty ? cleanFullAddr : fullAddr,
               'short_address': finalShort,
               'full_address': fullAddr,
               'summary_address': fullAddr,

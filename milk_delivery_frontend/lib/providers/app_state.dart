@@ -743,12 +743,18 @@ class AppState extends ChangeNotifier {
       final userPhone = currentUser?.phone;
       final userId = currentUser?.id;
 
+      final isStaffOrDriver = currentRole == 'DRIVER' || currentRole == 'DELIVERY_PARTNER' || currentRole == 'HUB_MANAGER';
+      final todayStr = '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}';
+
       final results = await Future.wait([
         ApiService.fetchUserProfile(),
         ApiService.fetchCustomerAddresses(customerId: userId, phone: userPhone),
         ApiService.fetchProducts(),
         ApiService.fetchSubscriptions(phone: userPhone, customerId: userId),
-        ApiService.fetchDeliveries(hubCode: activeHubCode),
+        ApiService.fetchDeliveries(
+          hubCode: activeHubCode,
+          date: isStaffOrDriver ? todayStr : null,
+        ),
         ApiService.fetchLiveOrders(hubCode: activeHubCode),
         ApiService.fetchWalletTransactions(),
         ApiService.fetchNotifications(),

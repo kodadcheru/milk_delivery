@@ -190,3 +190,109 @@ class MilkBackendAPITests(TestCase):
         # Location far outside coverage (lat=1.0, lon=1.0)
         hub = find_hub_for_location(latitude=1.0, longitude=1.0, strict=True)
         self.assertIsNone(hub)
+
+    def test_phone_validation_rejects_invalid(self):
+        # 1. Too short
+        res = self.client.post(reverse("auth_send_otp"), {"phone": "12345"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # 2. Starts with invalid prefix (e.g. 5)
+        res = self.client.post(reverse("auth_send_otp"), {"phone": "5888877777"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # 3. Letters/non-digits
+        res = self.client.post(reverse("auth_send_otp"), {"phone": "abcdefghij"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_email_validation_rejects_malformed(self):
+        data = {
+            "phone": "9777766666",
+            "first_name": "EmailTester",
+            "email": "not-a-valid-email",
+        }
+        res = self.client.post(reverse("auth_register_mobile"), data, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("valid email address", res.data.get("detail", ""))
+
+    def test_email_validation_rejects_duplicates(self):
+        data1 = {
+            "phone": "9666655555",
+            "first_name": "FirstUser",
+            "email": "unique@example.com",
+        }
+        res1 = self.client.post(reverse("auth_register_mobile"), data1, format="json")
+        self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+
+        data2 = {
+            "phone": "9555544444",
+            "first_name": "SecondUser",
+            "email": "unique@example.com",
+        }
+        res2 = self.client.post(reverse("auth_register_mobile"), data2, format="json")
+        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("already exists", res2.data.get("detail", ""))
+
+    def test_customer_sees_past_delivered_daily_orders(self):
+        from datetime import date, timedelta
+        from apps.subscriptions.models import Subscription
+        from apps.deliveries.models import DeliveryTask
+
+        cust = User.objects.create_user(
+            username="past_order_cust",
+            password="pass",
+            role=User.Roles.CUSTOMER,
+            phone="+91 9777711111",
+        )
+        self.client.force_authenticate(user=cust)
+
+        # Create past delivered drops
+        two_days_ago = date.today() - timedelta(days=2)
+        yesterday = date.today() - timedelta(days=1)
+        today = date.today()
+
+        sub = Subscription.objects.create(
+            customer=cust,
+            product=self.product,
+            quantity=1,
+            schedule_type="DAILY",
+            delivery_slot="05:30 AM - 07:00 AM",
+            delivery_address="1-23 Main Road, Kodad",
+            status=Subscription.Statuses.ACTIVE,
+            start_date=two_days_ago,
+        )
+
+        t_past2 = DeliveryTask.objects.create(
+            subscription=sub,
+            delivery_date=two_days_ago,
+            slot_time="06:00 AM",
+            status=DeliveryTask.Statuses.DELIVERED,
+        )
+        t_past1 = DeliveryTask.objects.create(
+            subscription=sub,
+            delivery_date=yesterday,
+            slot_time="06:00 AM",
+            status=DeliveryTask.Statuses.DELIVERED,
+        )
+        t_today = DeliveryTask.objects.create(
+            subscription=sub,
+            delivery_date=today,
+            slot_time="06:00 AM",
+            status=DeliveryTask.Statuses.PENDING,
+        )
+
+        # Customer calls delivery list without date filter
+        res = self.client.get(reverse("delivery_list"))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        tasks_data = res.data.get("results", res.data) if isinstance(res.data, dict) else res.data
+        task_ids = [t["id"] for t in tasks_data]
+
+        # Customer must receive ALL tasks including past delivered orders
+        self.assertIn(t_past2.id, task_ids)
+        self.assertIn(t_past1.id, task_ids)
+        self.assertIn(t_today.id, task_ids)
+
+        # Check latest-first ordering
+        self.assertEqual(tasks_data[0]["id"], t_today.id)
+        self.assertEqual(tasks_data[1]["id"], t_past1.id)
+        self.assertEqual(tasks_data[2]["id"], t_past2.id)

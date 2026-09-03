@@ -28,6 +28,16 @@ class DeliveryTaskListView(generics.ListAPIView):
         qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("delivery_date", "id")
         
         if user and user.is_authenticated and getattr(user, "role", "") == "CUSTOMER":
+            today = date.today()
+            # Auto-ensure today's daily order exists if customer has active subscriptions
+            try:
+                has_active = Subscription.objects.filter(customer=user, status=Subscription.Statuses.ACTIVE).exists()
+                if has_active and not DeliveryTask.objects.filter(subscription__customer=user, delivery_date=today).exists():
+                    from apps.deliveries.task_generator import generate_daily_tasks_for_date
+                    generate_daily_tasks_for_date(target_date=today)
+            except Exception:
+                pass
+
             if req_date:
                 try:
                     from datetime import datetime as _dt
@@ -35,7 +45,7 @@ class DeliveryTaskListView(generics.ListAPIView):
                     qs = qs.filter(delivery_date=filter_date)
                 except (ValueError, TypeError):
                     pass
-            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
+            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user)).order_by("-delivery_date", "-id")
 
         hub_code = self.request.query_params.get("hub_code") or self.request.query_params.get("hub")
         if hub_code:

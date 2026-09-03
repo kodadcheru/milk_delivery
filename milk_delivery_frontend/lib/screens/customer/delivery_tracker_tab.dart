@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
-import '../../models/subscription_model.dart';
 import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
@@ -92,7 +91,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final isTelugu = widget.state.isTelugu;
     final liveOrders = widget.state.liveOrders;
     final subTasks = widget.state.deliveries;
-    final activeSubs = widget.state.subscriptions.where((s) => s.status != 'CANCELLED').toList();
 
     return SafeArea(
       child: Scaffold(
@@ -190,10 +188,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text('🔁', style: TextStyle(fontSize: 14)),
+                                const Text('🥛', style: TextStyle(fontSize: 14)),
                                 const SizedBox(width: 6),
-                                Text(isTelugu ? 'సభ్యత్వాలు' : 'Subscriptions'),
-                                if (activeSubs.isNotEmpty || subTasks.isNotEmpty) ...[
+                                Text(isTelugu ? 'డైలీ ఆర్డర్లు' : 'Daily Orders'),
+                                if (subTasks.isNotEmpty) ...[
                                   const SizedBox(width: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -202,7 +200,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      '${activeSubs.isNotEmpty ? activeSubs.length : subTasks.length}',
+                                      '${subTasks.length}',
                                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
                                     ),
                                   ),
@@ -469,28 +467,34 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                         ),
-                        const SizedBox(width: 5),
-                        Text(
-                          statusText,
-                          style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              statusText,
+                              style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+                    ],
                   ),
                 ],
               ),
@@ -591,23 +595,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   Row(
                     children: [
                       if (isOutForDelivery || isPlaced) ...[
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              BookingDetailSheet.showForLiveOrder(context, widget.state, order);
-                            },
-                            icon: const Icon(Icons.receipt_long_rounded, size: 16),
-                            label: Text(isTelugu ? 'ఆర్డర్ షీట్ 📄' : 'Order Sheet 📄'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF0F172A),
-                              side: const BorderSide(color: Color(0xFFCBD5E1)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
@@ -723,23 +710,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       ] else if (isDelivered) ...[
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              BookingDetailSheet.showForLiveOrder(context, widget.state, order);
-                            },
-                            icon: const Icon(Icons.receipt_long_rounded, size: 16),
-                            label: Text(isTelugu ? 'ఆర్డర్ షీట్ 📄' : 'Order Sheet 📄'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0D7C66),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
                               showModalBottomSheet(
@@ -758,7 +728,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                               );
                             },
                             icon: const Icon(Icons.receipt_rounded, size: 16),
-                            label: Text(isTelugu ? 'రశీదు / ఇన్వాయిస్' : 'Invoice 📄'),
+                            label: Text(isTelugu ? 'రశీదు / ఇన్వాయిస్ 📄' : 'Bill Invoice 📄'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: UiTone.primary,
                               side: BorderSide(color: UiTone.primary),
@@ -806,20 +776,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
   // TAB 2: SUBSCRIPTION DELIVERIES VIEW
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildSubscriptionDeliveriesView(BuildContext context, bool isTelugu) {
-    // 1. Filter parent recurring subscriptions
-    final subs = widget.state.subscriptions.where((sub) {
-      if (_searchQuery.isNotEmpty) {
-        final pName = (sub.productDetail?.name ?? '').toLowerCase();
-        final addr = sub.deliveryAddress.toLowerCase();
-        if (!pName.contains(_searchQuery) && !addr.contains(_searchQuery)) return false;
-      }
-      if (_selectedFilterIndex == 1) return sub.status == 'ACTIVE';
-      if (_selectedFilterIndex == 2) return sub.status == 'PAUSED';
-      if (_selectedFilterIndex == 3) return sub.status == 'CANCELLED';
-      return true;
-    }).toList();
-
-    // 2. Filter daily fulfillment delivery drops
+    // Filter daily fulfillment delivery drops (daily orders)
     final tasks = widget.state.deliveries.where((task) {
       if (_searchQuery.isNotEmpty) {
         final matchesName = task.productName.toLowerCase().contains(_searchQuery);
@@ -832,6 +789,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       return true;
     }).toList();
 
+    final hasActiveSubs = widget.state.subscriptions.any((s) => s.status == 'ACTIVE');
+
     return RefreshIndicator(
       color: UiTone.primary,
       onRefresh: () => widget.state.reloadAllData(),
@@ -842,7 +801,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Empty state when both subscriptions and daily runs are empty
-            if (subs.isEmpty && tasks.isEmpty)
+            if (tasks.isEmpty && !hasActiveSubs)
               Container(
                 padding: const EdgeInsets.all(32),
                 alignment: Alignment.center,
@@ -856,7 +815,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     const Text('🥛', style: TextStyle(fontSize: 48)),
                     const SizedBox(height: 12),
                     Text(
-                      isTelugu ? 'సభ్యత్వాలు లేదా డెలివరీలు ఏవీ లేవు' : 'No Active Subscriptions Found',
+                      isTelugu ? 'డైలీ ఆర్డర్లు ఏవీ లేవు' : 'No Daily Orders Found',
                       style: UiText.h2.copyWith(fontSize: 16, color: UiTone.ink),
                     ),
                     const SizedBox(height: 6),
@@ -884,76 +843,71 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     ),
                   ],
                 ),
-              ),
-
-            // ── Section 1: Active Recurring Subscriptions ──
-            if (subs.isNotEmpty) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        isTelugu ? 'యాక్టివ్ సబ్‌స్క్రిప్షన్లు' : 'Active Subscriptions',
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: UiTone.ink),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: UiTone.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${subs.length}',
-                          style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      widget.state.setTab(1); // Navigate to dedicated Subscriptions tab
-                    },
-                    icon: const Icon(Icons.tune_rounded, size: 14),
-                    label: Text(isTelugu ? 'నిర్వహించండి' : 'Manage All'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: UiTone.primary,
-                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                      visualDensity: VisualDensity.compact,
+              )
+            else if (tasks.isEmpty && hasActiveSubs)
+              Container(
+                padding: const EdgeInsets.all(24),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    const Text('🥛', style: TextStyle(fontSize: 44)),
+                    const SizedBox(height: 12),
+                    Text(
+                      isTelugu ? 'డైలీ ఆర్డర్లు షెడ్యూల్ చేయబడ్డాయి' : 'Daily Drops Scheduled',
+                      style: UiText.h2.copyWith(fontSize: 16, color: UiTone.ink),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ...subs.map((sub) => _buildActiveSubscriptionCard(context, sub, isTelugu)),
-              const SizedBox(height: 16),
-            ],
-
-            // ── Section 2: Daily Delivery Drops / Route Fulfillment ──
-            if (tasks.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      isTelugu
+                          ? 'మీ యాక్టివ్ సబ్‌స్క్రిప్షన్ కోసం రేపటి ఉదయం డెలివరీ 06:00 AM కి డోర్‌స్టెప్ వద్ద చేరుతుంది.'
+                          : 'Your active subscription is scheduled for guaranteed 06:00 AM morning doorstep delivery.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        widget.state.setTab(1); // Go to Subscriptions tab
+                      },
+                      icon: const Icon(Icons.tune_rounded, size: 15),
+                      label: Text(isTelugu ? 'సభ్యత్వాలను నిర్వహించండి' : 'View / Manage Subscriptions'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: UiTone.primary,
+                        side: BorderSide(color: UiTone.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
               Row(
                 children: [
                   Text(
-                    isTelugu ? 'డైలీ డెలివరీ రన్స్' : 'Daily Delivery Drops',
+                    isTelugu ? 'డైలీ సబ్‌స్క్రిప్షన్ ఆర్డర్లు' : 'Daily Subscription Orders',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: UiTone.ink),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: UiTone.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '${tasks.length}',
-                      style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w900, fontSize: 11),
+                      style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 11),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               ...tasks.map((task) => _buildSubscriptionTaskCard(context, task, isTelugu)),
             ],
           ],
@@ -962,354 +916,18 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     );
   }
 
-  Widget _buildActiveSubscriptionCard(BuildContext context, SubscriptionModel sub, bool isTelugu) {
-    final prod = sub.productDetail;
-    final pName = prod?.name ?? 'Farm Fresh Milk';
-    final isPaused = sub.status == 'PAUSED';
-    final isCancelled = sub.status == 'CANCELLED';
-    final unitPrice = prod?.pricePerUnit ?? 72.0;
-    final dailyTotal = unitPrice * sub.quantity;
+  String _formatTaskDate(String deliveryDate, String slotTime, bool isTelugu) {
+    final now = DateTime.now();
+    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayStr = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isPaused ? Colors.orange.shade200 : Colors.grey.shade200,
-          width: isPaused ? 1.2 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: isPaused
-                      ? Colors.orange.withValues(alpha: 0.1)
-                      : UiTone.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Text(prod?.icon ?? '🥛', style: const TextStyle(fontSize: 24)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.state.translateProduct(pName),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${sub.packSize} • ${sub.scheduleType}',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isCancelled
-                      ? Colors.red.withValues(alpha: 0.1)
-                      : isPaused
-                          ? Colors.orange.withValues(alpha: 0.12)
-                          : const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCancelled
-                            ? Colors.red
-                            : isPaused
-                                ? Colors.orange.shade700
-                                : const Color(0xFF0D7C66),
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      isCancelled
-                          ? (isTelugu ? 'రద్దు చేయబడింది' : 'CANCELLED')
-                          : isPaused
-                              ? (isTelugu ? 'విరామం' : 'PAUSED')
-                              : (isTelugu ? 'యాక్టివ్' : 'ACTIVE'),
-                      style: TextStyle(
-                        color: isCancelled
-                            ? Colors.red
-                            : isPaused
-                                ? Colors.orange.shade800
-                                : const Color(0xFF0D7C66),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isCancelled) ...[
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                  tooltip: isTelugu ? 'సభ్యత్వాన్ని తొలగించండి' : 'Delete Subscription',
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  padding: EdgeInsets.zero,
-                  onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
-                ),
-              ],
-            ],
-          ),
-          const Divider(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.alarm_rounded, size: 14, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    sub.deliverySlot,
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 11.5, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              Text(
-                '${sub.quantity} Units • ${UiFormat.price(dailyTotal)} / day',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: UiTone.ink),
-              ),
-            ],
-          ),
-          if (sub.deliveryAddress.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    sub.deliveryAddress.length > 36
-                        ? '${sub.deliveryAddress.substring(0, 36)}...'
-                        : sub.deliveryAddress,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (!isCancelled) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      HapticFeedback.mediumImpact();
-                      final ok = await widget.state.toggleSubscriptionStatus(sub.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: isPaused ? const Color(0xFF0D7C66) : Colors.orange.shade800,
-                            content: Text(isPaused
-                                ? (isTelugu ? 'సబ్‌స్క్రిప్షన్ పునఃప్రారంభించబడింది' : 'Subscription resumed!')
-                                : (isTelugu ? 'సబ్‌స్క్రిప్షన్ తాత్కాలికంగా నిలిపివేయబడింది' : 'Subscription paused')),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    },
-                    icon: Icon(
-                      isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                      size: 16,
-                      color: isPaused ? const Color(0xFF0D7C66) : Colors.orange.shade800,
-                    ),
-                    label: Text(
-                      isPaused
-                          ? (isTelugu ? 'పునఃప్రారంభించు ▶' : 'Resume ▶')
-                          : (isTelugu ? 'విరామం ⏸' : 'Pause ⏸'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isPaused ? const Color(0xFF0D7C66) : Colors.orange.shade800,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: isPaused
-                            ? const Color(0xFF0D7C66).withValues(alpha: 0.4)
-                            : Colors.orange.shade300,
-                      ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                OutlinedButton.icon(
-                  onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Colors.red),
-                  label: Text(
-                    isTelugu ? 'తొలగించు' : 'Delete',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.red),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: BorderSide(color: Colors.red.shade300),
-                    backgroundColor: Colors.red.withValues(alpha: 0.04),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    widget.state.setTab(1);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: UiTone.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  child: Text(
-                    isTelugu ? 'సవరించు' : 'Manage',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
-    HapticFeedback.mediumImpact();
-    final pName = sub.productDetail?.name ?? 'Subscription';
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isTelugu ? 'సభ్యత్వాన్ని తొలగించాలా?' : 'Delete Subscription?',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isTelugu
-                  ? '${widget.state.translateProduct(pName)} సభ్యత్వాన్ని ఖచ్చితంగా తొలగించాలనుకుంటున్నారా?'
-                  : 'Are you sure you want to delete your recurring subscription for ${widget.state.translateProduct(pName)}?',
-              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber.shade400.withValues(alpha: 0.5)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      isTelugu
-                          ? 'రేపటి నుండి ఉదయం డెలివరీలు మరియు రోజువారీ ఛార్జీలు వెంటనే ఆగిపోతాయి.'
-                          : 'Morning doorstep deliveries and daily charges will be stopped immediately.',
-                      style: TextStyle(color: Colors.brown.shade800, fontSize: 11.5, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          OutlinedButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFCBD5E1)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: Text(
-              isTelugu ? 'ఉంచండి' : 'Keep Plan',
-              style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
-            icon: const Icon(Icons.delete_forever_rounded, size: 16),
-            label: Text(isTelugu ? 'అవును, తొలగించు' : 'Yes, Delete'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      HapticFeedback.heavyImpact();
-      final ok = await widget.state.cancelSubscription(sub.id);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: ok ? Colors.red.shade700 : Colors.orange.shade800,
-            content: Text(ok
-                ? (isTelugu ? 'సభ్యత్వం విజయవంతంగా తొలగించబడింది.' : 'Subscription deleted successfully.')
-                : (isTelugu ? 'లోపం సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.' : 'Failed to delete subscription.')),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+    if (deliveryDate == todayStr) {
+      return '${isTelugu ? 'ఈరోజు' : 'Today'} • $slotTime';
+    } else if (deliveryDate == yesterdayStr) {
+      return '${isTelugu ? 'నిన్న' : 'Yesterday'} • $slotTime';
     }
+    return '$deliveryDate • $slotTime';
   }
 
   Widget _buildSubscriptionTaskCard(BuildContext context, DeliveryTaskModel task, bool isTelugu) {
@@ -1360,28 +978,34 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'TASK #${task.id}',
+                          'DAILY ORDER #${task.id}',
                           style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w900, fontSize: 11),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        task.slotTime,
+                        _formatTaskDate(task.deliveryDate, task.slotTime, isTelugu),
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      isDelivered ? (isTelugu ? 'పూర్తయింది' : 'DELIVERED') : task.status,
-                      style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          isDelivered ? (isTelugu ? 'పూర్తయింది' : 'DELIVERED') : task.status,
+                          style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+                    ],
                   ),
                 ],
               ),
@@ -1460,23 +1084,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     children: [
                       if (!isDelivered) ...[
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              BookingDetailSheet.showForSubscriptionTask(context, widget.state, task);
-                            },
-                            icon: const Icon(Icons.receipt_long_rounded, size: 15),
-                            label: Text(isTelugu ? 'వివరాలు 📄' : 'Order Sheet 📄'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF0F172A),
-                              side: const BorderSide(color: Color(0xFFCBD5E1)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
                               Navigator.push(
@@ -1503,24 +1110,22 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             ),
                           ),
                         ),
-                      ] else ...[
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
+                        if ((task.driverDetail?.phone ?? '').isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          IconButton(
+                            icon: const Icon(Icons.phone_rounded, color: Color(0xFF0D7C66), size: 18),
+                            tooltip: 'Call Delivery Partner',
+                            onPressed: () async {
                               HapticFeedback.lightImpact();
-                              BookingDetailSheet.showForSubscriptionTask(context, widget.state, task);
+                              final clean = (task.driverDetail?.phone ?? '').replaceAll(RegExp(r'[^0-9+]'), '');
+                              if (clean.isNotEmpty) {
+                                final uri = Uri.parse('tel:$clean');
+                                try { await launchUrl(uri); } catch (_) {}
+                              }
                             },
-                            icon: const Icon(Icons.receipt_long_rounded, size: 15),
-                            label: Text(isTelugu ? 'వివరాలు 📄' : 'Order Sheet 📄'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0D7C66),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
+                        ],
+                      ] else ...[
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
