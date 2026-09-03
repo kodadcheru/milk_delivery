@@ -19,10 +19,22 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS is_cod BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_collected BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_amount NUMERIC(10, 2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS payout_id BIGINT;
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS is_cod BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_collected BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_amount NUMERIC(10, 2) DEFAULT 0.00;
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'WALLET';
+                    ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50) DEFAULT '';
+                    ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS bank_ifsc VARCHAR(20) DEFAULT '';
+                    ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS bank_name VARCHAR(150) DEFAULT '';
+                    ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS cash_collected NUMERIC(12, 2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS prepaid_revenue NUMERIC(12, 2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100) DEFAULT '';
+                    ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS bank_account_holder VARCHAR(150) DEFAULT '';
+                    ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50) DEFAULT '';
+                    ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS bank_ifsc VARCHAR(20) DEFAULT '';
+                    ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS bank_name VARCHAR(150) DEFAULT '';
+                    ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100) DEFAULT '';
                 """)
             elif vendor == 'sqlite':
                 columns = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_deliverytask')]
@@ -32,6 +44,8 @@ def auto_heal_schema():
                     cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN cash_collected BOOLEAN DEFAULT FALSE;")
                 if 'cash_amount' not in columns:
                     cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN cash_amount NUMERIC(10, 2) DEFAULT 0.00;")
+                if 'payout_id' not in columns:
+                    cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN payout_id BIGINT;")
                 order_cols = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_liveorder')]
                 if 'is_cod' not in order_cols:
                     cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN is_cod BOOLEAN DEFAULT FALSE;")
@@ -44,6 +58,13 @@ def auto_heal_schema():
             print("✅ [Railway DB Initializer] Database columns verified.")
         except Exception as e:
             print("Schema auto-heal notice:", e)
+
+    try:
+        from django.core.management import call_command
+        call_command('migrate', interactive=False)
+        print("✅ [Railway DB Initializer] Migrations caught up successfully.")
+    except Exception as mig_err:
+        print("⚠️ [Railway DB Initializer] Migration catch-up notice:", mig_err)
 
 
 def seed():
