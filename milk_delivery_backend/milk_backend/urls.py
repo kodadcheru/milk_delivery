@@ -125,6 +125,7 @@ urlpatterns = [
     path("api/admin/deliveries/reassign/", AdminDeliveryReassignView.as_view(), name="admin_delivery_reassign_batch"),
     path("api/admin/broadcast-notification/", AdminBroadcastNotificationView.as_view(), name="admin_broadcast"),
     path("api/admin/hubs/", AdminHubsView.as_view(), name="admin_hubs"),
+    path("api/hubs/", AdminHubsView.as_view(), name="public_hubs"),
     path("api/admin/hubs/cleanup/", AdminHubCleanupView.as_view(), name="admin_hubs_cleanup"),
     path("api/admin/hubs/<str:pk>/", AdminHubDetailView.as_view(), name="admin_hub_detail"),
     path("api/admin/hubs/<str:pk>/assign-driver/", AdminHubAssignDriverView.as_view(), name="admin_hub_assign_driver"),

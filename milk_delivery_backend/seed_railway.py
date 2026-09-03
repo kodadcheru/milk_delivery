@@ -117,6 +117,68 @@ def seed():
     except Exception as e:
         print("Category seeding notice:", e)
 
+    # 3. Ensure Hub Coverage & Service Areas
+    try:
+        from apps.deliveries.models import LocationHub, ServiceArea
+        from apps.products.models import Product, HubProductInventory
+        from django.db.models import Q
+
+        # Update Mella Chervu Depot radius to 15.0 km
+        mlc_hub = LocationHub.objects.filter(Q(hub_code="HUB-MLC-01") | Q(name__icontains="Mella Chervu")).first()
+        if mlc_hub:
+            mlc_hub.coverage_radius_km = 15.0
+            mlc_hub.latitude = 16.817715
+            mlc_hub.longitude = 79.933978
+            mlc_hub.save()
+            print("📍 [Railway DB Initializer] Mella Chervu Depot coverage radius expanded to 15.0 km.")
+
+        kdd_hub = LocationHub.objects.filter(Q(hub_code="HUB-KDD-01") | Q(name__icontains="Kodad")).first()
+        if kdd_hub and kdd_hub.coverage_radius_km < 15.0:
+            kdd_hub.coverage_radius_km = 15.0
+            kdd_hub.save()
+
+        # Seed Service Areas
+        if mlc_hub:
+            ServiceArea.objects.get_or_create(
+                name="Mellacheruvu",
+                defaults={
+                    "pincodes": "508246",
+                    "hub": mlc_hub,
+                    "radius_km": 15.0,
+                    "status": ServiceArea.Statuses.ACTIVE,
+                    "popular_societies": "Mellacheruvu Town, Main Road, Temple Road",
+                },
+            )
+
+        if kdd_hub:
+            ServiceArea.objects.get_or_create(
+                name="Kodad",
+                defaults={
+                    "pincodes": "508206",
+                    "hub": kdd_hub,
+                    "radius_km": 15.0,
+                    "status": ServiceArea.Statuses.ACTIVE,
+                    "popular_societies": "RTC Bus Depot Colony, Main Road, Gandhi Nagar",
+                },
+            )
+
+        # Ensure Hub Inventory for all active hubs
+        all_products = list(Product.objects.all())
+        for hub in LocationHub.objects.all():
+            for p in all_products:
+                HubProductInventory.objects.get_or_create(
+                    hub=hub,
+                    product=p,
+                    defaults={
+                        "daily_capacity_slots": 100,
+                        "booked_slots": 0,
+                        "is_available": True,
+                    },
+                )
+        print("🛒 [Railway DB Initializer] Hub product inventories ensured across all hubs.")
+    except Exception as e:
+        print("Hub and inventory initialization notice:", e)
+
     print("✅ [Railway DB Initializer] Ready with dynamic backend architecture.")
 
 

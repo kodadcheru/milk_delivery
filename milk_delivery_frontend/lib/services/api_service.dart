@@ -782,7 +782,10 @@ class ApiService {
   // ── 10. Location Hubs ──
   static Future<List<Map<String, dynamic>>> fetchHubs() async {
     try {
-      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/hubs/'), headers: _headers));
+      var res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/hubs/'), headers: _headers));
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/admin/hubs/'), headers: _headers));
+      }
       if (res.statusCode == 200 || res.statusCode == 201) {
         final List list = jsonDecode(res.body);
         return list.cast<Map<String, dynamic>>();

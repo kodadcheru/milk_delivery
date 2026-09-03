@@ -473,7 +473,10 @@ def generate_hub_code(name, address):
 
 
 class AdminHubsView(APIView):
-    permission_classes = [IsAdminOrHubManager]
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.AllowAny()]
+        return [IsAdminOrHubManager()]
 
     def get(self, request):
         from apps.accounts.models import User
@@ -504,15 +507,18 @@ class AdminHubsView(APIView):
                 fssai_license="13621014000343",
             )
 
-        user = request.user
+        user = getattr(request, 'user', None)
         hubs_qs = LocationHub.objects.all().prefetch_related("service_areas", "delivery_partners").order_by("-created_at")
         
-        # Scope to assigned hub for non-superusers
-        if not user.is_superuser and getattr(user, 'assigned_hub', None):
+        # Scope to assigned hub only for staff / hub manager roles with assigned hub
+        is_staff_role = user and user.is_authenticated and (
+            user.is_staff or getattr(user, 'role', '') in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "ADMIN", "HUB_MANAGER")
+        )
+        if is_staff_role and not user.is_superuser and getattr(user, 'assigned_hub', None):
             hubs_qs = hubs_qs.filter(id=user.assigned_hub_id)
 
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE)
-        if not user.is_superuser and getattr(user, 'assigned_hub', None):
+        if is_staff_role and not user.is_superuser and getattr(user, 'assigned_hub', None):
             from django.db.models import Q
             active_subs = active_subs.filter(Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub))
 

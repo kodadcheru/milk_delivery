@@ -15,7 +15,7 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
     Resolve the best hub for a given delivery location.
     If strict=True, returns None when outside all hub coverage areas.
     """
-    # Strategy 1: Match pincode against active service areas
+    # Strategy 1: Match pincode against active service areas or Hub addresses
     if pincode:
         clean_pincode = str(pincode).strip()
         matching_areas = ServiceArea.objects.filter(
@@ -27,7 +27,11 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
             if clean_pincode in area_pincodes and area.hub:
                 return area.hub
 
-    # Strategy 2: Match address text against service area names
+        for h in LocationHub.objects.all():
+            if clean_pincode in (h.address or ""):
+                return h
+
+    # Strategy 2: Match address text against service area names and LocationHub details
     if address:
         clean_address = str(address).lower().strip()
         matching_areas = ServiceArea.objects.filter(
@@ -37,6 +41,15 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
         for area in matching_areas:
             if area.name.lower() in clean_address and area.hub:
                 return area.hub
+
+        # Direct hub name or address matching
+        for h in LocationHub.objects.all():
+            h_name = (h.name or "").lower()
+            h_addr = (h.address or "").lower()
+            key_tokens = ["mella chervu", "mellachervu", "mellacheruvu", "kodad", "suryapet", "hyderabad", "jubilee hills"]
+            for token in key_tokens:
+                if token in clean_address and (token in h_name or token in h_addr):
+                    return h
 
     # Strategy 3: Find nearest hub by GPS (Haversine distance)
     if latitude and longitude:

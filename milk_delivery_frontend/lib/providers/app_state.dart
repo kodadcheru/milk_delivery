@@ -271,7 +271,7 @@ class AppState extends ChangeNotifier {
     for (final hub in locationHubs) {
       final hLat = double.tryParse(hub['latitude']?.toString() ?? '17.001734') ?? 17.001734;
       final hLon = double.tryParse(hub['longitude']?.toString() ?? '79.9625') ?? 79.9625;
-      final radius = double.tryParse(hub['coverage_radius_km']?.toString() ?? '8.5') ?? 8.5;
+      final radius = double.tryParse(hub['coverage_radius_km']?.toString() ?? '15.0') ?? 15.0;
       
       final dist = calculateDistanceKm(currentLat, currentLon, hLat, hLon);
       if (dist <= radius && dist < nearestDist) {
@@ -280,7 +280,22 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    return nearest; // Strictly returns null if customer is outside all hub radii!
+    // Name/Address keyword fallback if GPS distance was slightly off or not geocoded
+    if (nearest == null) {
+      final addrLower = '${activeAddress?.summaryAddress ?? ""} $currentDeliveryAddress'.toLowerCase();
+      for (final hub in locationHubs) {
+        final hName = (hub['name']?.toString() ?? '').toLowerCase();
+        final hAddr = (hub['address']?.toString() ?? '').toLowerCase();
+        final tokens = ['mella chervu', 'mellachervu', 'mellacheruvu', 'kodad', '508246', '508206'];
+        for (final token in tokens) {
+          if (addrLower.contains(token) && (hName.contains(token) || hAddr.contains(token))) {
+            return hub;
+          }
+        }
+      }
+    }
+
+    return nearest;
   }
 
   /// Whether current customer coordinates fall within any active hub delivery radius
