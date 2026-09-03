@@ -741,21 +741,13 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
-                            tooltip: 'View Proof',
+                            tooltip: 'View Doorstep Proof',
                             onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => Dialog(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                       ClipRRect(
-                                         borderRadius: BorderRadius.circular(12),
-                                         child: Image.network(order.proofImageUrl, fit: BoxFit.cover),
-                                       ),
-                                    ],
-                                  ),
-                                ),
+                              _showDoorstepProofLightbox(
+                                context,
+                                order.proofImageUrl,
+                                'Order #${order.id.length > 8 ? order.id.substring(0, 8) : order.id}',
+                                'Verified Doorstep Photo Proof',
                               );
                             },
                           ),
@@ -1156,20 +1148,126 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
                             tooltip: 'Doorstep Proof',
                             onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => Dialog(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(task.proofImageUrl, fit: BoxFit.cover),
-                                  ),
-                                ),
+                              _showDoorstepProofLightbox(
+                                context,
+                                task.proofImageUrl,
+                                'Daily Drop #${task.id}',
+                                '${task.productName} • ${task.deliveryDate}',
                               );
                             },
                           ),
                         ],
                       ],
                     ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDoorstepProofLightbox(BuildContext context, String imageUrl, String title, String subtitle) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.88),
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Top Bar
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Pinch-to-zoom interactive viewer
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.65,
+                ),
+                color: Colors.black,
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Container(
+                      padding: const EdgeInsets.all(32),
+                      color: const Color(0xFF1E293B),
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.broken_image_rounded, color: Colors.white54, size: 48),
+                          SizedBox(height: 8),
+                          Text('Could not load photo proof', style: TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+              ],
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified_rounded, color: Color(0xFF34D399), size: 14),
+                  SizedBox(width: 6),
+                  Text(
+                    'Pinch to zoom • Verified Doorstep Photo Drop',
+                    style: TextStyle(
+                      color: Color(0xFF34D399),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
