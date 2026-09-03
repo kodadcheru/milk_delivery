@@ -267,7 +267,6 @@ class DeliverySummaryView(APIView):
         active_subs = Subscription.objects.filter(status=Subscription.Statuses.ACTIVE).select_related("product", "customer")
 
         # Scope to user's hub
-        from django.db.models import Q
         if not user.is_superuser and getattr(user, 'assigned_hub', None):
             tasks = tasks.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub))
             active_subs = active_subs.filter(Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub))
@@ -708,7 +707,6 @@ class GenerateTodayTasksView(APIView):
                 logger.warning(f"Batch certification warning: {batch_err}")
 
         # 5. Query active subscriptions
-        from django.db.models import Q
         active_subs = (
             Subscription.objects
             .filter(status=Subscription.Statuses.ACTIVE)

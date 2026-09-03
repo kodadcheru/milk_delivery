@@ -22,6 +22,7 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 return base_qs.filter(customer=user)
 
         hub_code = self.request.query_params.get('hub_code') or self.request.query_params.get('hub')
+        qs = base_qs
         if hub_code:
             from django.db.models import Q
             if str(hub_code).isdigit():

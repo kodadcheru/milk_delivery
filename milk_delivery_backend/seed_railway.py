@@ -8,7 +8,46 @@ if __name__ == "__main__":
 from apps.accounts.models import User
 
 
+def auto_heal_schema():
+    print("🛠️ [Railway DB Initializer] Ensuring schema consistency...")
+    from django.db import connection
+    vendor = connection.vendor
+    with connection.cursor() as cursor:
+        try:
+            if vendor == 'postgresql':
+                cursor.execute("""
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS is_cod BOOLEAN DEFAULT FALSE;
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_collected BOOLEAN DEFAULT FALSE;
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_amount NUMERIC(10, 2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS is_cod BOOLEAN DEFAULT FALSE;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_collected BOOLEAN DEFAULT FALSE;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_amount NUMERIC(10, 2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'WALLET';
+                """)
+            elif vendor == 'sqlite':
+                columns = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_deliverytask')]
+                if 'is_cod' not in columns:
+                    cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN is_cod BOOLEAN DEFAULT FALSE;")
+                if 'cash_collected' not in columns:
+                    cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN cash_collected BOOLEAN DEFAULT FALSE;")
+                if 'cash_amount' not in columns:
+                    cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN cash_amount NUMERIC(10, 2) DEFAULT 0.00;")
+                order_cols = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_liveorder')]
+                if 'is_cod' not in order_cols:
+                    cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN is_cod BOOLEAN DEFAULT FALSE;")
+                if 'cash_collected' not in order_cols:
+                    cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN cash_collected BOOLEAN DEFAULT FALSE;")
+                if 'cash_amount' not in order_cols:
+                    cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN cash_amount NUMERIC(10, 2) DEFAULT 0.00;")
+                if 'payment_method' not in order_cols:
+                    cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN payment_method VARCHAR(20) DEFAULT 'WALLET';")
+            print("✅ [Railway DB Initializer] Database columns verified.")
+        except Exception as e:
+            print("Schema auto-heal notice:", e)
+
+
 def seed():
+    auto_heal_schema()
     print("🌱 [Railway DB Initializer] Ensuring Super Admin account exists...")
 
     # 1. Permanent Super Admin Account (zero hardcoded categories, products, hubs, or banners)

@@ -536,7 +536,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
   }
 
   Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
-    HapticFeedback.warningImpact();
+    HapticFeedback.mediumImpact();
     final pName = sub.productDetail?.name ?? 'Subscription';
     final confirmed = await showDialog<bool>(
       context: context,
