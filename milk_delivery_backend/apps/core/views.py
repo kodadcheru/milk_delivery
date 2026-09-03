@@ -26,6 +26,15 @@ class HealthCheckView(APIView):
                 cursor.fetchone()
                 cursor.execute("""
                     ALTER TABLE accounts_user ADD COLUMN IF NOT EXISTS gender varchar(10) DEFAULT 'Male';
+                    ALTER TABLE products_category ADD COLUMN IF NOT EXISTS subtitle varchar(150) DEFAULT '';
+                    ALTER TABLE products_category ADD COLUMN IF NOT EXISTS quality_badge_title varchar(150) DEFAULT '';
+                    ALTER TABLE products_category ADD COLUMN IF NOT EXISTS quality_specs jsonb DEFAULT '{}'::jsonb;
+                    ALTER TABLE products_category ADD COLUMN IF NOT EXISTS tracking_badges jsonb DEFAULT '[]'::jsonb;
+                    ALTER TABLE products_category ADD COLUMN IF NOT EXISTS image_url varchar(500) DEFAULT '';
+                    ALTER TABLE products_product ADD COLUMN IF NOT EXISTS subtitle varchar(150) DEFAULT '';
+                    ALTER TABLE products_product ADD COLUMN IF NOT EXISTS quality_badge_title varchar(150) DEFAULT '';
+                    ALTER TABLE products_product ADD COLUMN IF NOT EXISTS quality_specs jsonb DEFAULT '{}'::jsonb;
+                    ALTER TABLE products_product ADD COLUMN IF NOT EXISTS tracking_badges jsonb DEFAULT '[]'::jsonb;
                     CREATE TABLE IF NOT EXISTS deliveries_deliverychatmessage (
                         id BIGSERIAL PRIMARY KEY,
                         channel_key VARCHAR(100) NOT NULL,
@@ -40,6 +49,11 @@ class HealthCheckView(APIView):
                     );
                     CREATE INDEX IF NOT EXISTS deliv_chat_chan_idx ON deliveries_deliverychatmessage (channel_key, created_at);
                 """)
+            try:
+                from django.core.management import call_command
+                call_command("migrate", interactive=False)
+            except Exception as mig_err:
+                print("HealthCheck migration notice:", mig_err)
             db_latency_ms = round((time.time() - t0) * 1000, 2)
         except Exception as e:
             db_status = f"UNHEALTHY: {str(e)}"

@@ -37,9 +37,27 @@ def seed():
     admin.save()
     print("🛡️ [Super Admin Initialized]: admin / admin123 (Phone: +91 8919548905)")
 
-    # NOTE: ZERO categories, products, hubs, or storefront banners are seeded automatically.
-    # Everything is managed dynamically from the PostgreSQL backend via the Admin Web Console.
-    print("✅ [Railway DB Initializer] Ready with 100% dynamic backend architecture.")
+    # 2. Ensure initial active categories exist if empty
+    try:
+        from apps.products.models import Category
+        if Category.objects.count() == 0:
+            default_categories = [
+                {"name": "Fresh Milk", "slug": "milk", "icon": "🥛", "subtitle": "Pure 4°C Raw Cow & Buffalo Milk", "quality_badge_title": "100% Antibiotic & Preservative-Free", "display_order": 1},
+                {"name": "Country Eggs", "slug": "eggs", "icon": "🥚", "subtitle": "Free-Range Organic Desi Eggs", "quality_badge_title": "Direct from Native Farms", "display_order": 2},
+                {"name": "Tender Meat", "slug": "meat", "icon": "🥩", "subtitle": "Fresh Cut Certified Hygienic", "quality_badge_title": "FSSAI Inspected • Zero Frozen", "display_order": 3},
+                {"name": "Water Cans", "slug": "water_can", "icon": "💧", "subtitle": "20L RO UV Purified Mineral Cans", "quality_badge_title": "Daily Sanitized Food-Grade Cans", "display_order": 4},
+                {"name": "Fresh Paneer", "slug": "paneer", "icon": "🧀", "subtitle": "Soft Malai Paneer Made Daily", "quality_badge_title": "100% Pure Buffalo Milk", "display_order": 5},
+                {"name": "Desi Ghee", "slug": "ghee", "icon": "🧈", "subtitle": "Bilona Churned Golden Ghee", "quality_badge_title": "A2 Traditional Vedic Churning", "display_order": 6},
+                {"name": "Fresh Curd", "slug": "curd", "icon": "🥣", "subtitle": "Thick Traditional Clay-Pot Dahi", "quality_badge_title": "Active Live Cultures", "display_order": 7},
+                {"name": "Bakery & Breads", "slug": "bakery", "icon": "🍞", "subtitle": "Fresh Sourdough & Brown Breads", "quality_badge_title": "Zero Palm Oil • Artisanal", "display_order": 8},
+            ]
+            for cat_data in default_categories:
+                Category.objects.create(**cat_data)
+            print(f"📦 [Railway DB Initializer] Seeded {len(default_categories)} default core categories.")
+    except Exception as e:
+        print("Category seeding notice:", e)
+
+    print("✅ [Railway DB Initializer] Ready with dynamic backend architecture.")
 
 
 if __name__ == "__main__":

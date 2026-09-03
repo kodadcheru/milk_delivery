@@ -14,15 +14,7 @@ class HomeCategoryShowcase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If no categories are configured on backend, do not render placeholders
-    if (state.categories.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     final backendCategories = state.categories.where((c) => c.isActive).toList();
-    if (backendCategories.isEmpty) {
-      return const SizedBox.shrink();
-    }
 
     // Calculate tile width for 3-column grid
     final screenWidth = MediaQuery.of(context).size.width;
@@ -31,28 +23,49 @@ class HomeCategoryShowcase extends StatelessWidget {
     final tileWidth = (screenWidth - horizontalPadding - spacing * 2) / 3;
     final isCovered = state.isLocationCovered;
 
+    final List<Widget> categoryTiles;
+    if (backendCategories.isNotEmpty) {
+      categoryTiles = backendCategories.map((bCat) {
+        final catalogMeta = categoryMetaFor(bCat.slug);
+        final effectiveImageUrl = bCat.imageUrl.isNotEmpty ? bCat.imageUrl : catalogMeta.image;
+        final effectiveIcon = bCat.icon.isNotEmpty ? bCat.icon : catalogMeta.icon;
+
+        return SizedBox(
+          width: tileWidth,
+          child: _buildCategoryTile(
+            context: context,
+            categoryKey: bCat.slug,
+            title: bCat.name,
+            icon: effectiveIcon,
+            imageUrl: effectiveImageUrl,
+            bgColor: catalogMeta.tileBg,
+          ),
+        );
+      }).toList();
+    } else {
+      // Graceful fallback to curated catalogue so the customer storefront never looks empty
+      categoryTiles = kHomeCategoryKeys.map((key) {
+        final meta = categoryMetaFor(key);
+        return SizedBox(
+          width: tileWidth,
+          child: _buildCategoryTile(
+            context: context,
+            categoryKey: meta.key,
+            title: meta.shortTitle,
+            icon: meta.icon,
+            imageUrl: meta.image,
+            bgColor: meta.tileBg,
+          ),
+        );
+      }).toList();
+    }
+
     Widget content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Wrap(
         spacing: spacing,
         runSpacing: 16,
-        children: backendCategories.map((bCat) {
-          final catalogMeta = categoryMetaFor(bCat.slug);
-          final effectiveImageUrl = bCat.imageUrl.isNotEmpty ? bCat.imageUrl : catalogMeta.image;
-          final effectiveIcon = bCat.icon.isNotEmpty ? bCat.icon : catalogMeta.icon;
-
-          return SizedBox(
-            width: tileWidth,
-            child: _buildCategoryTile(
-              context: context,
-              categoryKey: bCat.slug,
-              title: bCat.name,
-              icon: effectiveIcon,
-              imageUrl: effectiveImageUrl,
-              bgColor: catalogMeta.tileBg,
-            ),
-          );
-        }).toList(),
+        children: categoryTiles,
       ),
     );
 
