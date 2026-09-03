@@ -1172,8 +1172,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
   void _showDoorstepProofLightbox(BuildContext context, String imageUrl, String title, String subtitle) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.88),
-      builder: (_) => Dialog(
+      barrierColor: const Color(0xE0000000),
+      builder: (dialogCtx) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Column(
@@ -1197,19 +1197,19 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
+                      style: const TextStyle(
+                        color: Color(0xBFFFFFFF),
                         fontSize: 12,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
                   icon: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                    decoration: const BoxDecoration(
+                      color: Color(0x33FFFFFF),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
@@ -1252,10 +1252,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                color: const Color(0x3310B981),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
-              ],
+                border: Border.all(color: const Color(0x8010B981)),
+              ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
