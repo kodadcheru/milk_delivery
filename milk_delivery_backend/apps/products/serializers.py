@@ -97,10 +97,30 @@ class ProductSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def get_available_slots(self, obj):
+    def _resolve_hub(self):
         request = self.context.get("request")
+        hub = None
+        if request and hasattr(request, "query_params"):
+            from apps.deliveries.models import LocationHub
+            hub_code = request.query_params.get("hub_code") or request.query_params.get("hub")
+            hub_id = request.query_params.get("hub_id")
+            if hub_code:
+                if str(hub_code).isdigit():
+                    hub = LocationHub.objects.filter(pk=int(hub_code)).first()
+                if not hub:
+                    hub = LocationHub.objects.filter(hub_code=hub_code).first()
+            elif hub_id:
+                try:
+                    hub = LocationHub.objects.filter(pk=int(hub_id)).first()
+                except (ValueError, TypeError):
+                    pass
         user = request.user if request and hasattr(request, "user") and request.user.is_authenticated else None
-        hub = getattr(user, "assigned_hub", None) if user else None
+        if not hub and user:
+            hub = getattr(user, "assigned_hub", None)
+        return hub
+
+    def get_available_slots(self, obj):
+        hub = self._resolve_hub()
         if hub:
             inv = HubProductInventory.objects.filter(hub=hub, product=obj).first()
             if inv:
@@ -108,9 +128,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return 100
 
     def get_daily_capacity_slots(self, obj):
-        request = self.context.get("request")
-        user = request.user if request and hasattr(request, "user") and request.user.is_authenticated else None
-        hub = getattr(user, "assigned_hub", None) if user else None
+        hub = self._resolve_hub()
         if hub:
             inv = HubProductInventory.objects.filter(hub=hub, product=obj).first()
             if inv:

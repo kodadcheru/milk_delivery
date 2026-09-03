@@ -92,7 +92,7 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                     raise ValidationError(
                         f"Delivery address is outside the operational service zone of {hub.name} "
                         f"({dist:.1f} km away, max coverage radius is {hub.coverage_radius_km} km). "
-                        f"Please choose an address within the Kodad service area."
+                        f"Please choose an address within the {hub.name} service area."
                     )
             except (ValueError, TypeError):
                 pass

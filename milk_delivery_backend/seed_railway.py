@@ -16,6 +16,57 @@ def auto_heal_schema():
         try:
             if vendor == 'postgresql':
                 cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS deliveries_providerpayout (
+                        id BIGSERIAL PRIMARY KEY,
+                        period_start DATE NOT NULL DEFAULT CURRENT_DATE,
+                        period_end DATE NOT NULL DEFAULT CURRENT_DATE,
+                        total_deliveries INTEGER NOT NULL DEFAULT 0,
+                        total_revenue NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+                        driver_salaries NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+                        platform_commission NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+                        net_payout NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+                        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+                        payment_reference VARCHAR(100) NOT NULL DEFAULT '',
+                        notes TEXT NOT NULL DEFAULT '',
+                        bank_account_number VARCHAR(50) NOT NULL DEFAULT '',
+                        bank_ifsc VARCHAR(20) NOT NULL DEFAULT '',
+                        bank_name VARCHAR(150) NOT NULL DEFAULT '',
+                        cash_collected NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+                        prepaid_revenue NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+                        upi_id VARCHAR(100) NOT NULL DEFAULT '',
+                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                        paid_at TIMESTAMP WITH TIME ZONE,
+                        hub_id BIGINT REFERENCES deliveries_locationhub(id) ON DELETE CASCADE,
+                        manager_id BIGINT REFERENCES accounts_user(id) ON DELETE SET NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS deliveries_bottlereturn (
+                        id BIGSERIAL PRIMARY KEY,
+                        quantity INTEGER NOT NULL DEFAULT 1,
+                        deposit_amount NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
+                        status VARCHAR(20) NOT NULL DEFAULT 'DEPOSITED',
+                        collected_date DATE NOT NULL DEFAULT CURRENT_DATE,
+                        returned_date DATE,
+                        notes TEXT NOT NULL DEFAULT '',
+                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                        customer_id BIGINT REFERENCES accounts_user(id) ON DELETE CASCADE,
+                        driver_id BIGINT REFERENCES accounts_user(id) ON DELETE SET NULL,
+                        hub_id BIGINT REFERENCES deliveries_locationhub(id) ON DELETE SET NULL,
+                        product_id BIGINT REFERENCES products_product(id) ON DELETE SET NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS deliveries_deliveryrating (
+                        id BIGSERIAL PRIMARY KEY,
+                        rating SMALLINT NOT NULL DEFAULT 5,
+                        feedback TEXT NOT NULL DEFAULT '',
+                        tags JSONB DEFAULT '[]'::jsonb,
+                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                        driver_id BIGINT REFERENCES accounts_user(id) ON DELETE SET NULL,
+                        order_id VARCHAR(50) REFERENCES deliveries_liveorder(id) ON DELETE SET NULL,
+                        task_id BIGINT REFERENCES deliveries_deliverytask(id) ON DELETE SET NULL,
+                        user_id BIGINT REFERENCES accounts_user(id) ON DELETE SET NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS deliv_rate_driver_idx ON deliveries_deliveryrating(driver_id, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS deliv_rate_order_idx ON deliveries_deliveryrating(order_id, created_at DESC);
+
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS is_cod BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_collected BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_amount NUMERIC(10, 2) DEFAULT 0.00;
@@ -37,6 +88,19 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100) DEFAULT '';
                 """)
             elif vendor == 'sqlite':
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS deliveries_deliveryrating (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        rating INTEGER NOT NULL DEFAULT 5,
+                        feedback TEXT NOT NULL DEFAULT '',
+                        tags TEXT DEFAULT '[]',
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        driver_id INTEGER REFERENCES accounts_user(id) ON DELETE SET NULL,
+                        order_id VARCHAR(50) REFERENCES deliveries_liveorder(id) ON DELETE SET NULL,
+                        task_id INTEGER REFERENCES deliveries_deliverytask(id) ON DELETE SET NULL,
+                        user_id INTEGER REFERENCES accounts_user(id) ON DELETE SET NULL
+                    );
+                """)
                 columns = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_deliverytask')]
                 if 'is_cod' not in columns:
                     cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN is_cod BOOLEAN DEFAULT FALSE;")
@@ -55,7 +119,7 @@ def auto_heal_schema():
                     cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN cash_amount NUMERIC(10, 2) DEFAULT 0.00;")
                 if 'payment_method' not in order_cols:
                     cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN payment_method VARCHAR(20) DEFAULT 'WALLET';")
-            print("✅ [Railway DB Initializer] Database columns verified.")
+            print("✅ [Railway DB Initializer] Database tables and columns verified.")
         except Exception as e:
             print("Schema auto-heal notice:", e)
 
