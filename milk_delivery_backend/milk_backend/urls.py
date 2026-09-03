@@ -204,6 +204,7 @@ urlpatterns = [
     path("api/deliveries/coverage-request/", CoverageExpansionRequestView.as_view(), name="coverage_request"),
     path("api/slots/availability/", SlotAvailabilityView.as_view(), name="slot_availability"),
     path("api/admin/generate-tasks/", GenerateTodayTasksView.as_view(), name="generate_tasks"),
+    path("api/deliveries/generate-today-tasks/", GenerateTodayTasksView.as_view(), name="generate_today_tasks_alias"),
     # Bottle Return & Payout Tracking endpoints
     path("api/bottles/", BottleReturnListCreateView.as_view(), name="bottle_list_create"),
     path("api/bottles/<int:pk>/", BottleReturnUpdateView.as_view(), name="bottle_update"),

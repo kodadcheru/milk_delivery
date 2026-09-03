@@ -241,6 +241,14 @@ class ExpressOrderListCreateView(APIView):
         parsed_items = []
 
         for item_entry in items_data:
+            if isinstance(item_entry, str):
+                import json
+                try:
+                    item_entry = json.loads(item_entry)
+                except Exception:
+                    continue
+            if not isinstance(item_entry, dict):
+                continue
             prod_id = item_entry.get("product_id") or (item_entry.get("product", {}).get("id") if isinstance(item_entry.get("product"), dict) else None)
             qty = int(item_entry.get("quantity", 1))
             if not prod_id:
