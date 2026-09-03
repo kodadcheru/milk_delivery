@@ -740,7 +740,7 @@ class AppState extends ChangeNotifier {
         ApiService.fetchUserProfile(),
         ApiService.fetchCustomerAddresses(customerId: userId, phone: userPhone),
         ApiService.fetchSubscriptions(phone: userPhone, customerId: userId),
-        ApiService.fetchDeliveries(phone: userPhone, customerId: userId, hubCode: activeHubCode),
+        ApiService.fetchDeliveries(hubCode: activeHubCode),
         ApiService.fetchLiveOrders(hubCode: activeHubCode),
         ApiService.fetchWalletTransactions(),
         ApiService.fetchNotifications(),

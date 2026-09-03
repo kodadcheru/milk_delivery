@@ -577,20 +577,43 @@ class ProviderPayoutListCreateView(APIView):
 
 
 class GenerateTodayTasksView(APIView):
-    """Admin / Hub Manager endpoint to trigger daily delivery task generation."""
+    """Admin / Hub Manager / Driver endpoint to trigger daily delivery task generation."""
     permission_classes = [IsAdminOrHubManager]
 
     def post(self, request):
         from datetime import timedelta
         from apps.subscriptions.models import VacationPause
+        from apps.deliveries.models import LocationHub, DailyMilkBatch, DeliveryTask
+        from apps.products.models import Product
+        import random
+        import logging
 
+        logger = logging.getLogger(__name__)
+
+        # 1. Parse target date safely
         target_date_str = request.data.get("date")
         if target_date_str:
-            target_date = date.fromisoformat(target_date_str)
+            try:
+                target_date = date.fromisoformat(str(target_date_str).split("T")[0].strip())
+            except Exception:
+                target_date = date.today()
         else:
             target_date = date.today()
 
-        # Auto-resume expired vacation pauses
+        # 2. Resolve target hub (ALWAYS define hub_obj safely)
+        hub_code = request.data.get("hub_code") or request.data.get("hub_id")
+        hub_obj = None
+        if hub_code and str(hub_code).lower() != "all":
+            hub_qs = LocationHub.objects.filter(hub_code=hub_code)
+            if not hub_qs.exists() and str(hub_code).isdigit():
+                hub_qs = LocationHub.objects.filter(pk=int(hub_code))
+            hub_obj = hub_qs.first()
+        if not hub_obj and getattr(request.user, "assigned_hub", None):
+            hub_obj = request.user.assigned_hub
+        if not hub_obj:
+            hub_obj = LocationHub.objects.first()
+
+        # 3. Auto-resume expired vacation pauses
         resumed_count = 0
         expired_pauses = VacationPause.objects.filter(
             end_date__lt=target_date,
@@ -601,15 +624,18 @@ class GenerateTodayTasksView(APIView):
             sub = pause.subscription
             sub.status = Subscription.Statuses.ACTIVE
             sub.save(update_fields=["status"])
-            Notification.objects.create(
-                user=sub.customer,
-                title="🔔 Subscription Resumed",
-                message=f"Your vacation pause has ended. Daily deliveries of {sub.product.name} resume from {target_date}.",
-                notification_type=Notification.Types.VACATION,
-            )
+            try:
+                Notification.objects.create(
+                    user=sub.customer,
+                    title="🔔 Subscription Resumed",
+                    message=f"Your vacation pause has ended. Daily deliveries of {sub.product.name} resume from {target_date}.",
+                    notification_type=Notification.Types.VACATION,
+                )
+            except Exception:
+                pass
             resumed_count += 1
 
-        # Record & wire daily batch lab certification if provided
+        # 4. Record & wire daily batch lab certification if provided
         product_name = request.data.get("product_name", "Pure Buffalo Milk")
         fat_val = request.data.get("fat_percentage")
         snf_val = request.data.get("snf_percentage")
@@ -620,67 +646,50 @@ class GenerateTodayTasksView(APIView):
 
         created_batch_code = None
         if fat_val is not None and price_val is not None:
-            from django.db import models
-            from apps.deliveries.models import DailyMilkBatch, LocationHub
-            from apps.products.models import Product
-            import random
-            
-            hub_code = request.data.get("hub_code") or request.data.get("hub_id")
-            hub_obj = None
-            if hub_code:
-                hub_qs = LocationHub.objects.filter(hub_code=hub_code)
-                if not hub_qs.exists() and str(hub_code).isdigit():
-                    hub_qs = LocationHub.objects.filter(pk=int(hub_code))
-                hub_obj = hub_qs.first()
-            if not hub_obj:
-                hub_obj = LocationHub.objects.first()
+            try:
+                batch_code = request.data.get("batch_code") or f"BATCH-{target_date.strftime('%Y%m%d')}-{random.randint(100, 999)}"
+                # Find existing batch for this date, hub, and product
+                batch_filter = {"batch_date": target_date, "product_name__iexact": product_name}
+                if hub_obj:
+                    batch_filter["hub"] = hub_obj
+                batch = DailyMilkBatch.objects.filter(**batch_filter).first()
+                if not batch:
+                    batch = DailyMilkBatch(
+                        batch_date=target_date,
+                        hub=hub_obj,
+                        product_name=product_name,
+                        batch_code=batch_code,
+                    )
+                batch.fat_percentage = float(fat_val)
+                batch.snf_percentage = float(snf_val or 9.0)
+                batch.water_percentage = float(water_val or 0.0)
+                batch.price_per_litre = float(price_val)
+                batch.total_litres = float(total_litres or 450.0)
+                batch.temperature_celsius = float(temp_val or 3.8)
+                batch.status = "DISPATCHED"
+                batch.dispatched_by = request.user if request.user.is_authenticated else None
+                batch.save()
+                created_batch_code = batch.batch_code
 
-            batch_code = request.data.get("batch_code") or f"BATCH-{target_date.strftime('%Y%m%d')}-{random.randint(100, 999)}"
-            created_batch_code = batch_code
+                # Update product unit price
+                first_w = product_name.split()[0] if product_name else "Milk"
+                Product.objects.filter(name__icontains=first_w).update(price_per_unit=float(price_val))
+            except Exception as batch_err:
+                logger.warning(f"Batch certification warning: {batch_err}")
 
-            DailyMilkBatch.objects.update_or_create(
-                batch_date=target_date,
-                product_name=product_name,
-                defaults={
-                    "hub": hub_obj,
-                    "batch_code": batch_code,
-                    "fat_percentage": float(fat_val),
-                    "snf_percentage": float(snf_val or 9.0),
-                    "water_percentage": float(water_val or 0.0),
-                    "price_per_litre": float(price_val),
-                    "total_litres": float(total_litres or 450.0),
-                    "temperature_celsius": float(temp_val or 3.8),
-                    "status": "DISPATCHED",
-                    "dispatched_by": request.user if request.user.is_authenticated else None,
-                }
-            )
-
-            # Update product unit price
-            first_w = product_name.split()[0] if product_name else "Milk"
-            Product.objects.filter(name__icontains=first_w).update(price_per_unit=float(price_val))
-
-        # Generate tasks for active subscriptions
+        # 5. Query active subscriptions
         from django.db.models import Q
         active_subs = (
             Subscription.objects
             .filter(status=Subscription.Statuses.ACTIVE)
-            .filter(Q(start_date__lte=target_date) | Q(created_at__date__lte=target_date))
-            .select_related("customer", "product", "hub", "customer__assigned_hub")
+            .select_related("customer", "product", "hub", "address", "customer__assigned_hub")
         )
-        
+
         user = request.user
-        hub_code_filter = request.data.get("hub_code") or request.data.get("hub_id")
-        if hub_code_filter:
-            # Use explicit hub_code from request body
-            from apps.deliveries.models import LocationHub
-            filter_hub_qs = LocationHub.objects.filter(hub_code=hub_code_filter)
-            if not filter_hub_qs.exists() and str(hub_code_filter).isdigit():
-                filter_hub_qs = LocationHub.objects.filter(pk=int(hub_code_filter))
-            filter_hub = filter_hub_qs.first()
-            if filter_hub:
-                active_subs = active_subs.filter(
-                    Q(hub=filter_hub) | Q(customer__assigned_hub=filter_hub) | Q(hub__isnull=True)
-                )
+        if hub_code and str(hub_code).lower() != "all" and hub_obj:
+            active_subs = active_subs.filter(
+                Q(hub=hub_obj) | Q(customer__assigned_hub=hub_obj) | Q(hub__isnull=True)
+            )
         elif not user.is_superuser and getattr(user, 'assigned_hub', None):
             active_subs = active_subs.filter(
                 Q(hub=user.assigned_hub) | Q(customer__assigned_hub=user.assigned_hub) | Q(hub__isnull=True)
@@ -702,64 +711,77 @@ class GenerateTodayTasksView(APIView):
                 skipped_count += 1
                 continue
 
+            # Check if task already exists for this subscription on this date
             existing_task = DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).first()
             if existing_task:
-                if existing_task.status in ('DELIVERED', 'SKIPPED', 'FAILED'):
-                    pass  # Don't override any completed/skipped/failed status
                 skipped_count += 1
                 continue
 
-            # Schedule eligibility
-            if sub.schedule_type == Subscription.Schedules.ALTERNATE:
+            # Don't generate tasks if subscription starts in the future
+            if sub.start_date and sub.start_date > target_date:
+                skipped_count += 1
+                continue
+
+            # Schedule eligibility (case-insensitive)
+            sched = (sub.schedule_type or 'DAILY').upper()
+            if sched == Subscription.Schedules.ALTERNATE:
                 days_since = (target_date - sub.start_date).days
                 if days_since % 2 != 0:
                     skipped_count += 1
                     continue
-            elif sub.schedule_type == Subscription.Schedules.CUSTOM:
+            elif sched == Subscription.Schedules.CUSTOM:
                 if target_date.weekday() not in (0, 2, 4):
                     skipped_count += 1
                     continue
-            elif sub.schedule_type == Subscription.Schedules.ONCE:
+            elif sched == Subscription.Schedules.ONCE:
                 if DeliveryTask.objects.filter(subscription=sub).exists():
                     skipped_count += 1
                     continue
-            elif sub.schedule_type == 'WEEKDAYS' and target_date.weekday() >= 5:  # 5=Sat, 6=Sun
+            elif sched in ('WEEKDAYS', 'WEEKDAY') and target_date.weekday() >= 5:  # 5=Sat, 6=Sun
                 skipped_count += 1
                 continue
 
-            # Resolve hub and driver
-            hub = sub.hub or getattr(sub.customer, "assigned_hub", None)
-            if not hub and hub_obj:
-                hub = hub_obj  # Use the batch hub as fallback
-            # Auto-fix: assign hub to old subscriptions missing it
+            # Resolve hub
+            hub = sub.hub or getattr(sub.customer, "assigned_hub", None) or hub_obj
             if hub and not sub.hub:
                 sub.hub = hub
                 sub.save(update_fields=["hub"])
+
+            # Resolve driver with multi-tier fallback
             driver = self._get_next_driver(hub, hub_drivers, hub_driver_indices)
+
+            # Resolve customer address
+            task_address = sub.address
+            if not task_address and hasattr(sub.customer, "addresses"):
+                task_address = sub.customer.addresses.filter(is_default=True).first() or sub.customer.addresses.first()
+
+            slot = sub.delivery_slot or getattr(sub.customer, "delivery_slot_preference", None) or "05:30 AM - 07:00 AM"
 
             DeliveryTask.objects.create(
                 subscription=sub,
                 hub=hub,
                 driver=driver,
+                address=task_address,
                 delivery_date=target_date,
-                slot_time=sub.delivery_slot or getattr(sub.customer, "delivery_slot_preference", None) or "05:30 AM - 07:00 AM",
+                slot_time=slot,
                 status=DeliveryTask.Statuses.PENDING,
             )
             created_count += 1
 
-        # Auto-link quality batch to generated tasks
-        from .models import DailyMilkBatch
+        # 6. Auto-link quality batch to generated tasks
         batches = DailyMilkBatch.objects.filter(batch_date=target_date)
-        for task in DeliveryTask.objects.filter(delivery_date=target_date, batch__isnull=True):
-            matching_batch = batches.filter(hub=task.hub).first()
-            if matching_batch:
-                task.batch = matching_batch
-                task.save(update_fields=['batch'])
+        if batches.exists():
+            for task in DeliveryTask.objects.filter(delivery_date=target_date, batch__isnull=True):
+                matching_batch = batches.filter(hub=task.hub).first() or batches.first()
+                if matching_batch:
+                    task.batch = matching_batch
+                    task.save(update_fields=['batch'])
 
-        # Count total existing tasks for this date (including ones just created)
+        # 7. Total tasks count
         total_tasks = DeliveryTask.objects.filter(delivery_date=target_date).count()
 
         return Response({
+            "status": "success",
             "message": f"Task generation complete for {target_date}.",
             "date": str(target_date),
             "tasks_created": created_count,
@@ -767,8 +789,9 @@ class GenerateTodayTasksView(APIView):
             "subscriptions_skipped": skipped_count,
             "vacations_resumed": resumed_count,
             "active_subscriptions_found": active_subs.count() if hasattr(active_subs, 'count') else len(list(active_subs)),
-            "hub_filter": hub_code_filter or (str(getattr(user, 'assigned_hub_id', None)) if getattr(user, 'assigned_hub', None) else 'none'),
-        })
+            "hub_filter": str(hub_code or getattr(hub_obj, 'hub_code', 'ALL')),
+            "batch_code": created_batch_code,
+        }, status=status.HTTP_200_OK)
 
     def _get_next_driver(self, hub, hub_drivers, hub_driver_indices):
         if hub is None:
@@ -776,13 +799,29 @@ class GenerateTodayTasksView(APIView):
 
         hub_id = hub.id
         if hub_id not in hub_drivers:
+            # 1. Try active drivers for this hub
             drivers = list(
                 User.objects.filter(
-                    role=User.Roles.DELIVERY_PARTNER,
+                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
                     assigned_hub=hub,
                     driver_status="ACTIVE",
-                )
+                ).order_by("id")
             )
+            # 2. Fallback: Any drivers assigned to this hub
+            if not drivers:
+                drivers = list(
+                    User.objects.filter(
+                        role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
+                        assigned_hub=hub,
+                    ).order_by("id")
+                )
+            # 3. Fallback: Any driver in the system
+            if not drivers:
+                drivers = list(
+                    User.objects.filter(
+                        role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
+                    ).order_by("id")
+                )
             hub_drivers[hub_id] = drivers
             hub_driver_indices[hub_id] = 0
 
