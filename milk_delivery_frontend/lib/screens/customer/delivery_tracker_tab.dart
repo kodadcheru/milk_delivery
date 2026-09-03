@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/delivery_task_model.dart';
 import '../../models/live_order_model.dart';
+import '../../models/subscription_model.dart';
 import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
@@ -91,6 +92,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     final isTelugu = widget.state.isTelugu;
     final liveOrders = widget.state.liveOrders;
     final subTasks = widget.state.deliveries;
+    final activeSubs = widget.state.subscriptions.where((s) => s.status != 'CANCELLED').toList();
 
     return SafeArea(
       child: Scaffold(
@@ -191,7 +193,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                 const Text('🔁', style: TextStyle(fontSize: 14)),
                                 const SizedBox(width: 6),
                                 Text(isTelugu ? 'సభ్యత్వాలు' : 'Subscriptions'),
-                                if (subTasks.isNotEmpty) ...[
+                                if (activeSubs.isNotEmpty || subTasks.isNotEmpty) ...[
                                   const SizedBox(width: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -200,7 +202,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      '${subTasks.length}',
+                                      '${activeSubs.isNotEmpty ? activeSubs.length : subTasks.length}',
                                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
                                     ),
                                   ),
@@ -804,6 +806,20 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
   // TAB 2: SUBSCRIPTION DELIVERIES VIEW
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildSubscriptionDeliveriesView(BuildContext context, bool isTelugu) {
+    // 1. Filter parent recurring subscriptions
+    final subs = widget.state.subscriptions.where((sub) {
+      if (_searchQuery.isNotEmpty) {
+        final pName = (sub.productDetail?.name ?? '').toLowerCase();
+        final addr = sub.deliveryAddress.toLowerCase();
+        if (!pName.contains(_searchQuery) && !addr.contains(_searchQuery)) return false;
+      }
+      if (_selectedFilterIndex == 1) return sub.status == 'ACTIVE';
+      if (_selectedFilterIndex == 2) return sub.status == 'PAUSED';
+      if (_selectedFilterIndex == 3) return sub.status == 'CANCELLED';
+      return true;
+    }).toList();
+
+    // 2. Filter daily fulfillment delivery drops
     final tasks = widget.state.deliveries.where((task) {
       if (_searchQuery.isNotEmpty) {
         final matchesName = task.productName.toLowerCase().contains(_searchQuery);
@@ -825,7 +841,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (tasks.isEmpty)
+            // Empty state when both subscriptions and daily runs are empty
+            if (subs.isEmpty && tasks.isEmpty)
               Container(
                 padding: const EdgeInsets.all(32),
                 alignment: Alignment.center,
@@ -839,24 +856,328 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     const Text('🥛', style: TextStyle(fontSize: 48)),
                     const SizedBox(height: 12),
                     Text(
-                      isTelugu ? 'సభ్యత్వ డెలివరీలు ఏవీ లేవు' : 'No Subscription Deliveries Found',
+                      isTelugu ? 'సభ్యత్వాలు లేదా డెలివరీలు ఏవీ లేవు' : 'No Active Subscriptions Found',
                       style: UiText.h2.copyWith(fontSize: 16, color: UiTone.ink),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       isTelugu
-                          ? 'తాజా పాలు ప్రతిరోజూ ఉదయం 06:00 గంటలకు మీ ఇంటి వద్ద పొందండి.'
-                          : 'Daily farm fresh milk drops will appear here during morning delivery routes.',
+                          ? 'తాజా పాలు ప్రతిరోజూ ఉదయం 06:00 గంటలకు మీ ఇంటి వద్ద పొందడానికి సబ్‌స్క్రయిబ్ చేసుకోండి.'
+                          : 'Subscribe to farm fresh milk & dairy for guaranteed 06:00 AM morning doorstep delivery.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                     ),
+                    const SizedBox(height: 18),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        widget.state.setTab(0);
+                      },
+                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
+                      label: Text(isTelugu ? 'సబ్‌స్క్రిప్షన్‌ను ప్రారంభించండి' : 'Start a Subscription'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      ),
+                    ),
                   ],
                 ),
-              )
-            else
+              ),
+
+            // ── Section 1: Active Recurring Subscriptions ──
+            if (subs.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        isTelugu ? 'యాక్టివ్ సబ్‌స్క్రిప్షన్లు' : 'Active Subscriptions',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: UiTone.ink),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: UiTone.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${subs.length}',
+                          style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w900, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      widget.state.setTab(1); // Navigate to dedicated Subscriptions tab
+                    },
+                    icon: const Icon(Icons.tune_rounded, size: 14),
+                    label: Text(isTelugu ? 'నిర్వహించండి' : 'Manage All'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: UiTone.primary,
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...subs.map((sub) => _buildActiveSubscriptionCard(context, sub, isTelugu)),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Section 2: Daily Delivery Drops / Route Fulfillment ──
+            if (tasks.isNotEmpty) ...[
+              Row(
+                children: [
+                  Text(
+                    isTelugu ? 'డైలీ డెలివరీ రన్స్' : 'Daily Delivery Drops',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: UiTone.ink),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${tasks.length}',
+                      style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w900, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               ...tasks.map((task) => _buildSubscriptionTaskCard(context, task, isTelugu)),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActiveSubscriptionCard(BuildContext context, SubscriptionModel sub, bool isTelugu) {
+    final prod = sub.productDetail;
+    final pName = prod?.name ?? 'Farm Fresh Milk';
+    final isPaused = sub.status == 'PAUSED';
+    final isCancelled = sub.status == 'CANCELLED';
+    final unitPrice = prod?.pricePerUnit ?? 72.0;
+    final dailyTotal = unitPrice * sub.quantity;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isPaused ? Colors.orange.shade200 : Colors.grey.shade200,
+          width: isPaused ? 1.2 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isPaused
+                      ? Colors.orange.withValues(alpha: 0.1)
+                      : UiTone.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(prod?.icon ?? '🥛', style: const TextStyle(fontSize: 24)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.state.translateProduct(pName),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${sub.packSize} • ${sub.scheduleType}',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isCancelled
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : isPaused
+                          ? Colors.orange.withValues(alpha: 0.12)
+                          : const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCancelled
+                            ? Colors.red
+                            : isPaused
+                                ? Colors.orange.shade700
+                                : const Color(0xFF0D7C66),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      isCancelled
+                          ? (isTelugu ? 'రద్దు చేయబడింది' : 'CANCELLED')
+                          : isPaused
+                              ? (isTelugu ? 'విరామం' : 'PAUSED')
+                              : (isTelugu ? 'యాక్టివ్' : 'ACTIVE'),
+                      style: TextStyle(
+                        color: isCancelled
+                            ? Colors.red
+                            : isPaused
+                                ? Colors.orange.shade800
+                                : const Color(0xFF0D7C66),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 22),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.alarm_rounded, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    sub.deliverySlot,
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 11.5, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              Text(
+                '${sub.quantity} Units • ${UiFormat.price(dailyTotal)} / day',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: UiTone.ink),
+              ),
+            ],
+          ),
+          if (sub.deliveryAddress.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    sub.deliveryAddress.length > 36
+                        ? '${sub.deliveryAddress.substring(0, 36)}...'
+                        : sub.deliveryAddress,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (!isCancelled) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      HapticFeedback.mediumImpact();
+                      final ok = await widget.state.toggleSubscriptionStatus(sub.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: isPaused ? const Color(0xFF0D7C66) : Colors.orange.shade800,
+                            content: Text(isPaused
+                                ? (isTelugu ? 'సబ్‌స్క్రిప్షన్ పునఃప్రారంభించబడింది' : 'Subscription resumed!')
+                                : (isTelugu ? 'సబ్‌స్క్రిప్షన్ తాత్కాలికంగా నిలిపివేయబడింది' : 'Subscription paused')),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    icon: Icon(
+                      isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                      size: 16,
+                      color: isPaused ? const Color(0xFF0D7C66) : Colors.orange.shade800,
+                    ),
+                    label: Text(
+                      isPaused
+                          ? (isTelugu ? 'పునఃప్రారంభించు ▶' : 'Resume ▶')
+                          : (isTelugu ? 'విరామం ⏸' : 'Pause ⏸'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isPaused ? const Color(0xFF0D7C66) : Colors.orange.shade800,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: isPaused
+                            ? const Color(0xFF0D7C66).withValues(alpha: 0.4)
+                            : Colors.orange.shade300,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      widget.state.setTab(1);
+                    },
+                    icon: const Icon(Icons.tune_rounded, size: 15),
+                    label: Text(
+                      isTelugu ? 'నిర్వహించు' : 'Manage',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: UiTone.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

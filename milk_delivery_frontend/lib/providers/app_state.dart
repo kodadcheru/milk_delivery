@@ -739,9 +739,8 @@ class AppState extends ChangeNotifier {
       final results = await Future.wait([
         ApiService.fetchUserProfile(),
         ApiService.fetchCustomerAddresses(customerId: userId, phone: userPhone),
-        ApiService.fetchProducts(),
-        ApiService.fetchSubscriptions(hubCode: activeHubCode),
-        ApiService.fetchDeliveries(hubCode: activeHubCode),
+        ApiService.fetchSubscriptions(phone: userPhone, customerId: userId),
+        ApiService.fetchDeliveries(phone: userPhone, customerId: userId, hubCode: activeHubCode),
         ApiService.fetchLiveOrders(hubCode: activeHubCode),
         ApiService.fetchWalletTransactions(),
         ApiService.fetchNotifications(),
