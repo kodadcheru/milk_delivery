@@ -154,7 +154,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   void _sendWhatsAppArrivalPing(BuildContext context, String customerName, String phone, String address) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final msg = Uri.encodeComponent(
-      '👋 Hello $customerName! Your fresh MilkDrop morning delivery has been safely placed at your doorstep ($address). Enjoy your farm-fresh milk! 🥛',
+      '👋 Hello $customerName! Your fresh Pamba morning delivery has been safely placed at your doorstep ($address). Enjoy your farm-fresh milk! 🥛',
     );
     final url = 'https://wa.me/91$cleanPhone?text=$msg';
     final uri = Uri.parse(url);

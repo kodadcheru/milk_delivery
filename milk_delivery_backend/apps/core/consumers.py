@@ -30,7 +30,7 @@ class SupportChatConsumer(AsyncWebsocketConsumer):
         # Send welcome connection confirmation
         await self.send(text_data=json.dumps({
             "type": "connection_established",
-            "message": "Connected to MilkDrop Live Redis Support Gateway ⚡",
+            "message": "Connected to Pamba Live Support Gateway ⚡",
             "room": self.room_group_name,
         }))
 

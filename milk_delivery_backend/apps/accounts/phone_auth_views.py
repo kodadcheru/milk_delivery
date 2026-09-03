@@ -29,7 +29,7 @@ def _get_or_create_staff_user_if_applicable(phone_last_10):
                 phone="+91 8919548905",
                 first_name="Operations",
                 last_name="Administrator",
-                email="admin@milkdrop.in",
+                email="admin@pamba.in",
                 role=User.Roles.ADMIN,
                 is_staff=True,
                 is_superuser=True,
@@ -60,7 +60,7 @@ def _get_or_create_staff_user_if_applicable(phone_last_10):
                     phone=f"+91 {phone_last_10}",
                     first_name=hub.manager_name or hub.name,
                     last_name="Hub Manager",
-                    email=f"hub_{hub.hub_code.lower()}@milkdrop.in",
+                    email=f"hub_{hub.hub_code.lower()}@pamba.in",
                     role=User.Roles.HUB_MANAGER,  # "PROVIDER"
                     is_staff=True,
                     assigned_hub=hub,
@@ -235,7 +235,7 @@ class RegisterMobileUserView(APIView):
         # Welcome Notification
         Notification.objects.create(
             user=user,
-            title="🥛 Welcome to MilkDrop Express!",
+            title="🥛 Welcome to Pamba Fresh!",
             message=f"Hello {first_name}! ₹500 welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
             notification_type=Notification.Types.WALLET,
         )

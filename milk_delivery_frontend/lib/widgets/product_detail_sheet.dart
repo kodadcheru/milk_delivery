@@ -182,10 +182,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 children: [
                   Text(
                     _currentStep == 0
-                        ? '1. Select Pack & Quantity'
+                        ? (widget.state.isTelugu ? '1. ప్యాక్ & పరిమాణాన్ని ఎంచుకోండి' : '1. Select Pack & Quantity')
                         : _currentStep == 1
-                            ? '2. Choose Delivery Schedule'
-                            : '3. Duration & Confirm',
+                            ? (widget.state.isTelugu ? '2. డెలివరీ షెడ్యూల్ ఎంచుకోండి' : '2. Choose Delivery Schedule')
+                            : (widget.state.isTelugu ? '3. కాలపరిమితి & నిర్ధారణ' : '3. Duration & Confirm'),
                     style: const TextStyle(
                       fontSize: 16.5,
                       fontWeight: FontWeight.w900,
@@ -195,7 +195,9 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Step ${_currentStep + 1} of 3 • Dairy Subscription',
+                    widget.state.isTelugu
+                        ? 'దశ ${_currentStep + 1}/3 • పాల సబ్‌స్క్రిప్షన్'
+                        : 'Step ${_currentStep + 1} of 3 • Dairy Subscription',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -224,11 +226,11 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           // Progress Step Indicators
           Row(
             children: [
-              _stepPill(0, 'Pack & Qty', Icons.shopping_basket_rounded),
+              _stepPill(0, widget.state.isTelugu ? 'ప్యాక్' : 'Pack & Qty', Icons.shopping_basket_rounded),
               _stepConnector(0),
-              _stepPill(1, 'Schedule', Icons.calendar_today_rounded),
+              _stepPill(1, widget.state.isTelugu ? 'షెడ్యూల్' : 'Schedule', Icons.calendar_today_rounded),
               _stepConnector(1),
-              _stepPill(2, 'Confirm', Icons.check_circle_rounded),
+              _stepPill(2, widget.state.isTelugu ? 'నిర్ధారణ' : 'Confirm', Icons.check_circle_rounded),
             ],
           ),
         ],
@@ -423,11 +425,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           const SizedBox(height: 20),
 
           // 2. Select Pack Size
-          const Row(
+          Row(
             children: [
-              Icon(Icons.inventory_2_outlined, size: 16, color: Color(0xFF0F172A)),
-              SizedBox(width: 6),
-              Text('Choose Pack Size', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const Icon(Icons.inventory_2_outlined, size: 16, color: Color(0xFF0F172A)),
+              const SizedBox(width: 6),
+              Text(
+                widget.state.isTelugu ? 'ప్యాక్ పరిమాణాన్ని ఎంచుకోండి' : 'Choose Pack Size',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -470,9 +475,9 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                               color: UiTone.primary,
                               borderRadius: BorderRadius.circular(UiRadius.pill),
                             ),
-                            child: const Text(
-                              'POPULAR ⭐',
-                              style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w900, color: Colors.white),
+                            child: Text(
+                              widget.state.isTelugu ? 'జనాదరణ ⭐' : 'POPULAR ⭐',
+                              style: const TextStyle(fontSize: 7.5, fontWeight: FontWeight.w900, color: Colors.white),
                             ),
                           ),
                         Text(
@@ -516,13 +521,15 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Daily Delivery Quantity',
-                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    Text(
+                      widget.state.isTelugu ? 'రోజువారీ డెలివరీ పరిమాణం' : 'Daily Delivery Quantity',
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${_qty * (double.tryParse(_selectedPackSize.split(' ').first) ?? 1.0)} Litres each delivery',
+                      widget.state.isTelugu
+                          ? 'ప్రతి డెలివరీకి ${_qty * (double.tryParse(_selectedPackSize.split(' ').first) ?? 1.0)} లీటర్లు'
+                          : '${_qty * (double.tryParse(_selectedPackSize.split(' ').first) ?? 1.0)} Litres each delivery',
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                     ),
                   ],
@@ -581,18 +588,18 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF10B981)),
-                    SizedBox(width: 6),
+                    const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF10B981)),
+                    const SizedBox(width: 6),
                     Text(
-                      'Estimated Daily Cost:',
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF065F46)),
+                      widget.state.isTelugu ? 'రోజువారీ ఖర్చు అంచనా:' : 'Estimated Daily Cost:',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF065F46)),
                     ),
                   ],
                 ),
                 Text(
-                  '${UiFormat.price(_singleDeliveryCost)} / day',
+                  '${UiFormat.price(_singleDeliveryCost)} / ${widget.state.isTelugu ? "రోజు" : "day"}',
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF047857)),
                 ),
               ],
@@ -613,11 +620,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Frequency Section
-          const Row(
+          Row(
             children: [
-              Icon(Icons.event_repeat_rounded, size: 16, color: Color(0xFF0F172A)),
-              SizedBox(width: 6),
-              Text('How Often Do You Need It?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const Icon(Icons.event_repeat_rounded, size: 16, color: Color(0xFF0F172A)),
+              const SizedBox(width: 6),
+              Text(
+                widget.state.isTelugu ? 'ఎంత తరచుగా కావాలి?' : 'How Often Do You Need It?',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -625,21 +635,21 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           // Frequency Options (Cards)
           _frequencyOptionCard(
             key: 'DAILY',
-            title: 'Everyday (Daily)',
-            subtitle: 'Fresh milk delivered 7 days a week',
-            badge: 'MOST POPULAR 🌟',
+            title: widget.state.isTelugu ? 'ప్రతిరోజూ (Daily)' : 'Everyday (Daily)',
+            subtitle: widget.state.isTelugu ? 'వారంలో 7 రోజులూ తాజా పాలు మీ ఇంటికే' : 'Fresh milk delivered 7 days a week',
+            badge: widget.state.isTelugu ? 'అత్యంత జనాదరణ 🌟' : 'MOST POPULAR 🌟',
           ),
           const SizedBox(height: 8),
           _frequencyOptionCard(
             key: 'ALTERNATE',
-            title: 'Alternate Days',
-            subtitle: 'Delivered every 2nd day (Mon, Wed, Fri...)',
+            title: widget.state.isTelugu ? 'రోజు విడిచి రోజు' : 'Alternate Days',
+            subtitle: widget.state.isTelugu ? 'ప్రతి 2వ రోజున డెలివరీ (సోమ, బుధ, శుక్ర...)' : 'Delivered every 2nd day (Mon, Wed, Fri...)',
           ),
           const SizedBox(height: 8),
           _frequencyOptionCard(
             key: 'CUSTOM',
-            title: 'Custom Days of Week',
-            subtitle: 'Choose specific days (e.g. Weekends only)',
+            title: widget.state.isTelugu ? 'మీకు నచ్చిన రోజులు' : 'Custom Days of Week',
+            subtitle: widget.state.isTelugu ? 'నిర్దిష్ట రోజులను ఎంచుకోండి' : 'Choose specific days (e.g. Weekends only)',
           ),
 
           // Custom Days Selector (Revealed if CUSTOM selected)
@@ -655,7 +665,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Select delivery days:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF334155))),
+                  Text(
+                    widget.state.isTelugu ? 'డెలివరీ రోజులను ఎంచుకోండి:' : 'Select delivery days:',
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -677,11 +690,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           const SizedBox(height: 24),
 
           // Shift & Slot Section
-          const Row(
+          Row(
             children: [
-              Icon(Icons.access_time_filled_rounded, size: 16, color: Color(0xFF0F172A)),
-              SizedBox(width: 6),
-              Text('Preferred Delivery Shift & Slot', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const Icon(Icons.access_time_filled_rounded, size: 16, color: Color(0xFF0F172A)),
+              const SizedBox(width: 6),
+              Text(
+                widget.state.isTelugu ? 'డెలివరీ సమయం & స్లాట్' : 'Preferred Delivery Shift & Slot',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -715,7 +731,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         children: [
                           const Text('☀️ ', style: TextStyle(fontSize: 12)),
                           Text(
-                            'Morning Drop',
+                            widget.state.isTelugu ? 'ఉదయం బ్యాచ్' : 'Morning Drop',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -747,7 +763,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         children: [
                           const Text('🌙 ', style: TextStyle(fontSize: 12)),
                           Text(
-                            'Evening Drop',
+                            widget.state.isTelugu ? 'సాయంత్రం బ్యాచ్' : 'Evening Drop',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -772,7 +788,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     Expanded(
                       child: _slotSelectionChip(
                         '05:30 AM - 07:00 AM',
-                        '⚡ Early Morning',
+                        widget.state.isTelugu ? '⚡ తెల్లవారుజాము' : '⚡ Early Morning',
                         '05:30 - 07:00 AM',
                         _selectedSlot == '05:30 AM - 07:00 AM',
                         () => setState(() => _selectedSlot = '05:30 AM - 07:00 AM'),
@@ -782,7 +798,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     Expanded(
                       child: _slotSelectionChip(
                         '07:00 AM - 08:30 AM',
-                        '🌅 Standard',
+                        widget.state.isTelugu ? '🌅 సాధారణ ఉదయం' : '🌅 Standard',
                         '07:00 - 08:30 AM',
                         _selectedSlot == '07:00 AM - 08:30 AM',
                         () => setState(() => _selectedSlot = '07:00 AM - 08:30 AM'),
@@ -793,7 +809,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     Expanded(
                       child: _slotSelectionChip(
                         '05:00 PM - 07:00 PM',
-                        '🌇 Early Evening',
+                        widget.state.isTelugu ? '🌇 సాయంత్రం' : '🌇 Early Evening',
                         '05:00 - 07:00 PM',
                         _selectedSlot == '05:00 PM - 07:00 PM',
                         () => setState(() => _selectedSlot = '05:00 PM - 07:00 PM'),
@@ -803,7 +819,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     Expanded(
                       child: _slotSelectionChip(
                         '06:30 PM - 08:30 PM',
-                        '🌙 Standard',
+                        widget.state.isTelugu ? '🌙 రాత్రి' : '🌙 Standard',
                         '06:30 - 08:30 PM',
                         _selectedSlot == '06:30 PM - 08:30 PM',
                         () => setState(() => _selectedSlot = '06:30 PM - 08:30 PM'),
@@ -1017,7 +1033,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Starts On', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        Text(widget.state.isTelugu ? 'ప్రారంభ తేదీ' : 'Starts On', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                         const SizedBox(height: 2),
                         Row(
                           children: [
@@ -1051,14 +1067,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Duration', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                      Text(widget.state.isTelugu ? 'కాలపరిమితి' : 'Duration', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
                       Row(
                         children: [
                           const Icon(Icons.repeat_rounded, size: 13, color: UiTone.primary),
                           const SizedBox(width: 3),
                           Text(
-                            '$_durationDays Days Plan',
+                            widget.state.isTelugu ? '$_durationDays రోజుల ప్లాన్' : '$_durationDays Days Plan',
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                         ],
@@ -1088,7 +1104,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      '$d Days',
+                      widget.state.isTelugu ? '$d రోజులు' : '$d Days',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -1104,11 +1120,14 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           const SizedBox(height: 18),
 
           // 2. Delivery Doorstep Address
-          const Row(
+          Row(
             children: [
-              Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF0F172A)),
-              SizedBox(width: 6),
-              Text('Delivery Address', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF0F172A)),
+              const SizedBox(width: 6),
+              Text(
+                widget.state.isTelugu ? 'డెలివరీ చిరునామా' : 'Delivery Address',
+                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1135,7 +1154,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        activeAddr?.title ?? 'Doorstep Address',
+                        activeAddr?.title ?? (widget.state.isTelugu ? 'డోర్‌స్టెప్ చిరునామా' : 'Doorstep Address'),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 2),
@@ -1152,9 +1171,9 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   onPressed: () {
                     HomeLocationSheet.show(context, widget.state);
                   },
-                  child: const Text(
-                    'Change ▾',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: UiTone.primary),
+                  child: Text(
+                    widget.state.isTelugu ? 'మార్చండి ▾' : 'Change ▾',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: UiTone.primary),
                   ),
                 ),
               ],
@@ -1164,15 +1183,18 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           const SizedBox(height: 16),
 
           // 3. Doorstep Instructions (1-tap chips)
-          const Text('Doorstep Preference:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF334155))),
+          Text(
+            widget.state.isTelugu ? 'డోర్‌స్టెప్ ప్రాధాన్యత:' : 'Doorstep Preference:',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
+          ),
           const SizedBox(height: 6),
           Row(
             children: [
-              _dropPrefChip('🔔 Ring Bell'),
+              _dropPrefChip(widget.state.isTelugu ? '🔔 బెల్ మోగించండి' : '🔔 Ring Bell'),
               const SizedBox(width: 6),
-              _dropPrefChip('🔕 Don\'t Ring'),
+              _dropPrefChip(widget.state.isTelugu ? '🔕 బెల్ వద్దు' : '🔕 Don\'t Ring'),
               const SizedBox(width: 6),
-              _dropPrefChip('🛍️ In Milk Bag'),
+              _dropPrefChip(widget.state.isTelugu ? '🛍️ బ్యాగ్‌లో ఉంచండి' : '🛍️ In Milk Bag'),
             ],
           ),
 
@@ -1192,7 +1214,9 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$_totalDeliveryDays deliveries × ${UiFormat.price(_singleDeliveryCost)}',
+                      widget.state.isTelugu
+                          ? '$_totalDeliveryDays డెలివరీలు × ${UiFormat.price(_singleDeliveryCost)}'
+                          : '$_totalDeliveryDays deliveries × ${UiFormat.price(_singleDeliveryCost)}',
                       style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
                     ),
                     Text(
@@ -1213,16 +1237,21 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF10B981)),
                         const SizedBox(width: 5),
                         Text(
-                          'Wallet: ${UiFormat.price(walletBal)}',
+                          '${widget.state.isTelugu ? "వాలెట్" : "Wallet"}: ${UiFormat.price(walletBal)}',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                         ),
                       ],
                     ),
                     if (hasEnoughBalance)
-                      const Text('Ready for Drop ✅', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF10B981)))
+                      Text(
+                        widget.state.isTelugu ? 'డెలివరీకి సిద్ధం ✅' : 'Ready for Drop ✅',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF10B981)),
+                      )
                     else
                       Text(
-                        'Recharge ${UiFormat.price((_singleDeliveryCost * 3) - walletBal)} recommended',
+                        widget.state.isTelugu
+                            ? '${UiFormat.price((_singleDeliveryCost * 3) - walletBal)} రీఛార్జ్ సిఫార్సు'
+                            : 'Recharge ${UiFormat.price((_singleDeliveryCost * 3) - walletBal)} recommended',
                         style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
                       ),
                   ],
@@ -1294,13 +1323,13 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   border: Border.all(color: const Color(0xFFCBD5E1)),
                 ),
                 alignment: Alignment.center,
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF475569)),
-                    SizedBox(width: 4),
+                    const Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF475569)),
+                    const SizedBox(width: 4),
                     Text(
-                      'Back',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                      widget.state.isTelugu ? 'వెనుకకు' : 'Back',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                     ),
                   ],
                 ),
@@ -1332,10 +1361,12 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         children: [
                           Text(
                             _currentStep == 0
-                                ? 'Next: Choose Schedule →'
+                                ? (widget.state.isTelugu ? 'తదుపరి: షెడ్యూల్ ఎంచుకోండి →' : 'Next: Choose Schedule →')
                                 : _currentStep == 1
-                                    ? 'Next: Review & Address →'
-                                    : 'CONFIRM • ${UiFormat.price(_singleDeliveryCost)}/day',
+                                    ? (widget.state.isTelugu ? 'తదుపరి: సమీక్ష & చిరునామా →' : 'Next: Review & Address →')
+                                    : (widget.state.isTelugu
+                                        ? 'సబ్‌స్క్రిప్షన్ ప్రారంభించండి • ${UiFormat.price(_singleDeliveryCost)}/రోజు'
+                                        : 'CONFIRM • ${UiFormat.price(_singleDeliveryCost)}/day'),
                             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, letterSpacing: 0.2),
                           ),
                         ],

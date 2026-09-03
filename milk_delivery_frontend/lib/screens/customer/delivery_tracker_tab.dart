@@ -708,7 +708,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             }
 
                             final dName = order.driverName.isNotEmpty ? order.driverName : 'Delivery Partner';
-                            final msg = 'Hi $dName, I am tracking my MilkDrop Express Order #${order.id}. Please deliver to: ${order.deliveryAddress}. Thank you!';
+                            final msg = 'Hi $dName, I am tracking my Pamba Express Order #${order.id}. Please deliver to: ${order.deliveryAddress}. Thank you!';
                             final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}');
                             try {
                               final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);

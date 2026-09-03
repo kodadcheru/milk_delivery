@@ -19,7 +19,7 @@ class AdminProfileTab extends StatelessWidget {
     final adminName = (adminUser != null && (adminUser.firstName.isNotEmpty || adminUser.username.isNotEmpty))
         ? '${adminUser.firstName} ${adminUser.lastName}'.trim()
         : 'Operations Administrator';
-    final adminEmail = adminUser?.email.isNotEmpty == true ? adminUser!.email : 'ops.admin@milkdrop.in';
+    final adminEmail = adminUser?.email.isNotEmpty == true ? adminUser!.email : 'ops.admin@pamba.in';
     final adminId = adminUser != null ? '${adminUser.id}' : '1';
 
     final topInset = MediaQuery.of(context).padding.top;
@@ -288,7 +288,7 @@ class AdminProfileTab extends StatelessWidget {
                 // Version Footer
                 const Center(
                   child: Text(
-                    'MilkDrop Master Admin Console v1.0.0 • Operations Command 🛡️',
+                    'Pamba Master Admin Console v1.0.0 • Operations Command 🛡️',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
                   ),
                 ),

@@ -237,7 +237,7 @@ class _DriverDeliveryChatSheetState extends State<DriverDeliveryChatSheet> {
     if (phone.isEmpty) return;
     final clean = phone.length == 10 ? '91$phone' : phone;
     final msg = Uri.encodeComponent(
-      'Namaste ${widget.customerName}! Your fresh MilkDrop delivery is arriving shortly at ${widget.deliveryAddress}. 🥛',
+      'Namaste ${widget.customerName}! Your fresh Pamba delivery is arriving shortly at ${widget.deliveryAddress}. 🥛',
     );
     final uri = Uri.parse('https://wa.me/$clean?text=$msg');
     if (await canLaunchUrl(uri)) {

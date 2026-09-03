@@ -271,11 +271,11 @@ def execute_hub_payout_settlement(hub: LocationHub, manager_user: User, amount: 
             net_payout=payout_amount,
             status=ProviderPayout.Statuses.COMPLETED,
             payment_reference=ref_code,
-            bank_name=hub.bank_name or "State Bank of India",
-            bank_account_number=hub.bank_account_number or "389201948210",
-            bank_ifsc=hub.bank_ifsc or "SBIN0004892",
-            upi_id=hub.upi_id or "8885199878@upi",
-            notes=notes or f"Instant IMPS settlement to {hub.bank_name} A/C ending in {(hub.bank_account_number or '4892')[-4:]}",
+            bank_name=hub.bank_name or "",
+            bank_account_number=hub.bank_account_number or "",
+            bank_ifsc=hub.bank_ifsc or "",
+            upi_id=hub.upi_id or "",
+            notes=notes or f"Instant IMPS settlement to {hub.bank_name or 'Registered Bank'} A/C ending in {(hub.bank_account_number or '0000')[-4:]}",
             paid_at=timezone.now(),
         )
 

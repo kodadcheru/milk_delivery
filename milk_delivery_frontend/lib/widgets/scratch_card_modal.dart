@@ -103,7 +103,7 @@ class _ScratchCardRewardModalState extends State<ScratchCardRewardModal> with Si
             ),
             const SizedBox(height: 4),
             Text(
-              _isScratched ? 'Cashback instantly credited to your MilkDrop wallet.' : 'Tap the card below to reveal your instant cashback reward.',
+              _isScratched ? 'Cashback instantly credited to your Pamba wallet.' : 'Tap the card below to reveal your instant cashback reward.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
             ),

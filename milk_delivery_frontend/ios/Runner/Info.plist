@@ -31,11 +31,11 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access is needed to select delivery proof images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>MilkDrop Express requires access to your location to accurately deliver fresh morning milk and dairy to your doorstep.</string>
+	<string>Pamba Fresh requires access to your location to accurately deliver fresh morning milk and dairy to your doorstep.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>MilkDrop Express uses your location to optimize live early morning delivery route dispatching.</string>
+	<string>Pamba Fresh uses your location to optimize live early morning delivery route dispatching.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>MilkDrop Express needs location access to verify doorstep deliveries.</string>
+	<string>Pamba Fresh needs location access to verify doorstep deliveries.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

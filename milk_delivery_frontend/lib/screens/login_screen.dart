@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'MilkDrop Express',
+                  'Pamba Fresh',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,

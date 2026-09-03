@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/app_config.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../driver/morning_batch_screen.dart';
@@ -29,25 +30,27 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
   @override
   Widget build(BuildContext context) {
     final activeHub = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
-    final hubCode = activeHub != null ? (activeHub['hub_code'] ?? activeHub['id'] ?? 'HUB-KDD-01').toString() : 'HUB-KDD-01';
-    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? 'Kodad Depot') : 'Kodad Depot';
-    final hubAddress = activeHub != null ? (activeHub['address']?.toString() ?? '2X27+M36, Kodad, Telangana 508206') : '2X27+M36, Kodad, Telangana 508206';
-    final fssai = activeHub != null ? (activeHub['fssai_license']?.toString() ?? '13621014000342') : '13621014000342';
-    final managerName = activeHub != null ? (activeHub['manager_name']?.toString() ?? 'Srinuvasa Reddy') : 'Srinuvasa Reddy';
+    final hubCode = activeHub != null ? (activeHub['hub_code'] ?? activeHub['id'] ?? 'HUB-DEFAULT').toString() : 'HUB-DEFAULT';
+    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
+    final hubAddress = activeHub != null ? (activeHub['address']?.toString() ?? AppConfig.defaultHubAddress) : AppConfig.defaultHubAddress;
+    final fssai = activeHub != null ? (activeHub['fssai_license']?.toString() ?? AppConfig.defaultFssai) : AppConfig.defaultFssai;
+    final managerName = activeHub != null ? (activeHub['manager_name']?.toString() ?? 'Hub Operations Lead') : 'Hub Operations Lead';
     final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
         ? activeHub['manager_phone'].toString()
-        : '8885199878';
+        : AppConfig.supportPhone;
 
     final coverageRadius = (activeHub != null && activeHub['coverage_radius_km'] != null)
         ? (double.tryParse(activeHub['coverage_radius_km'].toString()) ?? 8.5)
         : 8.5;
 
-    final bankName = activeHub != null ? (activeHub['bank_name']?.toString() ?? 'State Bank of India') : 'State Bank of India';
-    final bankAccountNumber = activeHub != null ? (activeHub['bank_account_number']?.toString() ?? '389201948210') : '389201948210';
-    final bankIfsc = activeHub != null ? (activeHub['bank_ifsc']?.toString() ?? 'SBIN0004892') : 'SBIN0004892';
+    final bankName = activeHub != null ? (activeHub['bank_name']?.toString() ?? 'Primary Bank Account') : 'Primary Bank Account';
+    final bankAccountNumber = activeHub != null ? (activeHub['bank_account_number']?.toString() ?? '') : '';
+    final bankIfsc = activeHub != null ? (activeHub['bank_ifsc']?.toString() ?? '') : '';
     final bankAccountHolder = activeHub != null ? (activeHub['bank_account_holder']?.toString() ?? managerName) : managerName;
-    final upiId = activeHub != null ? (activeHub['upi_id']?.toString() ?? '8885199878@upi') : '8885199878@upi';
-    final bankAcc = '$bankName • A/C ending in ${bankAccountNumber.length >= 4 ? bankAccountNumber.substring(bankAccountNumber.length - 4) : bankAccountNumber}';
+    final upiId = activeHub != null ? (activeHub['upi_id']?.toString() ?? '') : '';
+    final bankAcc = bankAccountNumber.isNotEmpty
+        ? '$bankName • A/C ending in ${bankAccountNumber.length >= 4 ? bankAccountNumber.substring(bankAccountNumber.length - 4) : bankAccountNumber}'
+        : '$bankName • Details Pending Verification';
 
     final topInset = MediaQuery.of(context).padding.top;
 
@@ -355,7 +358,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
                 // Version Footer
                 Center(
                   child: Text(
-                    'MilkDrop Hub Portal v1.0.0 • Powering Fresh Milk Logistics 🏬',
+                    'Pamba Hub Portal v1.0.0 • Powering Fresh Milk Logistics 🏬',
                     style: UiText.caption.copyWith(fontSize: 12),
                   ),
                 ),
@@ -1137,7 +1140,7 @@ class _ProviderProfileTabState extends State<ProviderProfileTab> {
             Text('Dedicated supply chain & operations desk for Location Hubs:', style: UiText.body.copyWith(fontSize: 13)),
             const SizedBox(height: 14),
             _buildSupportTile(context, Icons.local_shipping_rounded, 'Milk Supply Shortfall / Excess Request', '+91 8919548905'),
-            _buildSupportTile(context, Icons.shopping_bag_outlined, 'Packaging Pouches & Crates Reorder', '+91 8885199878'),
+            _buildSupportTile(context, Icons.shopping_bag_outlined, 'Packaging Pouches & Crates Reorder', AppConfig.supportPhone),
             _buildSupportTile(context, Icons.build_rounded, 'Chiller Equipment & Maintenance SOS', '+91 8919548905'),
             const SizedBox(height: 12),
           ],

@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../config/app_config.dart';
 import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../providers/app_state.dart';
@@ -44,11 +45,11 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   LatLng get _depotLocation {
     final hub = widget.state.nearestCoveringHub;
     if (hub != null) {
-      final lat = double.tryParse(hub['latitude']?.toString() ?? '') ?? 17.001734;
-      final lng = double.tryParse(hub['longitude']?.toString() ?? '') ?? 79.9625;
+      final lat = double.tryParse(hub['latitude']?.toString() ?? '') ?? AppConfig.defaultLatitude;
+      final lng = double.tryParse(hub['longitude']?.toString() ?? '') ?? AppConfig.defaultLongitude;
       return LatLng(lat, lng);
     }
-    return const LatLng(17.001734, 79.9625);
+    return const LatLng(AppConfig.defaultLatitude, AppConfig.defaultLongitude);
   }
 
   // Delivery partner location
@@ -73,13 +74,13 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
     }
 
     final hubModel = HubLocationModel(
-      id: widget.state.nearestCoveringHub?['hub_code']?.toString() ?? 'HUB-KDD-01',
-      name: widget.state.nearestCoveringHub?['name']?.toString() ?? 'Kodad Depot',
-      address: widget.state.nearestCoveringHub?['address']?.toString() ?? '2X27+M36, Kodad, Telangana 508206, India',
+      id: widget.state.nearestCoveringHub?['hub_code']?.toString() ?? 'HUB-DEFAULT',
+      name: widget.state.nearestCoveringHub?['name']?.toString() ?? AppConfig.defaultHubName,
+      address: widget.state.nearestCoveringHub?['address']?.toString() ?? AppConfig.defaultHubAddress,
       latitude: _depotLocation.latitude,
       longitude: _depotLocation.longitude,
-      managerName: widget.state.nearestCoveringHub?['manager_name']?.toString() ?? 'srinuvasa reddy',
-      managerPhone: widget.state.nearestCoveringHub?['manager_phone']?.toString() ?? '8885199878',
+      managerName: widget.state.nearestCoveringHub?['manager_name']?.toString() ?? 'Hub Operations Desk',
+      managerPhone: widget.state.nearestCoveringHub?['manager_phone']?.toString() ?? AppConfig.supportPhone,
     );
     _tspResult = RouteOptimizer.optimizeBatchRoute(hub: hubModel, tasks: widget.tasks);
     _orderedTasks = _tspResult.orderedStops;

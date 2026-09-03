@@ -11,6 +11,6 @@ class HealthCheckTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["status"], "UP")
-        self.assertEqual(data["service"], "MilkDrop Express Delivery API")
+        self.assertEqual(data["service"], "Pamba Fresh Delivery API")
         self.assertEqual(data["checks"]["database"]["status"], "HEALTHY")
         self.assertIn("uptime", data)

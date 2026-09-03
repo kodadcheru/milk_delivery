@@ -272,9 +272,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 final d = _driverList[idx];
                 final isOnline = (d['is_online'] ?? true) == true;
                 final dName = d['name'] ?? d['username'] ?? 'Driver Partner';
-                final dPhone = d['phone'] ?? '9876543210';
+                final dPhone = d['phone']?.toString().isNotEmpty == true ? d['phone'].toString() : 'No phone';
                 final dVehicle = d['vehicle_number'] ?? 'Scooter';
-                final dRoute = d['route'] ?? 'Kodad Central Route';
+                final dRoute = d['route'] ?? 'Central Route';
                 final dDrops = d['total_drops'] ?? widget.state.deliveries.length;
                 final dRating = d['rating'] ?? 4.9;
 

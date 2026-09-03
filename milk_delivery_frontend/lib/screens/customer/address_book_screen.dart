@@ -57,9 +57,9 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
             ),
           ),
         ),
-        title: const Text(
-          'Saved Addresses 📍',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        title: Text(
+          widget.state.isTelugu ? 'భద్రపరిచిన చిరునామాలు 📍' : 'Saved Addresses 📍',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
@@ -67,7 +67,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_location_alt_rounded, color: Color(0xFF10B981)),
-            tooltip: 'Add New Address',
+            tooltip: widget.state.isTelugu ? 'కొత్త చిరునామా జోడించండి' : 'Add New Address',
             onPressed: () => _openAddEditAddressSheet(context, widget.state),
           ),
         ],
@@ -104,25 +104,27 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            const Text(
-                              'No Saved Addresses Yet',
-                              style: TextStyle(
+                            Text(
+                              widget.state.isTelugu ? 'చిరునామాలు ఏవీ లేవు' : 'No Saved Addresses Yet',
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF0F172A),
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Save your home, office, and other locations for instant 1-tap morning milk delivery.',
+                            Text(
+                              widget.state.isTelugu
+                                  ? 'ఉదయం పాల డెలివరీ కోసం మీ ఇల్లు, ఆఫీస్ చిరునామాలను భద్రపరుచుకోండి.'
+                                  : 'Save your home, office, and other locations for instant 1-tap morning milk delivery.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
+                              style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton.icon(
                               onPressed: () => _openAddEditAddressSheet(context, state),
                               icon: const Icon(Icons.add, color: Colors.white),
-                              label: const Text('Add Delivery Address'),
+                              label: Text(widget.state.isTelugu ? 'డెలివరీ చిరునామాను జోడించండి' : 'Add Delivery Address'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF10B981),
                                 foregroundColor: Colors.white,
@@ -153,7 +155,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Active Delivery Location: ${state.currentDeliveryAddress.split(',').take(2).join(',')}',
+                        '${widget.state.isTelugu ? "ప్రస్తుత డెలివరీ ప్రాంతం" : "Active Delivery Location"}: ${state.currentDeliveryAddress.split(',').take(2).join(',')}',
                         style: const TextStyle(
                           color: Color(0xFF065F46),
                           fontSize: 12,
@@ -201,22 +203,24 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                           child: const Icon(Icons.my_location_rounded, color: Color(0xFF0F766E), size: 20),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Use Current GPS Location 📍',
-                                style: TextStyle(
+                                widget.state.isTelugu ? 'ప్రస్తుత GPS స్థానాన్ని ఉపయోగించండి 📍' : 'Use Current GPS Location 📍',
+                                style: const TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF0F172A),
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'Auto-detect exact live coordinates & autofill address',
-                                style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                widget.state.isTelugu
+                                    ? 'ఖచ్చితమైన లైవ్ స్థానాన్ని ఆటోమేటిక్‌గా గుర్తించి నింపండి'
+                                    : 'Auto-detect exact live coordinates & autofill address',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -267,9 +271,9 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _openAddEditAddressSheet(context, state),
                     icon: const Icon(Icons.add_location_alt_outlined, color: Colors.white),
-                    label: const Text(
-                      'Add New Delivery Address',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    label: Text(
+                      widget.state.isTelugu ? 'కొత్త డెలివరీ చిరునామాను జోడించండి' : 'Add New Delivery Address',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
@@ -350,9 +354,9 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                                 color: const Color(0xFFFEF3C7),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                'PRIMARY',
-                                style: TextStyle(
+                              child: Text(
+                                appState.isTelugu ? 'ప్రాథమికం' : 'PRIMARY',
+                                style: const TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFFD97706),
@@ -368,9 +372,9 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                                 color: const Color(0xFFDCFCE7),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                'ACTIVE 📍',
-                                style: TextStyle(
+                              child: Text(
+                                appState.isTelugu ? 'యాక్టివ్ 📍' : 'ACTIVE 📍',
+                                style: const TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF15803D),
@@ -397,7 +401,11 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                       appState.setDefaultCustomerAddress(addr.id);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text("⭐ Set '${addr.title}' as primary delivery address"),
+                          content: Text(
+                            appState.isTelugu
+                                ? "⭐ '${addr.title}' ప్రాథమిక డెలివరీ చిరునామాగా సెట్ చేయబడింది"
+                                : "⭐ Set '${addr.title}' as primary delivery address",
+                          ),
                           backgroundColor: const Color(0xFF0F172A),
                         ),
                       );
@@ -509,7 +517,9 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(
-                      isActive ? 'Selected Active Address ✓' : 'Deliver Here 🚀',
+                      isActive
+                          ? (appState.isTelugu ? 'ఎంచుకున్న చిరునామా ✓' : 'Selected Active Address ✓')
+                          : (appState.isTelugu ? 'ఇక్కడికి డెలివరీ చేయండి 🚀' : 'Deliver Here 🚀'),
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -526,12 +536,16 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Address?'),
-        content: Text("Are you sure you want to remove '${addr.title}' from your Address Book?"),
+        title: Text(appState.isTelugu ? 'చిరునామాను తొలగించాలా?' : 'Delete Address?'),
+        content: Text(
+          appState.isTelugu
+              ? "మీ అడ్రస్ బుక్ నుండి '${addr.title}'ని తొలగించాలనుకుంటున్నారా?"
+              : "Are you sure you want to remove '${addr.title}' from your Address Book?",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(appState.isTelugu ? 'రద్దు' : 'Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -539,12 +553,18 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
               await appState.deleteCustomerAddress(addr.id);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("🗑️ '${addr.title}' removed from saved addresses")),
+                  SnackBar(
+                    content: Text(
+                      appState.isTelugu
+                          ? "🗑️ '${addr.title}' చిరునామాలనుండి తొలగించబడింది"
+                          : "🗑️ '${addr.title}' removed from saved addresses",
+                    ),
+                  ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-            child: const Text('Delete'),
+            child: Text(appState.isTelugu ? 'తొలగించండి' : 'Delete'),
           ),
         ],
       ),
@@ -772,7 +792,9 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  isEditing ? 'Edit Address' : 'Add New Delivery Address',
+                  isEditing
+                      ? (widget.state.isTelugu ? 'చిరునామాను సవరించండి' : 'Edit Address')
+                      : (widget.state.isTelugu ? 'కొత్త డెలివరీ చిరునామా' : 'Add New Delivery Address'),
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -803,9 +825,9 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                         child: FilledButton.icon(
                           onPressed: _pickOnGoogleMap,
                           icon: const Icon(Icons.map_rounded, color: Colors.white, size: 18),
-                          label: const Text(
-                            'Pick on map 🗺️',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                          label: Text(
+                            widget.state.isTelugu ? 'మ్యాప్‌లో ఎంచుకోండి 🗺️' : 'Pick on map 🗺️',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
                           ),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFF0D7C66),
@@ -826,7 +848,9 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                                 )
                               : const Icon(Icons.my_location_rounded, color: Color(0xFF0D7C66), size: 18),
                           label: Text(
-                            _isDetectingGps ? 'Locating...' : 'Use GPS 🎯',
+                            _isDetectingGps
+                                ? (widget.state.isTelugu ? 'గుర్తిస్తోంది...' : 'Locating...')
+                                : (widget.state.isTelugu ? 'GPS వాడండి 🎯' : 'Use GPS 🎯'),
                             style: const TextStyle(color: Color(0xFF0D7C66), fontWeight: FontWeight.w800, fontSize: 13),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -842,9 +866,9 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                   const SizedBox(height: 18),
 
                   // ── 2. Save Address As Label Box Selector ──
-                  const Text(
-                    'Save address as',
-                    style: TextStyle(
+                  Text(
+                    widget.state.isTelugu ? 'చిరునామా రకం' : 'Save address as',
+                    style: const TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF1E293B),
@@ -853,11 +877,11 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _buildTypeButton('HOME', '🏠 Home'),
+                      _buildTypeButton('HOME', widget.state.isTelugu ? '🏠 ఇల్లు' : '🏠 Home'),
                       const SizedBox(width: 8),
-                      _buildTypeButton('WORK', '💼 Work'),
+                      _buildTypeButton('WORK', widget.state.isTelugu ? '💼 ఆఫీస్' : '💼 Work'),
                       const SizedBox(width: 8),
-                      _buildTypeButton('OTHER', '📍 Other'),
+                      _buildTypeButton('OTHER', widget.state.isTelugu ? '📍 ఇతర' : '📍 Other'),
                     ],
                   ),
 
@@ -866,7 +890,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                     TextFormField(
                       controller: _customTagController,
                       decoration: InputDecoration(
-                        labelText: 'Address label',
+                        labelText: widget.state.isTelugu ? 'చిరునామా లేబుల్' : 'Address label',
                         hintText: 'e.g. Mom\'s House, Gym, Farmhouse',
                         prefixIcon: const Icon(Icons.label_rounded, color: Color(0xFF0D7C66)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -878,8 +902,6 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
 
                   const SizedBox(height: 16),
 
-                  const SizedBox(height: 16),
-
                   // Flat / House No & Floor
                   Row(
                     children: [
@@ -888,7 +910,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                         child: TextFormField(
                           controller: _flatNoController,
                           decoration: InputDecoration(
-                            labelText: 'Flat / House / Door No. *',
+                            labelText: widget.state.isTelugu ? 'ఫ్లాట్ / ఇంటి నంబర్ *' : 'Flat / House / Door No. *',
                             hintText: 'e.g. Flat 402',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -901,7 +923,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                         child: TextFormField(
                           controller: _floorController,
                           decoration: InputDecoration(
-                            labelText: 'Floor (Optional)',
+                            labelText: widget.state.isTelugu ? 'అంతస్తు (ఐచ్ఛికం)' : 'Floor (Optional)',
                             hintText: 'e.g. 4th Floor',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -917,7 +939,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                   TextFormField(
                     controller: _buildingController,
                     decoration: InputDecoration(
-                      labelText: 'Apartment / Building / Society Name *',
+                      labelText: widget.state.isTelugu ? 'అపార్ట్‌మెంట్ / భవనం పేరు *' : 'Apartment / Building / Society Name *',
                       hintText: 'e.g. My Home Bhooja, Rainbow Vistas',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -932,7 +954,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                     controller: _streetController,
                     maxLines: 2,
                     decoration: InputDecoration(
-                      labelText: 'Street Address / Locality *',
+                      labelText: widget.state.isTelugu ? 'వీధి / ప్రాంతం *' : 'Street Address / Locality *',
                       hintText: 'e.g. Road No. 36, Jubilee Hills',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -946,7 +968,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                   TextFormField(
                     controller: _landmarkController,
                     decoration: InputDecoration(
-                      labelText: 'Nearby Landmark',
+                      labelText: widget.state.isTelugu ? 'సమీప ల్యాండ్‌మార్క్' : 'Nearby Landmark',
                       hintText: 'e.g. Opposite Peddamma Temple',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -962,7 +984,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                         child: TextFormField(
                           controller: _cityController,
                           decoration: InputDecoration(
-                            labelText: 'City',
+                            labelText: widget.state.isTelugu ? 'నగరం' : 'City',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           ),
@@ -974,7 +996,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                           controller: _pincodeController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'PIN Code',
+                            labelText: widget.state.isTelugu ? 'పిన్ కోడ్' : 'PIN Code',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           ),
@@ -990,7 +1012,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                     controller: _instructionsController,
                     maxLines: 2,
                     decoration: InputDecoration(
-                      labelText: 'Doorstep Delivery Instructions 🥛',
+                      labelText: widget.state.isTelugu ? 'డెలివరీ సూచనలు 🥛' : 'Doorstep Delivery Instructions 🥛',
                       hintText: 'e.g. Place in milk bag at door, do not ring bell before 6 AM',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1003,13 +1025,15 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                   SwitchListTile(
                     value: _isDefault,
                     onChanged: (val) => setState(() => _isDefault = val),
-                    title: const Text(
-                      'Make this my primary delivery address',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                    title: Text(
+                      widget.state.isTelugu ? 'దీన్ని నా ప్రాథమిక డెలివరీ చిరునామాగా చేయండి' : 'Make this my primary delivery address',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
-                    subtitle: const Text(
-                      'Morning milk deliveries and orders will default to this address',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    subtitle: Text(
+                      widget.state.isTelugu
+                          ? 'ఉదయం డెలివరీలు మరియు ఆర్డర్‌లు ఈ చిరునామాకే వస్తాయి'
+                          : 'Morning milk deliveries and orders will default to this address',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                     activeThumbColor: const Color(0xFF10B981),
                     contentPadding: EdgeInsets.zero,
@@ -1035,7 +1059,9 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
                           : Text(
-                              isEditing ? 'Update Address' : 'Save Address to Book',
+                              isEditing
+                                  ? (widget.state.isTelugu ? 'చిరునామాను అప్‌డేట్ చేయండి' : 'Update Address')
+                                  : (widget.state.isTelugu ? 'చిరునామాను భద్రపరచండి' : 'Save Address to Book'),
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                             ),
                     ),

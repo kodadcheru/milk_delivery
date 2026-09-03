@@ -54,7 +54,7 @@ class Command(BaseCommand):
             target_date = date.today() + timedelta(days=1)
 
         self.stdout.write(f"\n{'='*60}")
-        self.stdout.write(f"🥛 MilkDrop Daily Task Generator")
+        self.stdout.write(f"🥛 Pamba Daily Task Generator")
         self.stdout.write(f"   Target Date: {target_date}")
         self.stdout.write(f"   Shift: {shift_opt.upper()}")
         self.stdout.write(f"   Mode: {'DRY RUN (preview only)' if dry_run else 'LIVE'}")

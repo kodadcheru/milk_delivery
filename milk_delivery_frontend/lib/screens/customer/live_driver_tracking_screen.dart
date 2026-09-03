@@ -330,7 +330,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner');
     final orderId = widget.liveOrder?.id ?? (widget.subscriptionTask != null ? '#${widget.subscriptionTask!.id}' : '');
 
-    final msgText = 'Hi $dName, I am tracking my MilkDrop Express Order $orderId. Please deliver to: ${widget.deliveryAddress}. Thank you!';
+    final msgText = 'Hi $dName, I am tracking my Pamba Express Order $orderId. Please deliver to: ${widget.deliveryAddress}. Thank you!';
     final encodedMsg = Uri.encodeComponent(msgText);
     final uri = Uri.parse('https://wa.me/$cleanPhone?text=$encodedMsg');
     try {

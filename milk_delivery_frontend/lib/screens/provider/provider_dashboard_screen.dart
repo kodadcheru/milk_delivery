@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../config/app_config.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_format.dart';
@@ -47,7 +48,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   String get _activeHubName {
     final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
-    return activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+    return activeHub != null ? (activeHub['name'] ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
   }
 
   @override
@@ -267,8 +268,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   Expanded(
                     child: Text(
                       activeHub != null && (activeHub['bank_name'] != null || activeHub['bank_account_number'] != null)
-                          ? '${activeHub['bank_name'] ?? 'State Bank of India'} (A/C •••• ${(activeHub['bank_account_number']?.toString() ?? '4892').replaceAll(RegExp(r'.*(?=.{4}$)'), '')})\nIFSC: ${activeHub['bank_ifsc'] ?? 'SBIN0004892'} • Instant IMPS'
-                          : 'Primary Bank Account (A/C **4892)\nDaily Auto-Payout • Instant Transfer',
+                          ? '${activeHub['bank_name'] ?? 'Primary Bank Account'} (A/C •••• ${(activeHub['bank_account_number']?.toString() ?? '••••').replaceAll(RegExp(r'.*(?=.{4}$)'), '')})\nIFSC: ${activeHub['bank_ifsc'] ?? 'Verified'} • Instant IMPS'
+                          : 'Settlement Bank Account\nDaily Auto-Payout • Instant Transfer',
                       style: UiText.body.copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.ink),
                     ),
                   ),

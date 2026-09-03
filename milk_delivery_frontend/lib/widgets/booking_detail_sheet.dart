@@ -102,7 +102,7 @@ class BookingDetailSheet extends StatelessWidget {
       clean = '91${clean.substring(1)}';
     }
 
-    final message = 'Hi $driverName, I am tracking my MilkDrop Express Order #$orderId. Please deliver to: $address. Thank you!';
+    final message = 'Hi $driverName, I am tracking my Pamba Express Order #$orderId. Please deliver to: $address. Thank you!';
     final encoded = Uri.encodeComponent(message);
     final waUri = Uri.parse('https://wa.me/$clean?text=$encoded');
     try {
@@ -155,8 +155,8 @@ class BookingDetailSheet extends StatelessWidget {
         : (activeAddr.isNotEmpty ? activeAddr : 'Doorstep Delivery Location');
 
     final driverName = isExpress
-        ? (liveOrder!.driverName.isNotEmpty ? liveOrder!.driverName : 'Assigned MilkDrop Partner')
-        : (subscriptionTask!.driverDetail?.fullName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Assigned MilkDrop Partner');
+        ? (liveOrder!.driverName.isNotEmpty ? liveOrder!.driverName : 'Assigned Pamba Delivery Partner')
+        : (subscriptionTask!.driverDetail?.fullName.isNotEmpty == true ? subscriptionTask!.driverDetail!.fullName : 'Assigned Pamba Delivery Partner');
     final driverPhone = isExpress ? liveOrder!.driverPhone : (subscriptionTask!.driverDetail?.phone ?? '');
     final isDriverAssigned = driverPhone.isNotEmpty;
     final slot = isExpress ? liveOrder!.deliverySlot : subscriptionTask!.slotTime;
@@ -527,7 +527,7 @@ class BookingDetailSheet extends StatelessWidget {
                         const Icon(Icons.electric_moped_rounded, size: 13, color: Color(0xFF0D7C66)),
                         const SizedBox(width: 4),
                         Text(
-                          isExpress ? (liveOrder?.driverVehicle ?? 'Electric Scooter Fleet') : 'MilkDrop Morning Fleet',
+                          isExpress ? (liveOrder?.driverVehicle ?? 'Electric Scooter Fleet') : 'Pamba Morning Fleet',
                           style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
                         ),
                       ],

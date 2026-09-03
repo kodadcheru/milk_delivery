@@ -25,7 +25,7 @@ class OrderInvoiceSheet extends StatelessWidget {
     required this.address,
     required this.totalAmount,
     this.customerName = 'Valued Customer',
-    this.paymentMethod = 'MilkDrop Pre-paid Wallet',
+    this.paymentMethod = 'Pamba Pre-paid Wallet',
   });
 
   static void show(
@@ -38,7 +38,7 @@ class OrderInvoiceSheet extends StatelessWidget {
     required String address,
     required double totalAmount,
     String customerName = 'Valued Customer',
-    String paymentMethod = 'MilkDrop Pre-paid Wallet',
+    String paymentMethod = 'Pamba Pre-paid Wallet',
   }) {
     showModalBottomSheet(
       context: context,
@@ -99,7 +99,7 @@ class OrderInvoiceSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('MilkDrop Express', style: UiText.h2.copyWith(fontSize: 18, color: UiTone.primaryDark)),
+                          Text('Pamba Fresh', style: UiText.h2.copyWith(fontSize: 18, color: UiTone.primaryDark)),
                           Text('Official Delivery Receipt & Tax Invoice', style: UiText.caption.copyWith(color: UiTone.softText)),
                         ],
                       ),

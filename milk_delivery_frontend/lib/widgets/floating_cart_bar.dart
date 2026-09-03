@@ -89,9 +89,9 @@ class FloatingCartBar extends StatelessWidget {
                         '₹${total.toStringAsFixed(0)}',
                         style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                       ),
-                      const Text(
-                        'Free 06:00 AM Delivery',
-                        style: TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
+                      Text(
+                        state.isTelugu ? 'ఉచిత 06:00 AM డెలివరీ' : 'Free 06:00 AM Delivery',
+                        style: const TextStyle(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -104,11 +104,11 @@ class FloatingCartBar extends StatelessWidget {
                     color: UiTone.primary,
                     borderRadius: BorderRadius.circular(UiRadius.sm),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Text('View Cart', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15),
+                      Text(state.tr('view_cart'), style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15),
                     ],
                   ),
                 ),
@@ -170,7 +170,9 @@ class FloatingCartBar extends StatelessWidget {
                           const Text('🛍️', style: TextStyle(fontSize: 22)),
                           const SizedBox(width: 8),
                           Text(
-                            'Checkout (${state.totalCartItemCount} items)',
+                            state.isTelugu
+                                ? 'చెక్‌అవుట్ (${state.totalCartItemCount} వస్తువులు)'
+                                : 'Checkout (${state.totalCartItemCount} items)',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: UiTone.ink),
                           ),
                         ],
@@ -208,7 +210,7 @@ class FloatingCartBar extends StatelessWidget {
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        '⚡ Instant',
+                                        state.isTelugu ? '⚡ తక్షణ డెలివరీ' : '⚡ Instant',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: _deliveryMode == 'INSTANT' ? Colors.white : Colors.grey[600],
@@ -233,7 +235,7 @@ class FloatingCartBar extends StatelessWidget {
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        '📅 Schedule',
+                                        state.isTelugu ? '📅 షెడ్యూల్' : '📅 Schedule',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: _deliveryMode == 'SCHEDULED' ? Colors.white : Colors.grey[600],
@@ -256,15 +258,21 @@ class FloatingCartBar extends StatelessWidget {
                                 ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
-                                  Icon(Icons.flash_on, color: Colors.white, size: 32),
-                                  SizedBox(width: 12),
+                                  const Icon(Icons.flash_on, color: Colors.white, size: 32),
+                                  const SizedBox(width: 12),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Instant Delivery', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                      Text('Estimated arrival in ~25 minutes', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                      Text(
+                                        state.isTelugu ? 'తక్షణ డెలివరీ' : 'Instant Delivery',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
+                                      Text(
+                                        state.isTelugu ? 'సుమారు ~25 నిమిషాల్లో చేరుకుంటుంది' : 'Estimated arrival in ~25 minutes',
+                                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -363,9 +371,9 @@ class FloatingCartBar extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  '1. Scheduled Delivery Date 📅:',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
+                                Text(
+                                  state.isTelugu ? '1. డెలివరీ తేదీ 📅:' : '1. Scheduled Delivery Date 📅:',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -373,11 +381,11 @@ class FloatingCartBar extends StatelessWidget {
                                     color: UiTone.primary.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(UiRadius.xs),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     children: [
-                                      Icon(Icons.lock_clock_rounded, size: 13, color: UiTone.primary),
-                                      SizedBox(width: 4),
-                                      Text('Tomorrow Only', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.primary)),
+                                      const Icon(Icons.lock_clock_rounded, size: 13, color: UiTone.primary),
+                                      const SizedBox(width: 4),
+                                      Text(state.isTelugu ? 'రేపు మాత్రమే' : 'Tomorrow Only', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.primary)),
                                     ],
                                   ),
                                 ),
@@ -426,7 +434,7 @@ class FloatingCartBar extends StatelessWidget {
                                             Row(
                                               children: [
                                                 Text(
-                                                  'Tomorrow (${weekdayNames[tomorrow.weekday - 1]})',
+                                                  state.isTelugu ? 'రేపు (${weekdayNames[tomorrow.weekday - 1]})' : 'Tomorrow (${weekdayNames[tomorrow.weekday - 1]})',
                                                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: UiTone.ink),
                                                 ),
                                                 const SizedBox(width: 6),
@@ -436,13 +444,15 @@ class FloatingCartBar extends StatelessWidget {
                                                     color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
                                                     borderRadius: BorderRadius.circular(4),
                                                   ),
-                                                  child: const Text('⚡ NEXT-DAY DROP', style: TextStyle(color: Color(0xFF0D7C66), fontSize: 9, fontWeight: FontWeight.w900)),
+                                                  child: Text(state.isTelugu ? '⚡ తదుపరి రోజు' : '⚡ NEXT-DAY DROP', style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 9, fontWeight: FontWeight.w900)),
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              '${tomorrow.day} ${monthNames[tomorrow.month - 1]} ${tomorrow.year} • Farm fresh delivery guaranteed',
+                                              state.isTelugu
+                                                  ? '${tomorrow.day} ${monthNames[tomorrow.month - 1]} ${tomorrow.year} • తాజా ఫారం డెలివరీ హామీ'
+                                                  : '${tomorrow.day} ${monthNames[tomorrow.month - 1]} ${tomorrow.year} • Farm fresh delivery guaranteed',
                                               style: TextStyle(color: Colors.grey[600], fontSize: 11.5),
                                             ),
                                           ],
@@ -460,9 +470,9 @@ class FloatingCartBar extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  '2. Delivery Time Slot ⏰:',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
+                                Text(
+                                  state.isTelugu ? '2. డెలివరీ సమయం ⏰:' : '2. Delivery Time Slot ⏰:',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -471,7 +481,7 @@ class FloatingCartBar extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(UiRadius.xs),
                                   ),
                                   child: Text(
-                                    '3 Slots Available',
+                                    state.isTelugu ? '3 సమయాలు అందుబాటులో ఉన్నాయి' : '3 Slots Available',
                                     style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
                                   ),
                                 ),
@@ -633,7 +643,7 @@ class FloatingCartBar extends StatelessWidget {
                                             children: [
                                               Row(
                                                 children: [
-                                                  const Text('Deliver to:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF047857))),
+                                                  Text(state.isTelugu ? 'డెలివరీ చిరునామా:' : 'Deliver to:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF047857))),
                                                   const SizedBox(width: 6),
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -668,7 +678,7 @@ class FloatingCartBar extends StatelessWidget {
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                                           ),
                                           icon: const Icon(Icons.edit_location_alt_rounded, size: 13, color: Colors.white),
-                                          label: const Text('Change', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                          label: Text(state.isTelugu ? 'మార్చండి' : 'Change', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                         ),
                                       ],
                                     ),
@@ -721,9 +731,9 @@ class FloatingCartBar extends StatelessWidget {
                           const SizedBox(height: 14),
 
                           // ── Payment Method Selector (Prepaid Wallet vs Cash on Delivery) ──
-                          const Text(
-                            'Payment Method 💳:',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
+                          Text(
+                            state.isTelugu ? 'చెల్లింపు విధానం 💳:' : 'Payment Method 💳:',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
                           ),
                           const SizedBox(height: 8),
                           Row(
@@ -751,7 +761,7 @@ class FloatingCartBar extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Prepaid Wallet',
+                                              state.isTelugu ? 'ప్రీపెయిడ్ వాలెట్' : 'Prepaid Wallet',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 12,
@@ -759,7 +769,7 @@ class FloatingCartBar extends StatelessWidget {
                                               ),
                                             ),
                                             Text(
-                                              'Bal: ₹${(state.currentUser?.walletBalance ?? 0.0).toStringAsFixed(0)}',
+                                              '${state.isTelugu ? "నిల్వ" : "Bal"}: ₹${(state.currentUser?.walletBalance ?? 0.0).toStringAsFixed(0)}',
                                               style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                                             ),
                                           ],
@@ -793,14 +803,14 @@ class FloatingCartBar extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Cash on Delivery',
+                                              state.isTelugu ? 'క్యాష్ ఆన్ డెలివరీ' : 'Cash on Delivery',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 12,
                                                 color: _paymentMethod == 'COD' ? UiTone.primary : UiTone.ink,
                                               ),
                                             ),
-                                            Text('Pay at doorstep', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                                            Text(state.isTelugu ? 'డోర్‌స్టెప్ వద్ద నగదు' : 'Pay at doorstep', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                                           ],
                                         ),
                                       ],
@@ -822,11 +832,16 @@ class FloatingCartBar extends StatelessWidget {
                             ),
                             child: Column(
                               children: [
-                                _buildBillRow('Item Subtotal', '₹${total.toStringAsFixed(0)}'),
-                                _buildBillRow('Doorstep Delivery (${_deliveryMode == 'INSTANT' ? "Instant" : formatDate(selectedDate)})', 'FREE', isHighlight: true),
-                                _buildBillRow('Handling & Quality Assurance', '₹0 (Waived)'),
+                                _buildBillRow(state.isTelugu ? 'వస్తువుల మొత్తం' : 'Item Subtotal', '₹${total.toStringAsFixed(0)}'),
+                                _buildBillRow(
+                                    state.isTelugu
+                                        ? 'డోర్‌స్టెప్ డెలివరీ (${_deliveryMode == "INSTANT" ? "తక్షణ" : formatDate(selectedDate)})'
+                                        : 'Doorstep Delivery (${_deliveryMode == "INSTANT" ? "Instant" : formatDate(selectedDate)})',
+                                    state.isTelugu ? 'ఉచితం' : 'FREE',
+                                    isHighlight: true),
+                                _buildBillRow(state.isTelugu ? 'నాణ్యతా తనిఖీ & హ్యాండ్లింగ్' : 'Handling & Quality Assurance', state.isTelugu ? '₹0 (రద్దు చేయబడింది)' : '₹0 (Waived)'),
                                 const Divider(height: 16),
-                                _buildBillRow('To Pay', '₹${total.toStringAsFixed(0)}', isBold: true),
+                                _buildBillRow(state.isTelugu ? 'చెల్లించాల్సిన మొత్తం' : 'To Pay', '₹${total.toStringAsFixed(0)}', isBold: true),
                               ],
                             ),
                           ),
@@ -906,8 +921,12 @@ class FloatingCartBar extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             _paymentMethod == 'COD'
-                                ? (_deliveryMode == 'INSTANT' ? 'Place COD Instant Drop — ₹${total.toStringAsFixed(0)} 💵' : 'Place COD Order — ₹${total.toStringAsFixed(0)} 💵')
-                                : (_deliveryMode == 'INSTANT' ? 'Pay & Order Now — ₹${total.toStringAsFixed(0)} ⚡' : 'Schedule Order — ₹${total.toStringAsFixed(0)} 📅'),
+                                ? (_deliveryMode == 'INSTANT'
+                                    ? (state.isTelugu ? 'తక్షణ ఆర్డర్ ఇవ్వండి — ₹${total.toStringAsFixed(0)} 💵' : 'Place COD Instant Drop — ₹${total.toStringAsFixed(0)} 💵')
+                                    : (state.isTelugu ? 'ఆర్డర్ ఇవ్వండి — ₹${total.toStringAsFixed(0)} 💵' : 'Place COD Order — ₹${total.toStringAsFixed(0)} 💵'))
+                                : (_deliveryMode == 'INSTANT'
+                                    ? (state.isTelugu ? 'చెల్లించి తక్షణ ఆర్డర్ చేయండి — ₹${total.toStringAsFixed(0)} ⚡' : 'Pay & Order Now — ₹${total.toStringAsFixed(0)} ⚡')
+                                    : (state.isTelugu ? 'షెడ్యూల్ ఆర్డర్ చేయండి — ₹${total.toStringAsFixed(0)} 📅' : 'Schedule Order — ₹${total.toStringAsFixed(0)} 📅')),
                             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900),
                           ),
                         ],

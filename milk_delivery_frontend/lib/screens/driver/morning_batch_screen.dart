@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_config.dart';
 import '../../services/api_service.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
@@ -68,12 +69,12 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
   HubLocationModel get _activeHub {
     final h = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
     if (h != null) {
-      final name = h['name']?.toString() ?? 'Kodad Depot';
-      final address = h['address']?.toString() ?? '$name, Telangana';
+      final name = h['name']?.toString() ?? AppConfig.defaultHubName;
+      final address = h['address']?.toString() ?? AppConfig.defaultHubAddress;
       final mgrName = h['manager_name']?.toString() ?? 'Hub Dispatch Lead';
-      final mgrPhone = h['manager_phone']?.toString() ?? '8885199878';
-      final lat = double.tryParse(h['latitude']?.toString() ?? '17.001734') ?? 17.001734;
-      final lng = double.tryParse(h['longitude']?.toString() ?? '79.9625') ?? 79.9625;
+      final mgrPhone = h['manager_phone']?.toString() ?? AppConfig.supportPhone;
+      final lat = double.tryParse(h['latitude']?.toString() ?? '') ?? AppConfig.defaultLatitude;
+      final lng = double.tryParse(h['longitude']?.toString() ?? '') ?? AppConfig.defaultLongitude;
 
       return HubLocationModel(
         id: '${h['hub_code'] ?? h['id'] ?? 'HUB-KDD-01'}',

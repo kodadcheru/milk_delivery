@@ -49,21 +49,34 @@ class ApiService {
     }
   }
 
-  static const String _prefTokenKey = 'milkdrop_auth_token';
-  static const String _prefRefreshTokenKey = 'milkdrop_refresh_token';
-  static const String _prefUserKey = 'milkdrop_user_data';
+  static const String _prefTokenKey = 'pamba_auth_token';
+  static const String _prefRefreshTokenKey = 'pamba_refresh_token';
+  static const String _prefUserKey = 'pamba_user_data';
+  // Legacy keys for backwards-compatible migration
+  static const String _legacyPrefTokenKey = 'milkdrop_auth_token';
+  static const String _legacyPrefRefreshTokenKey = 'milkdrop_refresh_token';
+  static const String _legacyPrefUserKey = 'milkdrop_user_data';
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
 
-  /// Initialize and restore stored tokens from SharedPreferences
+  /// Initialize and restore stored tokens from SharedPreferences (with migration)
   static Future<String?> initAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      authToken = prefs.getString(_prefTokenKey);
-      refreshToken = prefs.getString(_prefRefreshTokenKey);
+      authToken = prefs.getString(_prefTokenKey) ?? prefs.getString(_legacyPrefTokenKey);
+      refreshToken = prefs.getString(_prefRefreshTokenKey) ?? prefs.getString(_legacyPrefRefreshTokenKey);
+
+      // Seamless migration to new pamba keys
+      if (authToken != null && !prefs.containsKey(_prefTokenKey)) {
+        await prefs.setString(_prefTokenKey, authToken!);
+      }
+      if (refreshToken != null && !prefs.containsKey(_prefRefreshTokenKey)) {
+        await prefs.setString(_prefRefreshTokenKey, refreshToken!);
+      }
+
       return authToken;
     } catch (_) {
       return null;
@@ -121,6 +134,9 @@ class ApiService {
       await prefs.remove(_prefTokenKey);
       await prefs.remove(_prefRefreshTokenKey);
       await prefs.remove(_prefUserKey);
+      await prefs.remove(_legacyPrefTokenKey);
+      await prefs.remove(_legacyPrefRefreshTokenKey);
+      await prefs.remove(_legacyPrefUserKey);
     } catch (e) { lastError = e.toString(); }
   }
 

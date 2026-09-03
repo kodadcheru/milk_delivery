@@ -105,13 +105,13 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
                     ),
                   )
                 else
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
-                      SizedBox(width: 6),
+                      const Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
+                      const SizedBox(width: 6),
                       Text(
-                        'Kodad Central Operations Hub (8.5 km Radius)',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
+                        '${widget.state.primaryHub['name'] ?? "Central Operations Hub"} (8.5 km Radius)',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.softText),
                       ),
                     ],
                   ),

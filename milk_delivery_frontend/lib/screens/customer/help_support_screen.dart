@@ -85,8 +85,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
       SupportChatMessage(
         id: 'init_welcome',
         senderType: MessageSenderType.agent,
-        senderName: 'Priya (MilkDrop Care)',
-        text: '👋 Hello ${widget.state.currentUser?.firstName ?? "there"}! Welcome to MilkDrop 24/7 Priority Support.\n\nHow can we help you with your morning delivery, subscriptions, or orders today?',
+        senderName: 'Priya (Pamba Care)',
+        text: '👋 Hello ${widget.state.currentUser?.firstName ?? "there"}! Welcome to Pamba 24/7 Priority Support.\n\nHow can we help you with your morning delivery, subscriptions, or orders today?',
         timestamp: DateTime.now(),
         quickReplies: const [
           'Track Morning Delivery 🥛',
@@ -141,7 +141,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   Timer? _historyPollTimer;
 
   Future<void> _loadHistory() async {
-    final phone = widget.state.currentUser?.phone ?? '+917794893990';
+    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : AppConfig.supportPhone;
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
       final serverMsgs = history.map((h) {
@@ -165,7 +165,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   }
 
   Future<void> _syncIncomingMessages() async {
-    final phone = widget.state.currentUser?.phone ?? '+917794893990';
+    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : AppConfig.supportPhone;
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
       final serverMsgs = history.map((h) {
@@ -235,7 +235,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     _scrollToBottom();
 
     // 2. Transmit to backend
-    final phone = widget.state.currentUser?.phone ?? '+917794893990';
+    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : AppConfig.supportPhone;
     ApiService.sendSupportChatMessage(
       phone: phone,
       text: trimmed,
@@ -365,13 +365,13 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Connected to MilkDrop Priority Care Desk',
+                  'Connected to Pamba Priority Care Desk',
                   style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: UiTone.primary),
                 ),
               ),
               InkWell(
                 onTap: _callSupportHotline,
-                child: const Text('📞 1800-6455-3767', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.primary)),
+                child: Text('📞 ${AppConfig.supportPhone}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.primary)),
               ),
             ],
           ),

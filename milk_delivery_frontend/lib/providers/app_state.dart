@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 import '../l10n/app_translations.dart';
 import '../models/user_model.dart';
 import '../models/customer_address_model.dart';
@@ -45,6 +46,10 @@ class AppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('app_language', langCode);
     } catch (_) {}
+  }
+
+  Future<void> toggleLanguage() async {
+    await setLanguage(_currentLanguage == 'te' ? 'en' : 'te');
   }
 
   Future<void> loadSavedLanguage() async {
@@ -197,7 +202,7 @@ class AppState extends ChangeNotifier {
   Future<void> loadCachedCatalog() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final prodsJson = prefs.getString('milkdrop_cached_products');
+      final prodsJson = prefs.getString('pamba_cached_products') ?? prefs.getString('milkdrop_cached_products');
       if (prodsJson != null && prodsJson.isNotEmpty) {
         final List list = jsonDecode(prodsJson);
         final restored = list.map((j) => ProductModel.fromJson(j as Map<String, dynamic>)).toList();
@@ -205,7 +210,7 @@ class AppState extends ChangeNotifier {
           products = restored;
         }
       }
-      final catsJson = prefs.getString('milkdrop_cached_categories');
+      final catsJson = prefs.getString('pamba_cached_categories') ?? prefs.getString('milkdrop_cached_categories');
       if (catsJson != null && catsJson.isNotEmpty) {
         final List list = jsonDecode(catsJson);
         final restored = list.map((j) => CategoryModel.fromJson(j as Map<String, dynamic>)).toList();
@@ -222,11 +227,11 @@ class AppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (products.isNotEmpty) {
         final prodsJson = jsonEncode(products.map((p) => p.toJson()).toList());
-        await prefs.setString('milkdrop_cached_products', prodsJson);
+        await prefs.setString('pamba_cached_products', prodsJson);
       }
       if (categories.isNotEmpty) {
         final catsJson = jsonEncode(categories.map((c) => c.toJson()).toList());
-        await prefs.setString('milkdrop_cached_categories', catsJson);
+        await prefs.setString('pamba_cached_categories', catsJson);
       }
     } catch (_) {}
   }
@@ -239,12 +244,12 @@ class AppState extends ChangeNotifier {
 
   List<Map<String, dynamic>> locationHubs = [
     {
-      'id': 'HUB-KDD-01',
-      'hub_code': 'HUB-KDD-01',
-      'name': 'Kodad Depot',
-      'address': '2X27+M36, Kodad, Telangana 508206, India',
-      'latitude': 17.001734,
-      'longitude': 79.9625,
+      'id': 'HUB-DEFAULT',
+      'hub_code': 'HUB-DEFAULT',
+      'name': AppConfig.defaultHubName,
+      'address': AppConfig.defaultHubAddress,
+      'latitude': AppConfig.defaultLatitude,
+      'longitude': AppConfig.defaultLongitude,
       'coverage_radius_km': 8.5,
     },
   ];
@@ -329,12 +334,12 @@ class AppState extends ChangeNotifier {
   Future<void> loadSavedRatings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final orderJson = prefs.getString('milkdrop_rated_orders');
+      final orderJson = prefs.getString('pamba_rated_orders') ?? prefs.getString('milkdrop_rated_orders');
       if (orderJson != null) {
         final decoded = jsonDecode(orderJson) as Map<String, dynamic>;
         decoded.forEach((k, v) => _ratedOrders[k] = int.tryParse(v.toString()) ?? 5);
       }
-      final taskJson = prefs.getString('milkdrop_rated_tasks');
+      final taskJson = prefs.getString('pamba_rated_tasks') ?? prefs.getString('milkdrop_rated_tasks');
       if (taskJson != null) {
         final decoded = jsonDecode(taskJson) as Map<String, dynamic>;
         decoded.forEach((k, v) => _ratedTasks[int.tryParse(k) ?? 0] = int.tryParse(v.toString()) ?? 5);
@@ -359,10 +364,10 @@ class AppState extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('milkdrop_rated_orders', jsonEncode(_ratedOrders));
+      await prefs.setString('pamba_rated_orders', jsonEncode(_ratedOrders));
       final taskMap = <String, int>{};
       _ratedTasks.forEach((k, v) => taskMap[k.toString()] = v);
-      await prefs.setString('milkdrop_rated_tasks', jsonEncode(taskMap));
+      await prefs.setString('pamba_rated_tasks', jsonEncode(taskMap));
     } catch (_) {}
 
     await ApiService.submitDeliveryRating(
@@ -769,7 +774,7 @@ class AppState extends ChangeNotifier {
         currentRole = user.role;
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('milkdrop_cached_user_role', user.role);
+          await prefs.setString('pamba_cached_user_role', user.role);
         } catch (_) {}
         if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
           currentDeliveryAddress = user.address;
@@ -834,7 +839,7 @@ class AppState extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('🚨 [MilkDrop Concurrent Reload Error]: $e');
+      debugPrint('🚨 [Pamba Concurrent Reload Error]: $e');
     }
 
     isLoading = false;
@@ -1023,7 +1028,7 @@ class AppState extends ChangeNotifier {
   Future<void> loadCachedUserRole() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedRole = prefs.getString('milkdrop_cached_user_role');
+      final savedRole = prefs.getString('pamba_cached_user_role') ?? prefs.getString('milkdrop_cached_user_role');
       if (savedRole != null && savedRole.isNotEmpty) {
         currentRole = savedRole;
         notifyListeners();
@@ -1036,7 +1041,7 @@ class AppState extends ChangeNotifier {
     currentRole = user.role;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('milkdrop_cached_user_role', user.role);
+      await prefs.setString('pamba_cached_user_role', user.role);
     } catch (_) {}
     subscriptions = [];
     deliveries = [];
@@ -1052,6 +1057,7 @@ class AppState extends ChangeNotifier {
     await _clearCachedAddresses(); // Clear local cache on logout
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('pamba_cached_user_role');
       await prefs.remove('milkdrop_cached_user_role');
     } catch (_) {}
     currentUser = null;

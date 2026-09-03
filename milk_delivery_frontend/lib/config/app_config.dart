@@ -36,4 +36,12 @@ class AppConfig {
   static const String adminPhone = '+91 8919548905';
   static const String adminWhatsApp = '918919548905';
   static const String supportEmail = 'support@pamba.in';
+
+  // Geographic & Hub Fallbacks
+  static const double defaultLatitude = 17.001734;
+  static const double defaultLongitude = 79.962500;
+  static const String defaultCity = 'Kodad';
+  static const String defaultHubName = 'Central Operational Hub';
+  static const String defaultHubAddress = 'Kodad, Telangana 508206, India';
+  static const String defaultFssai = '13621014000342';
 }

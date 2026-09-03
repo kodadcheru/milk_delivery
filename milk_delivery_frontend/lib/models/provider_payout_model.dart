@@ -50,16 +50,16 @@ class ProviderPayoutModel {
   });
 
   factory ProviderPayoutModel.fromJson(Map<String, dynamic> json) {
-    final bName = json['bank_name']?.toString() ?? 'State Bank of India';
-    final bAcc = json['bank_account_number']?.toString() ?? '389201948210';
+    final bName = json['bank_name']?.toString() ?? 'Primary Bank Account';
+    final bAcc = json['bank_account_number']?.toString() ?? '';
     final bMasked = json['bank_account_masked']?.toString() ?? (bAcc.length >= 4 ? '•••• ${bAcc.substring(bAcc.length - 4)}' : bAcc);
-    final bankDesc = json['bank']?.toString() ?? '$bName (A/C $bMasked)';
+    final bankDesc = json['bank']?.toString() ?? (bAcc.isNotEmpty ? '$bName (A/C $bMasked)' : bName);
 
     return ProviderPayoutModel(
-      id: json['id']?.toString() ?? json['payment_reference']?.toString() ?? 'PAY-KDD-0001',
+      id: json['id']?.toString() ?? json['payment_reference']?.toString() ?? 'PAY-0001',
       rawId: json['raw_id'] is int ? json['raw_id'] : int.tryParse(json['raw_id']?.toString() ?? '0') ?? 0,
       hubId: json['hub_id'] is int ? json['hub_id'] : int.tryParse(json['hub_id']?.toString() ?? '0') ?? 0,
-      hubName: json['hub_name'] ?? 'Kodad Depot',
+      hubName: json['hub_name'] ?? 'Operations Hub',
       periodStart: json['period_start'] ?? '',
       periodEnd: json['period_end'] ?? '',
       totalDeliveries: json['total_deliveries'] is int ? json['total_deliveries'] : int.tryParse(json['total_deliveries']?.toString() ?? '0') ?? 0,

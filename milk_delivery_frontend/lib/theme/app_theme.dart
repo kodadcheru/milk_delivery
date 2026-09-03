@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Next-Gen Design Tokens, Color Palette, and Styling Utilities for MilkDrop
+/// Next-Gen Design Tokens, Color Palette, and Styling Utilities for Pamba
 class AppTheme {
   // ── 🎨 Core Color Palette ──
   // Kept in lockstep with UiTone (lib/theme/ui_tokens.dart) so the Material

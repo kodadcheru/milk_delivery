@@ -21,7 +21,7 @@ class ProfileTab extends StatelessWidget {
         ? '${user.firstName} ${user.lastName}'.trim()
         : (user?.username.isNotEmpty == true ? user!.username : 'Customer');
     final email = user?.email.isNotEmpty == true ? user!.email : 'No email linked';
-    final phone = user?.phone.isNotEmpty == true ? user!.phone : '+91 8885199878';
+    final phone = user?.phone.isNotEmpty == true ? user!.phone : 'No phone linked';
     
     final topInset = MediaQuery.of(context).padding.top;
 
@@ -371,7 +371,7 @@ class ProfileTab extends StatelessWidget {
                     iconFg: const Color(0xFF2563EB),
                     label: 'Share App',
                     onTap: () async {
-                      await Clipboard.setData(const ClipboardData(text: 'https://milkdrop.com/app'));
+                      await Clipboard.setData(const ClipboardData(text: 'https://pamba.in/app'));
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied!')));
                       }
@@ -383,7 +383,7 @@ class ProfileTab extends StatelessWidget {
                     iconBg: const Color(0xFFF1F5F9),
                     iconFg: const Color(0xFF475569),
                     label: 'About us',
-                    onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('About Us'), content: const Text('MilkDrop Express is a farm-to-home fresh milk delivery service.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])),
+                    onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('About Us'), content: const Text('Pamba Fresh is a farm-to-home pure milk and dairy delivery service.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])),
                   ),
                   _buildDivider(),
                   _buildMenuTile(

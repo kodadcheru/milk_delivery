@@ -139,7 +139,7 @@ else:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-milkdrop-cache",
+            "LOCATION": "unique-pamba-cache",
         }
     }
     CHANNEL_LAYERS = {
@@ -279,3 +279,6 @@ LOGGING = {
         },
     },
 }
+
+# Google Maps API Configuration
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4")

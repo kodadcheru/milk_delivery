@@ -16,11 +16,11 @@ class LocationHub(models.Model):
     manager_phone = models.CharField(max_length=20)
     fssai_license = models.CharField(max_length=50, default="13621014000342")
     coverage_radius_km = models.FloatField(default=8.5)
-    bank_name = models.CharField(max_length=150, default="State Bank of India")
-    bank_account_number = models.CharField(max_length=50, default="389201948210")
-    bank_ifsc = models.CharField(max_length=20, default="SBIN0004892")
-    bank_account_holder = models.CharField(max_length=150, default="Srinuvasa Reddy")
-    upi_id = models.CharField(max_length=100, default="8885199878@upi")
+    bank_name = models.CharField(max_length=150, blank=True, default="")
+    bank_account_number = models.CharField(max_length=50, blank=True, default="")
+    bank_ifsc = models.CharField(max_length=20, blank=True, default="")
+    bank_account_holder = models.CharField(max_length=150, blank=True, default="")
+    upi_id = models.CharField(max_length=100, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

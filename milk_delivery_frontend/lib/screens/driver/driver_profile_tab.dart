@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/app_config.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../theme/ui_tokens.dart';
@@ -38,13 +39,13 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     final driverId = driverUser != null && driverUser.id > 0 ? 'DRV-${driverUser.id}' : 'DRV-101';
 
     final activeHub = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
-    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? 'Kodad Depot') : 'Kodad Depot';
+    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
     final managerName = activeHub != null && activeHub['manager_name'] != null && activeHub['manager_name'].toString().isNotEmpty
         ? activeHub['manager_name'].toString()
-        : 'Srinuvasa Reddy';
+        : 'Hub Operations Manager';
     final managerPhone = activeHub != null && activeHub['manager_phone'] != null && activeHub['manager_phone'].toString().isNotEmpty
         ? activeHub['manager_phone'].toString()
-        : '8885199878';
+        : AppConfig.supportPhone;
 
     final salaryText = (driverUser != null && driverUser.monthlySalary > 0)
         ? UiFormat.price(driverUser.monthlySalary)
@@ -386,7 +387,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                 // Version Footer
                 Center(
                   child: Text(
-                    'MilkDrop Express Partner v1.0.0 • Dedicated Delivery Heroes 🛵',
+                    'Pamba Express Partner v1.0.0 • Dedicated Delivery Heroes 🛵',
                     style: UiText.caption.copyWith(fontSize: 12),
                   ),
                 ),
@@ -875,9 +876,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   }
 
   void _showDepotDetailsDialog(BuildContext context, String hubName, Map<String, dynamic>? hub) {
-    final address = hub != null && hub['address'] != null ? hub['address'].toString() : 'Kodad Depot Operations, Telangana';
-    final managerName = hub != null && hub['manager_name'] != null ? hub['manager_name'].toString() : 'Srinuvasa Reddy';
-    final managerPhone = hub != null && hub['manager_phone'] != null ? hub['manager_phone'].toString() : '8885199878';
+    final address = hub != null && hub['address'] != null ? hub['address'].toString() : AppConfig.defaultHubAddress;
+    final managerName = hub != null && hub['manager_name'] != null ? hub['manager_name'].toString() : 'Hub Operations Manager';
+    final managerPhone = hub != null && hub['manager_phone'] != null ? hub['manager_phone'].toString() : AppConfig.supportPhone;
 
     showDialog(
       context: context,
@@ -1043,7 +1044,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
               Icons.location_off_rounded,
               'Customer Address or Gate Lock Issue',
               'Central Ops address re-routing',
-              '+91 8885199878',
+              AppConfig.supportPhone,
             ),
             _buildEmergencyActionTile(
               context,
@@ -1110,7 +1111,7 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             _buildSafetyItem('2. Zero Pouch Damage Policy', 'Place pouches gently inside the customer doorstep delivery bag. Never drop or throw pouches.'),
             _buildSafetyItem('3. Contactless & Silent Morning Protocol', 'Between 05:00 AM – 07:00 AM, avoid honking or ringing bells unless specified in customer notes.'),
             _buildSafetyItem('4. Doorstep Photo Proof', 'Snap a quick doorstep photo on delivery completion for zero-dispute verification.'),
-            _buildSafetyItem('5. Helmet & Road Safety First', 'Always wear your MilkDrop safety helmet and reflective vest while operating your vehicle.'),
+            _buildSafetyItem('5. Helmet & Road Safety First', 'Always wear your Pamba safety helmet and reflective vest while operating your vehicle.'),
             const SizedBox(height: 16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),

@@ -46,7 +46,7 @@ class SupportChatMessage {
     return SupportChatMessage(
       id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
       senderType: type,
-      senderName: json['sender_name'] as String? ?? (type == MessageSenderType.user ? 'You' : 'MilkDrop Support'),
+      senderName: json['sender_name'] as String? ?? (type == MessageSenderType.user ? 'You' : 'Pamba Support'),
       text: json['text'] as String? ?? '',
       timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()

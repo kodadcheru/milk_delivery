@@ -93,12 +93,12 @@ class SupportChatSendView(APIView):
         auto_reply = None
         user_msg_count = SupportMessage.objects.filter(phone__endswith=clean_phone).count()
         if sender_type == "user" and user_msg_count <= 1:
-            reply_text = f"👋 Hello {cust_name}! Connected to MilkDrop Live Support Desk. How can our team assist you today?"
+            reply_text = f"👋 Hello {cust_name}! Connected to Pamba Live Support Desk. How can our team assist you today?"
             bot_msg = SupportMessage.objects.create(
                 phone=phone,
                 user=matched_user,
                 sender_type="agent",
-                sender_name="Priya (MilkDrop Support)",
+                sender_name="Priya (Pamba Support)",
                 text=reply_text,
                 order_id=order_id,
             )

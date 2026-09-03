@@ -288,7 +288,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(32, 4, 32, 14),
                 child: Text(
-                  'By continuing, you agree to MilkDrop Express Terms of Service & Privacy Policy.',
+                  widget.state.tr('terms_notice'),
                   textAlign: TextAlign.center,
                   style: UiText.caption,
                 ),
@@ -305,7 +305,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     final topInset = MediaQuery.of(context).padding.top;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(24, topInset + 44, 24, 40),
+      padding: EdgeInsets.fromLTRB(24, topInset + 16, 24, 32),
       decoration: const BoxDecoration(
         gradient: UiGradient.hero,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -313,6 +313,40 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       ),
       child: Column(
         children: [
+          // Top row with Language Toggle
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: () {
+                  widget.state.toggleLanguage();
+                  setState(() {});
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.language_rounded, size: 14, color: Colors.white),
+                      const SizedBox(width: 5),
+                      Text(
+                        widget.state.isTelugu ? 'English' : 'తెలుగు',
+                        style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
           // Frosted brand mark
           Container(
             padding: const EdgeInsets.all(18),
@@ -335,7 +369,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 5),
           Text(
-            '⚡ Farm Fresh Dairy • Guaranteed 6:00 AM Delivery',
+            widget.state.isTelugu
+                ? '⚡ స్వచ్ఛమైన ఫారం పాలు • ప్రతిరోజూ ఉదయం ఇంటి వద్దకే'
+                : '⚡ Farm Fresh Dairy • Guaranteed 6:00 AM Delivery',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
@@ -361,11 +397,11 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 UiTone.primarySoft,
               ),
               const SizedBox(width: 10),
-              const Text('Enter Mobile Number', style: UiText.h2),
+              Text(widget.state.tr('login_heading'), style: UiText.h2),
             ],
           ),
           const SizedBox(height: 6),
-          Text('We will send a 4-digit OTP to verify your account', style: UiText.label),
+          Text(widget.state.tr('login_sub'), style: UiText.label),
           const SizedBox(height: 18),
 
           Row(
@@ -393,7 +429,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
                   style: const TextStyle(color: UiTone.ink, fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: 1),
-                  decoration: _fieldDecoration(hint: 'Enter 10-digit number'),
+                  decoration: _fieldDecoration(hint: widget.state.isTelugu ? '10 అంకెల మొబైల్ నంబర్' : 'Enter 10-digit number'),
                 ),
               ),
             ],
@@ -404,12 +440,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           _primaryCta(
             key: const ValueKey('send_otp_btn'),
             onTap: _handleSendOTP,
-            label: const Row(
+            label: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Get OTP & Continue', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+                Text(widget.state.tr('send_otp'), style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
               ],
             ),
           ),
@@ -429,10 +465,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Enter 4-Digit OTP', style: UiText.h2),
+                    Text(widget.state.isTelugu ? '4 అంకెల OTP ని నమోదు చేయండి' : 'Enter 4-Digit OTP', style: UiText.h2),
                     const SizedBox(height: 2),
                     Text(
-                      'Sent to ${_phoneController.text}',
+                      widget.state.isTelugu ? '${_phoneController.text} కు SMS పంపబడింది' : 'Sent to ${_phoneController.text}',
                       style: const TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -441,7 +477,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               TextButton.icon(
                 onPressed: () => setState(() => _step = 1),
                 icon: const Icon(Icons.edit_rounded, size: 14, color: UiTone.primary),
-                label: const Text('Change', style: TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                label: Text(widget.state.isTelugu ? 'మార్చండి' : 'Change', style: const TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -471,7 +507,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               TextButton(
                 onPressed: _canResend ? _handleSendOTP : null,
                 child: Text(
-                  _canResend ? 'Resend OTP' : 'Resend in ${_resendSeconds}s',
+                  _canResend ? widget.state.tr('resend_otp') : (widget.state.isTelugu ? 'మళ్లీ పంపడానికి ${_resendSeconds}సె' : 'Resend in ${_resendSeconds}s'),
                   style: TextStyle(
                     color: _canResend ? UiTone.primary : UiText.muted,
                     fontSize: 11.5,
@@ -486,12 +522,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           _primaryCta(
             key: const ValueKey('verify_otp_btn'),
             onTap: _handleVerifyOTP,
-            label: const Row(
+            label: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.lock_open_rounded, size: 18, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Verify OTP & Secure Login 🔒', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+                const Icon(Icons.lock_open_rounded, size: 18, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(widget.state.tr('verify_otp'), style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
               ],
             ),
           ),
@@ -510,30 +546,30 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               UiTone.warningSoft,
             ),
             const SizedBox(width: 10),
-            const Expanded(child: Text('New Customer Profile', style: UiText.h2)),
+            Expanded(child: Text(widget.state.isTelugu ? 'కొత్త కస్టమర్ ప్రొఫైల్' : 'New Customer Profile', style: UiText.h2)),
           ],
         ),
         const SizedBox(height: 6),
-        const Text(
-          'Complete profile to claim ₹500 welcome milk credit',
-          style: TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.w600),
+        Text(
+          widget.state.isTelugu ? 'పూర్తి చేసి ₹500 స్వాగత వాలెట్ క్రెడిట్ పొందండి' : 'Complete profile to claim ₹500 welcome milk credit',
+          style: const TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 18),
 
-        _buildTextField(_nameController, 'Full Name', Icons.person_outline),
+        _buildTextField(_nameController, widget.state.isTelugu ? 'పూర్తి పేరు' : 'Full Name', Icons.person_outline),
         const SizedBox(height: 12),
-        _buildTextField(_emailController, 'Email Address', Icons.email_outlined),
+        _buildTextField(_emailController, widget.state.isTelugu ? 'ఈమెయిల్ చిరునామా' : 'Email Address', Icons.email_outlined),
         const SizedBox(height: 16),
 
-        const Text('Select Gender', style: UiText.label),
+        Text(widget.state.isTelugu ? 'లింగం ఎంచుకోండి' : 'Select Gender', style: UiText.label),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildGenderChip('Male', '👨 Male'),
-            _buildGenderChip('Female', '👩 Female'),
-            _buildGenderChip('Other', '👤 Other'),
+            _buildGenderChip('Male', widget.state.isTelugu ? '👨 పురుషుడు' : '👨 Male'),
+            _buildGenderChip('Female', widget.state.isTelugu ? '👩 మహిళ' : '👩 Female'),
+            _buildGenderChip('Other', widget.state.isTelugu ? '👤 ఇతర' : '👤 Other'),
           ],
         ),
         const SizedBox(height: 22),
@@ -541,12 +577,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         // Prominent Complete Registration Button
         _primaryCta(
           onTap: _handleRegisterCustomer,
-          label: const Row(
+          label: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Complete & Claim ₹500 🥛', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+              const Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(widget.state.isTelugu ? 'నమోదు పూర్తి చేయండి 🥛' : 'Complete & Claim ₹500 🥛', style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
             ],
           ),
         ),

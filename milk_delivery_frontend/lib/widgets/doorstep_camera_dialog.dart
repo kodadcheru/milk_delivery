@@ -55,7 +55,7 @@ Future<Uint8List> stampWatermarkOnImageBytes({
       text: TextSpan(
         children: [
           TextSpan(
-            text: '🟢 MILKDROP DOORSTEP PROOF VERIFIED\n',
+            text: '🟢 PAMBA DOORSTEP PROOF VERIFIED\n',
             style: TextStyle(
               color: const Color(0xFF00E676),
               fontSize: 13 * scale,

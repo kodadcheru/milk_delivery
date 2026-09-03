@@ -393,3 +393,4 @@ Traceback (most recent call last):
               ^^^^^^^^^^^^^^
 AttributeError: 'str' object has no attribute 'get'
 [2026-09-03 14:10:54,797] ERROR [django.request:246] Internal Server Error: /api/orders/express/
+[2026-09-03 17:59:29,097] ERROR [django.request:246] Service Unavailable: /api/health/

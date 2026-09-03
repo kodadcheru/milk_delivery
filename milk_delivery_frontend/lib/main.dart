@@ -33,11 +33,11 @@ void main() {
   // Production Global Crash & Error Boundary
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    debugPrint('🚨 [MilkDrop FlutterError]: ${details.exceptionAsString()}');
+    debugPrint('🚨 [Pamba FlutterError]: ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('🚨 [MilkDrop UncaughtAsyncError]: $error');
+    debugPrint('🚨 [Pamba UncaughtAsyncError]: $error');
     return true; // Prevent app crashes
   };
 
@@ -207,7 +207,7 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
     // ── 1. DRIVER ROLE APP SHELL ──
     if (widget.state.currentRole == 'DRIVER') {
       final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
-      final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
+      final hubName = activeHub != null ? (activeHub['name'] ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
       final pendingCount = widget.state.deliveries.where((d) => d.status == "PENDING").length;
 
       final driverScreens = [
@@ -714,8 +714,8 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
 
 void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
   final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
-  final hubName = activeHub != null ? (activeHub['name'] ?? 'Kodad Depot') : 'Kodad Depot';
-  final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-KDD-01') : 'HUB-KDD-01';
+  final hubName = activeHub != null ? (activeHub['name'] ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
+  final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-DEFAULT') : 'HUB-DEFAULT';
 
   showModalBottomSheet(
     context: context,

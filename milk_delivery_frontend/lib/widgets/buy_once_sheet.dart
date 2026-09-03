@@ -61,7 +61,11 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
       SnackBar(
         duration: const Duration(seconds: 1),
         backgroundColor: UiTone.ink,
-        content: Text('🛒 Added ${_qty}x ${widget.product.name} ($_packSize) to cart'),
+        content: Text(
+          widget.state.isTelugu
+              ? '🛒 కార్ట్‌కి ${_qty}x ${widget.product.localizedName("te")} ($_packSize) జోడించబడింది'
+              : '🛒 Added ${_qty}x ${widget.product.name} ($_packSize) to cart',
+        ),
       ),
     );
   }
@@ -137,7 +141,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                   const SizedBox(height: 16),
 
                   // Pack size
-                  Text('Pack size', style: UiText.label),
+                  Text(widget.state.isTelugu ? 'ప్యాక్ పరిమాణం' : 'Pack size', style: UiText.label),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -155,7 +159,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Quantity', style: UiText.label),
+                          Text(widget.state.isTelugu ? 'పరిమాణం' : 'Quantity', style: UiText.label),
                           const SizedBox(height: 8),
                           _quantityStepper(),
                         ],
@@ -163,7 +167,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Total', style: UiText.label),
+                          Text(widget.state.isTelugu ? 'మొత్తం' : 'Total', style: UiText.label),
                           const SizedBox(height: 6),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -199,7 +203,9 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                           onTap: soldOut ? null : _addToCart,
                           child: Center(
                             child: Text(
-                              soldOut ? 'Sold out' : 'Add to cart · ${UiFormat.price(_lineTotal)}',
+                              soldOut
+                                  ? (widget.state.isTelugu ? 'స్టాక్ అయిపోయింది' : 'Sold out')
+                                  : (widget.state.isTelugu ? 'కార్ట్‌కి జోడించండి · ${UiFormat.price(_lineTotal)}' : 'Add to cart · ${UiFormat.price(_lineTotal)}'),
                               style: UiText.title.copyWith(
                                 color: soldOut ? UiText.muted : Colors.white,
                               ),
@@ -226,9 +232,9 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
                       ),
                       onPressed: _openSubscription,
                       icon: const Icon(Icons.repeat_rounded, size: 20, color: Color(0xFF0E784D)),
-                      label: const Text(
-                        'SUBSCRIBE DAILY / SCHEDULED →',
-                        style: TextStyle(
+                      label: Text(
+                        widget.state.isTelugu ? 'రోజువారీ సబ్‌స్క్రిప్షన్ ప్లాన్ →' : 'SUBSCRIBE DAILY / SCHEDULED →',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 13.5,
                           color: Color(0xFF0E784D),

@@ -56,7 +56,7 @@ class Command(BaseCommand):
             period_end = date(period_start.year, period_start.month + 1, 1) - timedelta(days=1)
 
         self.stdout.write(f"\n{'='*60}")
-        self.stdout.write(f"💰 MilkDrop Provider Payout Generator")
+        self.stdout.write(f"💰 Pamba Provider Payout Generator")
         self.stdout.write(f"   Period: {period_start} to {period_end}")
         self.stdout.write(f"   Platform Commission: {commission_rate * 100}%")
         self.stdout.write(f"   Mode: {'DRY RUN' if dry_run else 'LIVE'}")

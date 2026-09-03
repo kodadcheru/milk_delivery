@@ -497,8 +497,8 @@ class ProviderEarningsSummaryView(APIView):
         recent_payouts = ProviderPayout.objects.filter(hub=hub).order_by("-created_at")[:5]
         payouts_list = []
         for p in recent_payouts:
-            b_name = p.bank_name or hub.bank_name or "State Bank of India"
-            b_acc = p.bank_account_number or hub.bank_account_number or "389201948210"
+            b_name = p.bank_name or hub.bank_name or ""
+            b_acc = p.bank_account_number or hub.bank_account_number or ""
             payouts_list.append({
                 "id": p.payment_reference or f"PAY-KDD-{p.id:04d}",
                 "raw_id": p.id,
@@ -509,16 +509,17 @@ class ProviderEarningsSummaryView(APIView):
                 "platform_commission": float(p.platform_commission),
                 "status": p.status,
                 "payment_reference": p.payment_reference,
-                "bank": f"{b_name} (A/C •••• {b_acc[-4:]})",
+                "bank": f"{b_name} (A/C •••• {b_acc[-4:]})" if len(b_acc) >= 4 else b_name,
                 "bank_name": b_name,
                 "bank_account_number": b_acc,
-                "bank_account_masked": f"•••• {b_acc[-4:]}",
-                "bank_ifsc": p.bank_ifsc or hub.bank_ifsc or "SBIN0004892",
-                "upi_id": p.upi_id or hub.upi_id or "8885199878@upi",
+                "bank_account_masked": f"•••• {b_acc[-4:]}" if len(b_acc) >= 4 else b_acc,
+                "bank_ifsc": p.bank_ifsc or hub.bank_ifsc or "",
+                "upi_id": p.upi_id or hub.upi_id or "",
                 "date": p.paid_at.strftime("%Y-%m-%d %H:%M") if p.paid_at else p.created_at.strftime("%Y-%m-%d"),
             })
 
-        bank_acc = hub.bank_account_number or "389201948210"
+        bank_acc = hub.bank_account_number or ""
+        masked_acc = f"•••• {bank_acc[-4:]}" if len(bank_acc) >= 4 else bank_acc
         return Response({
             "period": period.upper(),
             "start_date": str(s_date),
@@ -529,12 +530,12 @@ class ProviderEarningsSummaryView(APIView):
                 "name": hub.name,
                 "manager_name": hub.manager_name,
                 "manager_phone": hub.manager_phone,
-                "bank_name": hub.bank_name or "State Bank of India",
+                "bank_name": hub.bank_name or "",
                 "bank_account_number": bank_acc,
-                "bank_account_masked": f"•••• {bank_acc[-4:]}",
-                "bank_ifsc": hub.bank_ifsc or "SBIN0004892",
-                "bank_account_holder": hub.bank_account_holder or "Srinuvasa Reddy",
-                "upi_id": hub.upi_id or "8885199878@upi",
+                "bank_account_masked": masked_acc,
+                "bank_ifsc": hub.bank_ifsc or "",
+                "bank_account_holder": hub.bank_account_holder or (hub.manager_name or "Hub Manager"),
+                "upi_id": hub.upi_id or "",
             },
             "metrics": {
                 "total_deliveries": earnings["total_deliveries"],
@@ -573,10 +574,10 @@ class ProviderPayoutListCreateView(APIView):
         payouts_data = []
         for p in qs[:50]:
             h_obj = p.hub
-            b_name = p.bank_name or (h_obj.bank_name if h_obj else "State Bank of India")
-            b_acc = p.bank_account_number or (h_obj.bank_account_number if h_obj else "389201948210")
-            b_ifsc = p.bank_ifsc or (h_obj.bank_ifsc if h_obj else "SBIN0004892")
-            b_upi = p.upi_id or (h_obj.upi_id if h_obj else "8885199878@upi")
+            b_name = p.bank_name or (h_obj.bank_name if h_obj else "") or ""
+            b_acc = p.bank_account_number or (h_obj.bank_account_number if h_obj else "") or ""
+            b_ifsc = p.bank_ifsc or (h_obj.bank_ifsc if h_obj else "") or ""
+            b_upi = p.upi_id or (h_obj.upi_id if h_obj else "") or ""
 
             payouts_data.append({
                 "id": p.payment_reference or f"PAY-KDD-{p.id:04d}",
@@ -662,8 +663,8 @@ class ProviderPayoutListCreateView(APIView):
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        b_name = payout.bank_name or hub.bank_name or "State Bank of India"
-        b_acc = payout.bank_account_number or hub.bank_account_number or "389201948210"
+        b_name = payout.bank_name or hub.bank_name or ""
+        b_acc = payout.bank_account_number or hub.bank_account_number or ""
 
         return Response({
             "message": f"Instant Payout of ₹{payout.net_payout:.2f} transferred successfully!",

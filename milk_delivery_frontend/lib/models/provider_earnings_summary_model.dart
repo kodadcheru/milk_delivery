@@ -28,19 +28,19 @@ class HubBankDetailsModel {
   });
 
   factory HubBankDetailsModel.fromJson(Map<String, dynamic> json) {
-    final bAcc = json['bank_account_number']?.toString() ?? '389201948210';
+    final bAcc = json['bank_account_number']?.toString() ?? '';
     return HubBankDetailsModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       hubCode: json['hub_code']?.toString() ?? 'HUB-KDD-01',
-      name: json['name']?.toString() ?? 'Kodad Depot',
+      name: json['name']?.toString() ?? 'Operations Hub',
       managerName: json['manager_name']?.toString() ?? 'Hub Manager',
       managerPhone: json['manager_phone']?.toString() ?? '',
-      bankName: json['bank_name']?.toString() ?? 'State Bank of India',
+      bankName: json['bank_name']?.toString() ?? 'Primary Bank Account',
       bankAccountNumber: bAcc,
       bankAccountMasked: json['bank_account_masked']?.toString() ?? (bAcc.length >= 4 ? '•••• ${bAcc.substring(bAcc.length - 4)}' : bAcc),
-      bankIfsc: json['bank_ifsc']?.toString() ?? 'SBIN0004892',
-      bankAccountHolder: json['bank_account_holder']?.toString() ?? 'Srinuvasa Reddy',
-      upiId: json['upi_id']?.toString() ?? '8885199878@upi',
+      bankIfsc: json['bank_ifsc']?.toString() ?? '',
+      bankAccountHolder: json['bank_account_holder']?.toString() ?? '',
+      upiId: json['upi_id']?.toString() ?? '',
     );
   }
 }

@@ -148,10 +148,10 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
   void _showWithdrawModal(BuildContext context, double amount) {
     HapticFeedback.heavyImpact();
     final hubBank = _earningsSummary?.hub;
-    final bName = hubBank?.bankName.isNotEmpty == true ? hubBank!.bankName : 'State Bank of India';
-    final bMasked = hubBank?.bankAccountMasked.isNotEmpty == true ? hubBank!.bankAccountMasked : '•••• 4892';
-    final bIfsc = hubBank?.bankIfsc.isNotEmpty == true ? hubBank!.bankIfsc : 'SBIN0004892';
-    final upiId = hubBank?.upiId.isNotEmpty == true ? hubBank!.upiId : '8885199878@upi';
+    final bName = hubBank?.bankName.isNotEmpty == true ? hubBank!.bankName : 'Primary Bank Account';
+    final bMasked = hubBank?.bankAccountMasked.isNotEmpty == true ? hubBank!.bankAccountMasked : '•••• ••••';
+    final bIfsc = hubBank?.bankIfsc.isNotEmpty == true ? hubBank!.bankIfsc : 'Pending Verification';
+    final upiId = hubBank?.upiId.isNotEmpty == true ? hubBank!.upiId : '';
 
     showModalBottomSheet(
       context: context,

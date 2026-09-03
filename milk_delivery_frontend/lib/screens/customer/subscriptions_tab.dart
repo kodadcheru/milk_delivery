@@ -62,7 +62,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     double totalDailyCost = 0.0;
     int totalDailyUnits = 0;
     for (var s in activeSubs.where((s) => s.status == 'ACTIVE')) {
-      final pPrice = s.productDetail?.pricePerUnit ?? 72.0;
+      final pPrice = s.displayPrice > 0 ? s.displayPrice : (s.productDetail?.pricePerUnit ?? 0.0);
       totalDailyCost += (pPrice * s.quantity);
       totalDailyUnits += s.quantity;
     }

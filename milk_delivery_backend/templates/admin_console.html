@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MilkDrop Express — Central Admin & Operations Command Console</title>
+  <title>Pamba Fresh — Central Admin & Operations Command Console</title>
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -596,7 +596,7 @@
   <div id="loginScreen">
     <div class="login-card" style="max-width: 440px;">
       <div class="brand-icon" style="margin: 0 auto 14px; width: 56px; height: 56px; font-size: 28px;">🥛</div>
-      <h2 style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800;">MilkDrop Express</h2>
+      <h2 style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800;">Pamba Fresh</h2>
       <p style="font-size: 11.5px; color: var(--primary-accent); font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
         Operations Command Portal Login
       </p>
@@ -681,7 +681,7 @@
     <div class="brand-logo">
       <div class="brand-icon">🥛</div>
       <div>
-        <div class="brand-title">MilkDrop Express</div>
+        <div class="brand-title">Pamba Fresh</div>
         <div class="brand-subtitle">CENTRAL ADMIN & OPERATIONS CONSOLE</div>
       </div>
     </div>
@@ -1803,7 +1803,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
                 <label>Email Address</label>
-                <input type="email" id="profEmail" class="form-control" value="admin@milkdrop.in">
+                <input type="email" id="profEmail" class="form-control" value="admin@pamba.in">
               </div>
               <div class="form-group">
                 <label>Phone Number</label>
@@ -2330,25 +2330,25 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 11px;">Bank Name</label>
-            <input type="text" id="editHubBankName" class="form-control" placeholder="e.g. State Bank of India">
+            <input type="text" id="editHubBankName" class="form-control" placeholder="e.g. HDFC / SBI Bank">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 11px;">Account Number</label>
-            <input type="text" id="editHubBankAccountNumber" class="form-control" placeholder="e.g. 389201948210">
+            <input type="text" id="editHubBankAccountNumber" class="form-control" placeholder="e.g. 123456789012">
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 11px;">IFSC Code</label>
-            <input type="text" id="editHubBankIfsc" class="form-control" placeholder="e.g. SBIN0004892" style="text-transform: uppercase;">
+            <input type="text" id="editHubBankIfsc" class="form-control" placeholder="e.g. SBIN0001234" style="text-transform: uppercase;">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 11px;">Account Holder Name</label>
-            <input type="text" id="editHubBankAccountHolder" class="form-control" placeholder="e.g. Srinuvasa Reddy">
+            <input type="text" id="editHubBankAccountHolder" class="form-control" placeholder="e.g. Account Holder Name">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 11px;">Linked UPI ID</label>
-            <input type="text" id="editHubUpiId" class="form-control" placeholder="e.g. 8885199878@upi">
+            <input type="text" id="editHubUpiId" class="form-control" placeholder="e.g. business@upi">
           </div>
         </div>
       </div>
@@ -3418,7 +3418,7 @@
           </div>
           <div class="form-group">
             <label>Email Address</label>
-            <input type="email" id="suppEmail" class="form-control" placeholder="support@milkdrop.in">
+            <input type="email" id="suppEmail" class="form-control" placeholder="support@pamba.in">
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -4277,11 +4277,11 @@
       document.getElementById('editHubFssai').value = hub.fssai_license || '';
       
       // Settlement Bank Account
-      document.getElementById('editHubBankName').value = hub.bank_name || 'State Bank of India';
-      document.getElementById('editHubBankAccountNumber').value = hub.bank_account_number || '389201948210';
-      document.getElementById('editHubBankIfsc').value = hub.bank_ifsc || 'SBIN0004892';
-      document.getElementById('editHubBankAccountHolder').value = hub.bank_account_holder || (hub.manager_name || 'Srinuvasa Reddy');
-      document.getElementById('editHubUpiId').value = hub.upi_id || `${cleanDigits || '8885199878'}@upi`;
+      document.getElementById('editHubBankName').value = hub.bank_name || '';
+      document.getElementById('editHubBankAccountNumber').value = hub.bank_account_number || '';
+      document.getElementById('editHubBankIfsc').value = hub.bank_ifsc || '';
+      document.getElementById('editHubBankAccountHolder').value = hub.bank_account_holder || (hub.manager_name || '');
+      document.getElementById('editHubUpiId').value = hub.upi_id || (cleanDigits ? `${cleanDigits}@upi` : '');
 
       document.getElementById('editHubModal').style.display = 'flex';
     }
@@ -5867,14 +5867,14 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `MilkDrop_RunSheet_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `Pamba_RunSheet_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
     }
 
     function printDispatchSheet() {
       let printContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2 style="margin-bottom: 4px;">🥛 MilkDrop Express — 05:30 AM Morning Dispatch Run-Sheet</h2>
+          <h2 style="margin-bottom: 4px;">🥛 Pamba Fresh — 05:30 AM Morning Dispatch Run-Sheet</h2>
           <p style="font-size: 12px; color: #666; margin-bottom: 16px;">Date: ${new Date().toDateString()} • Total Scheduled Drops: ${rawDeliveries.length}</p>
           <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; font-size:12px;">
             <thead>

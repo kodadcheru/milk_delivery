@@ -116,7 +116,7 @@ class _WalletTabState extends State<WalletTab> {
                       AppTheme.hapticSuccess();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('✅ ₹${amt.toStringAsFixed(0)} credited to your MilkDrop wallet!'),
+                          content: Text('✅ ₹${amt.toStringAsFixed(0)} credited to your Pamba wallet!'),
                           backgroundColor: AppTheme.primaryMint,
                         ),
                       );

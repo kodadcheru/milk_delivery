@@ -20,13 +20,13 @@ class HubLocationModel {
   });
 
   static const HubLocationModel defaultHub = HubLocationModel(
-    id: 'HUB-KDD-01',
-    name: 'Kodad Depot',
-    address: '2X27+M36, Kodad, Telangana 508206, India',
+    id: 'HUB-DEFAULT',
+    name: 'Pamba Operations Hub',
+    address: 'Central Distribution Depot',
     latitude: 17.001734,
     longitude: 79.9625,
-    managerName: 'srinuvasa reddy',
-    managerPhone: '8885199878',
+    managerName: 'Hub Operations Desk',
+    managerPhone: '+91 8919548905',
   );
 }
 

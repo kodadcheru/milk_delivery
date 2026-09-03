@@ -89,7 +89,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               ],
             ),
             Text(
-              '${categoryProducts.length} Products • Tomorrow 06:00 AM Delivery',
+              widget.state.isTelugu
+                  ? '${categoryProducts.length} వస్తువులు • రేపు 06:00 AM డెలివరీ'
+                  : '${categoryProducts.length} Products • Tomorrow 06:00 AM Delivery',
               style: const TextStyle(color: UiTone.success, fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
@@ -99,7 +101,13 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('🔗 Sharing link to ${meta.longTitle} catalog!')),
+                SnackBar(
+                  content: Text(
+                    widget.state.isTelugu
+                        ? '🔗 ${widget.state.translateCategory(meta.longTitle)} కేటలాగ్ లింక్ షేర్ చేయండి!'
+                        : '🔗 Sharing link to ${meta.longTitle} catalog!',
+                  ),
+                ),
               );
             },
           ),
@@ -138,7 +146,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                              child: const Text('100% QUALITY ASSURED', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w800)),
+                              child: Text(
+                                widget.state.isTelugu ? '100% నాణ్యతా హామీ' : '100% QUALITY ASSURED',
+                                style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w800),
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -146,9 +157,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                               style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              '⚡ Milked/Packed at 3 AM • Delivered by 6 AM',
-                              style: TextStyle(color: Colors.white70, fontSize: 10.5),
+                            Text(
+                              widget.state.isTelugu
+                                  ? '⚡ తెల్లవారుజామున 3 గంటలకు ప్యాకింగ్ • ఉదయం 6 గంటలకు డెలివరీ'
+                                  : '⚡ Milked/Packed at 3 AM • Delivered by 6 AM',
+                              style: const TextStyle(color: Colors.white70, fontSize: 10.5),
                             ),
                           ],
                         ),
@@ -164,7 +177,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   style: UiText.body,
                   decoration: InputDecoration(
-                    hintText: 'Search ${meta.longTitle}...',
+                    hintText: widget.state.isTelugu
+                        ? '${widget.state.translateCategory(meta.longTitle)} వెతకండి...'
+                        : 'Search ${meta.longTitle}...',
                     hintStyle: const TextStyle(color: UiText.muted, fontSize: 13, fontWeight: FontWeight.w500),
                     prefixIcon: const Icon(Icons.search_rounded, color: UiTone.primary, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -203,7 +218,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                               border: Border.all(color: isSelected ? accent : UiTone.surfaceBorder),
                             ),
                             child: Text(
-                              tag == 'ALL' ? 'All Varieties' : tag,
+                              tag == 'ALL' ? (widget.state.isTelugu ? 'అన్నీ' : 'All Varieties') : tag,
                               style: TextStyle(
                                 color: isSelected ? Colors.white : UiTone.ink,
                                 fontSize: 11,
@@ -223,14 +238,19 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Showing ${categoryProducts.length} Items',
+                      widget.state.isTelugu
+                          ? '${categoryProducts.length} వస్తువులు ప్రదర్శించబడుతున్నాయి'
+                          : 'Showing ${categoryProducts.length} Items',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: UiTone.ink),
                     ),
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.verified_rounded, size: 14, color: UiTone.success),
-                        SizedBox(width: 4),
-                        Text('FSSAI Lab Certified', style: TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                        const Icon(Icons.verified_rounded, size: 14, color: UiTone.success),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.state.isTelugu ? 'FSSAI ల్యాబ్ ధృవీకరించబడింది' : 'FSSAI Lab Certified',
+                          style: const TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                   ],
@@ -295,15 +315,17 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              isFiltered ? 'No matches' : 'No products yet',
+              isFiltered
+                  ? (widget.state.isTelugu ? 'ఫలితాలు లేవు' : 'No matches')
+                  : (widget.state.isTelugu ? 'వస్తువులు ఇంకా లేవు' : 'No products yet'),
               textAlign: TextAlign.center,
               style: UiText.title,
             ),
             const SizedBox(height: 4),
             Text(
               isFiltered
-                  ? 'Try clearing the search or filter tags'
-                  : 'Fresh stock is on its way — check back soon',
+                  ? (widget.state.isTelugu ? 'శోధన పదాన్ని మార్చి ప్రయత్నించండి' : 'Try clearing the search or filter tags')
+                  : (widget.state.isTelugu ? 'తాజా సరుకు త్వరలోనే అందుబాటులోకి వస్తుంది' : 'Fresh stock is on its way — check back soon'),
               textAlign: TextAlign.center,
               style: UiText.label,
             ),

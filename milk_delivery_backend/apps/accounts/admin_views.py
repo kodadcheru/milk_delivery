@@ -104,7 +104,7 @@ class AdminCustomerListView(APIView):
             first_name=first_name,
             last_name=last_name,
             phone=clean_phone,
-            email=email or f"{username}@milkdrop.in",
+            email=email or f"{username}@pamba.in",
             gender=request.data.get("gender", "Male").strip(),
             address=address,
             city=city,
@@ -365,7 +365,7 @@ class AdminBroadcastNotificationView(APIView):
     permission_classes = [IsAdminOrStaff]
 
     def post(self, request):
-        title = request.data.get("title", "MilkDrop Announcement")
+        title = request.data.get("title", "Pamba Announcement")
         message = request.data.get("message", "Important update regarding morning deliveries.")
         target_role = request.data.get("target_role", "ALL")
         notification_type = request.data.get("notification_type", Notification.Types.OFFER)
@@ -541,12 +541,12 @@ class AdminHubsView(APIView):
                 "status": "OPERATIONAL",
                 "fssai_license": h.fssai_license,
                 "coverage_radius_km": getattr(h, "coverage_radius_km", 8.5),
-                "bank_name": getattr(h, "bank_name", "State Bank of India"),
-                "bank_account_number": getattr(h, "bank_account_number", "389201948210"),
-                "bank_ifsc": getattr(h, "bank_ifsc", "SBIN0004892"),
-                "bank_account_holder": getattr(h, "bank_account_holder", "Srinuvasa Reddy"),
-                "upi_id": getattr(h, "upi_id", "8885199878@upi"),
-                "bank_account": f"{getattr(h, 'bank_name', 'State Bank of India')} • A/C ending in {str(getattr(h, 'bank_account_number', '389201948210'))[-4:]}",
+                "bank_name": getattr(h, "bank_name", "") or "",
+                "bank_account_number": getattr(h, "bank_account_number", "") or "",
+                "bank_ifsc": getattr(h, "bank_ifsc", "") or "",
+                "bank_account_holder": getattr(h, "bank_account_holder", "") or (h.manager_name or "Hub Manager"),
+                "upi_id": getattr(h, "upi_id", "") or "",
+                "bank_account": f"{getattr(h, 'bank_name', '') or 'Bank Account'} • A/C ending in {str(getattr(h, 'bank_account_number', '0000'))[-4:]}",
                 "service_areas_count": service_areas_count,
                 "latitude": h.latitude,
                 "longitude": h.longitude,
@@ -633,7 +633,7 @@ class AdminHubsView(APIView):
                     phone=f"+91 {mgr_last_10}",
                     first_name=manager_name or name,
                     last_name="Hub Manager",
-                    email=f"hub_{hub.hub_code.lower()}@milkdrop.in",
+                    email=f"hub_{hub.hub_code.lower()}@pamba.in",
                     role=User.Roles.HUB_MANAGER,
                     is_staff=True,
                     assigned_hub=hub,
@@ -736,12 +736,12 @@ class AdminHubDetailView(APIView):
                 "manager_phone": hub.manager_phone or "",
                 "fssai_license": hub.fssai_license or "",
                 "coverage_radius_km": float(getattr(hub, "coverage_radius_km", 8.5) or 8.5),
-                "bank_name": getattr(hub, "bank_name", "State Bank of India") or "State Bank of India",
-                "bank_account_number": str(getattr(hub, "bank_account_number", "389201948210") or "389201948210"),
-                "bank_ifsc": getattr(hub, "bank_ifsc", "SBIN0004892") or "SBIN0004892",
-                "bank_account_holder": getattr(hub, "bank_account_holder", "Srinuvasa Reddy") or "Srinuvasa Reddy",
-                "upi_id": getattr(hub, "upi_id", "8885199878@upi") or "8885199878@upi",
-                "bank_account": f"{getattr(hub, 'bank_name', 'State Bank of India')} • A/C ending in {str(getattr(hub, 'bank_account_number', '389201948210'))[-4:]}",
+                "bank_name": getattr(hub, "bank_name", "") or "",
+                "bank_account_number": str(getattr(hub, "bank_account_number", "") or ""),
+                "bank_ifsc": getattr(hub, "bank_ifsc", "") or "",
+                "bank_account_holder": getattr(hub, "bank_account_holder", "") or (hub.manager_name or "Hub Manager"),
+                "upi_id": getattr(hub, "upi_id", "") or "",
+                "bank_account": f"{getattr(hub, 'bank_name', '') or 'Bank Account'} • A/C ending in {str(getattr(hub, 'bank_account_number', '0000'))[-4:]}",
                 "latitude": float(hub.latitude or 0.0),
                 "longitude": float(hub.longitude or 0.0),
                 "created_at": created_at_str,
@@ -963,7 +963,7 @@ class AdminSubscriptionDetailView(APIView):
                 "username": s.customer.username,
                 "name": f"{s.customer.first_name or s.customer.username} {s.customer.last_name or ''}".strip(),
                 "phone": s.customer.phone or "+91 9876543210",
-                "email": s.customer.email or "customer@milkdrop.in",
+                "email": s.customer.email or "customer@pamba.in",
                 "wallet_balance": float(getattr(s.customer, "wallet_balance", 0.0) or 0.0),
                 "address": s.customer.address or "Doorstep Delivery Address",
                 "slot_preference": s.customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
@@ -1633,10 +1633,10 @@ class AdminPayoutsView(APIView):
         for p in payouts:
             provider_name = f"{p.manager.first_name} {p.manager.last_name}".strip() if p.manager and p.manager.first_name else (p.manager.username if p.manager else "Hub Operator")
             h_obj = p.hub
-            b_name = p.bank_name or (h_obj.bank_name if h_obj else "State Bank of India")
-            b_acc = p.bank_account_number or (h_obj.bank_account_number if h_obj else "389201948210")
-            b_ifsc = p.bank_ifsc or (h_obj.bank_ifsc if h_obj else "SBIN0004892")
-            b_upi = p.upi_id or (h_obj.upi_id if h_obj else "8885199878@upi")
+            b_name = p.bank_name or (h_obj.bank_name if h_obj else "") or "Primary Bank"
+            b_acc = p.bank_account_number or (h_obj.bank_account_number if h_obj else "") or ""
+            b_ifsc = p.bank_ifsc or (h_obj.bank_ifsc if h_obj else "") or ""
+            b_upi = p.upi_id or (h_obj.upi_id if h_obj else "") or ""
 
             data.append({
                 "id": p.id,

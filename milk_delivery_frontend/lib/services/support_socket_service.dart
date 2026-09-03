@@ -107,7 +107,7 @@ class SupportSocketService {
     }
 
     // 3. Transmit via HTTP POST to backend DB & Redis so Web Admin Console receives it
-    final phone = userPhone ?? '+917794893990';
+    final phone = (userPhone != null && userPhone.isNotEmpty) ? userPhone : AppConfig.supportPhone;
     ApiService.sendSupportChatMessage(
       phone: phone,
       text: text,
@@ -120,7 +120,7 @@ class SupportSocketService {
         final agentMsg = SupportChatMessage(
           id: autoReply['id']?.toString() ?? 'rep_${DateTime.now().millisecondsSinceEpoch}',
           senderType: MessageSenderType.agent,
-          senderName: autoReply['sender_name']?.toString() ?? 'Priya (MilkDrop Care)',
+          senderName: autoReply['sender_name']?.toString() ?? 'Priya (Pamba Care)',
           text: autoReply['text']?.toString() ?? '',
           timestamp: DateTime.now(),
           orderId: orderId,

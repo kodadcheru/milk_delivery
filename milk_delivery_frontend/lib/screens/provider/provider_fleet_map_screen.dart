@@ -327,7 +327,16 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                             ),
                             icon: const Icon(Icons.phone, size: 18),
                             label: Text('Call Partner', style: UiText.label.copyWith(fontWeight: FontWeight.w700, color: UiTone.surface)),
-                            onPressed: () => _callDriver(_selectedDriver!['phone'] ?? '+919123456789'),
+                            onPressed: () {
+                              final phone = _selectedDriver?['phone']?.toString();
+                              if (phone != null && phone.trim().isNotEmpty) {
+                                _callDriver(phone);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Driver phone number not registered')),
+                                );
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
