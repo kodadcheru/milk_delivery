@@ -1067,6 +1067,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   ],
                 ),
               ),
+              if (!isCancelled) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                  tooltip: isTelugu ? 'సభ్యత్వాన్ని తొలగించండి' : 'Delete Subscription',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
+                ),
+              ],
             ],
           ),
           const Divider(height: 22),
@@ -1112,6 +1123,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             Row(
               children: [
                 Expanded(
+                  flex: 3,
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       HapticFeedback.mediumImpact();
@@ -1154,24 +1166,37 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      widget.state.setTab(1);
-                    },
-                    icon: const Icon(Icons.tune_rounded, size: 15),
-                    label: Text(
-                      isTelugu ? 'నిర్వహించు' : 'Manage',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: UiTone.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Colors.red),
+                  label: Text(
+                    isTelugu ? 'తొలగించు' : 'Delete',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.red),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: BorderSide(color: Colors.red.shade300),
+                    backgroundColor: Colors.red.withValues(alpha: 0.04),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                ElevatedButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.state.setTab(1);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UiTone.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  child: Text(
+                    isTelugu ? 'సవరించు' : 'Manage',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -1180,6 +1205,111 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
+    HapticFeedback.warningImpact();
+    final pName = sub.productDetail?.name ?? 'Subscription';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isTelugu ? 'సభ్యత్వాన్ని తొలగించాలా?' : 'Delete Subscription?',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isTelugu
+                  ? '${widget.state.translateProduct(pName)} సభ్యత్వాన్ని ఖచ్చితంగా తొలగించాలనుకుంటున్నారా?'
+                  : 'Are you sure you want to delete your recurring subscription for ${widget.state.translateProduct(pName)}?',
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.shade400.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isTelugu
+                          ? 'రేపటి నుండి ఉదయం డెలివరీలు మరియు రోజువారీ ఛార్జీలు వెంటనే ఆగిపోతాయి.'
+                          : 'Morning doorstep deliveries and daily charges will be stopped immediately.',
+                      style: TextStyle(color: Colors.brown.shade800, fontSize: 11.5, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text(
+              isTelugu ? 'ఉంచండి' : 'Keep Plan',
+              style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.delete_forever_rounded, size: 16),
+            label: Text(isTelugu ? 'అవును, తొలగించు' : 'Yes, Delete'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      HapticFeedback.heavyImpact();
+      final ok = await widget.state.cancelSubscription(sub.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: ok ? Colors.red.shade700 : Colors.orange.shade800,
+            content: Text(ok
+                ? (isTelugu ? 'సభ్యత్వం విజయవంతంగా తొలగించబడింది.' : 'Subscription deleted successfully.')
+                : (isTelugu ? 'లోపం సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.' : 'Failed to delete subscription.')),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildSubscriptionTaskCard(BuildContext context, DeliveryTaskModel task, bool isTelugu) {

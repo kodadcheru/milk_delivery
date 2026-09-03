@@ -422,6 +422,17 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   ),
                 ),
               ),
+              if (!isCancelled) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                  tooltip: isTelugu ? 'సభ్యత్వాన్ని తొలగించండి' : 'Delete Subscription',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
+                ),
+              ],
             ],
           ),
           const Divider(height: 24),
@@ -446,24 +457,75 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
           ),
           if (!isCancelled) ...[
             const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      HapticFeedback.mediumImpact();
+                      await widget.state.toggleSubscriptionStatus(sub.id);
+                    },
+                    icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 16),
+                    label: Text(
+                      isPaused
+                          ? (isTelugu ? 'పునఃప్రారంభించండి' : 'Resume Plan ▶')
+                          : (isTelugu ? 'విరామం ఇవ్వండి' : 'Pause Plan ⏸'),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isPaused ? UiTone.primary : Colors.orange.shade800,
+                      side: BorderSide(color: isPaused ? UiTone.primary : Colors.orange.shade300),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
+                    label: Text(
+                      isTelugu ? 'తొలగించు' : 'Delete',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Colors.red),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: BorderSide(color: Colors.red.shade300),
+                      backgroundColor: Colors.red.withValues(alpha: 0.04),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: ElevatedButton.icon(
                 onPressed: () async {
                   HapticFeedback.mediumImpact();
-                  await widget.state.toggleSubscriptionStatus(sub.id);
+                  final ok = await widget.state.reactivateSubscription(sub.id);
+                  if (context.mounted && ok) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF0D7C66),
+                        content: Text(isTelugu ? 'సభ్యత్వం మళ్లీ ప్రారంభించబడింది' : 'Subscription reactivated!'),
+                      ),
+                    );
+                  }
                 },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: isPaused ? UiTone.primary : Colors.orange.shade800,
-                  side: BorderSide(color: isPaused ? UiTone.primary : Colors.orange.shade300),
+                icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                label: Text(isTelugu ? 'సభ్యత్వాన్ని పునఃప్రారంభించండి' : 'Reactivate Subscription'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: UiTone.primary,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                child: Text(
-                  isPaused
-                      ? (isTelugu ? 'పునఃప్రారంభించండి' : 'Resume Plan ▶')
-                      : (isTelugu ? 'విరామం ఇవ్వండి' : 'Pause Plan ⏸'),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                 ),
               ),
             ),
@@ -471,5 +533,110 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
+    HapticFeedback.warningImpact();
+    final pName = sub.productDetail?.name ?? 'Subscription';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isTelugu ? 'సభ్యత్వాన్ని తొలగించాలా?' : 'Delete Subscription?',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isTelugu
+                  ? '${widget.state.translateProduct(pName)} సభ్యత్వాన్ని ఖచ్చితంగా తొలగించాలనుకుంటున్నారా?'
+                  : 'Are you sure you want to delete your recurring subscription for ${widget.state.translateProduct(pName)}?',
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.shade400.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isTelugu
+                          ? 'రేపటి నుండి ఉదయం డెలివరీలు మరియు రోజువారీ ఛార్జీలు వెంటనే ఆగిపోతాయి.'
+                          : 'Morning doorstep deliveries and daily charges will be stopped immediately.',
+                      style: TextStyle(color: Colors.brown.shade800, fontSize: 11.5, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text(
+              isTelugu ? 'ఉంచండి' : 'Keep Plan',
+              style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.delete_forever_rounded, size: 16),
+            label: Text(isTelugu ? 'అవును, తొలగించు' : 'Yes, Delete'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      HapticFeedback.heavyImpact();
+      final ok = await widget.state.cancelSubscription(sub.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: ok ? Colors.red.shade700 : Colors.orange.shade800,
+            content: Text(ok
+                ? (isTelugu ? 'సభ్యత్వం విజయవంతంగా తొలగించబడింది.' : 'Subscription deleted successfully.')
+                : (isTelugu ? 'లోపం సంభవించింది. దయచేసి మళ్లీ ప్రయత్నించండి.' : 'Failed to delete subscription.')),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }

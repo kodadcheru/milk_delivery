@@ -358,3 +358,28 @@ Traceback (most recent call last):
     estimated_delivery_time = timezone.now() + timedelta(minutes=25)
                               ^^^^^^^^
 UnboundLocalError: cannot access local variable 'timezone' where it is not associated with a value
+[2026-09-03 11:57:33,494] ERROR [django.request:61] Unhandled Exception in <apps.deliveries.views.GenerateTodayTasksView object at 0x10ef9f620>: cannot access local variable 'hub_obj' where it is not associated with a value
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/views.py", line 732, in post
+    if not hub and hub_obj:
+                   ^^^^^^^
+UnboundLocalError: cannot access local variable 'hub_obj' where it is not associated with a value
+[2026-09-03 13:08:04,697] ERROR [django.request:61] Unhandled Exception in <apps.deliveries.views.DeliveryTaskListView object at 0x10f09c980>: cannot access local variable 'Q' where it is not associated with a value
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/generics.py", line 203, in get
+    return self.list(request, *args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/views.py", line 85, in list
+    return super().list(request, *args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/mixins.py", line 38, in list
+    queryset = self.filter_queryset(self.get_queryset())
+                                    ~~~~~~~~~~~~~~~~~^^
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/views.py", line 38, in get_queryset
+    return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
+                     ^
+UnboundLocalError: cannot access local variable 'Q' where it is not associated with a value

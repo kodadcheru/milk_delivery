@@ -225,6 +225,8 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Subscription.objects.none()
         if user.is_superuser:
             return Subscription.objects.all()
+        if getattr(user, "role", "") == User.Roles.CUSTOMER:
+            return Subscription.objects.filter(customer=user)
         if getattr(user, "assigned_hub", None):
             return Subscription.objects.filter(hub=user.assigned_hub)
         if user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
@@ -255,6 +257,9 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Soft-cancel the subscription to preserve past delivery and financial audit history
         instance.status = Subscription.Statuses.CANCELLED
         instance.save(update_fields=["status"])
+
+        # Cancel any upcoming pending delivery tasks immediately
+        DeliveryTask.objects.filter(subscription=instance, status=DeliveryTask.Statuses.PENDING).delete()
 
         # Release booked capacity slots in HubProductInventory
         if instance.hub and instance.product:
