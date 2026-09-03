@@ -1091,8 +1091,8 @@
       <div class="section-card">
         <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
           <div>
-            <div class="section-title"><i class="fa-solid fa-route"></i> Today's Doorstep Deliveries & GPS Proofs</div>
-            <span style="font-size: 12px; color: var(--text-muted);">Real-time dispatch status, doorstep bottle return tally, and GPS photo reconciliation</span>
+            <div class="section-title"><i class="fa-solid fa-route"></i> Doorstep Deliveries & Daily Drops</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Real-time dispatch status, past delivery audit, doorstep bottle returns, and skipped/paused deliveries</span>
           </div>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-secondary" onclick="exportDeliveriesCSV()"><i class="fa-solid fa-file-csv"></i> Export Run-Sheet (CSV)</button>
@@ -1101,20 +1101,47 @@
           </div>
         </div>
 
-        <!-- Search & Status Filter Toolbar -->
-        <div class="table-toolbar">
-          <div class="search-box">
+        <!-- ── Status Metric Filter Pills ── -->
+        <div style="display: flex; gap: 10px; margin: 14px 0; flex-wrap: wrap;">
+          <button id="delivPillAll" class="btn btn-secondary" style="border-radius: 20px; font-size: 12px; font-weight: 700; padding: 6px 14px; background: var(--primary-accent); color: white; border: none;" onclick="setDeliveryStatusPill('ALL')">
+            📦 All Deliveries (<span id="delivCountAll">0</span>)
+          </button>
+          <button id="delivPillPending" class="btn btn-secondary" style="border-radius: 20px; font-size: 12px; font-weight: 700; padding: 6px 14px;" onclick="setDeliveryStatusPill('PENDING')">
+            🚚 Pending / Scheduled (<span id="delivCountPending">0</span>)
+          </button>
+          <button id="delivPillDelivered" class="btn btn-secondary" style="border-radius: 20px; font-size: 12px; font-weight: 700; padding: 6px 14px;" onclick="setDeliveryStatusPill('DELIVERED')">
+            ✅ Delivered (<span id="delivCountDelivered">0</span>)
+          </button>
+          <button id="delivPillSkipped" class="btn btn-secondary" style="border-radius: 20px; font-size: 12px; font-weight: 700; padding: 6px 14px; border: 1px solid #F59E0B; color: #F59E0B;" onclick="setDeliveryStatusPill('SKIPPED')">
+            ⏸️ Skipped / Paused (<span id="delivCountSkipped">0</span>)
+          </button>
+        </div>
+
+        <!-- Search & Date / Status Filter Toolbar -->
+        <div class="table-toolbar" style="flex-wrap: wrap; gap: 10px;">
+          <div class="search-box" style="min-width: 260px; flex: 1;">
             <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
             <input type="text" id="deliverySearchInput" placeholder="Search customer, phone, address, or task ID..." oninput="filterDeliveriesTable()">
           </div>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Shift Filter:</label>
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Date Filter:</label>
+            <select id="deliveryDateFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="handleDeliveryDateFilterChange()">
+              <option value="ALL">📅 All History (Past & Today)</option>
+              <option value="TODAY">☀️ Today</option>
+              <option value="YESTERDAY">⏪ Yesterday</option>
+              <option value="PAST_7_DAYS">🗓️ Past 7 Days</option>
+              <option value="CUSTOM">📆 Custom Date...</option>
+            </select>
+            <input type="date" id="deliveryCustomDate" class="form-control" style="width: auto; padding: 5px 10px; font-size: 12px; display: none;" onchange="filterDeliveriesTable()">
+
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Shift:</label>
             <select id="deliveryShiftFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="this.dataset.userChanged='true'; filterDeliveriesTable()">
               <option value="ALL">All Shifts (☀️/🌙)</option>
               <option value="MORNING">☀️ Morning Shift (AM)</option>
               <option value="EVENING">🌙 Evening Shift (PM)</option>
             </select>
-            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status Filter:</label>
+
+            <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Status:</label>
             <select id="deliveryStatusFilter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterDeliveriesTable()">
               <option value="ALL">All Statuses</option>
               <option value="PENDING">Scheduled (Pending)</option>
@@ -1143,6 +1170,40 @@
               <!-- Rendered dynamically -->
             </tbody>
           </table>
+        </div>
+
+        <!-- ── Dedicated Skipped & Paused Deliveries Section ── -->
+        <div id="skipped-deliveries-card" style="margin-top: 24px; padding: 18px; border-radius: 14px; background: rgba(245, 158, 11, 0.06); border: 1.5px solid rgba(245, 158, 11, 0.35);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-size: 15px; font-weight: 800; color: #D97706; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-pause"></i> Skipped & Paused Deliveries Audit
+                <span id="skipped-badge-count" style="background: #F59E0B; color: white; border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 700;">0</span>
+              </div>
+              <span style="font-size: 11.5px; color: var(--text-muted);">Daily recurring deliveries on hold due to customer vacation, manual skip, or billing pause</span>
+            </div>
+            <button class="btn btn-secondary" style="font-size: 11.5px; padding: 4px 12px;" onclick="toggleSkippedSection()">
+              <span id="skipped-toggle-text">Collapse</span>
+            </button>
+          </div>
+          <div id="skipped-table-wrapper" class="data-table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Task ID</th>
+                  <th>Customer</th>
+                  <th>Address & Contact</th>
+                  <th>Product & Quantity</th>
+                  <th>Date & Shift</th>
+                  <th>Skip Reason / Cause</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="skipped-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -5746,23 +5807,81 @@
       }
     }
 
+    let activeDeliveryPill = 'ALL';
+
     async function loadDeliveries() {
       try {
-        const res = await fetch(`${baseUrl}/deliveries/`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
+        const res = await fetch(`${baseUrl}/deliveries/?page_size=200`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           const dData = await res.json();
           rawDeliveries = Array.isArray(dData) ? dData : (dData.results || []);
 
-          // Auto-select shift based on current time (After 12:00 PM -> Evening, After 12:00 AM -> Morning)
+          // Keep shift filter default as ALL so morning deliveries are never hidden
           const shiftEl = document.getElementById('deliveryShiftFilter');
-          if (shiftEl && !shiftEl.dataset.userChanged) {
-            const currentHour = new Date().getHours();
-            shiftEl.value = currentHour >= 12 ? 'EVENING' : 'MORNING';
+          if (shiftEl && !shiftEl.value) {
+            shiftEl.value = 'ALL';
           }
 
+          // Update metric counts
+          const totalCount = rawDeliveries.length;
+          const pendingCount = rawDeliveries.filter(t => t.status === 'PENDING').length;
+          const deliveredCount = rawDeliveries.filter(t => t.status === 'DELIVERED').length;
+          const skippedCount = rawDeliveries.filter(t => t.status === 'SKIPPED').length;
+
+          if (document.getElementById('delivCountAll')) document.getElementById('delivCountAll').textContent = totalCount;
+          if (document.getElementById('delivCountPending')) document.getElementById('delivCountPending').textContent = pendingCount;
+          if (document.getElementById('delivCountDelivered')) document.getElementById('delivCountDelivered').textContent = deliveredCount;
+          if (document.getElementById('delivCountSkipped')) document.getElementById('delivCountSkipped').textContent = skippedCount;
+          if (document.getElementById('skipped-badge-count')) document.getElementById('skipped-badge-count').textContent = skippedCount;
+
+          renderSkippedSection();
           filterDeliveriesTable();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    function handleDeliveryDateFilterChange() {
+      const df = document.getElementById('deliveryDateFilter').value;
+      const customDateInput = document.getElementById('deliveryCustomDate');
+      if (customDateInput) {
+        customDateInput.style.display = df === 'CUSTOM' ? 'inline-block' : 'none';
+        if (df === 'CUSTOM' && !customDateInput.value) {
+          customDateInput.value = new Date().toISOString().split('T')[0];
+        }
+      }
+      filterDeliveriesTable();
+    }
+
+    function setDeliveryStatusPill(statusVal) {
+      activeDeliveryPill = statusVal;
+      const statusSelect = document.getElementById('deliveryStatusFilter');
+      if (statusSelect) {
+        statusSelect.value = statusVal;
+      }
+
+      const pills = [
+        { id: 'delivPillAll', val: 'ALL', color: 'var(--primary-accent)' },
+        { id: 'delivPillPending', val: 'PENDING', color: '#3B82F6' },
+        { id: 'delivPillDelivered', val: 'DELIVERED', color: '#10B981' },
+        { id: 'delivPillSkipped', val: 'SKIPPED', color: '#F59E0B' }
+      ];
+
+      pills.forEach(p => {
+        const btn = document.getElementById(p.id);
+        if (btn) {
+          if (p.val === statusVal) {
+            btn.style.background = p.color;
+            btn.style.color = '#FFFFFF';
+            btn.style.borderColor = p.color;
+          } else {
+            btn.style.background = 'transparent';
+            btn.style.color = p.val === 'SKIPPED' ? '#F59E0B' : 'var(--text-main)';
+            btn.style.borderColor = p.val === 'SKIPPED' ? '#F59E0B' : 'var(--border-color)';
+          }
+        }
+      });
+
+      filterDeliveriesTable();
     }
 
     function renderDeliveriesTable(tasks) {
@@ -5815,17 +5934,105 @@
                 <button class="btn" style="padding: 4px 10px; font-size:11px; background: var(--accent-blue); color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 4px;" onclick="openReassignModal(${t.id})">
                   <i class="fa-solid fa-arrows-rotate"></i> Reassign
                 </button>
-              ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Done</span>`}
+              ` : (t.status === 'SKIPPED' ? `
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px; color: #F59E0B; border-color: #F59E0B;" onclick="rescheduleTask(${t.id})">
+                  <i class="fa-solid fa-play"></i> Resume
+                </button>
+              ` : `<span style="color: var(--primary-accent); font-weight: bold; font-size: 11px;">✓ Done</span>`)}
             </td>
           </tr>
         `;
       });
     }
 
+    function renderSkippedSection() {
+      const tbody = document.getElementById('skipped-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const skippedTasks = rawDeliveries.filter(t => t.status === 'SKIPPED');
+      if (skippedTasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding: 18px;">✨ Great! No deliveries are currently skipped or paused.</td></tr>';
+        return;
+      }
+
+      skippedTasks.forEach(t => {
+        const sub = t.subscription_detail || {};
+        const prod = sub.product_detail || {};
+        const cust = sub.customer_detail || { username: t.customer_name || 'Customer', phone: t.customer_phone || '', address: t.delivery_address || '' };
+        const reason = t.failure_reason || 'Customer Vacation / Manual Pause';
+
+        tbody.innerHTML += `
+          <tr>
+            <td><strong style="color: #D97706;">#${t.id}</strong></td>
+            <td><strong>${t.customer_name || cust.username || 'Customer'}</strong></td>
+            <td>${t.delivery_address || cust.address || 'Address'}<br><small style="color:var(--text-muted);">${t.customer_phone || cust.phone || ''}</small></td>
+            <td><strong>${sub.quantity || 1}x ${prod.name || 'Product'}</strong></td>
+            <td>📅 ${t.delivery_date || 'Today'}<br><small style="color:var(--text-muted);">${t.slot_time || '05:30 AM'}</small></td>
+            <td>
+              <span style="background: rgba(245, 158, 11, 0.15); color: #B45309; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">
+                ⚠️ ${reason}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; color: #D97706; border-color: #F59E0B;" onclick="rescheduleTask(${t.id})">
+                <i class="fa-solid fa-play"></i> Reactivate
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function toggleSkippedSection() {
+      const el = document.getElementById('skipped-table-wrapper');
+      const text = document.getElementById('skipped-toggle-text');
+      if (el) {
+        const isHidden = el.style.display === 'none';
+        el.style.display = isHidden ? 'block' : 'none';
+        if (text) text.textContent = isHidden ? 'Collapse' : 'Expand';
+      }
+    }
+
+    async function rescheduleTask(taskId) {
+      if (!confirm(`Are you sure you want to reactivate and reschedule delivery task #${taskId} to Scheduled/Pending?`)) return;
+      try {
+        const res = await fetch(`${baseUrl}/admin/deliveries/${taskId}/reassign/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token')
+          },
+          body: JSON.stringify({ status: 'PENDING' })
+        });
+        if (res.ok) {
+          alert(`✅ Delivery Task #${taskId} has been reactivated!`);
+          loadDeliveries();
+        } else {
+          alert('Could not reactivate delivery task.');
+        }
+      } catch (e) {
+        alert('Network error while reactivating task.');
+      }
+    }
+
     function filterDeliveriesTable() {
       const q = document.getElementById('deliverySearchInput').value.toLowerCase().trim();
       const statusFilter = document.getElementById('deliveryStatusFilter').value;
       const shiftFilter = document.getElementById('deliveryShiftFilter') ? document.getElementById('deliveryShiftFilter').value : 'ALL';
+      const dateFilter = document.getElementById('deliveryDateFilter') ? document.getElementById('deliveryDateFilter').value : 'ALL';
+      const customDateVal = document.getElementById('deliveryCustomDate') ? document.getElementById('deliveryCustomDate').value : '';
+
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      const yDate = new Date();
+      yDate.setDate(yDate.getDate() - 1);
+      const yesterdayStr = yDate.toISOString().split('T')[0];
+
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
       const filtered = rawDeliveries.filter(t => {
         const sub = t.subscription_detail || {};
@@ -5843,7 +6050,19 @@
         const isEvening = slotStr.includes('PM') || slotStr.includes('17:') || slotStr.includes('18:') || slotStr.includes('19:') || slotStr.includes('EVENING');
         const shiftMatch = (shiftFilter === 'ALL') || (shiftFilter === 'EVENING' && isEvening) || (shiftFilter === 'MORNING' && !isEvening);
 
-        return textMatch && statusMatch && shiftMatch;
+        let dateMatch = true;
+        const taskDate = t.delivery_date || todayStr;
+        if (dateFilter === 'TODAY') {
+          dateMatch = (taskDate === todayStr);
+        } else if (dateFilter === 'YESTERDAY') {
+          dateMatch = (taskDate === yesterdayStr);
+        } else if (dateFilter === 'PAST_7_DAYS') {
+          dateMatch = (taskDate >= sevenDaysAgoStr && taskDate <= todayStr);
+        } else if (dateFilter === 'CUSTOM' && customDateVal) {
+          dateMatch = (taskDate === customDateVal);
+        }
+
+        return textMatch && statusMatch && shiftMatch && dateMatch;
       });
 
       renderDeliveriesTable(filtered);
