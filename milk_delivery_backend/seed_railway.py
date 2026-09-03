@@ -187,18 +187,23 @@ def seed():
         from apps.products.models import Product, HubProductInventory
         from django.db.models import Q
 
-        # Update Mella Chervu Depot radius to 15.0 km
+        # Ensure coordinates are set without overwriting administrator-configured coverage radius
         mlc_hub = LocationHub.objects.filter(Q(hub_code="HUB-MLC-01") | Q(name__icontains="Mella Chervu")).first()
         if mlc_hub:
-            mlc_hub.coverage_radius_km = 15.0
-            mlc_hub.latitude = 16.817715
-            mlc_hub.longitude = 79.933978
-            mlc_hub.save()
-            print("📍 [Railway DB Initializer] Mella Chervu Depot coverage radius expanded to 15.0 km.")
+            changed = False
+            if not mlc_hub.latitude or not mlc_hub.longitude:
+                mlc_hub.latitude = 16.817715
+                mlc_hub.longitude = 79.933978
+                changed = True
+            if not mlc_hub.coverage_radius_km:
+                mlc_hub.coverage_radius_km = 8.5
+                changed = True
+            if changed:
+                mlc_hub.save()
 
         kdd_hub = LocationHub.objects.filter(Q(hub_code="HUB-KDD-01") | Q(name__icontains="Kodad")).first()
-        if kdd_hub and kdd_hub.coverage_radius_km < 15.0:
-            kdd_hub.coverage_radius_km = 15.0
+        if kdd_hub and not kdd_hub.coverage_radius_km:
+            kdd_hub.coverage_radius_km = 8.5
             kdd_hub.save()
 
         # Seed Service Areas
