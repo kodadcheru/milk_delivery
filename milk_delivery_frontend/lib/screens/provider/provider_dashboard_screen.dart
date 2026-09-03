@@ -266,8 +266,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      activeHub != null && activeHub['bank_account'] != null
-                          ? '${activeHub['bank_account']}'
+                      activeHub != null && (activeHub['bank_name'] != null || activeHub['bank_account_number'] != null)
+                          ? '${activeHub['bank_name'] ?? 'State Bank of India'} (A/C •••• ${(activeHub['bank_account_number']?.toString() ?? '4892').replaceAll(RegExp(r'.*(?=.{4}$)'), '')})\nIFSC: ${activeHub['bank_ifsc'] ?? 'SBIN0004892'} • Instant IMPS'
                           : 'Primary Bank Account (A/C **4892)\nDaily Auto-Payout • Instant Transfer',
                       style: UiText.body.copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.ink),
                     ),

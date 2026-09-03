@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/delivery_task_model.dart';
+import '../../models/provider_earnings_summary_model.dart';
+import '../../models/provider_payout_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../theme/ui_format.dart';
@@ -19,6 +21,7 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
   String _selectedPeriod = 'TODAY'; // TODAY, YESTERDAY, 7DAYS, MONTH, CUSTOM
   bool _isLoading = false;
   List<DeliveryTaskModel> _periodTasks = [];
+  ProviderEarningsSummaryModel? _earningsSummary;
 
   @override
   void initState() {
@@ -43,50 +46,24 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
   Future<void> _fetchRealTimeEarnings() async {
     setState(() => _isLoading = true);
     try {
-      if (_selectedPeriod == '7DAYS') {
-        // Fetch real deliveries for the last 7 dates in parallel from backend API
-        final now = DateTime.now();
-        final dateList = List.generate(7, (i) {
-          final d = now.subtract(Duration(days: i));
-          return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      final summary = await ApiService.fetchProviderEarningsSummary(
+        period: _selectedPeriod,
+        startDate: _selectedPeriod == 'CUSTOM' ? _formattedDateStr : null,
+        endDate: _selectedPeriod == 'CUSTOM' ? _formattedDateStr : null,
+      );
+
+      final tasks = await ApiService.fetchDeliveries(
+        date: (_selectedPeriod == 'TODAY' || _selectedPeriod == 'YESTERDAY' || _selectedPeriod == 'CUSTOM')
+            ? _formattedDateStr
+            : null,
+      );
+
+      if (mounted) {
+        setState(() {
+          _earningsSummary = summary;
+          _periodTasks = tasks.isNotEmpty ? tasks : widget.state.deliveries;
+          _isLoading = false;
         });
-        final results = await Future.wait(
-          dateList.map((d) => ApiService.fetchDeliveries(date: d)),
-        );
-        final aggregated = results.expand((list) => list).toList();
-        if (mounted) {
-          setState(() {
-            _periodTasks = aggregated.isNotEmpty ? aggregated : widget.state.deliveries;
-            _isLoading = false;
-          });
-        }
-      } else if (_selectedPeriod == 'MONTH') {
-        // Fetch real deliveries for the current month in parallel
-        final now = DateTime.now();
-        final daysCount = now.day.clamp(1, 31);
-        final dateList = List.generate(daysCount, (i) {
-          final d = now.subtract(Duration(days: i));
-          return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        });
-        final results = await Future.wait(
-          dateList.map((d) => ApiService.fetchDeliveries(date: d)),
-        );
-        final aggregated = results.expand((list) => list).toList();
-        if (mounted) {
-          setState(() {
-            _periodTasks = aggregated.isNotEmpty ? aggregated : widget.state.deliveries;
-            _isLoading = false;
-          });
-        }
-      } else {
-        // Single Day Real-Time API Query
-        final tasks = await ApiService.fetchDeliveries(date: _formattedDateStr);
-        if (mounted) {
-          setState(() {
-            _periodTasks = tasks;
-            _isLoading = false;
-          });
-        }
       }
     } catch (_) {
       if (mounted) {
@@ -170,6 +147,12 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
 
   void _showWithdrawModal(BuildContext context, double amount) {
     HapticFeedback.heavyImpact();
+    final hubBank = _earningsSummary?.hub;
+    final bName = hubBank?.bankName.isNotEmpty == true ? hubBank!.bankName : 'State Bank of India';
+    final bMasked = hubBank?.bankAccountMasked.isNotEmpty == true ? hubBank!.bankAccountMasked : '•••• 4892';
+    final bIfsc = hubBank?.bankIfsc.isNotEmpty == true ? hubBank!.bankIfsc : 'SBIN0004892';
+    final upiId = hubBank?.upiId.isNotEmpty == true ? hubBank!.upiId : '8885199878@upi';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -244,11 +227,16 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.state.isTelugu
-                        ? '🏛️ HDFC బ్యాంక్ (ఖాతా: •••• 4892) • IMPS తక్షణ క్రెడిట్'
-                        : '🏛️ HDFC Bank (A/C: •••• 4892) • Instant IMPS Credit',
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                    '🏛️ $bName (A/C $bMasked) • IFSC: $bIfsc',
+                    style: TextStyle(color: Colors.grey.shade300, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
+                  if (upiId.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      '📱 UPI: $upiId',
+                      style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -257,26 +245,101 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      backgroundColor: const Color(0xFF0D7C66),
+                      backgroundColor: const Color(0xFF1E293B),
                       content: Row(
                         children: [
-                          const Icon(Icons.check_circle_rounded, color: Colors.white),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              widget.state.isTelugu
-                                  ? '✅ ${UiFormat.price(amount)} మీ బ్యాంక్ ఖాతాకు విజయవంతంగా పంపబడింది!'
-                                  : '✅ Payout of ${UiFormat.price(amount)} initiated successfully!',
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00F59B)),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(widget.state.isTelugu ? 'బదిలీ ప్రాసెస్ చేయబడుతోంది...' : 'Processing instant payout transfer...'),
+                        ],
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+
+                  final payout = await ApiService.requestInstantPayout(amount: amount);
+                  if (!context.mounted) return;
+
+                  if (payout != null) {
+                    _fetchRealTimeEarnings();
+                    showDialog(
+                      context: context,
+                      builder: (dCtx) => AlertDialog(
+                        backgroundColor: const Color(0xFF0F172A),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded, color: Color(0xFF00F59B)),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.state.isTelugu ? 'పేఅవుట్ విజయవంతమైంది!' : 'Payout Settled! ✅',
+                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                             ),
+                          ],
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.state.isTelugu
+                                  ? '₹${payout.amount.toStringAsFixed(2)} మీ రిజిస్టర్డ్ బ్యాంక్ ఖాతాకు బదిలీ చేయబడింది.'
+                                  : '₹${payout.amount.toStringAsFixed(2)} has been transferred via IMPS to your registered bank account.',
+                              style: TextStyle(color: Colors.grey.shade300, fontSize: 13.5),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(10)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '🏛️ ${payout.bankName} (${payout.bankAccountMasked})',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Ref: #${payout.paymentReference}',
+                                    style: const TextStyle(color: Color(0xFF00F59B), fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                  if (payout.upiId.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text('UPI: ${payout.upiId}', style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dCtx),
+                            child: const Text('OK', style: TextStyle(color: Color(0xFF00F59B), fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.red.shade700,
+                        content: Text(
+                          ApiService.lastError != null && ApiService.lastError!.isNotEmpty
+                              ? ApiService.lastError!
+                              : 'Failed to process instant payout transfer.',
+                        ),
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.account_balance_rounded, size: 18),
                 label: Text(
@@ -301,13 +364,12 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
     final state = widget.state;
     final isTelugu = state.isTelugu;
 
-    // ── 1. Calculate Real-Time Dynamic Metrics from Live Backend Tasks ──
+    // ── 1. Calculate Real-Time Dynamic Metrics from Live Backend Summary & Tasks ──
+    final summary = _earningsSummary;
     final activeTasks = _periodTasks.isNotEmpty ? _periodTasks : state.deliveries;
 
-    double totalLitres = 0.0;
-    double totalEarnings = 0.0;
-    int totalDrops = activeTasks.length;
-    int deliveredDrops = activeTasks.where((d) => d.isDelivered || d.status == 'DELIVERED').length;
+    double computedLitres = 0.0;
+    double computedEarnings = 0.0;
 
     double morningLitres = 0.0;
     double morningEarnings = 0.0;
@@ -327,7 +389,7 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
       final qty = (sub?.quantity ?? task.quantity).toDouble();
       final itemRev = pPrice * qty;
 
-      totalEarnings += itemRev;
+      computedEarnings += itemRev;
 
       // Real Litres Calculation
       double itemLitres = 0.0;
@@ -346,7 +408,7 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
           pName.toLowerCase().contains('curd');
 
       if (isLiquid) {
-        totalLitres += itemLitres;
+        computedLitres += itemLitres;
       }
 
       // Shift Split from task slot time
@@ -380,8 +442,21 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
       productStatsMap[pName]!['revenue'] = (productStatsMap[pName]!['revenue'] as double) + itemRev;
     }
 
+    final totalEarnings = summary != null ? summary.grossRevenue : computedEarnings;
+    final totalLitres = summary != null ? summary.totalLitres : computedLitres;
+    final cashCod = summary?.cashCollected ?? 0.0;
+    final prepaidRev = summary?.prepaidRevenue ?? (totalEarnings - cashCod);
+    final commission = summary?.platformCommission ?? (totalEarnings * 0.05);
+    final withdrawable = summary != null
+        ? summary.netWithdrawableAmount
+        : ((prepaidRev - commission) > 0 ? (prepaidRev - commission) : 0.0);
+
+    final totalDrops = summary != null ? summary.totalDeliveries : activeTasks.length;
+    final deliveredDrops = summary != null
+        ? summary.completedDeliveries
+        : activeTasks.where((d) => d.isDelivered || d.status == 'DELIVERED').length;
+
     final productStatsList = productStatsMap.values.toList();
-    final cratesCount = (totalLitres / 12.0).ceil();
     final avgPerLitre = totalLitres > 0 ? (totalEarnings / totalLitres) : 0.0;
 
     return Scaffold(
@@ -650,27 +725,61 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
                               ),
                             ],
                           ),
-                          if (totalEarnings > 0) ...[
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 42,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _showWithdrawModal(context, totalEarnings),
-                                icon: const Icon(Icons.bolt_rounded, size: 18),
-                                label: Text(
-                                  isTelugu ? 'తక్షణ ఉపసంహరణ / పేఅవుట్ ⚡' : 'Instant Hub Payout ⚡',
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text('💵', style: TextStyle(fontSize: 12)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'COD In Hand: ${UiFormat.price(cashCod)}',
+                                      style: const TextStyle(color: Color(0xFFFDE047), fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF00F59B),
-                                  foregroundColor: const Color(0xFF0A192F),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                Container(width: 1, height: 14, color: Colors.white24),
+                                Row(
+                                  children: [
+                                    const Text('💳', style: TextStyle(fontSize: 12)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Online: ${UiFormat.price(prepaidRev)}',
+                                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showWithdrawModal(context, withdrawable > 0 ? withdrawable : totalEarnings),
+                              icon: const Icon(Icons.bolt_rounded, size: 18),
+                              label: Text(
+                                isTelugu
+                                    ? 'తక్షణ బ్యాంక్ బదిలీ: ${UiFormat.price(withdrawable > 0 ? withdrawable : totalEarnings)} ⚡'
+                                    : 'Instant Hub Payout: ${UiFormat.price(withdrawable > 0 ? withdrawable : totalEarnings)} ⚡',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00F59B),
+                                foregroundColor: const Color(0xFF0A192F),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
@@ -692,12 +801,12 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _metricTile(
-                            icon: '📦',
-                            title: isTelugu ? 'క్రేట్లు డిస్పాచ్' : 'Crates Dispatched',
-                            value: '$cratesCount Crates',
-                            subtitle: '${(cratesCount * 12)} Bottles total',
-                            color: const Color(0xFFA855F7),
-                            accentGradient: const [Color(0xFF7C3AED), Color(0xFFA855F7)],
+                            icon: '💵',
+                            title: isTelugu ? 'చేతిలో ఉన్న COD నగదు' : 'COD Cash in Hand',
+                            value: UiFormat.price(cashCod),
+                            subtitle: isTelugu ? 'డోర్‌స్టెప్ వసూలు' : 'Collected Doorstep',
+                            color: const Color(0xFFF59E0B),
+                            accentGradient: const [Color(0xFFD97706), Color(0xFFF59E0B)],
                           ),
                         ),
                       ],
@@ -707,23 +816,23 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
                       children: [
                         Expanded(
                           child: _metricTile(
-                            icon: '🛵',
-                            title: isTelugu ? 'డోర్‌స్టెప్ డ్రాప్‌లు' : 'Doorstep Drops',
-                            value: '$deliveredDrops / $totalDrops',
-                            subtitle: '${((deliveredDrops / (totalDrops > 0 ? totalDrops : 1)) * 100).toStringAsFixed(0)}% Completed',
-                            color: const Color(0xFF00F59B),
-                            accentGradient: const [Color(0xFF059669), Color(0xFF00F59B)],
+                            icon: '💳',
+                            title: isTelugu ? 'ఆన్‌లైన్ ప్రీపెయిడ్' : 'Online Prepaid',
+                            value: UiFormat.price(prepaidRev),
+                            subtitle: isTelugu ? 'ప్లాట్‌ఫారమ్ ఎస్క్రో' : 'In Platform Escrow',
+                            color: const Color(0xFF38BDF8),
+                            accentGradient: const [Color(0xFF0284C7), Color(0xFF38BDF8)],
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _metricTile(
-                            icon: '🏷️',
-                            title: isTelugu ? 'సగటు ధర / లీటరు' : 'Realization / Litre',
-                            value: '₹${avgPerLitre.toStringAsFixed(1)}',
-                            subtitle: isTelugu ? 'హై-మార్జిన్ డైరీ' : 'High-Margin Dairy',
-                            color: const Color(0xFFF59E0B),
-                            accentGradient: const [Color(0xFFD97706), Color(0xFFF59E0B)],
+                            icon: '⚙️',
+                            title: isTelugu ? 'కమీషన్ (5%)' : 'Platform Fee (5%)',
+                            value: UiFormat.price(commission),
+                            subtitle: isTelugu ? 'సర్వీస్ ఫీజు' : 'Platform Commission',
+                            color: const Color(0xFFA855F7),
+                            accentGradient: const [Color(0xFF7C3AED), Color(0xFFA855F7)],
                           ),
                         ),
                       ],
@@ -864,6 +973,10 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 20),
+
+                    // ── 8. Settlement Receipts & Payout Ledger ──
+                    _buildSettlementReceiptsSection(_earningsSummary, isTelugu),
                   ],
                 ),
               ),
@@ -1099,6 +1212,163 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
               minHeight: 4.5,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettlementReceiptsSection(ProviderEarningsSummaryModel? summary, bool isTelugu) {
+    final recentPayouts = summary?.recentPayouts ?? [];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, color: Color(0xFF00F59B), size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  isTelugu ? 'పేఅవుట్ & సెటిల్‌మెంట్ రసీదులు' : 'Payout & Settlement Receipts',
+                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${recentPayouts.length} Settled',
+                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (recentPayouts.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFF131B2E),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.account_balance_wallet_outlined, color: Colors.white38, size: 30),
+                const SizedBox(height: 8),
+                Text(
+                  isTelugu ? 'ఇంకా సెటిల్‌మెంట్ రసీదులు లేవు' : 'No payout settlement receipts yet',
+                  style: const TextStyle(color: Colors.white60, fontSize: 12.5, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isTelugu ? 'తక్షణ బదిలీని ప్రారంభించడానికి పై బటన్ క్లిక్ చేయండి' : 'Click the instant payout button above to transfer earnings',
+                  style: const TextStyle(color: Colors.white30, fontSize: 11),
+                ),
+              ],
+            ),
+          )
+        else
+          ...recentPayouts.map((p) => _buildReceiptCard(p, isTelugu)),
+      ],
+    );
+  }
+
+  Widget _buildReceiptCard(ProviderPayoutModel p, bool isTelugu) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131B2E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00F59B).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.check_circle_rounded, color: Color(0xFF00F59B), size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '#${p.paymentReference}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00F59B).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  p.status,
+                  style: const TextStyle(color: Color(0xFF00F59B), fontSize: 10, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🏛️ ${p.bankName} (${p.bankAccountMasked})',
+                    style: TextStyle(color: Colors.grey.shade300, fontSize: 11.5, fontWeight: FontWeight.w600),
+                  ),
+                  if (p.date.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      p.date,
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 10.5),
+                    ),
+                  ],
+                ],
+              ),
+              Text(
+                UiFormat.price(p.amount),
+                style: const TextStyle(color: Color(0xFF00F59B), fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          if (p.totalRevenue > 0) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Gross: ${UiFormat.price(p.totalRevenue)}', style: const TextStyle(color: Colors.white60, fontSize: 10)),
+                  Text('COD: ${UiFormat.price(p.cashCollected)}', style: const TextStyle(color: Color(0xFFFDE047), fontSize: 10)),
+                  Text('Fee: ${UiFormat.price(p.platformCommission)}', style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

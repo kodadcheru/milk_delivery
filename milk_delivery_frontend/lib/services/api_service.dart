@@ -13,6 +13,7 @@ import '../models/notification_model.dart';
 import '../models/live_order_model.dart';
 import '../models/bottle_return_model.dart';
 import '../models/provider_payout_model.dart';
+import '../models/provider_earnings_summary_model.dart';
 import '../models/storefront_config_model.dart';
 import '../models/category_model.dart';
 import 'image_upload_service.dart';
@@ -1427,7 +1428,7 @@ class ApiService {
     return false;
   }
 
-  // ── Provider Payouts ──
+  // ── Provider Payouts & Earnings ──
 
   static Future<List<ProviderPayoutModel>> fetchProviderPayouts() async {
     try {
@@ -1445,10 +1446,35 @@ class ApiService {
     return [];
   }
 
-  static Future<ProviderPayoutModel?> requestInstantPayout({double? amount}) async {
+  static Future<ProviderEarningsSummaryModel?> fetchProviderEarningsSummary({
+    String period = 'TODAY',
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final queryParams = <String, String>{'period': period};
+      if (startDate != null && startDate.isNotEmpty) queryParams['start_date'] = startDate;
+      if (endDate != null && endDate.isNotEmpty) queryParams['end_date'] = endDate;
+
+      final uri = Uri.parse('$baseUrl/payouts/summary/').replace(queryParameters: queryParams);
+      final res = await _executeWithRetry(() => http.get(uri, headers: _headers));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final data = jsonDecode(res.body);
+        return ProviderEarningsSummaryModel.fromJson(data);
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return null;
+  }
+
+  static Future<ProviderPayoutModel?> requestInstantPayout({double? amount, String? notes}) async {
     try {
       final payload = <String, dynamic>{};
-      if (amount != null) payload['amount'] = amount;
+      if (amount != null && amount > 0) payload['amount'] = amount;
+      if (notes != null && notes.isNotEmpty) payload['notes'] = notes;
 
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/payouts/'),

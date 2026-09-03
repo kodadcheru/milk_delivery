@@ -458,14 +458,108 @@ class BottleReturnUpdateView(APIView):
         return Response({"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ProviderEarningsSummaryView(APIView):
+    """
+    Dedicated endpoint for Hub Managers / Depot Operators to get live, real-time earnings,
+    demand metrics, volume in litres, COD cash in hand, and withdrawable balance.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrHubManager]
+
+    def get(self, request):
+        from .models import LocationHub, ProviderPayout
+        from .settlement_service import resolve_period_dates, calculate_hub_earnings
+
+        user = request.user
+        hub = getattr(user, "assigned_hub", None)
+        if not hub and (user.is_staff or user.is_superuser):
+            hub_code = request.query_params.get("hub_code") or request.query_params.get("hub_id")
+            if hub_code:
+                if str(hub_code).isdigit():
+                    hub = LocationHub.objects.filter(pk=int(hub_code)).first()
+                else:
+                    hub = LocationHub.objects.filter(hub_code=hub_code).first()
+            if not hub:
+                hub = LocationHub.objects.first()
+
+        if not hub:
+            return Response({"detail": "Hub not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        period = request.query_params.get("period", "TODAY")
+        start_date_str = request.query_params.get("start_date")
+        end_date_str = request.query_params.get("end_date")
+
+        s_date, e_date = resolve_period_dates(period, start_date_str, end_date_str)
+        earnings = calculate_hub_earnings(hub=hub, start_date=s_date, end_date=e_date, unsettled_only=False)
+
+        # All-time unsettled withdrawable balance
+        unsettled_earnings = calculate_hub_earnings(hub=hub, unsettled_only=True)
+
+        recent_payouts = ProviderPayout.objects.filter(hub=hub).order_by("-created_at")[:5]
+        payouts_list = []
+        for p in recent_payouts:
+            b_name = p.bank_name or hub.bank_name or "State Bank of India"
+            b_acc = p.bank_account_number or hub.bank_account_number or "389201948210"
+            payouts_list.append({
+                "id": p.payment_reference or f"PAY-KDD-{p.id:04d}",
+                "raw_id": p.id,
+                "amount": float(p.net_payout),
+                "gross_revenue": float(p.total_revenue),
+                "cash_collected": float(p.cash_collected),
+                "prepaid_revenue": float(p.prepaid_revenue),
+                "platform_commission": float(p.platform_commission),
+                "status": p.status,
+                "payment_reference": p.payment_reference,
+                "bank": f"{b_name} (A/C •••• {b_acc[-4:]})",
+                "bank_name": b_name,
+                "bank_account_number": b_acc,
+                "bank_account_masked": f"•••• {b_acc[-4:]}",
+                "bank_ifsc": p.bank_ifsc or hub.bank_ifsc or "SBIN0004892",
+                "upi_id": p.upi_id or hub.upi_id or "8885199878@upi",
+                "date": p.paid_at.strftime("%Y-%m-%d %H:%M") if p.paid_at else p.created_at.strftime("%Y-%m-%d"),
+            })
+
+        bank_acc = hub.bank_account_number or "389201948210"
+        return Response({
+            "period": period.upper(),
+            "start_date": str(s_date),
+            "end_date": str(e_date),
+            "hub": {
+                "id": hub.id,
+                "hub_code": hub.hub_code,
+                "name": hub.name,
+                "manager_name": hub.manager_name,
+                "manager_phone": hub.manager_phone,
+                "bank_name": hub.bank_name or "State Bank of India",
+                "bank_account_number": bank_acc,
+                "bank_account_masked": f"•••• {bank_acc[-4:]}",
+                "bank_ifsc": hub.bank_ifsc or "SBIN0004892",
+                "bank_account_holder": hub.bank_account_holder or "Srinuvasa Reddy",
+                "upi_id": hub.upi_id or "8885199878@upi",
+            },
+            "metrics": {
+                "total_deliveries": earnings["total_deliveries"],
+                "completed_deliveries": earnings["completed_deliveries"],
+                "pending_deliveries": earnings["pending_deliveries"],
+                "gross_revenue": float(earnings["gross_revenue"]),
+                "cash_collected": float(earnings["cash_collected"]),
+                "prepaid_revenue": float(earnings["prepaid_revenue"]),
+                "platform_commission": float(earnings["platform_commission"]),
+                "total_litres": earnings["total_litres"],
+                "net_withdrawable_amount": float(unsettled_earnings["net_withdrawable_amount"]),
+                "period_net_withdrawable": float(earnings["net_withdrawable_amount"]),
+                "already_settled_amount": float(earnings["already_settled_amount"]),
+            },
+            "product_breakdown": earnings["product_breakdown"],
+            "recent_payouts": payouts_list,
+        })
+
+
 class ProviderPayoutListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrHubManager]
 
     def get(self, request):
         """List provider payouts for the user's hub."""
-        from apps.deliveries.models import ProviderPayout, LocationHub, DeliveryTask
-        from datetime import date
-        import random
+        from apps.deliveries.models import ProviderPayout, LocationHub
 
         user = request.user
         hub = getattr(user, "assigned_hub", None) or LocationHub.objects.first()
@@ -477,22 +571,36 @@ class ProviderPayoutListCreateView(APIView):
             qs = qs.filter(hub=hub)
 
         payouts_data = []
-        for p in qs[:30]:
+        for p in qs[:50]:
+            h_obj = p.hub
+            b_name = p.bank_name or (h_obj.bank_name if h_obj else "State Bank of India")
+            b_acc = p.bank_account_number or (h_obj.bank_account_number if h_obj else "389201948210")
+            b_ifsc = p.bank_ifsc or (h_obj.bank_ifsc if h_obj else "SBIN0004892")
+            b_upi = p.upi_id or (h_obj.upi_id if h_obj else "8885199878@upi")
+
             payouts_data.append({
-                "id": p.payment_reference or f"PAY-HYD-{p.id:04d}",
+                "id": p.payment_reference or f"PAY-KDD-{p.id:04d}",
                 "raw_id": p.id,
                 "hub_id": p.hub_id,
-                "hub_name": p.hub.name if p.hub else "Central Hub",
+                "hub_name": h_obj.name if h_obj else "Central Hub",
                 "period_start": str(p.period_start),
                 "period_end": str(p.period_end),
                 "total_deliveries": p.total_deliveries,
                 "total_revenue": float(p.total_revenue),
+                "cash_collected": float(p.cash_collected),
+                "prepaid_revenue": float(p.prepaid_revenue),
                 "driver_salaries": float(p.driver_salaries),
                 "platform_commission": float(p.platform_commission),
                 "amount": float(p.net_payout),
                 "status": p.status,
-                "payment_reference": p.payment_reference or f"PAY-HYD-{p.id:04d}",
-                "bank": "Primary Bank Account (A/C **4892)",
+                "payment_reference": p.payment_reference or f"PAY-KDD-{p.id:04d}",
+                "bank": f"{b_name} (A/C •••• {b_acc[-4:]})",
+                "bank_name": b_name,
+                "bank_account_number": b_acc,
+                "bank_account_masked": f"•••• {b_acc[-4:]}",
+                "bank_ifsc": b_ifsc,
+                "upi_id": b_upi,
+                "notes": p.notes,
                 "date": p.paid_at.strftime("%Y-%m-%d %H:%M") if p.paid_at else p.created_at.strftime("%Y-%m-%d"),
             })
 
@@ -500,13 +608,10 @@ class ProviderPayoutListCreateView(APIView):
 
     def post(self, request):
         """Request / trigger instant payout settlement for hub manager with strict role and hub validation."""
-        from apps.deliveries.models import ProviderPayout, LocationHub, DeliveryTask
-        from datetime import date
-        from django.utils import timezone
-        import random
+        from apps.deliveries.models import LocationHub
+        from apps.deliveries.settlement_service import execute_hub_payout_settlement
 
         user = request.user
-        # Strict role restriction: Only hub managers or platform administrators can request payouts
         is_manager_or_admin = (
             user.is_staff
             or user.is_superuser
@@ -518,12 +623,14 @@ class ProviderPayoutListCreateView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Hub Scoping: ensure user is associated with a valid hub
         hub = getattr(user, "assigned_hub", None)
         if not hub and (user.is_staff or user.is_superuser):
             hub_id = request.data.get("hub_id") or request.data.get("hub")
             if hub_id:
-                hub = LocationHub.objects.filter(pk=hub_id).first()
+                if str(hub_id).isdigit():
+                    hub = LocationHub.objects.filter(pk=int(hub_id)).first()
+                else:
+                    hub = LocationHub.objects.filter(hub_code=hub_id).first()
             if not hub:
                 hub = LocationHub.objects.first()
 
@@ -534,6 +641,7 @@ class ProviderPayoutListCreateView(APIView):
             )
 
         amount_req = request.data.get("amount")
+        parsed_amount = None
         if amount_req is not None:
             try:
                 parsed_amount = Decimal(str(amount_req))
@@ -541,63 +649,41 @@ class ProviderPayoutListCreateView(APIView):
                     return Response({"detail": "Payout amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
             except Exception:
                 return Response({"detail": "Invalid payout amount format."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            parsed_amount = None
 
-        today = date.today()
-        period_start = today.replace(day=1)
-        period_end = today
+        notes = request.data.get("notes", "")
 
-        # Calculate actual completed deliveries for this hub
-        completed_tasks = DeliveryTask.objects.filter(
-            status=DeliveryTask.Statuses.DELIVERED,
-            hub=hub,
-        )
-
-        deliv_count = completed_tasks.count()
-        tot_rev = Decimal("0.00")
-        for t in completed_tasks:
-            if t.subscription and t.subscription.product:
-                tot_rev += Decimal(str(t.subscription.product.price_per_unit)) * t.subscription.quantity
-
-        net_payout = parsed_amount if parsed_amount is not None else tot_rev
-        if net_payout <= Decimal("0"):
-            net_payout = Decimal("4500.00") if (user.is_staff or user.is_superuser) else Decimal("0.00")
-
-        if net_payout <= Decimal("0"):
-            return Response(
-                {"detail": "No completed deliveries found to settle in this period, and no payout amount specified."},
-                status=status.HTTP_400_BAD_REQUEST,
+        try:
+            payout = execute_hub_payout_settlement(
+                hub=hub,
+                manager_user=user,
+                amount=parsed_amount,
+                notes=notes,
             )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        ref_code = f"PAY-{getattr(hub, 'hub_code', 'HUB')}-{random.randint(1000, 9999)}"
-
-        payout = ProviderPayout.objects.create(
-            hub=hub,
-            manager=user if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") else None,
-            period_start=period_start,
-            period_end=period_end,
-            total_deliveries=deliv_count,
-            total_revenue=tot_rev,
-            driver_salaries=Decimal("0.00"),
-            platform_commission=Decimal("0.00"),
-            net_payout=net_payout,
-            status=ProviderPayout.Statuses.COMPLETED,
-            payment_reference=ref_code,
-            paid_at=timezone.now(),
-            notes="Instant settlement transfer initiated by Provider",
-        )
+        b_name = payout.bank_name or hub.bank_name or "State Bank of India"
+        b_acc = payout.bank_account_number or hub.bank_account_number or "389201948210"
 
         return Response({
-            "message": f"Instant Payout of ₹{net_payout:.2f} transferred successfully!",
+            "message": f"Instant Payout of ₹{payout.net_payout:.2f} transferred successfully!",
             "payout": {
-                "id": ref_code,
+                "id": payout.payment_reference,
                 "raw_id": payout.id,
                 "amount": float(payout.net_payout),
+                "gross_revenue": float(payout.total_revenue),
+                "cash_collected": float(payout.cash_collected),
+                "prepaid_revenue": float(payout.prepaid_revenue),
+                "platform_commission": float(payout.platform_commission),
                 "status": "SETTLED ✅",
-                "payment_reference": ref_code,
-                "bank": "Primary Bank Account (A/C **4892)",
-                "date": payout.paid_at.strftime("%Y-%m-%d %H:%M"),
+                "payment_reference": payout.payment_reference,
+                "bank": f"{b_name} (A/C •••• {b_acc[-4:]})",
+                "bank_name": b_name,
+                "bank_account_number": b_acc,
+                "bank_account_masked": f"•••• {b_acc[-4:]}",
+                "bank_ifsc": payout.bank_ifsc,
+                "upi_id": payout.upi_id,
+                "date": payout.paid_at.strftime("%Y-%m-%d %H:%M") if payout.paid_at else "",
             }
         }, status=status.HTTP_201_CREATED)
 

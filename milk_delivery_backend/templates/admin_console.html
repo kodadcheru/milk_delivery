@@ -7535,9 +7535,11 @@
 
         const settledDate = p.settled_at ? new Date(p.settled_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         const gross = parseFloat(p.total_revenue || 0).toFixed(0);
-        const salaries = parseFloat(p.driver_salaries || 0).toFixed(0);
+        const codCash = parseFloat(p.cash_collected || 0).toFixed(0);
+        const onlineRev = parseFloat(p.prepaid_revenue || 0).toFixed(0);
         const comm = parseFloat(p.platform_commission || 0).toFixed(0);
         const netAmt = parseFloat(p.amount || 0).toFixed(2);
+        const bankInfo = p.bank || (p.bank_name ? `${p.bank_name} (${p.bank_account_masked || ''})` : 'Primary Bank');
 
         let actionBtn = '';
         if (!isSettled) {
@@ -7556,12 +7558,16 @@
           <tr>
             <td><strong>#${p.payment_reference || ('PAY-' + p.id)}</strong></td>
             <td><strong>🏢 ${p.hub_name || 'Kodad Hub'}</strong></td>
-            <td>${p.provider_name || 'Hub Operator'}</td>
+            <td>
+              ${p.provider_name || 'Hub Operator'}<br>
+              <small style="color:var(--text-muted); font-size:10px;">🏛️ ${bankInfo}</small>
+            </td>
             <td style="font-size: 11.5px; color:var(--text-muted);">${p.period_start || '—'} to ${p.period_end || '—'}</td>
             <td><strong>${p.total_deliveries || 0}</strong></td>
             <td style="font-size: 11.5px;">
-              Gross: ₹${gross} <br>
-              <small style="color:var(--text-muted);">- ₹${salaries} (Salary) - ₹${comm} (5% Comm)</small>
+              Gross: <strong>₹${gross}</strong> <br>
+              <span style="color:#F59E0B; font-size:10.5px;">💵 COD in Hand: ₹${codCash}</span> | <span style="color:#38BDF8; font-size:10.5px;">💳 Online: ₹${onlineRev}</span> <br>
+              <small style="color:var(--text-muted);">- ₹${comm} (5% Platform Comm)</small>
             </td>
             <td><strong style="font-size: 14px; color: #38BDF8;">₹${netAmt}</strong></td>
             <td>${statusTag}</td>

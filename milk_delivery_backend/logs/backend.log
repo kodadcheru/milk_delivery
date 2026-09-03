@@ -384,3 +384,12 @@ Traceback (most recent call last):
                      ^
 UnboundLocalError: cannot access local variable 'Q' where it is not associated with a value
 [2026-09-03 13:33:20,232] WARNING [apps.deliveries.views:708] Batch certification warning: cannot access local variable 'Q' where it is not associated with a value
+[2026-09-03 14:10:54,796] ERROR [django.request:61] Unhandled Exception in <apps.deliveries.order_views.ExpressOrderListCreateView object at 0x10d108830>: 'str' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/venv/lib/python3.14/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/galimanideepreddy/Documents/milk_delivery/milk_delivery_backend/apps/deliveries/order_views.py", line 244, in post
+    prod_id = item_entry.get("product_id") or (item_entry.get("product", {}).get("id") if isinstance(item_entry.get("product"), dict) else None)
+              ^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+[2026-09-03 14:10:54,797] ERROR [django.request:246] Internal Server Error: /api/orders/express/

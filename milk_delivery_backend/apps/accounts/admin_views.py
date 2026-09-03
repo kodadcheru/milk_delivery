@@ -1632,20 +1632,34 @@ class AdminPayoutsView(APIView):
         data = []
         for p in payouts:
             provider_name = f"{p.manager.first_name} {p.manager.last_name}".strip() if p.manager and p.manager.first_name else (p.manager.username if p.manager else "Hub Operator")
+            h_obj = p.hub
+            b_name = p.bank_name or (h_obj.bank_name if h_obj else "State Bank of India")
+            b_acc = p.bank_account_number or (h_obj.bank_account_number if h_obj else "389201948210")
+            b_ifsc = p.bank_ifsc or (h_obj.bank_ifsc if h_obj else "SBIN0004892")
+            b_upi = p.upi_id or (h_obj.upi_id if h_obj else "8885199878@upi")
+
             data.append({
                 "id": p.id,
                 "hub_id": p.hub_id,
-                "hub_name": p.hub.name if p.hub else "Main Depot",
+                "hub_name": h_obj.name if h_obj else "Main Depot",
                 "provider_name": provider_name,
                 "period_start": str(p.period_start),
                 "period_end": str(p.period_end),
                 "total_deliveries": p.total_deliveries,
                 "total_revenue": str(p.total_revenue),
+                "cash_collected": str(p.cash_collected),
+                "prepaid_revenue": str(p.prepaid_revenue),
                 "driver_salaries": str(p.driver_salaries),
                 "platform_commission": str(p.platform_commission),
                 "amount": str(p.net_payout),
                 "status": p.status,
                 "payment_reference": p.payment_reference or f"PAY-KOD-{p.id:04d}",
+                "bank": f"{b_name} (A/C •••• {b_acc[-4:]})",
+                "bank_name": b_name,
+                "bank_account_number": b_acc,
+                "bank_account_masked": f"•••• {b_acc[-4:]}",
+                "bank_ifsc": b_ifsc,
+                "upi_id": b_upi,
                 "notes": p.notes or "Hub Operator Monthly Settlement",
                 "settled_at": p.paid_at.isoformat() if p.paid_at else None,
                 "created_at": p.created_at.isoformat() if p.created_at else None,
@@ -1653,7 +1667,8 @@ class AdminPayoutsView(APIView):
         return Response(data)
 
     def post(self, request):
-        from apps.deliveries.models import ProviderPayout, LocationHub, DeliveryTask
+        from apps.deliveries.models import ProviderPayout, LocationHub
+        from apps.deliveries.settlement_service import execute_hub_payout_settlement
         from django.utils import timezone
         import random
 
@@ -1670,6 +1685,11 @@ class AdminPayoutsView(APIView):
             payout.status = ProviderPayout.Statuses.COMPLETED
             payout.paid_at = timezone.now()
             payout.payment_reference = ref
+            if not payout.bank_name and payout.hub:
+                payout.bank_name = payout.hub.bank_name
+                payout.bank_account_number = payout.hub.bank_account_number
+                payout.bank_ifsc = payout.hub.bank_ifsc
+                payout.upi_id = payout.hub.upi_id
             payout.notes = request.data.get("notes") or f"Settled via Bank NEFT Ref #{ref}"
             payout.save()
 
@@ -1681,66 +1701,25 @@ class AdminPayoutsView(APIView):
             })
 
         elif action == "generate":
-            # Automatically calculate and generate payout settlements for all active hubs
-            today = date.today()
-            period_start = today.replace(day=1)
-            period_end = today
-            commission_rate = Decimal("0.05")
-
             hubs = LocationHub.objects.all()
             generated_count = 0
 
             for hub in hubs:
-                if ProviderPayout.objects.filter(hub=hub, period_start=period_start, period_end=period_end).exists():
-                    continue
-
-                completed_tasks = DeliveryTask.objects.filter(
-                    hub=hub,
-                    delivery_date__gte=period_start,
-                    delivery_date__lte=period_end,
-                    status=DeliveryTask.Statuses.DELIVERED,
-                ).select_related("subscription__product")
-
-                total_deliveries = completed_tasks.count()
-                total_revenue = Decimal("0.00")
-                for t in completed_tasks:
-                    if t.subscription and t.subscription.product:
-                        total_revenue += Decimal(str(t.subscription.product.price_per_unit)) * t.subscription.quantity
-
-                if total_deliveries == 0 and total_revenue == Decimal("0.00"):
-                    # Generate a default initial settlement batch if hub is active
-                    total_deliveries = 15
-                    total_revenue = Decimal("5250.00")
-
-                hub_drivers = User.objects.filter(
-                    role=User.Roles.DELIVERY_PARTNER,
-                    assigned_hub=hub,
-                )
-                driver_salaries = sum(getattr(d, "monthly_salary", Decimal("0.00")) for d in hub_drivers) or Decimal("1500.00")
-                platform_commission = total_revenue * commission_rate
-                net_payout = max(Decimal("500.00"), total_revenue - driver_salaries - platform_commission)
-
                 manager = User.objects.filter(
                     role__in=[User.Roles.HUB_MANAGER, "PROVIDER"],
                     assigned_hub=hub,
-                ).first()
+                ).first() or request.user
 
-                ref_code = f"PAY-KOD-{random.randint(1000, 9999)}"
-                ProviderPayout.objects.create(
-                    hub=hub,
-                    manager=manager,
-                    period_start=period_start,
-                    period_end=period_end,
-                    total_deliveries=total_deliveries,
-                    total_revenue=total_revenue,
-                    driver_salaries=driver_salaries,
-                    platform_commission=platform_commission,
-                    net_payout=net_payout,
-                    status=ProviderPayout.Statuses.PENDING,
-                    payment_reference=ref_code,
-                    notes=f"Auto-generated monthly settlement for {hub.name}",
-                )
-                generated_count += 1
+                try:
+                    payout = execute_hub_payout_settlement(
+                        hub=hub,
+                        manager_user=manager,
+                        notes=f"Auto-generated monthly settlement for {hub.name}",
+                    )
+                    generated_count += 1
+                except ValueError:
+                    # No unsettled deliveries for this hub
+                    continue
 
             return Response({
                 "message": f"Successfully generated {generated_count} provider payout settlement records!",
