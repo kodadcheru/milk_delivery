@@ -1108,6 +1108,7 @@ class ApiService {
     double? deliveryLatitude,
     double? deliveryLongitude,
     String deliveryType = 'SCHEDULED',
+    String paymentMethod = 'WALLET',
   }) async {
     try {
       final res = await _executeWithRetry(() => http.post(
@@ -1121,6 +1122,7 @@ class ApiService {
               'delivery_latitude': deliveryLatitude != null ? (double.tryParse(deliveryLatitude.toStringAsFixed(6)) ?? deliveryLatitude) : null,
               'delivery_longitude': deliveryLongitude != null ? (double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude) : null,
               'delivery_type': deliveryType,
+              'payment_method': paymentMethod,
             }),
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {

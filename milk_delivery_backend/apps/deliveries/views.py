@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
-from django.db.models import F
+from django.db import models
+from django.db.models import F, Q, Case, When, Value, IntegerField
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -189,6 +190,18 @@ class DeliveryTaskSkipView(APIView):
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Authorization: only assigned driver or staff can skip, or auto-claim unassigned task
+        if task.driver and task.driver != request.user and not request.user.is_staff:
+            return Response({"detail": "Only the assigned driver can skip this delivery."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Strict Hub Check for Delivery Partner
+        if request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER") and getattr(request.user, "assigned_hub", None):
+            task_hub = task.hub or (task.subscription.hub if task.subscription else None) or (task.order.hub if task.order else None)
+            if task_hub and task_hub != request.user.assigned_hub:
+                return Response({
+                    "detail": f"You are strictly assigned to {request.user.assigned_hub.name} and cannot skip deliveries for {task_hub.name}."
+                }, status=status.HTTP_403_FORBIDDEN)
+
         reason = request.data.get("reason", "")
         if reason:
             task.status = DeliveryTask.Statuses.FAILED
@@ -197,6 +210,11 @@ class DeliveryTaskSkipView(APIView):
             task.status = DeliveryTask.Statuses.SKIPPED
             
         task.save()
+
+        # Update linked LiveOrder if express order task
+        if task.order:
+            task.order.status = LiveOrder.Statuses.CANCELLED
+            task.order.save(update_fields=["status"])
 
         # Notify customer about skipped drop with exact reason
         if task.target_customer:
@@ -671,9 +689,12 @@ class GenerateTodayTasksView(APIView):
                 batch.save()
                 created_batch_code = batch.batch_code
 
-                # Update product unit price
+                # Update product unit price (Milk products only - protect ghee, honey, paneer)
                 first_w = product_name.split()[0] if product_name else "Milk"
-                Product.objects.filter(name__icontains=first_w).update(price_per_unit=float(price_val))
+                Product.objects.filter(
+                    Q(name__iexact=product_name) |
+                    (Q(name__icontains=first_w) & Q(name__icontains="milk"))
+                ).update(price_per_unit=float(price_val))
             except Exception as batch_err:
                 logger.warning(f"Batch certification warning: {batch_err}")
 
@@ -1005,22 +1026,33 @@ class DailyMilkBatchListCreateView(APIView):
 
         batch_code = payload.get("batch_code") or f"BATCH-{batch_date_val.strftime('%Y%m%d')}-{random.randint(100, 999)}"
 
-        batch, created = DailyMilkBatch.objects.update_or_create(
-            batch_code=batch_code,
-            defaults={
-                "hub": hub,
-                "product_name": product_name,
-                "batch_date": batch_date_val,
-                "fat_percentage": fat,
-                "snf_percentage": snf,
-                "water_percentage": water,
-                "price_per_litre": litre_price,
-                "total_litres": total_litres,
-                "temperature_celsius": temperature,
-                "status": payload.get("status", "DISPATCHED"),
-                "quality_certificate_note": payload.get("quality_certificate_note", "FSSAI Certified • Passed 24 Purity Checks"),
-            }
-        )
+        batch_filter = {
+            "batch_date": batch_date_val,
+            "product_name__iexact": product_name,
+        }
+        if hub:
+            batch_filter["hub"] = hub
+
+        batch = DailyMilkBatch.objects.filter(**batch_filter).first()
+        created = False
+        if not batch:
+            batch = DailyMilkBatch(
+                batch_code=batch_code,
+                hub=hub,
+                product_name=product_name,
+                batch_date=batch_date_val,
+            )
+            created = True
+
+        batch.fat_percentage = fat
+        batch.snf_percentage = snf
+        batch.water_percentage = water
+        batch.price_per_litre = litre_price
+        batch.total_litres = total_litres
+        batch.temperature_celsius = temperature
+        batch.status = payload.get("status", "DISPATCHED")
+        batch.quality_certificate_note = payload.get("quality_certificate_note", "FSSAI Certified • Passed 24 Purity Checks")
+        batch.save()
 
         # ── Cascade and link to matching DeliveryTasks & LiveOrders for this date ──
         try:
@@ -1048,10 +1080,13 @@ class DailyMilkBatchListCreateView(APIView):
         except Exception as e:
             pass
 
-        # Sync/Update matching product's unit price in database
+        # Sync/Update matching product's unit price in database (Milk products only!)
         try:
             first_word = product_name.split()[0] if product_name.split() else "Milk"
-            matching_products = Product.objects.filter(name__icontains=first_word)
+            matching_products = Product.objects.filter(
+                models.Q(name__iexact=product_name) |
+                (models.Q(name__icontains=first_word) & models.Q(name__icontains="milk"))
+            )
             for p in matching_products:
                 p.price_per_unit = litre_price
                 p.save(update_fields=["price_per_unit"])
@@ -1137,10 +1172,13 @@ class DailyMilkBatchDetailView(APIView):
 
         b.save()
 
-        # Update product price
+        # Update product price (Milk products only!)
         try:
             first_word = b.product_name.split()[0] if b.product_name.split() else "Milk"
-            Product.objects.filter(name__icontains=first_word).update(price_per_unit=b.price_per_litre)
+            Product.objects.filter(
+                models.Q(name__iexact=b.product_name) |
+                (models.Q(name__icontains=first_word) & models.Q(name__icontains="milk"))
+            ).update(price_per_unit=b.price_per_litre)
         except Exception:
             pass
 

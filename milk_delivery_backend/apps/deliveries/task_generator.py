@@ -10,15 +10,22 @@ def _get_next_driver(hub, hub_drivers, hub_driver_indices):
         return None
     hub_id = hub.id
     if hub_id not in hub_drivers:
+        # 1. Active drivers for this hub
         drivers = list(User.objects.filter(
-            role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+            role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
             assigned_hub=hub,
             driver_status="ACTIVE",
         ).order_by("id"))
+        # 2. Any drivers for this hub
         if not drivers:
             drivers = list(User.objects.filter(
-                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
                 assigned_hub=hub,
+            ).order_by("id"))
+        # 3. System-wide fallback driver
+        if not drivers:
+            drivers = list(User.objects.filter(
+                role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
             ).order_by("id"))
         hub_drivers[hub_id] = drivers
         hub_driver_indices[hub_id] = 0
@@ -47,7 +54,10 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
     if target_date is None:
         target_date = date.today() + timedelta(days=1)
     elif isinstance(target_date, str):
-        target_date = date.fromisoformat(target_date)
+        try:
+            target_date = date.fromisoformat(str(target_date).split("T")[0].strip())
+        except Exception:
+            target_date = date.today() + timedelta(days=1)
 
     # 1. Auto-resume expired vacation pauses
     today = date.today()
@@ -75,6 +85,11 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
     hub_driver_indices = {}
 
     for sub in active_subs:
+        # Check start date: don't generate tasks if subscription starts in the future
+        if sub.start_date and sub.start_date > target_date:
+            skipped_count += 1
+            continue
+
         # Check active vacation pause
         active_pause = VacationPause.objects.filter(
             subscription=sub,
@@ -128,10 +143,15 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
         if shift == "evening" and not is_evening:
             continue
 
+        task_address = sub.address
+        if not task_address and hasattr(sub.customer, "addresses"):
+            task_address = sub.customer.addresses.filter(is_default=True).first() or sub.customer.addresses.first()
+
         DeliveryTask.objects.create(
             subscription=sub,
             hub=hub,
             driver=driver,
+            address=task_address,
             delivery_date=target_date,
             slot_time=slot,
             status=DeliveryTask.Statuses.PENDING,

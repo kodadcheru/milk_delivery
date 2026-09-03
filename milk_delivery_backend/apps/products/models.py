@@ -67,7 +67,7 @@ class Product(models.Model):
             if cat:
                 self.category_ref = cat
                 self.category = cat.name
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     @property
     def category_name(self):

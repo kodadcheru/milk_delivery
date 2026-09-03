@@ -124,6 +124,7 @@ class FloatingCartBar extends StatelessWidget {
     String slot = '06:00 AM - 08:00 AM';
     final slotController = TextEditingController(text: slot);
     String _deliveryMode = 'INSTANT';
+    String _paymentMethod = 'WALLET'; // 'WALLET' or 'COD'
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -719,6 +720,98 @@ class FloatingCartBar extends StatelessWidget {
                           ),
                           const SizedBox(height: 14),
 
+                          // ── Payment Method Selector (Prepaid Wallet vs Cash on Delivery) ──
+                          const Text(
+                            'Payment Method 💳:',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.ink),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => setSheetState(() => _paymentMethod = 'WALLET'),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: _paymentMethod == 'WALLET' ? UiTone.primary.withValues(alpha: 0.1) : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: _paymentMethod == 'WALLET' ? UiTone.primary : Colors.grey[300]!,
+                                        width: _paymentMethod == 'WALLET' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Text('⚡', style: TextStyle(fontSize: 16)),
+                                        const SizedBox(width: 6),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Prepaid Wallet',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                                color: _paymentMethod == 'WALLET' ? UiTone.primary : UiTone.ink,
+                                              ),
+                                            ),
+                                            Text(
+                                              'Bal: ₹${(state.currentUser?.walletBalance ?? 0.0).toStringAsFixed(0)}',
+                                              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => setSheetState(() => _paymentMethod = 'COD'),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: _paymentMethod == 'COD' ? UiTone.primary.withValues(alpha: 0.1) : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: _paymentMethod == 'COD' ? UiTone.primary : Colors.grey[300]!,
+                                        width: _paymentMethod == 'COD' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Text('💵', style: TextStyle(fontSize: 16)),
+                                        const SizedBox(width: 6),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Cash on Delivery',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                                color: _paymentMethod == 'COD' ? UiTone.primary : UiTone.ink,
+                                              ),
+                                            ),
+                                            Text('Pay at doorstep', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
                           // ── Bill Breakdown ──
                           Container(
                             padding: const EdgeInsets.all(14),
@@ -752,9 +845,9 @@ class FloatingCartBar extends StatelessWidget {
                         if (_isSubmitting) return;
                         
                         final walletBalance = state.currentUser?.walletBalance ?? 0.0;
-                        if (walletBalance < total) {
+                        if (_paymentMethod == 'WALLET' && walletBalance < total) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Insufficient wallet balance (₹${walletBalance.toStringAsFixed(0)}). Please top up ₹${(total - walletBalance).toStringAsFixed(0)} to continue.'),
+                            content: Text('Insufficient wallet balance (₹${walletBalance.toStringAsFixed(0)}). Please top up ₹${(total - walletBalance).toStringAsFixed(0)} or switch to Cash on Delivery (COD).'),
                             backgroundColor: Colors.red,
                           ));
                           return;
@@ -768,6 +861,7 @@ class FloatingCartBar extends StatelessWidget {
                             deliveryDate: _deliveryMode == 'INSTANT' ? formatDate(DateTime.now()) : formatDate(selectedDate),
                             deliverySlot: _deliveryMode == 'INSTANT' ? 'Instant Delivery' : slot,
                             deliveryAddress: currentAddr,
+                            paymentMethod: _paymentMethod,
                           );
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
@@ -808,12 +902,12 @@ class FloatingCartBar extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(_deliveryMode == 'INSTANT' ? Icons.flash_on : Icons.event_available_rounded, color: Colors.white, size: 18),
+                          Icon(_paymentMethod == 'COD' ? Icons.payments_rounded : (_deliveryMode == 'INSTANT' ? Icons.flash_on : Icons.event_available_rounded), color: Colors.white, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            _deliveryMode == 'INSTANT'
-                                ? 'Order Now — ₹${total.toStringAsFixed(0)} ⚡'
-                                : 'Schedule Order — ₹${total.toStringAsFixed(0)} 📅',
+                            _paymentMethod == 'COD'
+                                ? (_deliveryMode == 'INSTANT' ? 'Place COD Instant Drop — ₹${total.toStringAsFixed(0)} 💵' : 'Place COD Order — ₹${total.toStringAsFixed(0)} 💵')
+                                : (_deliveryMode == 'INSTANT' ? 'Pay & Order Now — ₹${total.toStringAsFixed(0)} ⚡' : 'Schedule Order — ₹${total.toStringAsFixed(0)} 📅'),
                             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900),
                           ),
                         ],

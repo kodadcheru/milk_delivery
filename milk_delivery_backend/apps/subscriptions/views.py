@@ -159,26 +159,42 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             status=Subscription.Statuses.ACTIVE,
         )
 
-        # Auto-create initial DeliveryTask so customer & driver immediately see morning delivery
+        # Auto-create initial DeliveryTask only if subscription starts today
         try:
             hub_driver = None
             if hub:
                 hub_driver = User.objects.filter(
-                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"],
+                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
                     assigned_hub=hub,
                     driver_status="ACTIVE",
                 ).first()
+                if not hub_driver:
+                    hub_driver = User.objects.filter(
+                        role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
+                        assigned_hub=hub,
+                    ).first()
+                if not hub_driver:
+                    hub_driver = User.objects.filter(
+                        role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
+                    ).first()
 
-            DeliveryTask.objects.get_or_create(
-                subscription=sub,
-                delivery_date=date.today(),
-                defaults={
-                    "hub": hub,
-                    "driver": hub_driver,
-                    "slot_time": deliv_slot,
-                    "status": DeliveryTask.Statuses.PENDING,
-                }
-            )
+            target_task_date = sub.start_date if sub.start_date and sub.start_date >= date.today() else date.today()
+            if target_task_date == date.today():
+                task_address = sub.address
+                if not task_address and hasattr(user, "addresses"):
+                    task_address = user.addresses.filter(is_default=True).first() or user.addresses.first()
+
+                DeliveryTask.objects.get_or_create(
+                    subscription=sub,
+                    delivery_date=target_task_date,
+                    defaults={
+                        "hub": hub,
+                        "driver": hub_driver,
+                        "address": task_address,
+                        "slot_time": deliv_slot,
+                        "status": DeliveryTask.Statuses.PENDING,
+                    }
+                )
         except Exception:
             pass
 
@@ -231,10 +247,31 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         from apps.deliveries.models import DeliveryTask
+        from apps.products.models import HubProductInventory
+        from django.db.models import F, Case, When, Value, IntegerField
 
         # Soft-cancel the subscription to preserve past delivery and financial audit history
         instance.status = Subscription.Statuses.CANCELLED
         instance.save(update_fields=["status"])
+
+        # Release booked capacity slots in HubProductInventory
+        if instance.hub and instance.product:
+            req_qty = instance.quantity or 1
+            pack_size_val = instance.pack_size or '1 Litre'
+            if '500' in pack_size_val.lower():
+                vol_mult = 0.5
+            elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+                vol_mult = 2.0
+            else:
+                vol_mult = 1.0
+            slots_to_release = int(req_qty * vol_mult)
+            HubProductInventory.objects.filter(hub=instance.hub, product=instance.product).update(
+                booked_slots=Case(
+                    When(booked_slots__gte=slots_to_release, then=F("booked_slots") - slots_to_release),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            )
 
         # Only cancel future PENDING delivery tasks; keep all past DELIVERED tasks intact
         DeliveryTask.objects.filter(
@@ -336,6 +373,13 @@ class SubscriptionResumeView(APIView):
 
         sub.status = Subscription.Statuses.ACTIVE
         sub.save()
+
+        # Terminate/clear any active or future vacation pauses so daily task generator resumes deliveries immediately
+        from apps.subscriptions.models import VacationPause
+        VacationPause.objects.filter(
+            subscription=sub,
+            end_date__gte=date.today(),
+        ).delete()
 
         # Resume skipped tasks for today or in the future back to PENDING
         DeliveryTask.objects.filter(

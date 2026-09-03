@@ -54,20 +54,24 @@ def auto_assign_hub_driver(order, active_hub=None):
     # 3. If no driver exists at all in the system, create a dedicated delivery partner for this hub
     if not driver and hub:
         hub_code_slug = (getattr(hub, "hub_code", "") or "kdd").lower().replace("-", "")
-        driver, _ = User.objects.get_or_create(
-            username=f"driver_{hub_code_slug}",
-            defaults={
-                "first_name": "Ramesh",
-                "last_name": f"Kumar ({hub.name})",
-                "phone": "+91 9848022338",
-                "email": f"driver.{hub_code_slug}@pamba.in",
-                "role": User.Roles.DELIVERY_PARTNER,
-                "assigned_hub": hub,
-                "driver_status": "ACTIVE",
-                "city": getattr(hub, "city", "Kodad") or "Kodad",
-                "vehicle_number": "TS 09 EB 4092",
-            },
-        )
+        hub_num = getattr(hub, "id", 1) or 1
+        driver_phone = f"+91 98480{int(hub_num):05d}"
+        driver = User.objects.filter(phone=driver_phone).first() or User.objects.filter(username=f"driver_{hub_code_slug}").first()
+        if not driver:
+            driver, _ = User.objects.get_or_create(
+                username=f"driver_{hub_code_slug}",
+                defaults={
+                    "first_name": "Ramesh",
+                    "last_name": f"Kumar ({hub.name})",
+                    "phone": driver_phone,
+                    "email": f"driver.{hub_code_slug}@pamba.in",
+                    "role": User.Roles.DELIVERY_PARTNER,
+                    "assigned_hub": hub,
+                    "driver_status": "ACTIVE",
+                    "city": getattr(hub, "city", "Kodad") or "Kodad",
+                    "vehicle_number": "TS 09 EB 4092",
+                },
+            )
 
     if driver:
         order.driver = driver
@@ -397,10 +401,26 @@ class ExpressOrderDetailView(APIView):
             return Response({"detail": "Not authorized to modify this order."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = request.data.get("status")
-        if new_status == 'DELIVERED' and getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER'):
-            submitted_otp = request.data.get('delivery_otp', '')
-            if submitted_otp and submitted_otp != order.delivery_otp:
-                return Response({"detail": "Invalid delivery OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Customer Role Authorization Check (Bug 3)
+        if is_customer and not (is_staff or is_assigned_driver):
+            if new_status == LiveOrder.Statuses.CANCELLED:
+                if order.status in (LiveOrder.Statuses.OUT_FOR_DELIVERY, LiveOrder.Statuses.DELIVERED):
+                    return Response(
+                        {"detail": "Cannot cancel an order that is out for delivery or already delivered."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            elif new_status != order.status:
+                return Response(
+                    {"detail": "Customers can only cancel unfulfilled orders. Delivery status transitions are handled by assigned dispatch partners."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # 2. OTP Verification for any party marking DELIVERED
+        if new_status == 'DELIVERED':
+            submitted_otp = str(request.data.get('delivery_otp', '')).strip()
+            if submitted_otp and submitted_otp != order.delivery_otp and not is_staff:
+                return Response({"detail": "Invalid delivery OTP code."}, status=status.HTTP_400_BAD_REQUEST)
                 
         if new_status == "DISPATCHED":
             new_status = LiveOrder.Statuses.OUT_FOR_DELIVERY
@@ -412,6 +432,26 @@ class ExpressOrderDetailView(APIView):
                 order.delivered_at = timezone.now()
                 if proof_url:
                     order.proof_image_url = proof_url
+                # Bug 8: Update COD status & cash collected flag
+                if order.is_cod:
+                    cash_collected = request.data.get("cash_collected", True)
+                    order.cash_collected = bool(cash_collected)
+                    if cash_collected:
+                        order.payment_status = "PAID (Cash Collected)"
+
+            # Bug 2 Part A: Restore booked inventory capacity slots on order cancellation
+            if new_status == LiveOrder.Statuses.CANCELLED:
+                if order.hub:
+                    from apps.products.models import HubProductInventory
+                    from django.db.models import Case, When, Value, IntegerField
+                    for item in order.items.all():
+                        HubProductInventory.objects.filter(hub=order.hub, product=item.product).update(
+                            booked_slots=Case(
+                                When(booked_slots__gte=item.quantity, then=F("booked_slots") - item.quantity),
+                                default=Value(0),
+                                output_field=IntegerField(),
+                            )
+                        )
 
             # Refund wallet on cancellation (only if paid and not already refunded)
             if new_status == LiveOrder.Statuses.CANCELLED and order.payment_status.startswith("PAID"):
@@ -452,6 +492,7 @@ class ExpressOrderDetailView(APIView):
             DeliveryTask.objects.filter(order=order).update(
                 status=task_status,
                 proof_image_url=proof_url if proof_url else "",
+                cash_collected=order.cash_collected if order.is_cod else False,
                 delivered_at=timezone.now() if new_status == LiveOrder.Statuses.DELIVERED else None,
             )
 

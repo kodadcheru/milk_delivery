@@ -79,6 +79,7 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
 def _haversine_km(lat1, lon1, lat2, lon2):
     """Calculate great-circle distance between two GPS points in kilometers."""
     R = 6371.0  # Earth radius in km
+    lat1, lon1, lat2, lon2 = float(lat1), float(lon1), float(lat2), float(lon2)
     d_lat = math.radians(lat2 - lat1)
     d_lon = math.radians(lon2 - lon1)
     a = (

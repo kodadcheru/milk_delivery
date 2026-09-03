@@ -506,6 +506,7 @@ class AppState extends ChangeNotifier {
     String? deliverySlot,
     String? deliveryAddress,
     String deliveryType = 'SCHEDULED',
+    String paymentMethod = 'WALLET',
   }) async {
     HapticFeedback.mediumImpact();
     final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
@@ -529,6 +530,7 @@ class AppState extends ChangeNotifier {
       deliveryLatitude: targetLat,
       deliveryLongitude: targetLon,
       deliveryType: deliveryType,
+      paymentMethod: paymentMethod,
     );
 
     if (serverOrder != null) {
