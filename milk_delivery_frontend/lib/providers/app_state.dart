@@ -71,6 +71,41 @@ class AppState extends ChangeNotifier {
   // ── Redis & Real-Time Sync State ──
   bool isRedisConnected = false;
   Timer? _providerHeartbeatTimer;
+  Map<String, dynamic>? get driverAssignedHub {
+    if (currentUser != null) {
+      if (currentUser!.assignedHubName != null && currentUser!.assignedHubName!.isNotEmpty) {
+        final matchByName = locationHubs.firstWhere(
+          (h) => h['name'] != null && h['name'].toString().toLowerCase().contains(currentUser!.assignedHubName!.toLowerCase()),
+          orElse: () => <String, dynamic>{},
+        );
+        if (matchByName.isNotEmpty) return matchByName;
+      }
+      if (currentUser!.assignedHub != null) {
+        final targetId = currentUser!.assignedHub;
+        final match = locationHubs.firstWhere(
+          (h) => h['id'] == targetId || h['pk'] == targetId || h['id'].toString() == targetId.toString() || h['hub_code'] == targetId.toString(),
+          orElse: () => <String, dynamic>{},
+        );
+        if (match.isNotEmpty) return match;
+      }
+      if (currentUser!.assignedHubName != null && currentUser!.assignedHubName!.isNotEmpty) {
+        return {
+          'name': currentUser!.assignedHubName!,
+          'hub_code': currentUser!.assignedHubCode ?? 'HUB-ASSIGNED',
+        };
+      }
+    }
+    return nearestCoveringHub ?? (locationHubs.isNotEmpty ? locationHubs.first : null);
+  }
+
+  String get driverHubName {
+    if (currentUser?.assignedHubName != null && currentUser!.assignedHubName!.isNotEmpty) {
+      return currentUser!.assignedHubName!;
+    }
+    final h = driverAssignedHub;
+    return h != null && h['name'] != null ? h['name'].toString() : AppConfig.defaultHubName;
+  }
+
   String get activeHubCode {
     if (currentUser != null && currentUser!.assignedHub != null) {
       final targetId = currentUser!.assignedHub;

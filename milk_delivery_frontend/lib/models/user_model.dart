@@ -15,6 +15,8 @@ class UserModel {
   final double latitude;
   final double longitude;
   final int? assignedHub;
+  final String? assignedHubName;
+  final String? assignedHubCode;
 
   final double monthlySalary;
   final String vehicleNumber;
@@ -37,6 +39,8 @@ class UserModel {
     this.latitude = 17.4319,
     this.longitude = 78.4073,
     this.assignedHub,
+    this.assignedHubName,
+    this.assignedHubCode,
     this.monthlySalary = 15000.0,
     this.vehicleNumber = '',
     this.drivingLicense = '',
@@ -71,6 +75,8 @@ class UserModel {
       latitude: double.tryParse(json['latitude']?.toString() ?? '17.4319') ?? 17.4319,
       longitude: double.tryParse(json['longitude']?.toString() ?? '78.4073') ?? 78.4073,
       assignedHub: json['assigned_hub'] is int ? json['assigned_hub'] : (json['assigned_hub'] is Map ? json['assigned_hub']['id'] : null),
+      assignedHubName: json['assigned_hub_name']?.toString() ?? (json['assigned_hub'] is Map ? json['assigned_hub']['name']?.toString() : null),
+      assignedHubCode: json['assigned_hub_code']?.toString() ?? (json['assigned_hub'] is Map ? json['assigned_hub']['hub_code']?.toString() : null),
       monthlySalary: double.tryParse(json['monthly_salary']?.toString() ?? '15000') ?? 15000.0,
       vehicleNumber: json['vehicle_number'] ?? '',
       drivingLicense: json['driving_license'] ?? '',
@@ -95,6 +101,8 @@ class UserModel {
       'latitude': latitude,
       'longitude': longitude,
       'assigned_hub': assignedHub,
+      'assigned_hub_name': assignedHubName,
+      'assigned_hub_code': assignedHubCode,
     };
   }
 
@@ -113,6 +121,8 @@ class UserModel {
     double? latitude,
     double? longitude,
     int? assignedHub,
+    String? assignedHubName,
+    String? assignedHubCode,
     double? monthlySalary,
     String? vehicleNumber,
     String? drivingLicense,
@@ -134,6 +144,8 @@ class UserModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       assignedHub: assignedHub ?? this.assignedHub,
+      assignedHubName: assignedHubName ?? this.assignedHubName,
+      assignedHubCode: assignedHubCode ?? this.assignedHubCode,
       monthlySalary: monthlySalary ?? this.monthlySalary,
       vehicleNumber: vehicleNumber ?? this.vehicleNumber,
       drivingLicense: drivingLicense ?? this.drivingLicense,

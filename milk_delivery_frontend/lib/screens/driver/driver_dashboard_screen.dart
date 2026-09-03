@@ -458,10 +458,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       driverLng = pos.longitude;
     } catch (_) {}
 
-    final hub = widget.state.nearestCoveringHub;
+    final hub = widget.state.driverAssignedHub;
     final hubLat = double.tryParse(hub?['latitude']?.toString() ?? '') ?? 17.001734;
     final hubLng = double.tryParse(hub?['longitude']?.toString() ?? '') ?? 79.9625;
-    final hubName = hub?['name']?.toString() ?? 'Kodad Depot';
+    final hubName = widget.state.driverHubName;
 
     // If all deliveries are already completed, navigate directly back to Depot!
     if (isAllCompleted) {
@@ -545,14 +545,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final tasks = widget.state.deliveries;
     final expressOrders = widget.state.liveOrders;
 
-    final driverHubId = widget.state.currentUser?.assignedHub;
-    final activeHub = driverHubId != null
-        ? widget.state.locationHubs.firstWhere(
-            (h) => h['id'] == driverHubId || h['pk'] == driverHubId || h['hub_code'] == driverHubId.toString(),
-            orElse: () => widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : <String, dynamic>{},
-          )
-        : (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
-    final hubName = activeHub != null && activeHub['name'] != null ? activeHub['name'].toString() : 'Assigned Depot';
+    final activeHub = widget.state.driverAssignedHub;
+    final hubName = widget.state.driverHubName;
 
     // 1. Filter deliveries by the active Morning/Evening shift first
     final shiftTasks = tasks.where((t) {

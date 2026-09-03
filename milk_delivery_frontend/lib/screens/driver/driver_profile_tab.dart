@@ -38,8 +38,8 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
     final driverPhone = driverUser?.phone.isNotEmpty == true ? driverUser!.phone : 'Unregistered Phone';
     final driverId = driverUser != null && driverUser.id > 0 ? 'DRV-${driverUser.id}' : 'DRV-101';
 
-    final activeHub = widget.state.nearestCoveringHub ?? (widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null);
-    final hubName = activeHub != null ? (activeHub['name']?.toString() ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
+    final activeHub = widget.state.driverAssignedHub;
+    final hubName = widget.state.driverHubName;
     final managerName = activeHub != null && activeHub['manager_name'] != null && activeHub['manager_name'].toString().isNotEmpty
         ? activeHub['manager_name'].toString()
         : 'Hub Operations Manager';

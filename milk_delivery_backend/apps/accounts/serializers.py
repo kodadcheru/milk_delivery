@@ -6,6 +6,8 @@ from apps.accounts.models import CustomerAddress, Notification, User, WalletTran
 class UserSerializer(serializers.ModelSerializer):
     customer_code = serializers.CharField(read_only=True)
     driver_code = serializers.CharField(read_only=True)
+    assigned_hub_name = serializers.CharField(source="assigned_hub.name", read_only=True, default="")
+    assigned_hub_code = serializers.CharField(source="assigned_hub.hub_code", read_only=True, default="")
 
     class Meta:
         model = User
@@ -30,9 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
             "monthly_salary",
             "driver_status",
             "assigned_hub",
+            "assigned_hub_name",
+            "assigned_hub_code",
             "last_location_updated",
         ]
-        read_only_fields = ["id", "customer_code", "driver_code", "wallet_balance"]
+        read_only_fields = ["id", "customer_code", "driver_code", "wallet_balance", "assigned_hub_name", "assigned_hub_code"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):

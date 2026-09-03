@@ -206,8 +206,8 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
   Widget build(BuildContext context) {
     // ── 1. DRIVER ROLE APP SHELL ──
     if (widget.state.currentRole == 'DRIVER') {
-      final activeHub = widget.state.locationHubs.isNotEmpty ? widget.state.locationHubs.first : null;
-      final hubName = activeHub != null ? (activeHub['name'] ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
+      final activeHub = widget.state.driverAssignedHub;
+      final hubName = widget.state.driverHubName;
       final pendingDeliveries = widget.state.deliveries.where((d) => d.status == "PENDING").length;
       final pendingExpress = widget.state.liveOrders.where((o) => o.status != 'DELIVERED' && o.status != 'CANCELLED').length;
       final pendingCount = pendingDeliveries + pendingExpress;
@@ -715,8 +715,8 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
 }
 
 void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
-  final activeHub = state.locationHubs.isNotEmpty ? state.locationHubs.first : null;
-  final hubName = activeHub != null ? (activeHub['name'] ?? AppConfig.defaultHubName) : AppConfig.defaultHubName;
+  final activeHub = state.driverAssignedHub;
+  final hubName = state.driverHubName;
   final hubCode = activeHub != null ? (activeHub['hub_code'] ?? 'HUB-DEFAULT') : 'HUB-DEFAULT';
 
   showModalBottomSheet(
