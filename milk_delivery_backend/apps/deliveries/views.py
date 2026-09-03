@@ -27,10 +27,22 @@ class DeliveryTaskListView(generics.ListAPIView):
 
         qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("delivery_date", "id")
         
+        if user and user.is_authenticated and getattr(user, "role", "") == "CUSTOMER":
+            if req_date:
+                try:
+                    from datetime import datetime as _dt
+                    filter_date = _dt.strptime(req_date, '%Y-%m-%d').date()
+                    qs = qs.filter(delivery_date=filter_date)
+                except (ValueError, TypeError):
+                    pass
+            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
+
         hub_code = self.request.query_params.get("hub_code") or self.request.query_params.get("hub")
         if hub_code:
-            from django.db.models import Q
-            qs = qs.filter(Q(hub__hub_code=hub_code) | Q(hub__id=hub_code))
+            if str(hub_code).isdigit():
+                qs = qs.filter(Q(hub__hub_code=hub_code) | Q(hub__id=int(hub_code)))
+            else:
+                qs = qs.filter(hub__hub_code=hub_code)
 
         if req_date:
             try:
@@ -41,7 +53,6 @@ class DeliveryTaskListView(generics.ListAPIView):
                 pass
 
         # Scope by role
-        from django.db.models import Q
         if user.role in (User.Roles.HUB_MANAGER, "PROVIDER"):
             if getattr(user, "assigned_hub", None):
                 return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
@@ -51,8 +62,6 @@ class DeliveryTaskListView(generics.ListAPIView):
                 hub_filter = Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(order__hub=user.assigned_hub)
                 return qs.filter(hub_filter).filter(Q(driver=user) | Q(driver__isnull=True))
             return qs.filter(driver=user)
-        elif user.role == "CUSTOMER":
-            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
         # Admin/staff see all
         if not user.is_superuser and getattr(user, 'assigned_hub', None):
             return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))

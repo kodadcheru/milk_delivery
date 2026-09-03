@@ -22,10 +22,12 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 return base_qs.filter(customer=user)
 
         hub_code = self.request.query_params.get('hub_code') or self.request.query_params.get('hub')
-        qs = base_qs
         if hub_code:
             from django.db.models import Q
-            qs = qs.filter(Q(hub__hub_code=hub_code) | Q(hub__id=hub_code))
+            if str(hub_code).isdigit():
+                qs = qs.filter(Q(hub__hub_code=hub_code) | Q(hub__id=int(hub_code)))
+            else:
+                qs = qs.filter(hub__hub_code=hub_code)
 
         if user and user.is_authenticated:
             if not user.is_superuser and getattr(user, 'assigned_hub', None):

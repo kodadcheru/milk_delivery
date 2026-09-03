@@ -94,15 +94,24 @@ class ExpressOrderListCreateView(APIView):
         user = request.user
         orders = LiveOrder.objects.all().prefetch_related("items__product__category_ref").select_related("customer", "hub", "driver").order_by("-created_at")
 
+        if user and user.is_authenticated and user.role == User.Roles.CUSTOMER:
+            customer_orders = orders.filter(customer=user)
+            paginator = StandardResultsSetPagination()
+            page = paginator.paginate_queryset(customer_orders, request)
+            if page is not None:
+                return paginator.get_paginated_response(LiveOrderSerializer(page, many=True).data)
+            return Response(LiveOrderSerializer(list(customer_orders), many=True).data)
+
         hub_code = request.query_params.get("hub_code") or request.query_params.get("hub")
         if hub_code:
             from django.db.models import Q
-            orders = orders.filter(Q(hub__hub_code=hub_code) | Q(hub__id=hub_code))
+            if str(hub_code).isdigit():
+                orders = orders.filter(Q(hub__hub_code=hub_code) | Q(hub__id=int(hub_code)))
+            else:
+                orders = orders.filter(hub__hub_code=hub_code)
 
         if user and user.is_authenticated:
-            if user.role == User.Roles.CUSTOMER:
-                orders = orders.filter(customer=user)
-            elif user.role in [User.Roles.DRIVER, "DRIVER", User.Roles.DELIVERY_PARTNER]:
+            if user.role in [User.Roles.DRIVER, "DRIVER", User.Roles.DELIVERY_PARTNER]:
                 from django.db.models import Q
                 if getattr(user, "assigned_hub", None):
                     orders = orders.filter(hub=user.assigned_hub).filter(
