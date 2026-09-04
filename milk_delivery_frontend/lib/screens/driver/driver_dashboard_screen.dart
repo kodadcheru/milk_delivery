@@ -526,6 +526,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       } catch (_) {}
     }
 
+    // Auto-mark shift tasks as PICKED_UP in the backend so customers know batch is collected
+    ApiService.startShiftDeliveryRoute(_selectedShift);
+    widget.state.reloadAllData();
+
     // 4. Open in-app Route Map screen with sequenced stops
     if (context.mounted) {
       Navigator.push(
@@ -1309,7 +1313,65 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           const SizedBox(height: 14),
 
           // Row 5: Action Button (Camera Proof or Status)
-          if (!isDone && !isSkipped)
+          if (!isDone && !isSkipped) ...[
+            if (firstTask != null && firstTask.status != 'ON_THE_WAY')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      for (final t in group.tasks) {
+                        await ApiService.updateDeliveryTaskStatus(t.id, 'ON_THE_WAY');
+                      }
+                      await widget.state.reloadAllData();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: UiTone.secondary,
+                            content: Text('🛵 Marked as On The Way! Customer notified.'),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.navigation_rounded, size: 15, color: Colors.white),
+                    label: Text(
+                      'Mark Heading to Customer (On The Way 🛵)',
+                      style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                    ),
+                  ),
+                ),
+              )
+            else if (firstTask?.status == 'ON_THE_WAY')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF4FF),
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
+                    border: Border.all(color: const Color(0xFFF0ABFC)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.flash_on_rounded, size: 14, color: Color(0xFFC026D3)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Active Drop: Customer is tracking you live!',
+                        style: UiText.caption.copyWith(color: const Color(0xFF86198F), fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Row(
               children: [
                 Expanded(
@@ -1349,8 +1411,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ),
                 ),
               ],
-            )
-          else
+            ),
+          ] else
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(

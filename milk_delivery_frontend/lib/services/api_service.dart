@@ -694,6 +694,39 @@ class ApiService {
     return false;
   }
 
+  static Future<bool> updateDeliveryTaskStatus(int taskId, String newStatus) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/$taskId/status/'),
+            headers: _headers,
+            body: jsonEncode({'status': newStatus}),
+          ));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) { lastError = e.toString(); }
+    return false;
+  }
+
+  static Future<int> startShiftDeliveryRoute(String shift) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/deliveries/start-route/'),
+            headers: _headers,
+            body: jsonEncode({'shift': shift}),
+          ));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final data = jsonDecode(res.body);
+        return int.tryParse(data['updated_count']?.toString() ?? '0') ?? 0;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) { lastError = e.toString(); }
+    return 0;
+  }
+
   // ── 8. Delivery Reassignment & Hub Fleet Balancing ──
   static Future<bool> reassignDeliveryTask(int taskId, int? driverId) async {
     try {

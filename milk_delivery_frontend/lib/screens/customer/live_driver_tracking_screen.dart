@@ -56,6 +56,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   late LatLng _driverLocation;
   double _driverBearing = 0.0;
 
+  // Dynamic live tracking status
+  late String _liveTaskStatus;
+  int _dropsAhead = 0;
+  String _hubName = 'Central Depot';
+  LatLng _assignedHubLocation = const LatLng(16.9950, 79.9670);
+
   // Route polyline coordinates simulating real road path
   List<LatLng> _routePoints = [];
   Timer? _liveGpsTimer;
@@ -68,6 +74,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   @override
   void initState() {
     super.initState();
+
+    _liveTaskStatus = widget.subscriptionTask?.status ?? widget.liveOrder?.status ?? 'PENDING';
+    _dropsAhead = widget.subscriptionTask?.dropsAhead ?? 0;
 
     _pulseAnimController = AnimationController(
       vsync: this,
@@ -100,25 +109,61 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     }
     _customerLocation = LatLng(custLat, custLon);
 
-    // 2. Dynamically resolve Driver / Hub Starting Location
-    double originLat = custLat - 0.008;
-    double originLon = custLon - 0.009;
-
-    if (widget.subscriptionTask?.driverDetail?.latitude != null && widget.subscriptionTask!.driverDetail!.latitude != 0) {
-      originLat = widget.subscriptionTask!.driverDetail!.latitude;
-      originLon = widget.subscriptionTask!.driverDetail!.longitude;
-    } else if (widget.state.locationHubs.isNotEmpty) {
-      final hub = widget.state.locationHubs.first;
-      final hLat = hub['latitude'];
-      final hLon = hub['longitude'];
+    // 2. Dynamically resolve Assigned Hub (NEVER hardcoded, NEVER locationHubs.first)
+    if (widget.subscriptionTask?.hubDetail != null) {
+      final h = widget.subscriptionTask!.hubDetail!;
+      final hLat = double.tryParse(h['latitude']?.toString() ?? '');
+      final hLon = double.tryParse(h['longitude']?.toString() ?? '');
       if (hLat != null && hLon != null) {
-        originLat = (hLat is num) ? hLat.toDouble() : (double.tryParse(hLat.toString()) ?? originLat);
-        originLon = (hLon is num) ? hLon.toDouble() : (double.tryParse(hLon.toString()) ?? originLon);
+        _assignedHubLocation = LatLng(hLat, hLon);
+        _hubName = h['name']?.toString() ?? _hubName;
+      }
+    } else if (widget.subscriptionTask?.subscriptionDetail?.hubDetail != null) {
+      final h = widget.subscriptionTask!.subscriptionDetail!.hubDetail!;
+      final hLat = double.tryParse(h['latitude']?.toString() ?? '');
+      final hLon = double.tryParse(h['longitude']?.toString() ?? '');
+      if (hLat != null && hLon != null) {
+        _assignedHubLocation = LatLng(hLat, hLon);
+        _hubName = h['name']?.toString() ?? _hubName;
+      }
+    } else {
+      // Find covering hub geographically closest to the customer doorstep
+      Map<String, dynamic>? closestHub;
+      double minD = double.infinity;
+      for (final h in widget.state.locationHubs) {
+        final hLat = double.tryParse(h['latitude']?.toString() ?? '');
+        final hLon = double.tryParse(h['longitude']?.toString() ?? '');
+        if (hLat != null && hLon != null) {
+          final d = RouteOptimizer.calculateDistanceKm(custLat, custLon, hLat, hLon);
+          if (d < minD) {
+            minD = d;
+            closestHub = h;
+          }
+        }
+      }
+      if (closestHub != null) {
+        final hLat = double.tryParse(closestHub['latitude']?.toString() ?? '');
+        final hLon = double.tryParse(closestHub['longitude']?.toString() ?? '');
+        if (hLat != null && hLon != null) {
+          _assignedHubLocation = LatLng(hLat, hLon);
+          _hubName = closestHub['name']?.toString() ?? _hubName;
+        }
       }
     }
-    _driverLocation = LatLng(originLat, originLon);
 
-    // 3. Compute real-time Haversine distance and dynamic ETA
+    // 3. Dynamically resolve Driver Starting Location
+    if (widget.subscriptionTask?.driverDetail?.latitude != null &&
+        widget.subscriptionTask!.driverDetail!.latitude != 0.0) {
+      _driverLocation = LatLng(
+        widget.subscriptionTask!.driverDetail!.latitude,
+        widget.subscriptionTask!.driverDetail!.longitude,
+      );
+    } else {
+      // If driver hasn't sent GPS, route starts at the assigned hub depot!
+      _driverLocation = _assignedHubLocation;
+    }
+
+    // 4. Compute real-time Haversine distance and dynamic ETA
     _distanceKm = RouteOptimizer.calculateDistanceKm(
       _driverLocation.latitude,
       _driverLocation.longitude,
@@ -127,11 +172,11 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     );
     _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
 
-    // 4. Load initial real road polyline
+    // 5. Load initial real road polyline
     _routePoints = [_driverLocation, _customerLocation];
     _fetchRealRoadNetwork();
 
-    // 5. Start real-time live GPS polling
+    // 6. Start real-time live GPS polling
     _fetchLiveDriverGps();
     _liveGpsTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchLiveDriverGps());
   }
@@ -178,6 +223,15 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
             if (locData['driver_status'] != null) {
               _driverStatusText = locData['driver_status'].toString();
+            }
+            if (locData['task_status'] != null) {
+              _liveTaskStatus = locData['task_status'].toString();
+            }
+            if (locData['drops_ahead'] != null) {
+              _dropsAhead = int.tryParse(locData['drops_ahead'].toString()) ?? _dropsAhead;
+            }
+            if (locData['hub_name'] != null && locData['hub_name'].toString().isNotEmpty) {
+              _hubName = locData['hub_name'].toString();
             }
           });
 
@@ -363,6 +417,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   @override
   Widget build(BuildContext context) {
     final isDelivered = _distanceKm <= 0.1 ||
+        _liveTaskStatus == 'DELIVERED' ||
         (widget.liveOrder?.status == 'DELIVERED') ||
         (widget.subscriptionTask?.status == 'DELIVERED');
 
@@ -615,46 +670,137 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                     const SizedBox(height: 16),
 
                     // ── B. 5-Stage Live Order Stepper ──
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: UiTone.shellBackground,
-                        borderRadius: BorderRadius.circular(UiRadius.lg),
-                        border: Border.all(color: UiTone.surfaceBorder),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Live Delivery Progress', style: UiText.bodyStrong.copyWith(fontSize: 13)),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: UiTone.primarySoft,
-                                  borderRadius: BorderRadius.circular(UiRadius.xs),
-                                ),
-                                child: Text('🧪 LAB TESTED BATCH', style: UiText.caption.copyWith(color: UiTone.primary, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                    Builder(
+                      builder: (context) {
+                        final isPickedUp = _liveTaskStatus == 'PICKED_UP' || _liveTaskStatus == 'ON_THE_WAY' || isDelivered;
+                        final isOnTheWay = _liveTaskStatus == 'ON_THE_WAY' || (_liveTaskStatus == 'PICKED_UP' && _dropsAhead == 0) || isDelivered;
+                        final isAtDoorstep = _distanceKm <= 0.3 || isDelivered;
+
+                        return Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: UiTone.shellBackground,
+                                borderRadius: BorderRadius.circular(UiRadius.lg),
+                                border: Border.all(color: UiTone.surfaceBorder),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              _buildStepIndicator('1. Tested', true, Icons.science_rounded),
-                              _buildStepLine(true),
-                              _buildStepIndicator('2. Packed', true, Icons.inventory_2_rounded),
-                              _buildStepLine(true),
-                              _buildStepIndicator('3. On Route', true, Icons.moped_rounded),
-                              _buildStepLine(_distanceKm <= 0.3),
-                              _buildStepIndicator('4. Doorstep', _distanceKm <= 0.3, Icons.door_front_door_rounded),
-                              _buildStepLine(isDelivered),
-                              _buildStepIndicator('5. Verified', isDelivered, Icons.verified_rounded),
-                            ],
-                          ),
-                        ],
-                      ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Live Delivery Progress', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: UiTone.primarySoft,
+                                          borderRadius: BorderRadius.circular(UiRadius.xs),
+                                        ),
+                                        child: Text('🧪 LAB TESTED BATCH', style: UiText.caption.copyWith(color: UiTone.primary, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    children: [
+                                      _buildStepIndicator('1. Tested', true, Icons.science_rounded),
+                                      _buildStepLine(true),
+                                      _buildStepIndicator('2. Packed', true, Icons.inventory_2_rounded),
+                                      _buildStepLine(isPickedUp),
+                                      _buildStepIndicator('3. Picked Up', isPickedUp, Icons.moped_rounded),
+                                      _buildStepLine(isOnTheWay),
+                                      _buildStepIndicator('4. On Route', isOnTheWay, Icons.alt_route_rounded),
+                                      _buildStepLine(isDelivered),
+                                      _buildStepIndicator('5. Verified', isDelivered, Icons.verified_rounded),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // ── Live On-The-Way Status Banner ──
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isDelivered
+                                    ? const Color(0xFFF0FDF4)
+                                    : (isOnTheWay ? const Color(0xFFFDF4FF) : const Color(0xFFF8FAFC)),
+                                borderRadius: BorderRadius.circular(UiRadius.lg),
+                                border: Border.all(
+                                  color: isDelivered
+                                      ? const Color(0xFF86EFAC)
+                                      : (isOnTheWay ? const Color(0xFFF0ABFC) : const Color(0xFFE2E8F0)),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isDelivered
+                                          ? const Color(0xFFDCFCE7)
+                                          : (isOnTheWay ? const Color(0xFFFAE8FF) : const Color(0xFFF1F5F9)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      isDelivered
+                                          ? Icons.verified_rounded
+                                          : (isOnTheWay ? Icons.flash_on_rounded : Icons.local_shipping_rounded),
+                                      color: isDelivered
+                                          ? const Color(0xFF16A34A)
+                                          : (isOnTheWay ? const Color(0xFFC026D3) : const Color(0xFF475569)),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          isDelivered
+                                              ? '🥛 Delivered to Your Doorstep'
+                                              : (isOnTheWay
+                                                  ? '⚡ Next Stop: Heading to Your Doorstep!'
+                                                  : (_isPickedUp
+                                                      ? '🛵 Delivering $_dropsAhead order${_dropsAhead == 1 ? '' : 's'} on the way'
+                                                      : '📦 Chilled & Ready at $_hubName')),
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDelivered
+                                                ? const Color(0xFF15803D)
+                                                : (isOnTheWay ? const Color(0xFF86198F) : const Color(0xFF1E293B)),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          isDelivered
+                                              ? 'Completed with doorstep proof photo.'
+                                              : (isOnTheWay
+                                                  ? 'Partner is en route from $_hubName (${_distanceKm.toStringAsFixed(1)} km away)'
+                                                  : (_isPickedUp
+                                                      ? 'Batch picked up from $_hubName. Delivering neighboring stops along the route.'
+                                                      : 'Awaiting partner dispatch from $_hubName.')),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isDelivered
+                                                ? const Color(0xFF166534)
+                                                : (isOnTheWay ? const Color(0xFFA21CAF) : const Color(0xFF64748B)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
 

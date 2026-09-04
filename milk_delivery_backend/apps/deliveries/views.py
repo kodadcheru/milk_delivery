@@ -266,6 +266,112 @@ class DeliveryTaskSkipView(APIView):
         )
 
 
+class DeliveryTaskStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            task = DeliveryTask.objects.get(pk=pk)
+        except DeliveryTask.DoesNotExist:
+            return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get("status")
+        valid_statuses = [
+            DeliveryTask.Statuses.PENDING,
+            DeliveryTask.Statuses.PICKED_UP,
+            DeliveryTask.Statuses.ON_THE_WAY,
+            DeliveryTask.Statuses.DELIVERED,
+            DeliveryTask.Statuses.SKIPPED,
+            DeliveryTask.Statuses.FAILED,
+        ]
+        if new_status not in valid_statuses:
+            return Response({"detail": f"Invalid status '{new_status}'. Must be one of {valid_statuses}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        task.status = new_status
+        task.save(update_fields=["status"])
+
+        # Send real-time notification to customer
+        if task.target_customer:
+            try:
+                hub_name = task.hub.name if task.hub else (task.subscription.hub.name if task.subscription and task.subscription.hub else "Depot")
+                if new_status == DeliveryTask.Statuses.PICKED_UP:
+                    Notification.objects.create(
+                        user=task.target_customer,
+                        title="📦 Milk Picked Up & Chilled",
+                        message=f"Your milk delivery #{task.id} was picked up from {hub_name}. Partner is packing crates for delivery.",
+                        notification_type=Notification.Types.DELIVERY,
+                    )
+                elif new_status == DeliveryTask.Statuses.ON_THE_WAY:
+                    Notification.objects.create(
+                        user=task.target_customer,
+                        title="🛵 Partner is On The Way!",
+                        message=f"Your delivery #{task.id} is the next stop! Partner is navigating to your doorstep.",
+                        notification_type=Notification.Types.DELIVERY,
+                    )
+            except Exception:
+                pass
+
+        # Broadcast WebSocket event
+        try:
+            from apps.core.consumers import broadcast_hub_event
+            hub_code = getattr(task.hub, "hub_code", "HUB-KDD-01") if task.hub else "HUB-KDD-01"
+            broadcast_hub_event(hub_code, "task_status_updated", {
+                "task_id": task.id,
+                "status": task.status,
+                "driver": request.user.username,
+            })
+        except Exception:
+            pass
+
+        return Response({
+            "message": f"Task #{task.id} status updated to {task.status}",
+            "task": DeliveryTaskSerializer(task).data,
+        })
+
+
+class DeliveryShiftStartRouteView(APIView):
+    """
+    Driver 1-tap action to mark all assigned pending tasks for today as PICKED_UP (Out for delivery route)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        today = date.today()
+        shift = request.data.get("shift", "ALL").upper()
+
+        qs = DeliveryTask.objects.filter(
+            driver=user,
+            delivery_date=today,
+            status=DeliveryTask.Statuses.PENDING,
+        )
+
+        if shift == "MORNING":
+            qs = qs.exclude(slot_time__icontains="PM").exclude(slot_time__icontains="17:").exclude(slot_time__icontains="18:").exclude(slot_time__icontains="19:")
+        elif shift == "EVENING":
+            qs = qs.filter(Q(slot_time__icontains="PM") | Q(slot_time__icontains="17:") | Q(slot_time__icontains="18:") | Q(slot_time__icontains="19:"))
+
+        updated_count = qs.update(status=DeliveryTask.Statuses.PICKED_UP)
+
+        # Notify customers
+        for task in DeliveryTask.objects.filter(driver=user, delivery_date=today, status=DeliveryTask.Statuses.PICKED_UP):
+            if task.target_customer:
+                try:
+                    Notification.objects.create(
+                        user=task.target_customer,
+                        title="🛵 Delivery Route Started!",
+                        message="Delivery partner has collected today's chilled farm batch and started the doorstep route!",
+                        notification_type=Notification.Types.DELIVERY,
+                    )
+                except Exception:
+                    pass
+
+        return Response({
+            "message": f"Successfully picked up {updated_count} delivery stops for today's route.",
+            "updated_count": updated_count,
+        })
+
+
 class DeliverySummaryView(APIView):
     permission_classes = [IsAdminOrStaff]
 

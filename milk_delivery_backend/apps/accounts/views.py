@@ -274,8 +274,20 @@ class DriverLocationByOrderView(APIView):
         if not driver:
             return Response({"detail": "Driver not assigned or not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        lat = float(driver.latitude) if (driver.latitude and float(driver.latitude) != 0.0) else 17.001734
-        lng = float(driver.longitude) if (driver.longitude and float(driver.longitude) != 0.0) else 79.9625
+        # Calculate dynamic drops ahead if task exists
+        drops_ahead = 0
+        task_status = getattr(task, 'status', None)
+        task_hub = getattr(task, 'hub', None) or getattr(driver, 'assigned_hub', None)
+        if task and driver:
+            drops_ahead = DeliveryTask.objects.filter(
+                driver=driver,
+                delivery_date=task.delivery_date,
+                status__in=[DeliveryTask.Statuses.PENDING, DeliveryTask.Statuses.PICKED_UP, DeliveryTask.Statuses.ON_THE_WAY],
+                id__lt=task.id,
+            ).count()
+
+        lat = float(driver.latitude) if (driver.latitude and float(driver.latitude) != 0.0) else (float(task_hub.latitude) if task_hub and task_hub.latitude else 17.001734)
+        lng = float(driver.longitude) if (driver.longitude and float(driver.longitude) != 0.0) else (float(task_hub.longitude) if task_hub and task_hub.longitude else 79.9625)
 
         return Response({
             "driver_id": driver.id,
@@ -284,6 +296,11 @@ class DriverLocationByOrderView(APIView):
             "latitude": lat,
             "longitude": lng,
             "driver_status": driver.driver_status,
+            "task_status": task_status or "PENDING",
+            "drops_ahead": drops_ahead,
+            "hub_name": task_hub.name if task_hub else "Central Hub",
+            "hub_latitude": float(task_hub.latitude) if task_hub and task_hub.latitude else lat,
+            "hub_longitude": float(task_hub.longitude) if task_hub and task_hub.longitude else lng,
             "vehicle_number": driver.vehicle_number or "TS-04-AP-1842",
             "last_location_updated": driver.last_location_updated.isoformat() if driver.last_location_updated else timezone.now().isoformat(),
         })

@@ -112,6 +112,8 @@ class DeliverySlot(models.Model):
 class DeliveryTask(models.Model):
     class Statuses(models.TextChoices):
         PENDING = "PENDING", "Scheduled (Pending)"
+        PICKED_UP = "PICKED_UP", "Picked Up from Hub"
+        ON_THE_WAY = "ON_THE_WAY", "Out for Delivery / On the Way"
         DELIVERED = "DELIVERED", "Delivered at Doorstep"
         SKIPPED = "SKIPPED", "Skipped / Paused"
         FAILED = "FAILED", "FAILED"

@@ -33,6 +33,9 @@ class DeliveryTaskModel {
   final bool isCod;
   final bool cashCollected;
   final double cashAmount;
+  final int? hubId;
+  final Map<String, dynamic>? hubDetail;
+  final int dropsAhead;
 
   DeliveryTaskModel({
     required this.id,
@@ -40,6 +43,9 @@ class DeliveryTaskModel {
     this.subscriptionDetail,
     this.driverId,
     this.driverDetail,
+    this.hubId,
+    this.hubDetail,
+    this.dropsAhead = 0,
     this.customerName = 'Customer',
     this.customerPhone = '',
     this.deliveryAddress = 'Doorstep Delivery Location',
@@ -128,6 +134,9 @@ class DeliveryTaskModel {
       subscriptionDetail: subDetail,
       driverId: int.tryParse(json['driver']?.toString() ?? '') ?? drvDetail?.id,
       driverDetail: drvDetail,
+      hubId: int.tryParse(json['hub']?.toString() ?? ''),
+      hubDetail: json['hub_detail'] is Map<String, dynamic> ? json['hub_detail'] : null,
+      dropsAhead: int.tryParse(json['drops_ahead']?.toString() ?? '0') ?? 0,
       customerName: json['customer_name'] ?? 'Customer',
       customerPhone: json['customer_phone'] ?? '',
       deliveryAddress: (json['delivery_address'] != null && json['delivery_address'].toString().trim().isNotEmpty)
@@ -210,4 +219,8 @@ class DeliveryTaskModel {
   }
 
   bool get isDelivered => status == 'DELIVERED';
+  bool get isPickedUp => status == 'PICKED_UP';
+  bool get isOnTheWay => status == 'ON_THE_WAY';
+  bool get isPending => status == 'PENDING';
+  bool get isInTransit => status == 'PICKED_UP' || status == 'ON_THE_WAY';
 }

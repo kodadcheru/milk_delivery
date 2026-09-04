@@ -41,6 +41,8 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
     batch_price_per_litre = serializers.SerializerMethodField()
     batch_code = serializers.SerializerMethodField()
     temperature_celsius = serializers.SerializerMethodField()
+    hub_detail = serializers.SerializerMethodField()
+    drops_ahead = serializers.SerializerMethodField()
 
     class Meta:
         model = DeliveryTask
@@ -51,6 +53,9 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "order",
             "driver",
             "driver_detail",
+            "hub",
+            "hub_detail",
+            "drops_ahead",
             "customer_name",
             "customer_phone",
             "delivery_address",
@@ -271,6 +276,37 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         if batch:
             return float(batch.temperature_celsius)
         return 3.8
+
+    def get_hub_detail(self, obj):
+        hub = obj.hub
+        if not hub and obj.subscription:
+            hub = obj.subscription.hub
+        if not hub and obj.order:
+            hub = obj.order.hub
+        if not hub and obj.driver and getattr(obj.driver, "assigned_hub", None):
+            hub = obj.driver.assigned_hub
+        if hub:
+            return {
+                "id": hub.id,
+                "hub_code": hub.hub_code,
+                "name": hub.name,
+                "address": hub.address,
+                "latitude": float(hub.latitude) if hub.latitude else 16.9950,
+                "longitude": float(hub.longitude) if hub.longitude else 79.9670,
+                "contact_phone": getattr(hub, "contact_phone", "") or "",
+                "coverage_radius_km": float(hub.coverage_radius_km) if hub.coverage_radius_km else 5.0,
+            }
+        return None
+
+    def get_drops_ahead(self, obj):
+        if not obj.driver or obj.status in [DeliveryTask.Statuses.DELIVERED, DeliveryTask.Statuses.SKIPPED, DeliveryTask.Statuses.FAILED]:
+            return 0
+        return DeliveryTask.objects.filter(
+            driver=obj.driver,
+            delivery_date=obj.delivery_date,
+            status__in=[DeliveryTask.Statuses.PENDING, DeliveryTask.Statuses.PICKED_UP, DeliveryTask.Statuses.ON_THE_WAY],
+            id__lt=obj.id,
+        ).count()
 
 
 class LiveOrderItemSerializer(serializers.ModelSerializer):

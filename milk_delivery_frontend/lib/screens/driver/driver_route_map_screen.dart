@@ -41,8 +41,20 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   List<LatLng> _realRoadPolylinePoints = [];
   bool _isLoadingRoadGeometry = false;
 
-  // Depot location — read from active hub, fallback to Kodad default
+  // Depot location — read from driver assigned hub, fallback to tasks hub
   LatLng get _depotLocation {
+    final assignedHub = widget.state.driverAssignedHub;
+    if (assignedHub != null) {
+      final lat = double.tryParse(assignedHub['latitude']?.toString() ?? '');
+      final lng = double.tryParse(assignedHub['longitude']?.toString() ?? '');
+      if (lat != null && lng != null) return LatLng(lat, lng);
+    }
+    if (widget.tasks.isNotEmpty && widget.tasks.first.hubDetail != null) {
+      final h = widget.tasks.first.hubDetail!;
+      final lat = double.tryParse(h['latitude']?.toString() ?? '');
+      final lng = double.tryParse(h['longitude']?.toString() ?? '');
+      if (lat != null && lng != null) return LatLng(lat, lng);
+    }
     final hub = widget.state.nearestCoveringHub;
     if (hub != null) {
       final lat = double.tryParse(hub['latitude']?.toString() ?? '') ?? AppConfig.defaultLatitude;
@@ -73,14 +85,18 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
       _driverLocation = _depotLocation;
     }
 
+    final resolvedHub = widget.state.driverAssignedHub ??
+        (widget.tasks.isNotEmpty ? widget.tasks.first.hubDetail : null) ??
+        widget.state.nearestCoveringHub;
+
     final hubModel = HubLocationModel(
-      id: widget.state.nearestCoveringHub?['hub_code']?.toString() ?? 'HUB-DEFAULT',
-      name: widget.state.nearestCoveringHub?['name']?.toString() ?? AppConfig.defaultHubName,
-      address: widget.state.nearestCoveringHub?['address']?.toString() ?? AppConfig.defaultHubAddress,
+      id: resolvedHub?['hub_code']?.toString() ?? 'HUB-KDD-01',
+      name: widget.state.driverHubName.isNotEmpty ? widget.state.driverHubName : (resolvedHub?['name']?.toString() ?? AppConfig.defaultHubName),
+      address: resolvedHub?['address']?.toString() ?? AppConfig.defaultHubAddress,
       latitude: _depotLocation.latitude,
       longitude: _depotLocation.longitude,
-      managerName: widget.state.nearestCoveringHub?['manager_name']?.toString() ?? 'Hub Operations Desk',
-      managerPhone: widget.state.nearestCoveringHub?['manager_phone']?.toString() ?? AppConfig.supportPhone,
+      managerName: resolvedHub?['manager_name']?.toString() ?? 'Hub Operations Desk',
+      managerPhone: resolvedHub?['manager_phone']?.toString() ?? (resolvedHub?['contact_phone']?.toString() ?? AppConfig.supportPhone),
     );
     _tspResult = RouteOptimizer.optimizeBatchRoute(hub: hubModel, tasks: widget.tasks);
     _orderedTasks = _tspResult.orderedStops;
