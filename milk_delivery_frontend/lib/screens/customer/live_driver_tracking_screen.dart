@@ -118,14 +118,6 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         _assignedHubLocation = LatLng(hLat, hLon);
         _hubName = h['name']?.toString() ?? _hubName;
       }
-    } else if (widget.subscriptionTask?.subscriptionDetail?.hubDetail != null) {
-      final h = widget.subscriptionTask!.subscriptionDetail!.hubDetail!;
-      final hLat = double.tryParse(h['latitude']?.toString() ?? '');
-      final hLon = double.tryParse(h['longitude']?.toString() ?? '');
-      if (hLat != null && hLon != null) {
-        _assignedHubLocation = LatLng(hLat, hLon);
-        _hubName = h['name']?.toString() ?? _hubName;
-      }
     } else {
       // Find covering hub geographically closest to the customer doorstep
       Map<String, dynamic>? closestHub;
@@ -200,6 +192,28 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
           ? (locData['longitude'] as num).toDouble()
           : double.tryParse(locData['longitude']?.toString() ?? '');
 
+      if (mounted) {
+        setState(() {
+          if (locData['driver_status'] != null) {
+            _driverStatusText = locData['driver_status'].toString();
+          }
+          if (locData['task_status'] != null) {
+            _liveTaskStatus = locData['task_status'].toString();
+          }
+          if (locData['drops_ahead'] != null) {
+            _dropsAhead = int.tryParse(locData['drops_ahead'].toString()) ?? _dropsAhead;
+          }
+          if (locData['hub_name'] != null && locData['hub_name'].toString().isNotEmpty) {
+            _hubName = locData['hub_name'].toString();
+          }
+          final hLat = double.tryParse(locData['hub_latitude']?.toString() ?? '');
+          final hLng = double.tryParse(locData['hub_longitude']?.toString() ?? '');
+          if (hLat != null && hLng != null && hLat != 0.0 && hLng != 0.0) {
+            _assignedHubLocation = LatLng(hLat, hLng);
+          }
+        });
+      }
+
       if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
         final newPos = LatLng(lat, lng);
         final distanceMoved = RouteOptimizer.calculateDistanceKm(
@@ -218,22 +232,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             _customerLocation.longitude,
           );
 
-          setState(() {
-            _distanceKm = remainingKm;
-            _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
-            if (locData['driver_status'] != null) {
-              _driverStatusText = locData['driver_status'].toString();
-            }
-            if (locData['task_status'] != null) {
-              _liveTaskStatus = locData['task_status'].toString();
-            }
-            if (locData['drops_ahead'] != null) {
-              _dropsAhead = int.tryParse(locData['drops_ahead'].toString()) ?? _dropsAhead;
-            }
-            if (locData['hub_name'] != null && locData['hub_name'].toString().isNotEmpty) {
-              _hubName = locData['hub_name'].toString();
-            }
-          });
+          if (mounted) {
+            setState(() {
+              _distanceKm = remainingKm;
+              _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
+            });
+          }
 
           if (distanceMoved > 0.03) {
             _fetchRealRoadNetwork();
@@ -765,7 +769,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                               ? '🥛 Delivered to Your Doorstep'
                                               : (isOnTheWay
                                                   ? '⚡ Next Stop: Heading to Your Doorstep!'
-                                                  : (_isPickedUp
+                                                  : (isPickedUp
                                                       ? '🛵 Delivering $_dropsAhead order${_dropsAhead == 1 ? '' : 's'} on the way'
                                                       : '📦 Chilled & Ready at $_hubName')),
                                           style: TextStyle(
@@ -782,7 +786,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                               ? 'Completed with doorstep proof photo.'
                                               : (isOnTheWay
                                                   ? 'Partner is en route from $_hubName (${_distanceKm.toStringAsFixed(1)} km away)'
-                                                  : (_isPickedUp
+                                                  : (isPickedUp
                                                       ? 'Batch picked up from $_hubName. Delivering neighboring stops along the route.'
                                                       : 'Awaiting partner dispatch from $_hubName.')),
                                           style: TextStyle(

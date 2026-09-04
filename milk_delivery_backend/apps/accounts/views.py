@@ -271,13 +271,17 @@ class DriverLocationByOrderView(APIView):
                     driver_status="ACTIVE",
                 ).first()
 
-        if not driver:
-            return Response({"detail": "Driver not assigned or not found"}, status=status.HTTP_404_NOT_FOUND)
-
         # Calculate dynamic drops ahead if task exists
         drops_ahead = 0
         task_status = getattr(task, 'status', None)
-        task_hub = getattr(task, 'hub', None) or getattr(driver, 'assigned_hub', None)
+        task_hub = getattr(task, 'hub', None)
+        if not task_hub and task and task.subscription:
+            task_hub = getattr(task.subscription, 'hub', None)
+        if not task_hub and order and getattr(order, 'hub', None):
+            task_hub = order.hub
+        if not task_hub and getattr(driver, 'assigned_hub', None):
+            task_hub = driver.assigned_hub
+
         if task and driver:
             drops_ahead = DeliveryTask.objects.filter(
                 driver=driver,
@@ -286,22 +290,22 @@ class DriverLocationByOrderView(APIView):
                 id__lt=task.id,
             ).count()
 
-        lat = float(driver.latitude) if (driver.latitude and float(driver.latitude) != 0.0) else (float(task_hub.latitude) if task_hub and task_hub.latitude else 17.001734)
-        lng = float(driver.longitude) if (driver.longitude and float(driver.longitude) != 0.0) else (float(task_hub.longitude) if task_hub and task_hub.longitude else 79.9625)
+        lat = float(driver.latitude) if (driver.latitude and float(driver.latitude) != 0.0) else (float(task_hub.latitude) if task_hub and task_hub.latitude else 0.0)
+        lng = float(driver.longitude) if (driver.longitude and float(driver.longitude) != 0.0) else (float(task_hub.longitude) if task_hub and task_hub.longitude else 0.0)
 
         return Response({
             "driver_id": driver.id,
             "driver_name": f"{driver.first_name} {driver.last_name}".strip() or driver.username,
-            "driver_phone": driver.phone,
+            "driver_phone": driver.phone or "",
             "latitude": lat,
             "longitude": lng,
-            "driver_status": driver.driver_status,
+            "driver_status": driver.driver_status or "ACTIVE",
             "task_status": task_status or "PENDING",
             "drops_ahead": drops_ahead,
-            "hub_name": task_hub.name if task_hub else "Central Hub",
+            "hub_name": task_hub.name if task_hub else "",
             "hub_latitude": float(task_hub.latitude) if task_hub and task_hub.latitude else lat,
             "hub_longitude": float(task_hub.longitude) if task_hub and task_hub.longitude else lng,
-            "vehicle_number": driver.vehicle_number or "TS-04-AP-1842",
+            "vehicle_number": driver.vehicle_number or "",
             "last_location_updated": driver.last_location_updated.isoformat() if driver.last_location_updated else timezone.now().isoformat(),
         })
 

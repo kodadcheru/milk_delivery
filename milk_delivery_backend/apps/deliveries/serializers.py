@@ -291,10 +291,10 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
                 "hub_code": hub.hub_code,
                 "name": hub.name,
                 "address": hub.address,
-                "latitude": float(hub.latitude) if hub.latitude else 16.9950,
-                "longitude": float(hub.longitude) if hub.longitude else 79.9670,
+                "latitude": float(hub.latitude) if hub.latitude is not None else None,
+                "longitude": float(hub.longitude) if hub.longitude is not None else None,
                 "contact_phone": getattr(hub, "contact_phone", "") or "",
-                "coverage_radius_km": float(hub.coverage_radius_km) if hub.coverage_radius_km else 5.0,
+                "coverage_radius_km": float(hub.coverage_radius_km) if hub.coverage_radius_km is not None else None,
             }
         return None
 
