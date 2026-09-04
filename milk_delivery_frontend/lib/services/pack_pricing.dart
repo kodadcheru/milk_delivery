@@ -51,16 +51,17 @@ class PackPricing {
 
   /// Per-unit price for [packSize] given the product's base [pricePerUnit].
   static double effectiveUnitPrice(double pricePerUnit, String packSize) {
-    if (packSize == '500 ml' || packSize == '500g') {
-      return (pricePerUnit * 0.55).roundToDouble();
-    } else if (packSize == '2 Litres' || packSize == '1 kg') {
-      return (pricePerUnit * 1.95).roundToDouble();
-    } else if (packSize == '12 Eggs') {
-      return (pricePerUnit * 1.9).roundToDouble();
-    } else if (packSize == '30 Tray') {
-      return (pricePerUnit * 4.5).roundToDouble();
-    } else if (packSize == '10 Litres') {
-      return (pricePerUnit * 0.6).roundToDouble();
+    final clean = packSize.toLowerCase().trim();
+    if (clean.contains('500')) {
+      return (pricePerUnit * 0.5).roundToDouble();
+    } else if (clean.contains('2') && (clean.contains('litre') || clean.contains('liter') || clean.contains('kg'))) {
+      return (pricePerUnit * 2.0).roundToDouble();
+    } else if (clean.contains('12')) {
+      return (pricePerUnit * 2.0).roundToDouble();
+    } else if (clean.contains('30')) {
+      return (pricePerUnit * 5.0).roundToDouble();
+    } else if (clean.contains('10') && (clean.contains('litre') || clean.contains('liter'))) {
+      return (pricePerUnit * 0.5).roundToDouble();
     }
     return pricePerUnit;
   }

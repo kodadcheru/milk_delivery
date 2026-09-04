@@ -100,6 +100,25 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     return '${months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}';
   }
 
+  String _formatDeliveryVolume(int qty, String packSize, {required bool isTelugu}) {
+    final clean = packSize.toLowerCase().trim();
+    if (clean.contains('500')) {
+      final totalL = qty * 0.5;
+      final lStr = totalL == totalL.roundToDouble() ? totalL.toInt().toString() : totalL.toStringAsFixed(1);
+      return isTelugu ? '$lStr లీటర్లు' : '$lStr Litres';
+    }
+    if (clean.contains('2') && (clean.contains('litre') || clean.contains('liter'))) {
+      final totalL = qty * 2;
+      return isTelugu ? '$totalL లీటర్లు' : '$totalL Litres';
+    }
+    final numPart = double.tryParse(clean.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 1.0;
+    final total = qty * numPart;
+    final totalStr = total == total.roundToDouble() ? total.toInt().toString() : total.toStringAsFixed(1);
+    if (clean.contains('egg')) return isTelugu ? '$totalStr గుడ్లు' : '$totalStr Eggs';
+    if (clean.contains('g') || clean.contains('gram')) return isTelugu ? '$totalStr గ్రాములు' : '$totalStr g';
+    return isTelugu ? '$totalStr లీటర్లు' : '$totalStr Litres';
+  }
+
   void _goToStep(int step) {
     setState(() => _currentStep = step);
     _pageController.animateToPage(
@@ -528,8 +547,8 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     const SizedBox(height: 2),
                     Text(
                       widget.state.isTelugu
-                          ? 'ప్రతి డెలివరీకి ${_qty * (double.tryParse(_selectedPackSize.split(' ').first) ?? 1.0)} లీటర్లు'
-                          : '${_qty * (double.tryParse(_selectedPackSize.split(' ').first) ?? 1.0)} Litres each delivery',
+                          ? 'ప్రతి డెలివరీకి ${_formatDeliveryVolume(_qty, _selectedPackSize, isTelugu: true)}'
+                          : '${_formatDeliveryVolume(_qty, _selectedPackSize, isTelugu: false)} each delivery',
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                     ),
                   ],

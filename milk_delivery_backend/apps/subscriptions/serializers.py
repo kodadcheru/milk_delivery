@@ -26,6 +26,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(required=False, default=date.today)
     delivery_latitude = serializers.FloatField(required=False, allow_null=True)
     delivery_longitude = serializers.FloatField(required=False, allow_null=True)
+    effective_unit_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Subscription
@@ -50,4 +51,17 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "vacation_pauses",
             "created_at",
         ]
-        read_only_fields = ["id", "customer", "created_at", "effective_unit_price"]
+        read_only_fields = ["id", "customer", "created_at"]
+
+    def get_effective_unit_price(self, obj):
+        if obj.effective_unit_price is not None and float(obj.effective_unit_price) > 0:
+            return str(obj.effective_unit_price)
+        if obj.product:
+            base = float(obj.product.price_per_unit)
+            p_size = (obj.pack_size or '').lower()
+            if '500' in p_size:
+                return str(round(base * 0.5, 2))
+            elif '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
+                return str(round(base * 2.0, 2))
+            return str(round(base, 2))
+        return "0.00"

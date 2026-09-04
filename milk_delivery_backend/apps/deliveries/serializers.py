@@ -200,13 +200,23 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         return "1 Litre"
 
     def get_price_per_unit(self, obj):
-        if obj.subscription and obj.subscription.product:
-            return str(obj.subscription.product.price_per_unit)
+        if obj.subscription:
+            eff = obj.subscription.effective_unit_price
+            if eff is not None and float(eff) > 0:
+                return str(eff)
+            if obj.subscription.product:
+                base = float(obj.subscription.product.price_per_unit)
+                p_size = (obj.subscription.pack_size or '').lower()
+                if '500' in p_size:
+                    return str(round(base * 0.5, 2))
+                elif '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
+                    return str(round(base * 2.0, 2))
+                return str(round(base, 2))
         if obj.order:
             first_item = obj.order.items.first()
             if first_item:
                 return str(first_item.unit_price)
-        return "72.00"
+        return "0.00"
 
     def _get_batch(self, obj):
         from apps.deliveries.models import DailyMilkBatch

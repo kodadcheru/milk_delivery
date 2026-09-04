@@ -124,10 +124,10 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         base_price = float(prod_obj.price_per_unit)
         pack_size_val = self.request.data.get('pack_size', '1 Litre') or '1 Litre'
         if '500' in pack_size_val.lower():
-            effective_price = round(base_price * 0.55, 2)
+            effective_price = round(base_price * 0.5, 2)
             volume_multiplier = 0.5
         elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
-            effective_price = round(base_price * 1.95, 2)
+            effective_price = round(base_price * 2.0, 2)
             volume_multiplier = 2
         else:
             effective_price = base_price

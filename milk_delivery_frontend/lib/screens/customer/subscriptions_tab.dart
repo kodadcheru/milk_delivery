@@ -450,7 +450,9 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 ],
               ),
               Text(
-                '${sub.quantity} Units • ${UiFormat.price((prod?.pricePerUnit ?? 72.0) * sub.quantity)} / day',
+                isTelugu
+                    ? '${sub.quantity} × ${sub.packSize} • ${UiFormat.price(sub.displayPrice * sub.quantity)} / రోజు'
+                    : '${sub.quantity} × ${sub.packSize} • ${UiFormat.price(sub.displayPrice * sub.quantity)} / day',
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
               ),
             ],

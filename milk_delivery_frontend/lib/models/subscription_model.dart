@@ -38,9 +38,10 @@ class SubscriptionModel {
   double get displayPrice {
     if (effectiveUnitPrice > 0) return effectiveUnitPrice;
     final basePrice = productDetail?.pricePerUnit ?? 0;
-    if (packSize.contains('500')) return (basePrice * 0.55).roundToDouble();
-    if (packSize.contains('2') && (packSize.toLowerCase().contains('litre') || packSize.toLowerCase().contains('kg'))) {
-      return (basePrice * 1.95).roundToDouble();
+    final pSize = packSize.toLowerCase().trim();
+    if (pSize.contains('500')) return (basePrice * 0.5).roundToDouble();
+    if (pSize.contains('2') && (pSize.contains('litre') || pSize.contains('liter') || pSize.contains('kg'))) {
+      return (basePrice * 2.0).roundToDouble();
     }
     return basePrice.toDouble();
   }
