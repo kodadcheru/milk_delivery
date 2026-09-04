@@ -129,6 +129,7 @@ class AppState extends ChangeNotifier {
   bool hasLocationPermission = false;
   bool hasNotificationPermission = false;
   bool isManualLocationOverride = false;
+  bool isSessionLocationSelected = false;
 
   List<CustomerAddressModel> savedAddresses = [];
   CustomerAddressModel? activeAddress;
@@ -354,6 +355,8 @@ class AppState extends ChangeNotifier {
   }
 
   void selectServiceArea(ServiceAreaModel area) {
+    isSessionLocationSelected = true;
+    isManualLocationOverride = true;
     selectedServiceArea = area;
     currentDeliveryAddress = '${area.name}, ${area.city}';
     currentLat = area.latitude;
@@ -670,10 +673,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> initDevicePermissionsAndLocation() async {
     hasNotificationPermission = await PermissionService.requestNotificationPermission();
+    isSessionLocationSelected = false; // Reset on app open
     await requestDeviceGPS(isStartup: true);
   }
 
   Future<bool> requestDeviceGPS({bool isStartup = false}) async {
+    if (isStartup) {
+      isSessionLocationSelected = false;
+      isManualLocationOverride = false;
+      activeAddress = null;
+    }
     isDetectingLocation = true;
     notifyListeners();
 
@@ -691,12 +700,15 @@ class AppState extends ChangeNotifier {
           currentDeliveryAddress = loc['short_address'];
         }
       } else {
+        hasLocationPermission = false;
         final loc = await LocationService.reverseGeocode(currentLat, currentLon);
         if (loc != null && loc['short_address'] != null) {
           currentDeliveryAddress = loc['short_address'];
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      hasLocationPermission = false;
+    }
 
     isDetectingLocation = false;
     notifyListeners();
@@ -704,7 +716,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateDeliveryLocation(String newAddress, double lat, double lon) async {
+    isSessionLocationSelected = true;
     isManualLocationOverride = true;
+    activeAddress = null;
     currentDeliveryAddress = newAddress;
     currentLat = lat;
     currentLon = lon;
@@ -832,28 +846,37 @@ class AppState extends ChangeNotifier {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('pamba_cached_user_role', user.role);
         } catch (_) {}
-        if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
-          currentDeliveryAddress = user.address;
+        if (!hasLocationPermission && !isSessionLocationSelected) {
+          if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
+            currentDeliveryAddress = user.address;
+          }
+          if (user.latitude != 0.0) currentLat = user.latitude;
+          if (user.longitude != 0.0) currentLon = user.longitude;
         }
-        if (user.latitude != 0.0) currentLat = user.latitude;
-        if (user.longitude != 0.0) currentLon = user.longitude;
       }
 
       final addrs = results[1] as List<CustomerAddressModel>? ?? [];
       if (addrs.isNotEmpty) {
         savedAddresses = addrs;
-        if (activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
-          activeAddress = addrs.firstWhere((a) => a.id == activeAddress!.id);
-        } else {
+        if (isSessionLocationSelected && activeAddress != null) {
+          // User manually chose an address in this session: maintain it!
+          if (addrs.any((a) => a.id == activeAddress!.id)) {
+            activeAddress = addrs.firstWhere((a) => a.id == activeAddress!.id);
+            currentDeliveryAddress = activeAddress!.summaryAddress;
+            currentLat = activeAddress!.latitude;
+            currentLon = activeAddress!.longitude;
+          }
+        } else if (!hasLocationPermission) {
+          // Only fallback to saved default if device GPS was unavailable or denied
           final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
           activeAddress = defaultAddr;
+          currentDeliveryAddress = defaultAddr.summaryAddress;
+          currentLat = defaultAddr.latitude;
+          currentLon = defaultAddr.longitude;
         }
-        currentDeliveryAddress = activeAddress!.summaryAddress;
-        currentLat = activeAddress!.latitude;
-        currentLon = activeAddress!.longitude;
         _cacheAddressesLocally();
-      } else if (savedAddresses.isNotEmpty) {
-        // Network returned empty or timed out: preserve existing cached addresses in memory!
+      } else if (savedAddresses.isNotEmpty && !hasLocationPermission && !isSessionLocationSelected) {
+        // Network returned empty or timed out: preserve existing cached addresses in memory if GPS unavailable
         if (activeAddress == null) {
           final defaultAddr = savedAddresses.firstWhere((a) => a.isDefault, orElse: () => savedAddresses.first);
           activeAddress = defaultAddr;
@@ -954,14 +977,14 @@ class AppState extends ChangeNotifier {
       );
       if (addrs.isNotEmpty) {
         savedAddresses = addrs;
-        // Keep the currently active address if it still exists in the fetched list
-        if (activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
+        // Keep the currently active address if user explicitly selected it in this session
+        if (isSessionLocationSelected && activeAddress != null && addrs.any((a) => a.id == activeAddress!.id)) {
           final matched = addrs.firstWhere((a) => a.id == activeAddress!.id);
           activeAddress = matched;
           currentDeliveryAddress = matched.summaryAddress;
           currentLat = matched.latitude;
           currentLon = matched.longitude;
-        } else {
+        } else if (!hasLocationPermission && !isSessionLocationSelected) {
           final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
           activeAddress = defaultAddr;
           currentDeliveryAddress = defaultAddr.summaryAddress;
@@ -976,6 +999,7 @@ class AppState extends ChangeNotifier {
 
   void selectActiveAddress(CustomerAddressModel addr) {
     HapticFeedback.lightImpact();
+    isSessionLocationSelected = true;
     isManualLocationOverride = true;
     activeAddress = addr;
     currentDeliveryAddress = addr.summaryAddress;

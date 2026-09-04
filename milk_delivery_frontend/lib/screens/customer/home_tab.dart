@@ -127,8 +127,8 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                 ),
               ],
 
-              // ── Active Subscription Snapshot (only when in service zone) ──
-              if (widget.state.isLocationCovered && activeSub != null) ...[
+              // ── Active Subscription Snapshot ──
+              if (activeSub != null) ...[
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 14),
