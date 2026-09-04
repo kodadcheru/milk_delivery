@@ -143,6 +143,18 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
         if shift == "evening" and not is_evening:
             continue
 
+        # Cutoff check: if generating for today, respect shift cutoffs
+        from django.utils import timezone
+        import datetime
+        now_local = timezone.localtime()
+        if target_date == now_local.date():
+            if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0)):
+                skipped_count += 1
+                continue
+            if is_evening and now_local.hour >= 12:
+                skipped_count += 1
+                continue
+
         task_address = sub.address
         if not task_address and hasattr(sub.customer, "addresses"):
             task_address = sub.customer.addresses.filter(is_default=True).first() or sub.customer.addresses.first()

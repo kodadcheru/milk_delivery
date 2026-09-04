@@ -149,9 +149,39 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             inv.booked_slots += int(req_qty * volume_multiplier)
             inv.save(update_fields=["booked_slots"])
 
+        # Determine effective start date based on shift cutoff
+        from django.utils import timezone
+        import datetime
+        now_local = timezone.localtime()
+        deliv_slot_str = deliv_slot or "05:30 AM - 07:00 AM"
+        is_evening = any(x in deliv_slot_str.upper() for x in ["PM", "17:", "18:", "19:", "EVENING"])
+
+        # Cutoff rules:
+        # 1. Morning drop (05:00 - 08:30 AM): If placed today after 12:00 PM (or past 05:00 AM dispatch),
+        #    do NOT generate today's morning drop. Initial delivery rolls over to tomorrow.
+        # 2. Evening drop (05:00 - 08:30 PM): If placed after 12:00 PM noon, cutoff has passed.
+        #    Initial delivery rolls over to tomorrow. If placed before 12:00 PM noon, today's evening drop is generated.
+        cutoff_passed_for_today = False
+        if not is_evening:
+            if now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0):
+                cutoff_passed_for_today = True
+        else:
+            if now_local.hour >= 12:
+                cutoff_passed_for_today = True
+
+        req_start_date = serializer.validated_data.get("start_date", date.today())
+        if req_start_date is None or req_start_date <= date.today():
+            if cutoff_passed_for_today:
+                effective_start_date = date.today() + datetime.timedelta(days=1)
+            else:
+                effective_start_date = date.today()
+        else:
+            effective_start_date = req_start_date
+
         sub = serializer.save(
             customer=user,
             hub=hub,
+            start_date=effective_start_date,
             delivery_address=deliv_addr or "Doorstep Delivery",
             delivery_slot=deliv_slot,
             delivery_latitude=deliv_lat or 16.9950,
@@ -162,34 +192,33 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             status=Subscription.Statuses.ACTIVE,
         )
 
-        # Auto-create initial DeliveryTask only if subscription starts today
-        try:
-            hub_driver = None
-            if hub:
-                hub_driver = User.objects.filter(
-                    role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
-                    assigned_hub=hub,
-                    driver_status="ACTIVE",
-                ).first()
-                if not hub_driver:
+        # Auto-create initial DeliveryTask only if subscription starts today AND cutoff has not passed
+        if effective_start_date == date.today() and not cutoff_passed_for_today:
+            try:
+                hub_driver = None
+                if hub:
                     hub_driver = User.objects.filter(
                         role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
                         assigned_hub=hub,
+                        driver_status="ACTIVE",
                     ).first()
-                if not hub_driver:
-                    hub_driver = User.objects.filter(
-                        role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
-                    ).first()
+                    if not hub_driver:
+                        hub_driver = User.objects.filter(
+                            role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
+                            assigned_hub=hub,
+                        ).first()
+                    if not hub_driver:
+                        hub_driver = User.objects.filter(
+                            role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER", "DELIVERY_PARTNER"],
+                        ).first()
 
-            target_task_date = sub.start_date if sub.start_date and sub.start_date >= date.today() else date.today()
-            if target_task_date == date.today():
                 task_address = sub.address
                 if not task_address and hasattr(user, "addresses"):
                     task_address = user.addresses.filter(is_default=True).first() or user.addresses.first()
 
                 DeliveryTask.objects.get_or_create(
                     subscription=sub,
-                    delivery_date=target_task_date,
+                    delivery_date=effective_start_date,
                     defaults={
                         "hub": hub,
                         "driver": hub_driver,
@@ -198,8 +227,8 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                         "status": DeliveryTask.Statuses.PENDING,
                     }
                 )
-        except Exception:
-            pass
+            except Exception:
+                pass
 
         # Broadcast real-time Redis event to Hub and Driver portals
         try:

@@ -130,6 +130,20 @@ class Command(BaseCommand):
             if shift_filter == "evening" and not is_evening:
                 continue
 
+            # Cutoff check: if generating for today, respect shift cutoffs
+            from django.utils import timezone
+            import datetime
+            now_local = timezone.localtime()
+            if target_date == now_local.date():
+                if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0)):
+                    self.stdout.write(f"  ⏭️  Skip (morning cutoff passed): Sub #{sub.id}")
+                    skipped_count += 1
+                    continue
+                if is_evening and now_local.hour >= 12:
+                    self.stdout.write(f"  ⏭️  Skip (evening cutoff passed): Sub #{sub.id}")
+                    skipped_count += 1
+                    continue
+
             # Check if task already exists for this date
             if DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).exists():
                 self.stdout.write(f"  ⏭️  Skip (exists): Sub #{sub.id} for {sub.customer.username}")

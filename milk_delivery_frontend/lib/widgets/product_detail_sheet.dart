@@ -827,6 +827,77 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     ),
                   ],
           ),
+          const SizedBox(height: 10),
+          Builder(
+            builder: (context) {
+              final now = DateTime.now();
+              final isEvening = _selectedShift == 1;
+              final bool startsToday = isEvening && (now.hour < 12);
+              final String firstDropText = startsToday
+                  ? (widget.state.isTelugu
+                      ? '⚡ మొదటి డెలివరీ: ఈరోజు సాయంత్రం ($_selectedSlot)'
+                      : '⚡ First Drop: Today Evening ($_selectedSlot)')
+                  : (widget.state.isTelugu
+                      ? (isEvening
+                          ? '🗓️ మొదటి డెలివరీ: రేపు సాయంత్రం ($_selectedSlot)'
+                          : '🗓️ మొదటి డెలివరీ: రేపు ఉదయం ($_selectedSlot)')
+                      : (isEvening
+                          ? '🗓️ First Drop: Tomorrow Evening ($_selectedSlot)'
+                          : '🗓️ First Drop: Tomorrow Morning ($_selectedSlot)'));
+              final String cutoffNote = startsToday
+                  ? (widget.state.isTelugu
+                      ? '12:00 PM కంటే ముందు ఆర్డర్ చేయబడింది • ఈరోజే పంపబడుతుంది'
+                      : 'Ordered before 12:00 PM • Dispatches Today')
+                  : (widget.state.isTelugu
+                      ? '12:00 PM కటాఫ్ ముగిసింది • డెలివరీ రేపటి నుండి ప్రారంభమవుతుంది'
+                      : (isEvening
+                          ? 'Cutoff (12 PM) passed for today • Dispatches tomorrow'
+                          : 'Morning dispatch closed for today • Dispatches tomorrow'));
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: startsToday ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: startsToday ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      startsToday ? Icons.flash_on_rounded : Icons.schedule_rounded,
+                      size: 16,
+                      color: startsToday ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            firstDropText,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: startsToday ? const Color(0xFF15803D) : const Color(0xFF334155),
+                            ),
+                          ),
+                          Text(
+                            cutoffNote,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: startsToday ? const Color(0xFF166534) : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

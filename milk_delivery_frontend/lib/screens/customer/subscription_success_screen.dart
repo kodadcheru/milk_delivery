@@ -41,12 +41,46 @@ class SubscriptionSuccessScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Delivering to: $address\nSlot: $slot',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                Builder(
+                  builder: (context) {
+                    final now = DateTime.now();
+                    final isEvening = slot.toUpperCase().contains('PM') || slot.contains('17:') || slot.contains('18:') || slot.contains('19:');
+                    final startsToday = isEvening && (now.hour < 12);
+                    final firstDropInfo = startsToday
+                        ? (state.isTelugu ? '⚡ మొదటి డెలివరీ: ఈరోజు సాయంత్రం' : '⚡ First Delivery: Today Evening')
+                        : (state.isTelugu
+                            ? (isEvening ? '🗓️ మొదటి డెలివరీ: రేపు సాయంత్రం' : '🗓️ మొదటి డెలివరీ: రేపు ఉదయం')
+                            : (isEvening ? '🗓️ First Delivery: Tomorrow Evening' : '🗓️ First Delivery: Tomorrow Morning'));
+
+                    return Column(
+                      children: [
+                        Text(
+                          'Delivering to: $address\nSlot: $slot',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 15),
+                        ),
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white30),
+                          ),
+                          child: Text(
+                            firstDropInfo,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 36),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
