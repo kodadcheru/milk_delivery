@@ -75,6 +75,7 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_collected BOOLEAN DEFAULT FALSE;
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_amount NUMERIC(10, 2) DEFAULT 0.00;
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'WALLET';
+                    ALTER TABLE deliveries_liveorderitem ADD COLUMN IF NOT EXISTS pack_size VARCHAR(50) DEFAULT '1 Litre';
                     ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50) DEFAULT '';
                     ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS bank_ifsc VARCHAR(20) DEFAULT '';
                     ALTER TABLE deliveries_providerpayout ADD COLUMN IF NOT EXISTS bank_name VARCHAR(150) DEFAULT '';
@@ -119,6 +120,9 @@ def auto_heal_schema():
                     cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN cash_amount NUMERIC(10, 2) DEFAULT 0.00;")
                 if 'payment_method' not in order_cols:
                     cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN payment_method VARCHAR(20) DEFAULT 'WALLET';")
+                item_cols = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_liveorderitem')]
+                if 'pack_size' not in item_cols:
+                    cursor.execute("ALTER TABLE deliveries_liveorderitem ADD COLUMN pack_size VARCHAR(50) DEFAULT '1 Litre';")
             print("✅ [Railway DB Initializer] Database tables and columns verified.")
         except Exception as e:
             print("Schema auto-heal notice:", e)
