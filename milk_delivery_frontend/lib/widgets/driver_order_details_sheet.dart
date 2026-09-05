@@ -6,6 +6,7 @@ import '../models/live_order_model.dart';
 import '../providers/app_state.dart';
 import '../theme/ui_text.dart';
 import '../theme/ui_tokens.dart';
+import 'order_status_tracker.dart';
 
 /// Dedicated Driver Order Details Sheet
 /// Displays all customer, item manifest, doorstep address, COD collection,
@@ -226,6 +227,22 @@ class DriverOrderDetailsSheet extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
               children: [
+                // ── Live Order Status Tracker ──
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: UiTone.surface,
+                    borderRadius: BorderRadius.circular(UiRadius.md),
+                    border: Border.all(color: UiTone.surfaceBorder),
+                  ),
+                  child: OrderStatusTracker(
+                    status: order.status,
+                    isTelugu: false,
+                    deliveredAt: order.deliveredAt,
+                  ),
+                ),
+
                 // ── 1. COD / Payment Collection Banner ──
                 if (order.isCod) ...[
                   Container(
@@ -678,31 +695,108 @@ class DriverOrderDetailsSheet extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            onPressed: isCancelled
-                                ? null
-                                : () => _showVerifyOtpModal(context),
-                            icon: const Icon(Icons.pin_rounded, color: Colors.white, size: 18),
-                            label: Text(
-                              order.isCod ? 'Collect & Deliver 💵' : 'Verify OTP & Deliver',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13.5,
+                        const SizedBox(width: 8),
+                        if (order.status == 'PLACED' || order.status == 'PREPARING') ...[
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              onPressed: isCancelled
+                                  ? null
+                                  : () async {
+                                      HapticFeedback.mediumImpact();
+                                      final ok = await state.updateOrderStatus(order.id, 'PICKED_UP');
+                                      if (context.mounted && ok) {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: const Color(0xFFD97706),
+                                            content: Text('📦 Order #${order.id} marked as Picked Up!'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 18),
+                              label: const Text(
+                                'Order Picked 📦',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFD97706),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ] else if (order.status == 'PICKED_UP') ...[
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              onPressed: isCancelled
+                                  ? null
+                                  : () async {
+                                      HapticFeedback.mediumImpact();
+                                      final ok = await state.updateOrderStatus(order.id, 'OUT_FOR_DELIVERY');
+                                      if (context.mounted && ok) {
+                                        Navigator.pop(context);
+                                        launchMapsNavigation(order.deliveryLatitude, order.deliveryLongitude);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: const Color(0xFF2563EB),
+                                            content: Text('🛵 Order #${order.id} is now On The Way!'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: const Icon(Icons.two_wheeler_rounded, color: Colors.white, size: 18),
+                              label: const Text(
+                                'On The Way 🛵',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2563EB),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
                             ),
                           ),
-                        ),
+                        ] else ...[
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              onPressed: isCancelled
+                                  ? null
+                                  : () => _showVerifyOtpModal(context),
+                              icon: const Icon(Icons.pin_rounded, color: Colors.white, size: 18),
+                              label: Text(
+                                order.isCod ? 'Collect & Deliver 💵' : 'Verify OTP & Deliver',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
             ),

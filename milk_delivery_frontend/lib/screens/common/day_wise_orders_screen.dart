@@ -8,6 +8,7 @@ import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_format.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import '../../widgets/order_status_tracker.dart';
 
 class DayWiseOrdersScreen extends StatefulWidget {
   final AppState state;
@@ -820,97 +821,145 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
             ),
             const SizedBox(height: 8),
             Text('📍 ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 11, color: UiTone.ink)),
+            const SizedBox(height: 8),
+            OrderStatusTracker(
+              status: ord.status,
+              isTelugu: widget.state.isTelugu,
+              deliveredAt: ord.deliveredAt != null ? UiFormat.time(ord.deliveredAt!) : null,
+            ),
             if (!isDelivered && widget.role == 'DRIVER') ...[
               const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      final otpController = TextEditingController();
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                          title: Row(
-                            children: [
-                              const Icon(Icons.flash_on_rounded, color: UiTone.error),
-                              const SizedBox(width: 8),
-                              Text('Complete ${ord.id}', style: UiText.h2.copyWith(fontSize: 16)),
-                            ],
-                          ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customer: ${ord.customerName.isNotEmpty ? ord.customerName : "Customer"}', style: UiText.bodyStrong.copyWith(fontSize: 13)),
-                              const SizedBox(height: 4),
-                              Text('Address: ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 12)),
-                              const SizedBox(height: 14),
-                              Text('Enter 4-Digit Customer OTP:', style: UiText.bodyStrong.copyWith(fontSize: 12)),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: otpController,
-                                keyboardType: TextInputType.number,
-                                maxLength: 4,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter 4-digit OTP',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  if (ord.status == 'PLACED' || ord.status == 'PREPARING')
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final ok = await widget.state.updateOrderStatus(ord.id, 'PICKED_UP');
+                        if (mounted && ok) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFFD97706),
+                              content: Text('📦 Order #${ord.id} marked as Picked Up!'),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.inventory_2_rounded, size: 14, color: Colors.white),
+                      label: const Text('Order Picked 📦', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD97706),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
+                    ),
+                  if (ord.status == 'PICKED_UP')
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final ok = await widget.state.updateOrderStatus(ord.id, 'OUT_FOR_DELIVERY');
+                        if (mounted && ok) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFF2563EB),
+                              content: Text('🛵 Order #${ord.id} is now On The Way!'),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.two_wheeler_rounded, size: 14, color: Colors.white),
+                      label: const Text('On The Way 🛵', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
+                    ),
+                  if (ord.status == 'OUT_FOR_DELIVERY' || ord.status == 'PICKED_UP')
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final otpController = TextEditingController();
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                            title: Row(
+                              children: [
+                                const Icon(Icons.flash_on_rounded, color: UiTone.error),
+                                const SizedBox(width: 8),
+                                Text('Complete ${ord.id}', style: UiText.h2.copyWith(fontSize: 16)),
+                              ],
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Customer: ${ord.customerName.isNotEmpty ? ord.customerName : "Customer"}', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                                const SizedBox(height: 4),
+                                Text('Address: ${ord.deliveryAddress}', style: UiText.body.copyWith(fontSize: 12)),
+                                const SizedBox(height: 14),
+                                Text('Enter 4-Digit Customer OTP:', style: UiText.bodyStrong.copyWith(fontSize: 12)),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: otpController,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 4,
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter 4-digit OTP',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  ),
                                 ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final enteredOtp = otpController.text.trim();
+                                  if (enteredOtp.isNotEmpty && (ord.deliveryOtp.isEmpty || enteredOtp == ord.deliveryOtp)) {
+                                    Navigator.pop(ctx);
+                                    final ok = await widget.state.updateOrderStatus(ord.id, 'DELIVERED', deliveryOtp: enteredOtp);
+                                    if (mounted) {
+                                      if (ok) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: UiTone.primary,
+                                            content: Text('🎉 Express Order ${ord.id} Delivered Successfully!'),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            backgroundColor: UiTone.error,
+                                            content: Text('❌ Failed to verify OTP with server.'),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        backgroundColor: UiTone.error,
+                                        content: Text('❌ Invalid OTP. Please enter correct 4-digit OTP.'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
+                                child: const Text('Verify & Complete'),
                               ),
                             ],
                           ),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                            ElevatedButton(
-                              onPressed: () async {
-                                final enteredOtp = otpController.text.trim();
-                                if (enteredOtp.isNotEmpty && (ord.deliveryOtp.isEmpty || enteredOtp == ord.deliveryOtp)) {
-                                  Navigator.pop(ctx);
-                                  final ok = await widget.state.updateOrderStatus(ord.id, 'DELIVERED', deliveryOtp: enteredOtp);
-                                  if (mounted) {
-                                    if (ok) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          backgroundColor: UiTone.primary,
-                                          content: Text('🎉 Express Order ${ord.id} Delivered Successfully!'),
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          backgroundColor: UiTone.error,
-                                          content: Text('❌ Failed to verify OTP with server.'),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      backgroundColor: UiTone.error,
-                                      content: Text('❌ Invalid OTP. Please enter correct 4-digit OTP.'),
-                                    ),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white),
-                              child: const Text('Verify & Complete'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
-                    label: Text('Complete Delivery', style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.bold, color: UiTone.surface)),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      minimumSize: Size.zero,
-                      backgroundColor: UiTone.primary,
-                      foregroundColor: UiTone.surface,
+                        );
+                      },
+                      icon: const Icon(Icons.check_circle_rounded, size: 14),
+                      label: const Text('Verify OTP & Deliver', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],

@@ -191,7 +191,8 @@ class LiveOrder(models.Model):
     class Statuses(models.TextChoices):
         PLACED = "PLACED", "Order Placed"
         PREPARING = "PREPARING", "Preparing / Packing"
-        OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY", "Out for Delivery"
+        PICKED_UP = "PICKED_UP", "Order Picked Up"
+        OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY", "Out for Delivery / On the Way"
         DELIVERED = "DELIVERED", "Delivered"
         CANCELLED = "CANCELLED", "Cancelled"
 

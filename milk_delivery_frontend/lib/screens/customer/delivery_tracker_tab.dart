@@ -11,6 +11,7 @@ import '../../widgets/delivery_chat_sheet.dart';
 import '../../widgets/delivery_rating_dialog.dart';
 import '../../widgets/order_invoice_sheet.dart';
 import '../../widgets/booking_detail_sheet.dart';
+import '../../widgets/order_status_tracker.dart';
 import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
@@ -500,9 +501,20 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               ),
             ),
 
+            // ── Live Order Status Tracker ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: OrderStatusTracker(
+                status: order.status,
+                isTelugu: isTelugu,
+                deliveredAt: order.deliveredAt != null ? UiFormat.time(order.deliveredAt!) : null,
+              ),
+            ),
+            const Divider(height: 12),
+
             // Items Preview
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1003,9 +1015,20 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
               ),
             ),
 
+            // ── Live Order Status Tracker ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: OrderStatusTracker(
+                status: task.status,
+                isTelugu: isTelugu,
+                deliveredAt: task.deliveredAt != null ? UiFormat.time(task.deliveredAt!) : null,
+              ),
+            ),
+            const Divider(height: 12),
+
             // Content
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -637,6 +637,29 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateDeliveryTaskStatus(int taskId, String newStatus) async {
+    final idx = deliveries.indexWhere((d) => d.id == taskId);
+    DeliveryTaskModel? old;
+    if (idx != -1) {
+      old = deliveries[idx];
+      deliveries[idx] = old.copyWith(status: newStatus);
+      notifyListeners();
+    }
+
+    final ok = await ApiService.updateDeliveryTaskStatus(taskId, newStatus);
+    if (ok) {
+      await reloadAllData(silent: true);
+      return true;
+    } else {
+      // Rollback optimistic update on failure
+      if (idx != -1 && old != null) {
+        deliveries[idx] = old;
+        notifyListeners();
+      }
+      return false;
+    }
+  }
+
   Future<void> checkoutCart({
     String schedule = 'DAILY',
     String slot = '05:30 AM - 07:00 AM',

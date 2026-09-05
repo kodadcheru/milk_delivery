@@ -460,11 +460,17 @@ class ExpressOrderDetailView(APIView):
                 if not submitted_otp or submitted_otp != str(order.delivery_otp).strip():
                     return Response({"detail": "Valid 4-digit delivery OTP code is required to complete delivery."}, status=status.HTTP_400_BAD_REQUEST)
                 
-        if new_status == "DISPATCHED":
+        if new_status in ("ON_THE_WAY", "ONTHEWAY", "EN_ROUTE", "DISPATCHED"):
             new_status = LiveOrder.Statuses.OUT_FOR_DELIVERY
+        elif new_status in ("PICKED", "PICKED_UP"):
+            new_status = LiveOrder.Statuses.PICKED_UP
 
         if new_status and new_status in dict(LiveOrder.Statuses.choices):
             order.status = new_status
+            if new_status in (LiveOrder.Statuses.PICKED_UP, LiveOrder.Statuses.OUT_FOR_DELIVERY):
+                if order.driver is None and getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER'):
+                    order.driver = request.user
+
             proof_url = request.data.get("proof_image_url", "")
             if new_status == LiveOrder.Statuses.DELIVERED:
                 order.delivered_at = timezone.now()
@@ -476,6 +482,25 @@ class ExpressOrderDetailView(APIView):
                     order.cash_collected = bool(cash_collected)
                     if cash_collected:
                         order.payment_status = "PAID (Cash Collected)"
+
+            # Send customer real-time notification on status change
+            try:
+                if new_status == LiveOrder.Statuses.PICKED_UP and order.customer:
+                    Notification.objects.create(
+                        user=order.customer,
+                        title="📦 Order Picked Up",
+                        message=f"Your order #{order.id} has been packed and picked up at the hub.",
+                        notification_type=Notification.Types.DELIVERY,
+                    )
+                elif new_status == LiveOrder.Statuses.OUT_FOR_DELIVERY and order.customer:
+                    Notification.objects.create(
+                        user=order.customer,
+                        title="🛵 Delivery Partner is On The Way!",
+                        message=f"Your delivery partner is en route to your doorstep with order #{order.id}!",
+                        notification_type=Notification.Types.DELIVERY,
+                    )
+            except Exception:
+                pass
 
             # Bug 2 Part A: Restore booked inventory capacity slots on order cancellation (idempotent)
             if new_status == LiveOrder.Statuses.CANCELLED and old_status != LiveOrder.Statuses.CANCELLED:
@@ -525,10 +550,15 @@ class ExpressOrderDetailView(APIView):
                 task_status = DeliveryTask.Statuses.DELIVERED
             elif new_status == LiveOrder.Statuses.CANCELLED:
                 task_status = DeliveryTask.Statuses.SKIPPED
+            elif new_status == LiveOrder.Statuses.PICKED_UP:
+                task_status = DeliveryTask.Statuses.PICKED_UP
+            elif new_status == LiveOrder.Statuses.OUT_FOR_DELIVERY:
+                task_status = DeliveryTask.Statuses.ON_THE_WAY
             else:
                 task_status = DeliveryTask.Statuses.PENDING
             DeliveryTask.objects.filter(order=order).update(
                 status=task_status,
+                driver=order.driver,
                 proof_image_url=proof_url if proof_url else "",
                 cash_collected=order.cash_collected if order.is_cod else False,
                 delivered_at=timezone.now() if new_status == LiveOrder.Statuses.DELIVERED else None,

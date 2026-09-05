@@ -25,4 +25,23 @@ class UiFormat {
   /// and the struck-through price can never disagree.
   static int get discountPercent =>
       (((_strikeMarkup - 1) / _strikeMarkup) * 100).round();
+
+  /// Formats an ISO datetime string or DateTime to a readable time string e.g. "6:30 AM".
+  static String time(dynamic value) {
+    if (value == null) return '';
+    try {
+      DateTime dt;
+      if (value is DateTime) {
+        dt = value.toLocal();
+      } else {
+        dt = DateTime.parse(value.toString()).toLocal();
+      }
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final min = dt.minute.toString().padLeft(2, '0');
+      return '$hour:$min $period';
+    } catch (_) {
+      return value.toString();
+    }
+  }
 }
