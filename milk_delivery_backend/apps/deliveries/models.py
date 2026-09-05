@@ -100,10 +100,18 @@ class DeliverySlot(models.Model):
     def is_full(self, date):
         return self.booked_count(date) >= self.max_orders
 
-    def is_cutoff_passed(self):
+    def is_cutoff_passed(self, delivery_date=None):
         from django.utils import timezone
         import datetime
         now = timezone.localtime()
+        if delivery_date:
+            if isinstance(delivery_date, str):
+                try:
+                    delivery_date = datetime.datetime.strptime(delivery_date, '%Y-%m-%d').date()
+                except ValueError:
+                    delivery_date = now.date()
+            if delivery_date > now.date():
+                return False
         cutoff = datetime.datetime.combine(now.date(), self.start_time) - datetime.timedelta(minutes=self.cutoff_minutes_before)
         cutoff = timezone.make_aware(cutoff) if timezone.is_naive(cutoff) else cutoff
         return now >= cutoff

@@ -124,7 +124,8 @@ class FloatingCartBar extends StatelessWidget {
     String slot = '06:00 AM - 08:00 AM';
     final slotController = TextEditingController(text: slot);
     String _deliveryMode = 'INSTANT';
-    String _paymentMethod = 'WALLET'; // 'WALLET' or 'COD'
+    final initialWallet = state.currentUser?.walletBalance ?? 0.0;
+    String _paymentMethod = (initialWallet >= state.totalCartPrice && initialWallet > 0) ? 'WALLET' : 'COD';
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -859,13 +860,18 @@ class FloatingCartBar extends StatelessWidget {
                       onPressed: () async {
                         if (_isSubmitting) return;
                         
+                        var effectivePaymentMethod = _paymentMethod;
                         final walletBalance = state.currentUser?.walletBalance ?? 0.0;
                         if (_paymentMethod == 'WALLET' && walletBalance < total) {
+                          effectivePaymentMethod = 'COD';
+                          setSheetState(() => _paymentMethod = 'COD');
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Insufficient wallet balance (₹${walletBalance.toStringAsFixed(0)}). Please top up ₹${(total - walletBalance).toStringAsFixed(0)} or switch to Cash on Delivery (COD).'),
-                            backgroundColor: Colors.red,
+                            content: Text(state.isTelugu
+                                ? 'వాలెట్ బ్యాలెన్స్ తక్కువగా ఉంది, క్యాష్ ఆన్ డెలివరీ (COD) ఎంచుకోబడింది.'
+                                : 'Wallet balance insufficient (₹${walletBalance.toStringAsFixed(0)}). Placed with Cash on Delivery (COD).'),
+                            backgroundColor: UiTone.primary,
+                            duration: const Duration(seconds: 3),
                           ));
-                          return;
                         }
                         
                         setSheetState(() => _isSubmitting = true);
@@ -876,7 +882,7 @@ class FloatingCartBar extends StatelessWidget {
                             deliveryDate: _deliveryMode == 'INSTANT' ? formatDate(DateTime.now()) : formatDate(selectedDate),
                             deliverySlot: _deliveryMode == 'INSTANT' ? 'Instant Delivery' : slot,
                             deliveryAddress: currentAddr,
-                            paymentMethod: _paymentMethod,
+                            paymentMethod: effectivePaymentMethod,
                           );
                           if (ctx.mounted) {
                             Navigator.pop(ctx);

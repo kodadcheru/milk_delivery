@@ -165,8 +165,19 @@ class ExpressOrderListCreateView(APIView):
             delivery_date = raw_delivery_date or date.today()
         delivery_slot = data.get("delivery_slot", "05:30 AM - 07:00 AM")
         delivery_address = data.get("delivery_address") or user.address or "Doorstep Delivery"
-        delivery_lat = float(data.get("delivery_latitude") or user.latitude or 17.4319)
-        delivery_lon = float(data.get("delivery_longitude") or user.longitude or 78.4073)
+        # Safely resolve coordinates — Kodad Depot default (17.001734, 79.9625)
+        raw_lat = data.get("delivery_latitude") or user.latitude
+        raw_lon = data.get("delivery_longitude") or user.longitude
+        try:
+            delivery_lat = float(raw_lat) if raw_lat and float(raw_lat) != 0.0 else 17.001734
+        except (ValueError, TypeError):
+            delivery_lat = 17.001734
+
+        try:
+            delivery_lon = float(raw_lon) if raw_lon and float(raw_lon) != 0.0 else 79.9625
+        except (ValueError, TypeError):
+            delivery_lon = 79.9625
+
         pincode = data.get("pincode", "")
 
         # Auto-resolve hub based on delivery location
@@ -176,25 +187,13 @@ class ExpressOrderListCreateView(APIView):
             latitude=delivery_lat,
             longitude=delivery_lon,
             address=delivery_address,
-            strict=True,
+            strict=False,
         )
         if not active_hub:
             active_hub = getattr(user, "assigned_hub", None)
-
-        if active_hub and delivery_lat and delivery_lon:
-            from apps.deliveries.hub_resolver import _haversine_km
-            try:
-                dist = _haversine_km(float(delivery_lat), float(delivery_lon), float(active_hub.latitude), float(active_hub.longitude))
-                if dist > active_hub.coverage_radius_km:
-                    return Response(
-                        {"detail": f"Delivery location is outside {active_hub.name} service coverage ({dist:.1f} km away, max radius is {active_hub.coverage_radius_km} km)."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-            except (ValueError, TypeError):
-                pass
-
         if not active_hub:
-            return Response({"detail": "Delivery location is outside our operational service area."}, status=status.HTTP_400_BAD_REQUEST)
+            from apps.deliveries.models import LocationHub
+            active_hub = LocationHub.objects.filter(is_active=True).first() or LocationHub.objects.first()
 
         delivery_type = data.get('delivery_type', 'SCHEDULED')
         
@@ -227,7 +226,7 @@ class ExpressOrderListCreateView(APIView):
                         {"error": f"The '{delivery_slot}' slot is full for this date. Only {slot_config.max_orders} orders allowed. Please choose another time slot."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                if slot_config.is_cutoff_passed():
+                if slot_config.is_cutoff_passed(delivery_date_for_check):
                     return Response(
                         {"error": f"The '{delivery_slot}' slot has passed its cutoff time. Please choose a later slot or order for tomorrow."},
                         status=status.HTTP_400_BAD_REQUEST

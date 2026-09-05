@@ -587,8 +587,15 @@ class AppState extends ChangeNotifier {
       'unit_price': e.key.pricePerUnit,
     }).toList();
 
-    final targetLat = activeAddress?.latitude ?? currentLat;
-    final targetLon = activeAddress?.longitude ?? currentLon;
+    double targetLat = AppConfig.defaultLatitude;
+    double targetLon = AppConfig.defaultLongitude;
+    if (activeAddress != null && activeAddress!.latitude != 0.0 && activeAddress!.longitude != 0.0) {
+      targetLat = activeAddress!.latitude;
+      targetLon = activeAddress!.longitude;
+    } else if (currentLat != 0.0 && currentLon != 0.0) {
+      targetLat = currentLat;
+      targetLon = currentLon;
+    }
 
     LiveOrderModel? serverOrder = await ApiService.createExpressOrder(
       items: itemsPayload,
