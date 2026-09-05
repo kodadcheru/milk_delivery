@@ -235,6 +235,102 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+
+                // Dedicated COD Settlement Card
+                Builder(
+                  builder: (context) {
+                    final codCollected = widget.state.deliveries.where((t) => t.isCod && t.cashCollected).fold<double>(0.0, (s, t) => s + t.cashAmount)
+                        + widget.state.liveOrders.where((o) => o.isCod && o.cashCollected).fold<double>(0.0, (s, o) => s + o.totalAmount);
+                    final codPending = widget.state.deliveries.where((t) => t.isCod && !t.cashCollected && t.status != 'SKIPPED').fold<double>(0.0, (s, t) => s + t.cashAmount)
+                        + widget.state.liveOrders.where((o) => o.isCod && !o.cashCollected && o.status != 'CANCELLED').fold<double>(0.0, (s, o) => s + o.totalAmount);
+
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: UiTone.surface,
+                        borderRadius: BorderRadius.circular(UiRadius.lg),
+                        border: Border.all(color: UiTone.surfaceBorder),
+                        boxShadow: UiShadow.card,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.sm)),
+                                      child: const Icon(Icons.payments_rounded, color: UiTone.warning, size: 20),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Cash In Hand (COD)', maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.bodyStrong.copyWith(fontSize: 14, fontWeight: FontWeight.w900)),
+                                          Text('Collected from today\'s drops', maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '₹${codCollected.toStringAsFixed(0)}',
+                                style: UiText.h2.copyWith(color: UiTone.warning, fontWeight: FontWeight.w900, fontSize: 20),
+                              ),
+                            ],
+                          ),
+                          if (codPending > 0) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: UiTone.shellBackground,
+                                borderRadius: BorderRadius.circular(UiRadius.xs),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Pending to collect from remaining drops:',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text('₹${codPending.toStringAsFixed(0)}', style: UiText.caption.copyWith(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 38,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showCodDepositSheet(context, codCollected, hubName),
+                              icon: const Icon(Icons.account_balance_wallet_rounded, size: 16, color: UiTone.primary),
+                              label: Text('Deposit Cash at Hub Counter', style: UiText.label.copyWith(fontWeight: FontWeight.bold, fontSize: 12, color: UiTone.primary)),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: UiTone.primary),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 20),
 
                 // Section 1: Route & Shift Details
@@ -610,6 +706,84 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
             child: const Text('Save Details'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCodDepositSheet(BuildContext context, double amount, String hubName) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.lg)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded, color: UiTone.primary, size: 24),
+                const SizedBox(width: 8),
+                Text('Depot Cash Settlement', style: UiText.h2.copyWith(fontWeight: FontWeight.w900)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Hand over cash collected from customers during today\'s doorstep deliveries to the $hubName shift manager.',
+              style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: UiTone.warningSoft,
+                borderRadius: BorderRadius.circular(UiRadius.md),
+                border: Border.all(color: UiTone.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Total Amount to Deposit:', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                  Text('₹${amount.toStringAsFixed(0)}', style: UiText.h2.copyWith(fontSize: 18, color: UiTone.warning, fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: UiTone.success,
+                      content: Text('✅ Settlement receipt recorded for ₹${amount.toStringAsFixed(0)} at $hubName!'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.check_circle_rounded, size: 18),
+                label: const Text('Confirm Handover to Manager', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: UiTone.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

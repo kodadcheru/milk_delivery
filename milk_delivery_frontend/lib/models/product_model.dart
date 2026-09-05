@@ -250,6 +250,10 @@ class ProductModel {
     int? dailyCapacitySlots,
     double? rating,
     String? icon,
+    String? subtitle,
+    String? qualityBadgeTitle,
+    Map<String, String>? qualitySpecs,
+    List<Map<String, String>>? trackingBadges,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -269,6 +273,10 @@ class ProductModel {
       dailyCapacitySlots: dailyCapacitySlots ?? this.dailyCapacitySlots,
       rating: rating ?? this.rating,
       icon: icon ?? this.icon,
+      subtitle: subtitle ?? this.subtitle,
+      qualityBadgeTitle: qualityBadgeTitle ?? this.qualityBadgeTitle,
+      qualitySpecs: qualitySpecs ?? this.qualitySpecs,
+      trackingBadges: trackingBadges ?? this.trackingBadges,
     );
   }
 }

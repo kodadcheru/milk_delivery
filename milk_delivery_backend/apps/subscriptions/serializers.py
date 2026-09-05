@@ -54,7 +54,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "customer", "created_at"]
 
     def get_effective_unit_price(self, obj):
-        if obj.effective_unit_price is not None and float(obj.effective_unit_price) > 0:
+        if obj.effective_unit_price is not None:
             return str(obj.effective_unit_price)
         if obj.product:
             base = float(obj.product.price_per_unit)

@@ -94,7 +94,7 @@ class DeliverySlot(models.Model):
             hub=self.hub,
             slot_time=self.name,
             delivery_date=date,
-            status__in=['PENDING', 'DELIVERED']
+            status__in=['PENDING', 'PICKED_UP', 'ON_THE_WAY', 'DELIVERED']
         ).count()
 
     def is_full(self, date):

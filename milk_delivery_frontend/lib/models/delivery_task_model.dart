@@ -182,6 +182,9 @@ class DeliveryTaskModel {
     bool? isCod,
     bool? cashCollected,
     double? cashAmount,
+    int? hubId,
+    Map<String, dynamic>? hubDetail,
+    int? dropsAhead,
   }) {
     return DeliveryTaskModel(
       id: id,
@@ -215,6 +218,9 @@ class DeliveryTaskModel {
       isCod: isCod ?? this.isCod,
       cashCollected: cashCollected ?? this.cashCollected,
       cashAmount: cashAmount ?? this.cashAmount,
+      hubId: hubId ?? this.hubId,
+      hubDetail: hubDetail ?? this.hubDetail,
+      dropsAhead: dropsAhead ?? this.dropsAhead,
     );
   }
 

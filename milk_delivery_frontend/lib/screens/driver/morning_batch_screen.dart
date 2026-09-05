@@ -353,14 +353,47 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
     return Scaffold(
       backgroundColor: UiTone.shellBackground,
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) {
+            final canPop = Navigator.canPop(ctx);
+            if (canPop) {
+              return IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                tooltip: 'Back',
+                onPressed: () => Navigator.pop(ctx),
+              );
+            }
+            if (widget.onReturnToDashboard != null) {
+              return IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                tooltip: 'Return to Drops',
+                onPressed: widget.onReturnToDashboard,
+              );
+            }
+            return const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.inventory_2_rounded, color: Colors.white, size: 22),
+            );
+          },
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_batchModeTitle,
-                style: UiText.h2.copyWith(color: Colors.white, fontSize: 16)),
-            Text(_batchModeTiming,
-                style: UiText.caption.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7), fontSize: 10.5)),
+            Text(
+              _batchModeTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.h2.copyWith(color: Colors.white, fontSize: 16),
+            ),
+            Text(
+              _batchModeTiming,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.caption.copyWith(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 10.5,
+              ),
+            ),
           ],
         ),
         backgroundColor: UiTone.ink,
@@ -724,10 +757,14 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
                         children: [
                           Text(
                             currentStop.customerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: UiText.bodyStrong.copyWith(fontWeight: FontWeight.w900, fontSize: 15),
                           ),
                           Text(
                             currentStop.customerPhone,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText),
                           ),
                         ],
@@ -1046,7 +1083,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
               children: [
                 _buildReceiptRow('Employment Type', 'Fixed Monthly Salaried Partner'),
                 const Divider(height: 16),
-                _buildReceiptRow('Monthly Salary (Paid by Hub)', '${widget.state.currentUser?.monthlySalary ?? '₹15,000 / Month'}'),
+                _buildReceiptRow('Monthly Salary (Paid by Hub)', (widget.state.currentUser != null && widget.state.currentUser!.monthlySalary > 0) ? '${UiFormat.price(widget.state.currentUser!.monthlySalary)} / Month' : '₹15,000 / Month'),
                 const Divider(height: 16),
                 _buildReceiptRow(_batchReceiptRowLabel, '${stops.length} / ${stops.length} Drops (100%)'),
                 const Divider(height: 16),
@@ -1135,7 +1172,7 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
     final snf = latestBatch?['snf_percentage'] != null ? '${latestBatch!['snf_percentage']}%' : '9.0%';
     final water = latestBatch?['water_percentage'] != null ? '${latestBatch!['water_percentage']}%' : '0.0%';
     final parsedP = latestBatch?['price_per_litre'] != null ? (double.tryParse(latestBatch!['price_per_litre'].toString()) ?? 68.0) : 68.0;
-    final price = '${UiFormat.price(parsedP)}/L';
+    final price = '₹${parsedP.toStringAsFixed(0)}/L';
     final product = latestBatch?['product_name']?.toString() ?? 'Pure Buffalo Milk';
     final batchCode = latestBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
 
@@ -1159,32 +1196,39 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: UiTone.success.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: UiTone.success.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.verified_rounded, color: UiTone.success, size: 18),
                     ),
-                    child: const Icon(Icons.verified_rounded, color: UiTone.success, size: 18),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Daily Milk Batch Certified 🥛',
-                        style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w800, color: UiTone.success),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Daily Milk Batch Certified 🥛',
+                            style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w800, color: UiTone.success),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '$product • $batchCode',
+                            style: UiText.caption.copyWith(fontSize: 11, color: UiTone.success, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        '$product • $batchCode',
-                        style: UiText.caption.copyWith(fontSize: 11, color: UiTone.success, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () => _showBatchLabQualityDialog(context),
                 icon: const Icon(Icons.edit_note_rounded, size: 14, color: UiTone.success),
@@ -1318,18 +1362,22 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Text('🥛', style: TextStyle(fontSize: 22)),
-                            const SizedBox(width: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Daily Batch Lab Certification', style: UiText.h2.copyWith(fontSize: 16)),
-                                Text('Enter lab quality parameters & litre rate', style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText)),
-                              ],
-                            ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Text('🥛', style: TextStyle(fontSize: 22)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Daily Batch Lab Certification', maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.h2.copyWith(fontSize: 16)),
+                                    Text('Enter lab quality parameters & litre rate', maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                       ],

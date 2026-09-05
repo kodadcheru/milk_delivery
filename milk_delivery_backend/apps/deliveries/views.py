@@ -144,7 +144,7 @@ class DeliveryTaskCompleteView(APIView):
             task.order.save()
 
         # Deduct wallet balance for subscription deliveries
-        if task.subscription and task.subscription.customer:
+        if not task.is_cod and task.subscription and task.subscription.customer:
             customer = task.subscription.customer
             if task.subscription.effective_unit_price:
                 unit_price = task.subscription.effective_unit_price
@@ -322,8 +322,8 @@ class DeliveryTaskStatusUpdateView(APIView):
             return Response({"detail": "Customers cannot update delivery task status."}, status=status.HTTP_403_FORBIDDEN)
 
         # Transition guard: never allow changing status of an already DELIVERED task
-        if task.status == DeliveryTask.Statuses.DELIVERED:
-            return Response({"detail": "Cannot change status of an already DELIVERED delivery task."}, status=status.HTTP_400_BAD_REQUEST)
+        if task.status in (DeliveryTask.Statuses.DELIVERED, DeliveryTask.Statuses.SKIPPED, DeliveryTask.Statuses.FAILED):
+            return Response({"detail": "Cannot change status of a terminal delivery task."}, status=status.HTTP_400_BAD_REQUEST)
 
         new_status = request.data.get("status")
         valid_statuses = [
@@ -398,10 +398,11 @@ class DeliveryShiftStartRouteView(APIView):
         elif shift == "EVENING":
             qs = qs.filter(Q(slot_time__icontains="PM") | Q(slot_time__icontains="17:") | Q(slot_time__icontains="18:") | Q(slot_time__icontains="19:"))
 
+        updated_task_ids = list(qs.values_list('id', flat=True))
         updated_count = qs.update(status=DeliveryTask.Statuses.PICKED_UP)
 
         # Notify customers
-        for task in DeliveryTask.objects.filter(driver=user, delivery_date=today, status=DeliveryTask.Statuses.PICKED_UP):
+        for task in DeliveryTask.objects.filter(id__in=updated_task_ids):
             if task.target_customer:
                 try:
                     Notification.objects.create(
@@ -438,18 +439,33 @@ class DeliverySummaryView(APIView):
         completed = tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count()
         pending = tasks.filter(status=DeliveryTask.Statuses.PENDING).count()
 
+        def get_vol_multiplier(p_size):
+            p_size = (p_size or '').lower()
+            if '500' in p_size:
+                return 0.5
+            if '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
+                return 2.0
+            return 1.0
+
+        def get_sub_vol(sub):
+            return get_vol_multiplier(sub.pack_size) * sub.quantity
+
+        def get_sub_rev(sub):
+            if sub.effective_unit_price:
+                return float(sub.effective_unit_price) * sub.quantity
+            if sub.product:
+                return float(sub.product.price_per_unit) * get_vol_multiplier(sub.pack_size) * sub.quantity
+            return 0.0
+
         # Real calculation of daily milk volume
-        daily_volume_liters = sum(s.quantity for s in active_subs)
+        daily_volume_liters = sum(get_sub_vol(s) for s in active_subs)
         if daily_volume_liters == 0 and total_deliveries > 0:
-            daily_volume_liters = sum((t.subscription.quantity if t.subscription else 1) for t in tasks)
+            daily_volume_liters = sum((get_sub_vol(t.subscription) if t.subscription else 1) for t in tasks)
 
         # Real calculation of GMV
-        gross_revenue = sum(float(s.product.price_per_unit * s.quantity) for s in active_subs)
+        gross_revenue = sum(get_sub_rev(s) for s in active_subs)
         if gross_revenue == 0.0 and total_deliveries > 0:
-            gross_revenue = sum(
-                float(t.subscription.product.price_per_unit * t.subscription.quantity)
-                for t in tasks if t.subscription and t.subscription.product
-            )
+            gross_revenue = sum(get_sub_rev(t.subscription) for t in tasks if t.subscription)
 
         # Real customer subscribers count
         subscribers_count = User.objects.filter(role=User.Roles.CUSTOMER).count()

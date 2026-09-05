@@ -79,7 +79,7 @@ class WalletTopUpView(APIView):
                 return Response({"detail": "Valid payment transaction/UTR reference is required for recharge."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Prevent duplicate top-ups with the same transaction reference
-            if WalletTransaction.objects.filter(description__icontains=payment_ref).exists():
+            if WalletTransaction.objects.filter(description__endswith=f"(Ref: {payment_ref})").exists():
                 return Response({"detail": "This payment reference has already been processed."}, status=status.HTTP_400_BAD_REQUEST)
 
             user = request.user
@@ -176,7 +176,7 @@ class RobustTokenObtainPairView(APIView):
         if not user:
             clean_phone = username_input.replace(" ", "").replace("-", "").replace("+91", "").strip()
             user_candidate = (
-                User.objects.filter(phone__icontains=clean_phone).first()
+                User.objects.filter(phone=clean_phone).first()
                 or User.objects.filter(email__iexact=username_input).first()
                 or User.objects.filter(username__iexact=username_input).first()
             )
@@ -253,7 +253,7 @@ class DriverLocationByOrderView(APIView):
         order = None
 
         # 1. Look up by LiveOrder ID
-        order = LiveOrder.objects.filter(id=order_id).select_related('driver', 'hub').first()
+        order = LiveOrder.objects.filter(id=order_id, customer=request.user).select_related('driver', 'hub').first()
         if order and order.driver:
             driver = order.driver
 
@@ -261,13 +261,9 @@ class DriverLocationByOrderView(APIView):
         if not driver:
             clean_id = str(order_id).replace("TASK-", "").replace("TASK#", "").replace("#", "").strip()
             if clean_id.isdigit():
-                task = DeliveryTask.objects.filter(id=int(clean_id)).select_related('driver', 'hub').first()
+                task = DeliveryTask.objects.filter(id=int(clean_id), subscription__customer=request.user).select_related('driver', 'hub').first()
                 if task and task.driver:
                     driver = task.driver
-
-        # 3. Direct driver user ID
-        if not driver and str(order_id).isdigit():
-            driver = User.objects.filter(id=int(order_id), role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]).first()
 
         # 4. Fallback to active customer delivery driver or hub driver
         if not driver and request.user.is_authenticated:

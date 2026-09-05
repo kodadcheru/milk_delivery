@@ -764,12 +764,12 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
                             width: double.infinity,
                             height: 44,
                             child: ElevatedButton.icon(
-                              onPressed: () => _showWithdrawModal(context, withdrawable > 0 ? withdrawable : totalEarnings),
+                              onPressed: withdrawable > 0 ? () => _showWithdrawModal(context, withdrawable) : null,
                               icon: const Icon(Icons.bolt_rounded, size: 18),
                               label: Text(
                                 isTelugu
-                                    ? 'తక్షణ బ్యాంక్ బదిలీ: ${UiFormat.price(withdrawable > 0 ? withdrawable : totalEarnings)} ⚡'
-                                    : 'Instant Hub Payout: ${UiFormat.price(withdrawable > 0 ? withdrawable : totalEarnings)} ⚡',
+                                    ? 'తక్షణ బ్యాంక్ బదిలీ: ${UiFormat.price(withdrawable)} ⚡'
+                                    : 'Instant Hub Payout: ${UiFormat.price(withdrawable)} ⚡',
                                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5),
                               ),
                               style: ElevatedButton.styleFrom(

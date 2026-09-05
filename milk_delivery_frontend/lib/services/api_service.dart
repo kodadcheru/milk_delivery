@@ -840,7 +840,7 @@ class ApiService {
             Uri.parse('$baseUrl/admin/credit-wallet/'),
             headers: _headers,
             body: jsonEncode({
-              'user_id': ?userId,
+              if (userId != null) 'user_id': userId,
               'amount': amount,
               'description': description,
             }),
@@ -1174,9 +1174,9 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({
               'items': items,
-              'delivery_date': ?deliveryDate,
-              'delivery_slot': ?deliverySlot,
-              'delivery_address': ?deliveryAddress,
+              if (deliveryDate != null) 'delivery_date': deliveryDate,
+              if (deliverySlot != null) 'delivery_slot': deliverySlot,
+              if (deliveryAddress != null) 'delivery_address': deliveryAddress,
               'delivery_latitude': deliveryLatitude != null ? (double.tryParse(deliveryLatitude.toStringAsFixed(6)) ?? deliveryLatitude) : null,
               'delivery_longitude': deliveryLongitude != null ? (double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude) : null,
               'delivery_type': deliveryType,

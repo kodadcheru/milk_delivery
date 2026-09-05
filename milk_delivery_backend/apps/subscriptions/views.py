@@ -140,14 +140,14 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 product=prod_obj,
                 defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
             )
-            if not inv.is_available or inv.available_slots < req_qty:
+            import math
+            slots_to_book = max(1, int(math.ceil(req_qty * volume_multiplier)))
+            if not inv.is_available or inv.available_slots < slots_to_book:
                 from rest_framework.exceptions import ValidationError
                 raise ValidationError(
                     f"Hub daily capacity limit reached for {prod_obj.name}. "
                     f"Only {inv.available_slots} slot(s) available at {hub.name}."
                 )
-            import math
-            slots_to_book = max(1, int(math.ceil(req_qty * volume_multiplier)))
             inv.booked_slots += slots_to_book
             inv.save(update_fields=["booked_slots"])
 
@@ -264,6 +264,7 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         from apps.deliveries.models import DeliveryTask
         from datetime import date, timedelta
+        import math
         prev_status = serializer.instance.status
         instance = serializer.save()
         if prev_status == Subscription.Statuses.CANCELLED and instance.status == Subscription.Statuses.ACTIVE:
@@ -276,6 +277,24 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
                     slot_time=instance.delivery_slot or '06:00 AM',
                     status=DeliveryTask.Statuses.PENDING,
                 )
+            if instance.hub and instance.product:
+                from apps.products.models import HubProductInventory
+                req_qty = instance.quantity or 1
+                pack_size_val = instance.pack_size or '1 Litre'
+                if '500' in pack_size_val.lower():
+                    vol_mult = 0.5
+                elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+                    vol_mult = 2.0
+                else:
+                    vol_mult = 1.0
+                slots_to_book = max(1, int(math.ceil(req_qty * vol_mult)))
+                inv, _ = HubProductInventory.objects.get_or_create(
+                    hub=instance.hub,
+                    product=instance.product,
+                    defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
+                )
+                from django.db.models import F
+                HubProductInventory.objects.filter(pk=inv.pk).update(booked_slots=F('booked_slots') + slots_to_book)
 
     def perform_destroy(self, instance):
         from apps.deliveries.models import DeliveryTask
@@ -287,7 +306,7 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.save(update_fields=["status"])
 
         # Cancel any upcoming pending delivery tasks immediately
-        DeliveryTask.objects.filter(subscription=instance, status=DeliveryTask.Statuses.PENDING).delete()
+        # Removed hard delete; tasks will be updated to SKIPPED later in the method
 
         # Release booked capacity slots in HubProductInventory
         if instance.hub and instance.product:
@@ -299,7 +318,8 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
                 vol_mult = 2.0
             else:
                 vol_mult = 1.0
-            slots_to_release = int(req_qty * vol_mult)
+            import math
+            slots_to_release = max(1, int(math.ceil(req_qty * vol_mult)))
             HubProductInventory.objects.filter(hub=instance.hub, product=instance.product).update(
                 booked_slots=Case(
                     When(booked_slots__gte=slots_to_release, then=F("booked_slots") - slots_to_release),
@@ -325,6 +345,9 @@ class SubscriptionPauseView(APIView):
         sub = Subscription.objects.filter(pk=pk).first()
         if not sub:
             return Response({"detail": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if sub.status != Subscription.Statuses.ACTIVE:
+            return Response({"detail": "Only active subscriptions can be paused"}, status=status.HTTP_400_BAD_REQUEST)
 
         is_allowed = (
             sub.customer == request.user
@@ -421,10 +444,11 @@ class SubscriptionResumeView(APIView):
 
         # Terminate/clear any active or future vacation pauses so daily task generator resumes deliveries immediately
         from apps.subscriptions.models import VacationPause
+        from datetime import timedelta
         VacationPause.objects.filter(
             subscription=sub,
             end_date__gte=date.today(),
-        ).delete()
+        ).update(end_date=date.today() - timedelta(days=1))
 
         # Resume skipped tasks for today or in the future back to PENDING
         DeliveryTask.objects.filter(

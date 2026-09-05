@@ -18,6 +18,7 @@ import 'screens/customer/profile_tab.dart';
 import 'screens/customer/notifications_screen.dart';
 import 'screens/driver/driver_dashboard_screen.dart';
 import 'screens/driver/driver_profile_tab.dart';
+import 'screens/driver/driver_route_map_screen.dart';
 import 'screens/provider/provider_dashboard_screen.dart';
 import 'screens/provider/provider_earnings_screen.dart';
 import 'screens/provider/provider_profile_tab.dart';
@@ -214,7 +215,7 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
 
       final driverScreens = [
         DriverDashboardScreen(state: widget.state),
-        DayWiseOrdersScreen(state: widget.state, role: 'DRIVER'),
+        DriverRouteMapScreen(state: widget.state, tasks: widget.state.deliveries),
         MorningBatchScreen(
           state: widget.state,
           onReturnToDashboard: () {
@@ -227,9 +228,8 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
 
       return Scaffold(
         extendBody: false,
-        appBar: _driverTab == 3
-            ? null
-            : AppBar(
+        appBar: _driverTab == 0
+            ? AppBar(
           backgroundColor: UiTone.ink,
           elevation: 0,
           title: InkWell(
@@ -318,7 +318,8 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
               },
             ),
           ],
-        ),
+        )
+      : null,
         body: IndexedStack(
           index: _driverTab.clamp(0, driverScreens.length - 1),
           children: driverScreens,
@@ -337,19 +338,19 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
               badgeText: pendingCount > 0 ? '$pendingCount' : null,
             ),
             const NextGenNavItem(
-              icon: Icons.calendar_month_outlined,
-              activeIcon: Icons.calendar_month_rounded,
-              label: 'Day Orders',
+              icon: Icons.map_outlined,
+              activeIcon: Icons.map_rounded,
+              label: 'Route Map',
             ),
             const NextGenNavItem(
               icon: Icons.inventory_2_outlined,
               activeIcon: Icons.inventory_2_rounded,
-              label: 'Batch Packing',
+              label: 'Crates',
             ),
             const NextGenNavItem(
-              icon: Icons.person_outline,
-              activeIcon: Icons.person_rounded,
-              label: 'Driver Profile',
+              icon: Icons.account_balance_wallet_outlined,
+              activeIcon: Icons.account_balance_wallet_rounded,
+              label: 'Account & Cash',
             ),
           ],
         ),

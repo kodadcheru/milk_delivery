@@ -343,7 +343,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       } else if (i == 0 && revenueByDay.containsKey('Today')) {
         val = revenueByDay['Today']!;
       } else {
-        val = widget.state.totalDailyRevenue > 0 ? widget.state.totalDailyRevenue * 0.8 : 4500.0;
+        val = 0.0;
       }
       data.add(MapEntry(dayName, val));
     }

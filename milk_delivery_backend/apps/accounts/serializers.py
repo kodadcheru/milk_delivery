@@ -40,6 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "customer_code",
             "driver_code",
+            "phone",
             "wallet_balance",
             "assigned_hub_name",
             "assigned_hub_code",

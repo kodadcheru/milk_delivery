@@ -105,7 +105,7 @@ class _SubscriptionAddressSelectionScreenState
 
     final currentUser = widget.state.currentUser;
     final balance = currentUser?.walletBalance ?? 0.0;
-    if (balance < widget.totalCost) {
+    if (balance < widget.singleDeliveryCost) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.redAccent,
@@ -184,8 +184,8 @@ class _SubscriptionAddressSelectionScreenState
 
         final currentUser = widget.state.currentUser;
         final balance = currentUser?.walletBalance ?? 0.0;
-        final hasEnoughBalance = balance >= widget.totalCost;
-        final amountNeeded = widget.totalCost - balance;
+        final hasEnoughBalance = balance >= widget.singleDeliveryCost;
+        final amountNeeded = widget.singleDeliveryCost - balance;
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),

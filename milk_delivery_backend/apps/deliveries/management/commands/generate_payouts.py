@@ -88,7 +88,19 @@ class Command(BaseCommand):
             total_revenue = Decimal("0")
             for task in completed_tasks.select_related("subscription__product", "order"):
                 if task.subscription:
-                    pr = task.subscription.effective_unit_price or (task.subscription.product.price_per_unit if task.subscription.product else Decimal("0.00"))
+                    if task.subscription.effective_unit_price:
+                        pr = task.subscription.effective_unit_price
+                    elif task.subscription.product:
+                        base = task.subscription.product.price_per_unit
+                        p_size = (task.subscription.pack_size or '').lower()
+                        if '500' in p_size:
+                            pr = base * Decimal("0.5")
+                        elif '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
+                            pr = base * Decimal("2.0")
+                        else:
+                            pr = base
+                    else:
+                        pr = Decimal("0.00")
                     total_revenue += Decimal(str(pr)) * task.subscription.quantity
                 elif task.order:
                     total_revenue += task.order.total_amount

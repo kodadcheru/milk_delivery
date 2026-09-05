@@ -300,21 +300,33 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
       appBar: AppBar(
         backgroundColor: UiTone.ink,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-          onPressed: () => Navigator.pop(context),
+        leading: Builder(
+          builder: (ctx) {
+            final canPop = Navigator.canPop(ctx);
+            return IconButton(
+              icon: Icon(canPop ? Icons.arrow_back_ios_new : Icons.alt_route_rounded, color: Colors.white, size: canPop ? 18 : 22),
+              tooltip: canPop ? 'Back' : 'Route Navigation',
+              onPressed: () {
+                if (canPop) Navigator.pop(ctx);
+              },
+            );
+          },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               allCompleted ? 'Shift Completed • Return to Depot' : 'Morning Route Map Navigation',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: UiText.h2.copyWith(fontSize: 16, color: Colors.white),
             ),
             Text(
               allCompleted
                   ? 'All ${tasks.length} Drops Delivered • $hubName'
                   : '${tasks.length} Drops • $hubName Sector',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: UiText.label.copyWith(
                 fontSize: 11,
                 color: allCompleted ? UiTone.success : UiTone.secondary,
@@ -457,6 +469,8 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                           allCompleted
                               ? '🎉 Shift Completed • 100% Drops Delivered!'
                               : 'TSP Shortest Path Navigation 🚀',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: UiText.bodyStrong.copyWith(
                             fontSize: 11.5,
                             color: allCompleted ? UiTone.success : UiTone.accentBlue,
@@ -466,11 +480,14 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                           allCompleted
                               ? 'Tap to navigate return to $hubName for crate reconciliation'
                               : 'Saved ${_tspResult.distanceSavedKm.toStringAsFixed(1)} km & ${_tspResult.fuelSavedLiters.toStringAsFixed(2)}L fuel (${tasks.length} Drops)',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: UiText.body.copyWith(fontSize: 10.5),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -599,8 +616,11 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           selectedTask.slotTime,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],

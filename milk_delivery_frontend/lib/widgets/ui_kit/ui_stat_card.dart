@@ -119,12 +119,22 @@ class UiStatCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-          Text(
-            value,
-            style: UiText.h2.copyWith(fontSize: 20, fontWeight: FontWeight.w900),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: UiText.h2.copyWith(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: UiText.caption),
+          Text(
+            label,
+            style: UiText.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

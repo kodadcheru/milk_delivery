@@ -1109,6 +1109,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> deleteCustomerAddress(int addressId) async {
+    final success = await ApiService.deleteCustomerAddress(addressId);
+    if (!success) return false;
+
     final wasDefaultOrActive = activeAddress?.id == addressId || 
         savedAddresses.any((a) => a.id == addressId && a.isDefault);
 
@@ -1129,7 +1132,6 @@ class AppState extends ChangeNotifier {
     await _cacheAddressesLocally(); // Update local cache
     notifyListeners();
 
-    await ApiService.deleteCustomerAddress(addressId);
     await fetchSavedAddresses();
     return true;
   }
@@ -1446,20 +1448,7 @@ class AppState extends ChangeNotifier {
       await reloadAllData();
       return true;
     } else {
-      subscriptions = subscriptions.map((s) {
-        if (s.id == subId) {
-          return s.copyWith(
-            deliveryAddress: deliveryAddress,
-            deliverySlot: deliverySlot,
-            deliveryLatitude: deliveryLatitude ?? s.deliveryLatitude,
-            deliveryLongitude: deliveryLongitude ?? s.deliveryLongitude,
-            deliveryInstructions: deliveryInstructions ?? s.deliveryInstructions,
-          );
-        }
-        return s;
-      }).toList();
-      notifyListeners();
-      return true;
+      return false;
     }
   }
 

@@ -14,7 +14,6 @@ import '../../widgets/ui_kit/ui_kit.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 import '../../widgets/driver_delivery_chat_sheet.dart';
 import '../../widgets/driver_order_details_sheet.dart';
-import '../../widgets/order_status_tracker.dart';
 import '../common/day_wise_orders_screen.dart';
 import 'driver_route_map_screen.dart';
 import 'morning_batch_screen.dart';
@@ -718,14 +717,49 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Route Action Buttons
+                  // Single Primary Action: Start Route in Google Maps
+                  Builder(
+                    builder: (context) {
+                      final filterTag = _selectedShift == 'MORNING' ? 'am' : 'pm';
+                      final shiftTasks = tasks.where((t) => t.slotTime.toLowerCase().contains(filterTag)).toList();
+                      final currentShiftTasks = shiftTasks.isNotEmpty ? shiftTasks : tasks;
+                      final isShiftDone = currentShiftTasks.isNotEmpty && currentShiftTasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
+
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _startDeliveriesWithGoogleMapsTSP(context),
+                          icon: Icon(
+                            isShiftDone ? Icons.warehouse_rounded : Icons.navigation_rounded,
+                            size: 18,
+                            color: isShiftDone ? Colors.white : const Color(0xFF0D7C66),
+                          ),
+                          label: Text(
+                            isShiftDone
+                                ? '🎉 Shift Deliveries Done • Return to Depot 🏬'
+                                : '🚀 Start Deliveries • Drop Pins in Google Maps',
+                            style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: isShiftDone ? Colors.white : const Color(0xFF0D7C66)),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isShiftDone ? UiTone.primary : Colors.white,
+                            foregroundColor: isShiftDone ? Colors.white : const Color(0xFF0D7C66),
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Compact secondary actions: Crate Checklist & Shift Calendar
                   Row(
                     children: [
                       Expanded(
-                        flex: 5,
                         child: SizedBox(
-                          height: 42,
-                          child: ElevatedButton.icon(
+                          height: 38,
+                          child: OutlinedButton.icon(
                             onPressed: () {
                               final filterTag = _selectedShift == 'MORNING' ? 'AM' : 'PM';
                               final shiftLabel = _selectedShift == 'MORNING' ? 'Morning Batch' : 'Evening Batch';
@@ -740,50 +774,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.inventory_2_rounded, size: 16, color: UiTone.primary),
-                            label: Text('Batch Crates 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 11.5, color: UiTone.primary)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: UiTone.primary,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        flex: 4,
-                        child: SizedBox(
-                          height: 42,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              final targetTasks = filteredTasks.isNotEmpty ? filteredTasks : widget.state.deliveries;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (ctx) => DriverRouteMapScreen(
-                                    state: widget.state,
-                                    tasks: targetTasks,
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.map_rounded, size: 15, color: Colors.white),
-                            label: Text('Route Map 🗺️', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.white)),
+                            icon: const Icon(Icons.inventory_2_rounded, size: 15, color: Colors.white),
+                            label: Text('Crate Checklist 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 11, color: Colors.white)),
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
-                              backgroundColor: Colors.white.withValues(alpha: 0.15),
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.2),
+                              backgroundColor: Colors.white.withValues(alpha: 0.12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Expanded(
-                        flex: 4,
                         child: SizedBox(
-                          height: 42,
+                          height: 38,
                           child: OutlinedButton.icon(
                             onPressed: () {
                               Navigator.push(
@@ -797,50 +801,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               );
                             },
                             icon: const Icon(Icons.calendar_month_rounded, size: 15, color: Colors.white),
-                            label: Text('Calendar 📅', style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.white)),
+                            label: Text('Shift Calendar 📅', style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 11, color: Colors.white)),
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
-                              backgroundColor: Colors.white.withValues(alpha: 0.15),
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.2),
+                              backgroundColor: Colors.white.withValues(alpha: 0.12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                             ),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 10),
-                  Builder(
-                    builder: (context) {
-                      final filterTag = _selectedShift == 'MORNING' ? 'am' : 'pm';
-                      final shiftTasks = tasks.where((t) => t.slotTime.toLowerCase().contains(filterTag)).toList();
-                      final currentShiftTasks = shiftTasks.isNotEmpty ? shiftTasks : tasks;
-                      final isShiftDone = currentShiftTasks.isNotEmpty && currentShiftTasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
-
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _startDeliveriesWithGoogleMapsTSP(context),
-                          icon: Icon(
-                            isShiftDone ? Icons.warehouse_rounded : Icons.navigation_rounded,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                          label: Text(
-                            isShiftDone
-                                ? '🎉 All Shift Deliveries Done • Return to Depot 🏬'
-                                : '🚀 Start Deliveries & Drop TSP Pins in Google Maps',
-                            style: UiText.label.copyWith(fontWeight: FontWeight.w900, fontSize: 12.5, color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isShiftDone ? UiTone.primary : UiTone.accentBlue,
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                          ),
-                        ),
-                      );
-                    },
                   ),
                 ],
               ),
@@ -861,10 +831,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMetricItem('Total Stops', '$totalAllStops', Icons.local_shipping_outlined, UiTone.accentBlue, UiTone.infoSoft),
-                      _buildMetricItem('Pending', '$totalPendingCount', Icons.pending_actions_rounded, UiTone.warning, UiTone.warningSoft),
-                      _buildMetricItem('Delivered', '$totalCompletedCount', Icons.check_circle_outline_rounded, UiTone.success, UiTone.successSoft),
-                      _buildMetricItem('Shift Zone', hubName.split(' ').first, Icons.warehouse_rounded, UiTone.primary, UiTone.primarySoft),
+                      Expanded(child: _buildMetricItem('Total Stops', '$totalAllStops', Icons.local_shipping_outlined, UiTone.accentBlue, UiTone.infoSoft)),
+                      Expanded(child: _buildMetricItem('Pending', '$totalPendingCount', Icons.pending_actions_rounded, UiTone.warning, UiTone.warningSoft)),
+                      Expanded(child: _buildMetricItem('Delivered', '$totalCompletedCount', Icons.check_circle_outline_rounded, UiTone.success, UiTone.successSoft)),
+                      Expanded(child: _buildMetricItem('Shift Zone', hubName.split(' ').first, Icons.warehouse_rounded, UiTone.primary, UiTone.primarySoft)),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -996,6 +966,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
             // ── 6. Daily Subscriptions Route Stops List ──
             if (_selectedFilterIndex != 3) ...[
+              if ((_selectedFilterIndex == 0 || _selectedFilterIndex == 1) && doorstepGroups.any((g) => g.isPending)) ...[
+                Builder(
+                  builder: (context) {
+                    final nextPendingIdx = doorstepGroups.indexWhere((g) => g.isPending);
+                    if (nextPendingIdx == -1) return const SizedBox.shrink();
+                    final nextGroup = doorstepGroups[nextPendingIdx];
+                    return _buildUpNextCard(nextGroup, nextPendingIdx);
+                  },
+                ),
+              ],
               UiSectionHeader(
                 title: '🥛 Route Stops & Doorsteps',
                 count: doorstepGroups.length,
@@ -1023,6 +1003,182 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Up Next Active Stop Highlight Card ──
+
+  Widget _buildUpNextCard(DoorstepGroup group, int idx) {
+    final totalItemsCount = group.tasks.fold<int>(0, (sum, t) => sum + (t.subscriptionDetail?.quantity ?? t.quantity));
+    final lat = group.customerLatitude;
+    final lon = group.customerLongitude;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0D7C66), Color(0xFF0F5A4B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(UiRadius.lg),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.near_me_rounded, size: 12, color: Color(0xFF0D7C66)),
+                    const SizedBox(width: 5),
+                    Text(
+                      'ACTIVE DROP • STOP #${idx + 1}',
+                      style: UiText.caption.copyWith(
+                        color: const Color(0xFF0D7C66),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                ),
+                child: Text(
+                  group.slotTime.isNotEmpty ? group.slotTime : '05:30 AM',
+                  style: UiText.caption.copyWith(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      group.customerName,
+                      style: UiText.h2.copyWith(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      group.deliveryAddress,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.caption.copyWith(color: Colors.white.withValues(alpha: 0.88), fontSize: 11.5, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.2)),
+                    icon: const Icon(Icons.phone_rounded, color: Colors.white, size: 18),
+                    tooltip: 'Call',
+                    onPressed: () => _callCustomer(context, group.customerPhone),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.2)),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 18),
+                    tooltip: 'WhatsApp',
+                    onPressed: () => _sendWhatsAppArrivalPing(context, group.customerName, group.customerPhone, group.deliveryAddress),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Item Pills
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: group.tasks.map((t) {
+              final qty = t.subscriptionDetail?.quantity ?? t.quantity;
+              final prodName = t.subscriptionDetail?.productDetail?.name ?? t.productName;
+              final prodIcon = t.subscriptionDetail?.productDetail?.icon ?? '🥛';
+              final packSize = t.packSize;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '$prodIcon $qty x $prodName ($packSize)',
+                  style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: SizedBox(
+                  height: 42,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _launchGoogleMapsNavigation(context, lat, lon, group.customerName),
+                    icon: const Icon(Icons.navigation_rounded, size: 16, color: Colors.white),
+                    label: Text('Navigate Maps', style: UiText.label.copyWith(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 5,
+                child: SizedBox(
+                  height: 42,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _handleCompleteDeliveryWithCamera(context, group),
+                    icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Color(0xFF0D7C66)),
+                    label: Text(
+                      'Deliver ($totalItemsCount items) 📸',
+                      style: UiText.label.copyWith(color: const Color(0xFF0D7C66), fontWeight: FontWeight.w900, fontSize: 12),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF0D7C66),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1055,57 +1211,46 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Stop #, Assignment Badge, Date & Shift Slot, & Status Pill
+          // Row 1: Stop #, Slot Pill & Status Pill
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: UiTone.ink,
-                      borderRadius: BorderRadius.circular(UiRadius.xs),
-                    ),
-                    child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
-                  ),
-                  const SizedBox(width: 6),
-                  if (group.driverId == widget.state.currentUser?.id)
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: UiTone.successSoft,
+                        color: UiTone.ink,
                         borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
-                      child: Text('ASSIGNED TO YOU', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.success)),
-                    )
-                  else if (group.driverId == null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: UiTone.warningSoft,
-                        borderRadius: BorderRadius.circular(UiRadius.xs),
-                      ),
-                      child: Text('OPEN POOL', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.warning)),
+                      child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
                     ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                    decoration: BoxDecoration(
-                      color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.12) : const Color(0xFF0D7C66).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(UiRadius.xs),
-                    ),
-                    child: Text(
-                      '📅 $dateStr • ${isEvening ? "🌙 Evening" : "☀️ Morning"} • $slotStr',
-                      style: UiText.caption.copyWith(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: isEvening ? const Color(0xFF7C3AED).withValues(alpha: 0.12) : const Color(0xFF0D7C66).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
+                        ),
+                        child: Text(
+                          '${isEvening ? "🌙 PM" : "☀️ AM"} • $slotStr',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.caption.copyWith(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               UiStatusPill(
                 status: isDone ? 'DELIVERED' : (isSkipped ? 'SKIPPED' : 'PENDING'),
                 dense: true,
@@ -1118,13 +1263,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Row(
             children: [
               CircleAvatar(
+                radius: 18,
                 backgroundColor: UiTone.primarySoft,
                 child: Text(
                   custName.isNotEmpty ? custName[0].toUpperCase() : 'C',
-                  style: UiText.bodyStrong.copyWith(color: UiTone.primary, fontSize: 14, fontWeight: FontWeight.w900),
+                  style: UiText.bodyStrong.copyWith(color: UiTone.primary, fontSize: 13, fontWeight: FontWeight.w900),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1133,29 +1279,31 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       custName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: UiText.bodyStrong.copyWith(fontSize: 14, fontWeight: FontWeight.w900),
+                      style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w900),
                     ),
-                    Text(custPhone, style: UiText.caption.copyWith(fontSize: 11.5, color: UiTone.softText)),
+                    Text(custPhone, maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText)),
                   ],
                 ),
               ),
               if (group.tasks.length > 1)
                 Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.only(right: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
                     color: UiTone.primarySoft,
                     borderRadius: BorderRadius.circular(UiRadius.xs),
                   ),
                   child: Text(
-                    '📦 ${group.tasks.length} ORDERS',
-                    style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.w900, color: UiTone.primary),
+                    '${group.tasks.length} PKGS',
+                    style: UiText.caption.copyWith(fontSize: 9, fontWeight: FontWeight.w900, color: UiTone.primary),
                   ),
                 ),
               // In-App Live Chat Button
               IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
-                icon: const Icon(Icons.forum_rounded, color: UiTone.primary, size: 16),
+                icon: const Icon(Icons.forum_rounded, color: UiTone.primary, size: 15),
                 tooltip: 'Live Chat with Customer',
                 onPressed: () {
                   DriverDeliveryChatSheet.show(
@@ -1171,19 +1319,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   );
                 },
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               // Call Button
               IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 style: IconButton.styleFrom(backgroundColor: UiTone.primarySoft),
-                icon: const Icon(Icons.phone_rounded, color: UiTone.primary, size: 16),
+                icon: const Icon(Icons.phone_rounded, color: UiTone.primary, size: 15),
                 tooltip: 'Call Customer',
                 onPressed: () => _callCustomer(context, custPhone),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               // WhatsApp Arrival Ping Button
               IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 style: IconButton.styleFrom(backgroundColor: UiTone.infoSoft),
-                icon: const Icon(Icons.chat_bubble_outline_rounded, color: UiTone.accentBlue, size: 16),
+                icon: const Icon(Icons.chat_bubble_outline_rounded, color: UiTone.accentBlue, size: 15),
                 tooltip: 'WhatsApp Ping',
                 onPressed: () => _sendWhatsAppArrivalPing(context, custName, custPhone, group.deliveryAddress),
               ),
@@ -1256,10 +1408,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          OrderStatusTracker(status: firstTask?.status ?? 'PENDING', orderType: 'SUBSCRIPTION'),
-          const SizedBox(height: 10),
-
           // Row 4: All Ordered Items at this Doorstep
           ...group.tasks.map((task) {
             final qty = task.subscriptionDetail?.quantity ?? task.quantity;
@@ -1321,103 +1469,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             ),
           ],
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // Row 5: Action Button (Camera Proof or Status)
+          // Row 5: Action Buttons (Skip or Deliver with Camera)
           if (!isDone && !isSkipped) ...[
-            if (firstTask != null && (firstTask.status == 'PENDING' || firstTask.status.isEmpty))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 40,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      for (final t in group.tasks) {
-                        await ApiService.updateDeliveryTaskStatus(t.id, 'PICKED_UP');
-                      }
-                      await widget.state.reloadAllData();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: Color(0xFF0D7C66),
-                            content: Text('📦 Marked as Order Picked! Customer status updated.'),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.inventory_2_rounded, size: 16, color: Colors.white),
-                    label: Text(
-                      'Order Picked 📦',
-                      style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D7C66),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                    ),
-                  ),
-                ),
-              )
-            else if (firstTask != null && firstTask.status == 'PICKED_UP')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 40,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      for (final t in group.tasks) {
-                        await ApiService.updateDeliveryTaskStatus(t.id, 'ON_THE_WAY');
-                      }
-                      await widget.state.reloadAllData();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: Color(0xFF7C3AED),
-                            content: Text('🛵 Marked as On The Way! Customer notified.'),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.navigation_rounded, size: 16, color: Colors.white),
-                    label: Text(
-                      'Heading to Customer (On The Way 🛵)',
-                      style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7C3AED),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
-                    ),
-                  ),
-                ),
-              )
-            else if (firstTask?.status == 'ON_THE_WAY')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDF4FF),
-                    borderRadius: BorderRadius.circular(UiRadius.sm),
-                    border: Border.all(color: const Color(0xFFF0ABFC)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.flash_on_rounded, size: 15, color: Color(0xFFC026D3)),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Active Drop: Customer is tracking you live!',
-                        style: UiText.caption.copyWith(color: const Color(0xFF86198F), fontWeight: FontWeight.bold, fontSize: 11.5),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             Row(
               children: [
                 Expanded(
@@ -1443,14 +1498,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _handleCompleteDeliveryWithCamera(context, group),
                       icon: const Icon(Icons.camera_alt_rounded, size: 16),
-                      label: Text(
-                        group.tasks.length > 1 ? 'Deliver All (${totalItemsCount} Items) 📸' : 'Deliver + Photo Proof 📸',
-                        style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          group.tasks.length > 1 ? 'Deliver All (${totalItemsCount} Items) 📸' : 'Deliver + Photo Proof 📸',
+                          style: UiText.label.copyWith(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.primary,
+                        backgroundColor: const Color(0xFF0D7C66),
                         foregroundColor: Colors.white,
-                        elevation: 0,
+                        elevation: 1,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                       ),
                     ),
@@ -1518,29 +1576,33 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: UiTone.infoSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                      child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                      child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
-                    ),
-                    if (order.isCod) ...[
-                      const SizedBox(width: 6),
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: UiTone.infoSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
+                      ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                        child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                        decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                        child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
                       ),
+                      if (order.isCod) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
+                          child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
+                const SizedBox(width: 6),
                 Row(
                   children: [
                     Container(
@@ -1600,8 +1662,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               overflow: TextOverflow.ellipsis,
               style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5),
             ),
-            const SizedBox(height: 10),
-            OrderStatusTracker(status: order.status, orderType: 'EXPRESS'),
             const SizedBox(height: 12),
 
             if (!isDelivered)
@@ -1724,9 +1784,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           child: Icon(icon, color: fg, size: 16),
         ),
         const SizedBox(height: 6),
-        Text(val, style: UiText.h2.copyWith(fontWeight: FontWeight.w900, fontSize: 15)),
+        Text(
+          val,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: UiText.h2.copyWith(fontWeight: FontWeight.w900, fontSize: 15),
+        ),
         const SizedBox(height: 1),
-        Text(label, style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 10, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 10, fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }

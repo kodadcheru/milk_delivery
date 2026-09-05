@@ -141,7 +141,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   Timer? _historyPollTimer;
 
   Future<void> _loadHistory() async {
-    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : AppConfig.supportPhone;
+    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : (widget.state.currentUser?.username.isNotEmpty == true ? widget.state.currentUser!.username : widget.state.currentUser?.id.toString() ?? AppConfig.supportPhone);
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
       final serverMsgs = history.map((h) {
@@ -165,7 +165,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   }
 
   Future<void> _syncIncomingMessages() async {
-    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : AppConfig.supportPhone;
+    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : (widget.state.currentUser?.username.isNotEmpty == true ? widget.state.currentUser!.username : widget.state.currentUser?.id.toString() ?? AppConfig.supportPhone);
     final history = await ApiService.fetchSupportChatHistory(phone);
     if (history.isNotEmpty && mounted) {
       final serverMsgs = history.map((h) {
@@ -235,7 +235,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     _scrollToBottom();
 
     // 2. Transmit to backend
-    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : AppConfig.supportPhone;
+    final phone = (widget.state.currentUser?.phone.isNotEmpty == true) ? widget.state.currentUser!.phone : (widget.state.currentUser?.username.isNotEmpty == true ? widget.state.currentUser!.username : widget.state.currentUser?.id.toString() ?? AppConfig.supportPhone);
     ApiService.sendSupportChatMessage(
       phone: phone,
       text: trimmed,
