@@ -126,6 +126,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     ),
                     const SizedBox(height: 14),
 
+                    // ── Next-Gen Bookings Live Tracking Banner ──
+                    _buildNextGenBookingsHero(context, isTelugu, liveOrders, subTasks),
+                    const SizedBox(height: 10),
+
                     // ── Dual Top Sliding Tab Selector: Express Orders & Subscriptions ──
                     Container(
                       padding: const EdgeInsets.all(4),
@@ -282,6 +286,188 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNextGenBookingsHero(
+    BuildContext context,
+    bool isTelugu,
+    List<LiveOrderModel> liveOrders,
+    List<DeliveryTaskModel> subTasks,
+  ) {
+    LiveOrderModel? inTransitOrder;
+    for (final o in liveOrders) {
+      if (o.status.toUpperCase() == 'OUT_FOR_DELIVERY' || o.status.toUpperCase() == 'IN_TRANSIT') {
+        inTransitOrder = o;
+        break;
+      }
+    }
+
+    final activeOrdersCount = liveOrders.where((o) => _isActiveOrder(o.status)).length;
+    final activeTasksCount = subTasks.where((t) => _isActiveTask(t.status)).length;
+
+    if (inTransitOrder != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0D7C66), Color(0xFF14B8A6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Text('🛵', style: TextStyle(fontSize: 22)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4ADE80),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isTelugu ? 'డ్రైవర్ దారిలో ఉన్నారు!' : 'Driver on the way!',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Order #${inTransitOrder.id} • ${inTransitOrder.deliverySlot}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LiveDriverTrackingScreen(
+                      state: widget.state,
+                      liveOrder: inTransitOrder,
+                      orderTitle: 'Express Order #${inTransitOrder!.id}',
+                      deliveryAddress: inTransitOrder.deliveryAddress,
+                      driverName: inTransitOrder.driverName,
+                      driverPhone: inTransitOrder.driverPhone,
+                      deliveryOtp: inTransitOrder.deliveryOtp,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF0D7C66),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              child: Text(
+                isTelugu ? 'లైవ్ మ్యాప్ 🗺️' : 'Live Map 🗺️',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: UiTone.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('⚡', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isTelugu ? 'లైవ్ బుకింగ్స్ ట్రాకర్' : 'Live Bookings Tracker',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: UiTone.ink),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isTelugu
+                        ? '$activeOrdersCount తక్షణ • $activeTasksCount డైలీ డ్రాప్స్'
+                        : '$activeOrdersCount Express • $activeTasksCount Daily Active',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.alarm_rounded, size: 12, color: Color(0xFF0D7C66)),
+                const SizedBox(width: 4),
+                Text(
+                  '06:00 AM Drop',
+                  style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

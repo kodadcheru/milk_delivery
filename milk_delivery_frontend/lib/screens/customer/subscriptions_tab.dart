@@ -6,6 +6,9 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
+import '../../widgets/subscriptions/interactive_week_scrubber.dart';
+import '../../widgets/delivery_calendar_view.dart';
+import '../../services/api_service.dart';
 
 class SubscriptionsTab extends StatefulWidget {
   final AppState state;
@@ -18,7 +21,8 @@ class SubscriptionsTab extends StatefulWidget {
 
 class _SubscriptionsTabState extends State<SubscriptionsTab> {
   int _selectedSegment = 0; // 0 = Active, 1 = Cancelled
-
+  DateTime _selectedForecastDate = DateTime.now().add(const Duration(days: 1));
+  bool _showFullCalendar = false;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +181,24 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 14),
+
+                      // ── 2. Next-Gen 7-Day Doorstep Forecast Scrubber ──
+                      InteractiveWeekScrubber(
+                        selectedDate: _selectedForecastDate,
+                        onDateSelected: (date) {
+                          setState(() => _selectedForecastDate = date);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+
+                      // ── 2b. Day Schedule Summary & Vacation Mode Action Bar ──
+                      _buildForecastActionCard(context, isTelugu, activeSubs),
+
+                      if (_showFullCalendar) ...[
+                        const SizedBox(height: 14),
+                        DeliveryCalendarView(state: widget.state),
+                      ],
                     ],
                   ),
                 ),
@@ -365,6 +387,245 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     );
   }
 
+  Widget _buildForecastActionCard(BuildContext context, bool isTelugu, List<SubscriptionModel> activeSubs) {
+    final now = DateTime.now();
+    final isToday = _selectedForecastDate.year == now.year &&
+        _selectedForecastDate.month == now.month &&
+        _selectedForecastDate.day == now.day;
+    final tomorrow = now.add(const Duration(days: 1));
+    final isTomorrow = _selectedForecastDate.year == tomorrow.year &&
+        _selectedForecastDate.month == tomorrow.month &&
+        _selectedForecastDate.day == tomorrow.day;
+
+    String dayLabel;
+    if (isToday) {
+      dayLabel = isTelugu ? 'ఈరోజు డ్రాప్స్' : "Today's Scheduled Drops";
+    } else if (isTomorrow) {
+      dayLabel = isTelugu ? 'రేపటి డ్రాప్స్ (06:00 AM)' : "Tomorrow's Scheduled Drops (06:00 AM)";
+    } else {
+      dayLabel = isTelugu
+          ? '${_selectedForecastDate.day}/${_selectedForecastDate.month} డ్రాప్స్'
+          : "Drops on ${_selectedForecastDate.day} ${_getMonthName(_selectedForecastDate.month)}";
+    }
+
+    final scheduledSubs = activeSubs.where((s) {
+      if (s.status != 'ACTIVE') return false;
+      if (s.scheduleType == 'ALTERNATE_DAYS') {
+        try {
+          final diff = _selectedForecastDate.difference(DateTime.parse(s.startDate)).inDays;
+          return diff >= 0 && diff % 2 == 0;
+        } catch (_) {
+          return true;
+        }
+      }
+      return true;
+    }).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text('🥛', style: TextStyle(fontSize: 14)),
+                  const SizedBox(width: 6),
+                  Text(
+                    dayLabel,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: scheduledSubs.isNotEmpty
+                      ? UiTone.primary.withValues(alpha: 0.1)
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  scheduledSubs.isNotEmpty
+                      ? '${scheduledSubs.length} ${scheduledSubs.length == 1 ? "Item" : "Items"}'
+                      : 'No drops',
+                  style: TextStyle(
+                    color: scheduledSubs.isNotEmpty ? UiTone.primary : Colors.grey.shade600,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (scheduledSubs.isNotEmpty) ...[
+            ...scheduledSubs.map((s) {
+              final pName = s.productDetail?.name ?? 'Fresh Milk';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Text(s.productDetail?.icon ?? '🥛', style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${widget.state.translateProduct(pName)} (${s.packSize})',
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    Text(
+                      'Qty: ${s.quantity}',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: UiTone.primary),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ] else ...[
+            Text(
+              isTelugu
+                  ? 'ఈ రోజున డెలివరీలు ఏవీ లేవు.'
+                  : 'No milk deliveries scheduled for this day (off-day or paused).',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 11.5, fontStyle: FontStyle.italic),
+            ),
+          ],
+          const Divider(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => _showVacationModePicker(context),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: UiTone.warningSoft,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: UiTone.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🏖️', style: TextStyle(fontSize: 13)),
+                        const SizedBox(width: 6),
+                        Text(
+                          isTelugu ? 'సెలవు మోడ్' : 'Vacation Mode',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _showFullCalendar = !_showFullCalendar);
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: UiTone.surfaceMuted,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: UiTone.surfaceBorder),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(_showFullCalendar ? Icons.expand_less_rounded : Icons.calendar_month_rounded, size: 14, color: UiTone.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          _showFullCalendar
+                              ? (isTelugu ? 'క్యాలెండర్ దాచు' : 'Hide Calendar')
+                              : (isTelugu ? 'నెల క్యాలెండర్' : 'Monthly View'),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: UiTone.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showVacationModePicker(BuildContext context) async {
+    final now = DateTime.now();
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: now,
+      lastDate: DateTime(now.year + 1),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: UiTone.primary,
+              onPrimary: Colors.white,
+              onSurface: UiTone.ink,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
+      for (var i = 0; i <= picked.end.difference(picked.start).inDays; i++) {
+        final date = picked.start.add(Duration(days: i));
+        final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        for (var s in activeSubs) {
+          await ApiService.pauseSubscription(s.id, dateStr, dateStr);
+        }
+      }
+      await widget.state.reloadAllData(silent: true);
+      if (context.mounted) {
+        final startStr = '${picked.start.day} ${_getMonthName(picked.start.month)}';
+        final endStr = '${picked.end.day} ${_getMonthName(picked.end.month)}';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: UiTone.warning,
+            content: Text('⏸️ Deliveries paused from $startStr to $endStr.'),
+          ),
+        );
+      }
+    }
+  }
+
+  String _getMonthName(int month) {
+    const names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return (month >= 1 && month <= 12) ? names[month] : '';
+  }
+
 
   Widget _buildSubscriptionCard(BuildContext context, SubscriptionModel sub, bool isTelugu) {
     final prod = sub.productDetail;
@@ -499,6 +760,91 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               ),
             ],
           ),
+          if (!isCancelled && !isPaused) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text('⚡', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 6),
+                      Text(
+                        isTelugu ? 'రేపటి పరిమాణం:' : "Tomorrow's Quantity:",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: sub.quantity > 1
+                            ? () async {
+                                HapticFeedback.lightImpact();
+                                await widget.state.updateSubscriptionQuantity(sub.id, sub.quantity - 1);
+                              }
+                            : null,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: sub.quantity > 1 ? Colors.white : Colors.grey.shade200,
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Icon(
+                            Icons.remove_rounded,
+                            size: 14,
+                            color: sub.quantity > 1 ? const Color(0xFF1E293B) : Colors.grey,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '${sub.quantity}',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: sub.quantity < 10
+                            ? () async {
+                                HapticFeedback.lightImpact();
+                                await widget.state.updateSubscriptionQuantity(sub.id, sub.quantity + 1);
+                              }
+                            : null,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: const Icon(
+                            Icons.add_rounded,
+                            size: 14,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (isCancelled) ...[
             const SizedBox(height: 14),
             SizedBox(
