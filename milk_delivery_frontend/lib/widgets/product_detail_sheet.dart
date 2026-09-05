@@ -204,7 +204,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         ? (widget.state.isTelugu ? '1. ప్యాక్ & పరిమాణాన్ని ఎంచుకోండి' : '1. Select Pack & Quantity')
                         : _currentStep == 1
                             ? (widget.state.isTelugu ? '2. డెలివరీ షెడ్యూల్ ఎంచుకోండి' : '2. Choose Delivery Schedule')
-                            : (widget.state.isTelugu ? '3. కాలపరిమితి & నిర్ధారణ' : '3. Duration & Confirm'),
+                            : (widget.state.isTelugu ? '3. వ్యవధి ఎంచుకోండి' : '3. Choose Duration'),
                     style: const TextStyle(
                       fontSize: 16.5,
                       fontWeight: FontWeight.w900,
@@ -249,7 +249,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               _stepConnector(0),
               _stepPill(1, widget.state.isTelugu ? 'షెడ్యూల్' : 'Schedule', Icons.calendar_today_rounded),
               _stepConnector(1),
-              _stepPill(2, widget.state.isTelugu ? 'నిర్ధారణ' : 'Confirm', Icons.check_circle_rounded),
+              _stepPill(2, widget.state.isTelugu ? 'వ్యవధి' : 'Duration', Icons.timer_rounded),
             ],
           ),
         ],
@@ -1082,15 +1082,9 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   }
 
   // ─────────────────────────────────────────────────────────
-  // ── STEP 3: DURATION, ADDRESS & CONFIRM (WHERE & REVIEW) ──
+  // ── STEP 3: DURATION ──
   // ─────────────────────────────────────────────────────────
   Widget _buildStep3DurationAndAddress() {
-    final activeAddr = widget.state.activeAddress;
-    final displayAddr = activeAddr?.summaryAddress ?? widget.state.currentDeliveryAddress;
-    final currentUser = widget.state.currentUser;
-    final walletBal = currentUser?.walletBalance ?? 0.0;
-    final hasEnoughBalance = walletBal >= _singleDeliveryCost * 3; // At least 3 days buffer
-
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       child: Column(
@@ -1206,178 +1200,32 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               );
             }).toList(),
           ),
-
-          const SizedBox(height: 18),
-
-          // 2. Delivery Doorstep Address
-          Row(
-            children: [
-              const Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF0F172A)),
-              const SizedBox(width: 6),
-              Text(
-                widget.state.isTelugu ? 'డెలివరీ చిరునామా' : 'Delivery Address',
-                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+          
+          const SizedBox(height: 20),
+          
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: UiTone.primarySoft,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: UiTone.primary.withOpacity(0.3)),
             ),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFECFDF5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(activeAddr?.icon ?? '🏠', style: const TextStyle(fontSize: 16)),
-                ),
-                const SizedBox(width: 10),
+                const Icon(Icons.info_outline_rounded, color: UiTone.primary),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activeAddr?.title ?? (widget.state.isTelugu ? 'డోర్‌స్టెప్ చిరునామా' : 'Doorstep Address'),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        displayAddr,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.3),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    HomeLocationSheet.show(context, widget.state);
-                  },
                   child: Text(
-                    widget.state.isTelugu ? 'మార్చండి ▾' : 'Change ▾',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: UiTone.primary),
+                    widget.state.isTelugu 
+                        ? 'తదుపరి దశలో మీరు మీ డెలివరీ చిరునామాను ఎంచుకోవచ్చు మరియు నిర్ధారించవచ్చు.' 
+                        : 'You can select your delivery address and confirm the subscription in the next step.',
+                    style: const TextStyle(fontSize: 12, color: UiTone.primaryDark),
                   ),
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 3. Doorstep Instructions (1-tap chips)
-          Text(
-            widget.state.isTelugu ? 'డోర్‌స్టెప్ ప్రాధాన్యత:' : 'Doorstep Preference:',
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              _dropPrefChip(widget.state.isTelugu ? '🔔 బెల్ మోగించండి' : '🔔 Ring Bell'),
-              const SizedBox(width: 6),
-              _dropPrefChip(widget.state.isTelugu ? '🔕 బెల్ వద్దు' : '🔕 Don\'t Ring'),
-              const SizedBox(width: 6),
-              _dropPrefChip(widget.state.isTelugu ? '🛍️ బ్యాగ్‌లో ఉంచండి' : '🛍️ In Milk Bag'),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          // 4. Payment & Wallet Summary Card
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.state.isTelugu
-                          ? '$_totalDeliveryDays డెలివరీలు × ${UiFormat.price(_singleDeliveryCost)}'
-                          : '$_totalDeliveryDays deliveries × ${UiFormat.price(_singleDeliveryCost)}',
-                      style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
-                    ),
-                    Text(
-                      UiFormat.price(_totalSubscriptionCost),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                    ),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1, color: Color(0xFFE2E8F0)),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF10B981)),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${widget.state.isTelugu ? "వాలెట్" : "Wallet"}: ${UiFormat.price(walletBal)}',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-                        ),
-                      ],
-                    ),
-                    if (hasEnoughBalance)
-                      Text(
-                        widget.state.isTelugu ? 'డెలివరీకి సిద్ధం ✅' : 'Ready for Drop ✅',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF10B981)),
-                      )
-                    else
-                      Text(
-                        widget.state.isTelugu
-                            ? '${UiFormat.price((_singleDeliveryCost * 3) - walletBal)} రీఛార్జ్ సిఫార్సు'
-                            : 'Recharge ${UiFormat.price((_singleDeliveryCost * 3) - walletBal)} recommended',
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          )
         ],
-      ),
-    );
-  }
-
-  Widget _dropPrefChip(String label) {
-    final isSelected = _dropPreference == label;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _dropPreference = label),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 7),
-          decoration: BoxDecoration(
-            color: isSelected ? UiTone.primary.withValues(alpha: 0.1) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? UiTone.primary : const Color(0xFFCBD5E1),
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              color: isSelected ? UiTone.primaryDark : const Color(0xFF475569),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1453,10 +1301,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                             _currentStep == 0
                                 ? (widget.state.isTelugu ? 'తదుపరి: షెడ్యూల్ ఎంచుకోండి →' : 'Next: Choose Schedule →')
                                 : _currentStep == 1
-                                    ? (widget.state.isTelugu ? 'తదుపరి: సమీక్ష & చిరునామా →' : 'Next: Review & Address →')
+                                    ? (widget.state.isTelugu ? 'తదుపరి: వ్యవధి ఎంచుకోండి →' : 'Next: Select Duration →')
                                     : (widget.state.isTelugu
-                                        ? 'సబ్‌స్క్రిప్షన్ ప్రారంభించండి • ${UiFormat.price(_singleDeliveryCost)}/రోజు'
-                                        : 'CONFIRM • ${UiFormat.price(_singleDeliveryCost)}/day'),
+                                        ? 'సమీక్ష & చెల్లింపు →'
+                                        : 'Review & Payment →'),
                             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, letterSpacing: 0.2),
                           ),
                         ],
@@ -1478,57 +1326,25 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   }
 
   Future<void> _submitSubscription() async {
-    setState(() => _isSubmitting = true);
+    Navigator.of(context).pop(); // Close the sheet
 
-    try {
-      final customProduct = widget.product.copyWith(
-        pricePerUnit: _effectiveUnitPrice,
-        unitQuantity: _selectedPackSize,
-      );
-
-      final targetAddress = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
-
-      await widget.state.createNewSubscription(
-        customProduct,
-        _qty,
-        _schedule,
-        deliverySlot: _selectedSlot,
-        deliveryAddress: targetAddress,
-        deliveryInstructions: _dropPreference,
-        packSize: _selectedPackSize,
-      );
-
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
-
-      // Dismiss the bottom sheet
-      Navigator.of(context).pop();
-
-      // Show the celebration success screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (c) => SubscriptionSuccessScreen(
-            productName: widget.product.name,
-            packSize: _selectedPackSize,
-            quantity: _qty,
-            schedule: _schedule,
-            slot: _selectedSlot,
-            address: targetAddress,
-            totalCost: _totalSubscriptionCost,
-            state: widget.state,
-          ),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (c) => SubscriptionAddressSelectionScreen(
+          product: widget.product,
+          quantity: _qty,
+          schedule: _schedule,
+          packSize: _selectedPackSize,
+          timeSlot: _selectedSlot,
+          durationLabel: '$_durationDays Days',
+          totalDeliveryDays: _totalDeliveryDays,
+          singleDeliveryCost: _singleDeliveryCost,
+          totalCost: _totalSubscriptionCost,
+          deliveryInstructions: _dropPreference,
+          state: widget.state,
         ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFFDC2626),
-          content: Text('❌ Subscription failed: ${e.toString().replaceAll('Exception: ', '')}'),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   Widget _heroFallback(ProductModel item) => Container(

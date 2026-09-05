@@ -44,6 +44,7 @@ class _SubscriptionAddressSelectionScreenState
     extends State<SubscriptionAddressSelectionScreen> {
   CustomerAddressModel? _selectedAddress;
   bool _isSubmitting = false;
+  bool _isEditingSlot = false;
   
   late String _selectedSlot;
   final TextEditingController _notesController = TextEditingController();
@@ -225,6 +226,7 @@ class _SubscriptionAddressSelectionScreenState
                     border: Border.all(color: const Color(0xFF10B981)),
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
                         width: 50,
@@ -261,13 +263,29 @@ class _SubscriptionAddressSelectionScreenState
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Slot: $_selectedSlot',
-                              style: TextStyle(fontSize: 10.5, color: Colors.grey[600]),
-                            ),
                           ],
                         ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            'Total',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '₹${widget.totalCost.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -275,96 +293,135 @@ class _SubscriptionAddressSelectionScreenState
                 const SizedBox(height: 18),
 
                 // ── 2. Delivery Slot Selection ──
-                const Text(
-                  'Delivery Slot ⏰',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Delivery Slot ⏰',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                    if (!_isEditingSlot)
+                      TextButton(
+                        onPressed: () => setState(() => _isEditingSlot = true),
+                        child: const Text('Change', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                      )
+                    else
+                      TextButton(
+                        onPressed: () => setState(() => _isEditingSlot = false),
+                        child: const Text('Done', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                if (_slotsData == null)
-                  const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
-                else
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+                
+                if (!_isEditingSlot)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
                     child: Row(
-                      children: List.generate(_slotsData!.length, (index) {
-                        final slotMap = _slotsData![index];
-                        final slotName = slotMap['name']?.toString() ?? slotMap['time_range']?.toString() ?? '';
-                        final timeRange = slotMap['time_range']?.toString() ?? '';
-                        final available = slotMap['available_capacity'] ?? slotMap['available'] ?? 0;
-                        final max = slotMap['max_capacity'] ?? 0;
-                        final isFull = slotMap['is_full'] == true;
-                        final isCutoff = slotMap['is_cutoff_passed'] == true;
-                        
-                        final isSelected = _selectedSlot == slotName;
-                        final isDisabled = isFull || isCutoff;
-                        
-                        return GestureDetector(
-                          onTap: isDisabled ? null : () => setState(() => _selectedSlot = slotName),
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isDisabled
-                                  ? Colors.grey[200]
-                                  : isSelected
-                                      ? const Color(0xFFF0FDF4)
-                                      : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected && !isDisabled ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
-                                width: isSelected && !isDisabled ? 2 : 1,
+                      children: [
+                        Text(_getSlotIcon(_selectedSlot, 0), style: const TextStyle(fontSize: 18)),
+                        const SizedBox(width: 10),
+                        Text(
+                          _selectedSlot,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  if (_slotsData == null)
+                    const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+                  else
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(_slotsData!.length, (index) {
+                          final slotMap = _slotsData![index];
+                          final slotName = slotMap['name']?.toString() ?? slotMap['time_range']?.toString() ?? '';
+                          final timeRange = slotMap['time_range']?.toString() ?? '';
+                          final available = slotMap['available_capacity'] ?? slotMap['available'] ?? 0;
+                          final max = slotMap['max_capacity'] ?? 0;
+                          final isFull = slotMap['is_full'] == true;
+                          final isCutoff = slotMap['is_cutoff_passed'] == true;
+                          
+                          final isSelected = _selectedSlot == slotName;
+                          final isDisabled = isFull || isCutoff;
+                          
+                          return GestureDetector(
+                            onTap: isDisabled ? null : () => setState(() {
+                              _selectedSlot = slotName;
+                              _isEditingSlot = false; // Auto-close on selection
+                            }),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDisabled
+                                    ? Colors.grey[200]
+                                    : isSelected
+                                        ? const Color(0xFFF0FDF4)
+                                        : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected && !isDisabled ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                                  width: isSelected && !isDisabled ? 2 : 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(_getSlotIcon(slotName, index), style: const TextStyle(fontSize: 16)),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        slotName,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: isDisabled ? Colors.grey[600] : Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    timeRange,
+                                    style: TextStyle(fontSize: 11, color: isDisabled ? Colors.grey[500] : Colors.grey[700]),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (isFull)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red[100],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text('FULL', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.bold)),
+                                    )
+                                  else if (isCutoff)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text('CLOSED', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                    )
+                                  else
+                                    Text('$available/$max slots available', style: const TextStyle(fontSize: 10, color: Color(0xFF10B981))),
+                                ],
                               ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(_getSlotIcon(slotName, index), style: const TextStyle(fontSize: 16)),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      slotName,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: isDisabled ? Colors.grey[600] : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  timeRange,
-                                  style: TextStyle(fontSize: 11, color: isDisabled ? Colors.grey[500] : Colors.grey[700]),
-                                ),
-                                const SizedBox(height: 4),
-                                if (isFull)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red[100],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text('FULL', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.bold)),
-                                  )
-                                else if (isCutoff)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text('CLOSED', style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
-                                  )
-                                else
-                                  Text('$available/$max slots available', style: const TextStyle(fontSize: 10, color: Color(0xFF10B981))),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
-                  ),
                 const SizedBox(height: 18),
 
                 // ── 3. Delivery Address Selection ──

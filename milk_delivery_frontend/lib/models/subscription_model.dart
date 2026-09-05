@@ -120,4 +120,38 @@ class SubscriptionModel {
       effectiveUnitPrice: effectiveUnitPrice ?? this.effectiveUnitPrice,
     );
   }
+
+  int get streakDays {
+    try {
+      final start = DateTime.parse(startDate);
+      final diff = DateTime.now().difference(start).inDays;
+      return diff >= 0 ? diff : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  double get monthlySavings {
+    if (effectiveUnitPrice > 0 && productDetail != null) {
+      final mrp = productDetail!.pricePerUnit;
+      if (effectiveUnitPrice < mrp) {
+        return (mrp - effectiveUnitPrice) * quantity * 30.0;
+      }
+    }
+    return 0.0;
+  }
+
+  bool get isDeliveryDay {
+    if (scheduleType.toUpperCase() == 'DAILY') return true;
+    if (scheduleType.toUpperCase() == 'ALTERNATE') {
+      try {
+        final start = DateTime.parse(startDate);
+        final diff = DateTime.now().difference(start).inDays;
+        return diff % 2 == 0;
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
 }

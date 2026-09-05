@@ -17,39 +17,8 @@ class SubscriptionsTab extends StatefulWidget {
 }
 
 class _SubscriptionsTabState extends State<SubscriptionsTab> {
-  late Timer _timer;
-  String _countdownStr = '';
-
   int _selectedSegment = 0; // 0 = Active, 1 = Cancelled
 
-  @override
-  void initState() {
-    super.initState();
-    _updateCountdown();
-    _timer = Timer.periodic(const Duration(minutes: 1), (timer) => _updateCountdown());
-  }
-
-  void _updateCountdown() {
-    final now = DateTime.now();
-    var nextDelivery = DateTime(now.year, now.month, now.day, 6, 0);
-    if (now.isAfter(nextDelivery)) {
-      nextDelivery = nextDelivery.add(const Duration(days: 1));
-    }
-    final diff = nextDelivery.difference(now);
-    final hours = diff.inHours;
-    final minutes = diff.inMinutes % 60;
-    if (mounted) {
-      setState(() {
-        _countdownStr = '${hours}h ${minutes}m';
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,10 +30,17 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
 
     double totalDailyCost = 0.0;
     int totalDailyUnits = 0;
+    double totalMonthlySavings = 0.0;
     for (var s in activeSubs.where((s) => s.status == 'ACTIVE')) {
       final pPrice = s.displayPrice > 0 ? s.displayPrice : (s.productDetail?.pricePerUnit ?? 0.0);
       totalDailyCost += (pPrice * s.quantity);
       totalDailyUnits += s.quantity;
+      
+      final mrp = s.productDetail?.pricePerUnit ?? 0.0;
+      final effective = s.effectiveUnitPrice > 0 ? s.effectiveUnitPrice : pPrice;
+      if (mrp > effective) {
+        totalMonthlySavings += (mrp - effective) * s.quantity * 30;
+      }
     }
 
     return SafeArea(
@@ -73,63 +49,16 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
         body: RefreshIndicator(
           color: UiTone.primary,
           onRefresh: () => widget.state.reloadAllData(),
-          child: SingleChildScrollView(
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Header Title ──
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isTelugu ? 'డైలీ సభ్యత్వాలు' : 'Daily Subscriptions',
-                          style: UiText.h1.copyWith(fontSize: 22, color: UiTone.ink),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isTelugu ? 'ప్రతిరోజూ ఉదయం 06:00 AM డోర్‌స్టెప్ డెలివరీ' : 'Guaranteed 06:00 AM morning doorstep deliveries',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: UiTone.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🥛', style: TextStyle(fontSize: 12)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Pamba Daily',
-                            style: TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // ── 1. Header Summary Card with Live Dispatch Countdown ──
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: UiGradient.primary,
-                    borderRadius: BorderRadius.circular(UiRadius.xl),
-                    boxShadow: UiShadow.elevated,
-                  ),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                sliver: SliverToBoxAdapter(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── Header Title ──
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -137,43 +66,31 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isTelugu ? 'డైలీ రికరింగ్ సబ్‌స్క్రిప్షన్‌లు' : 'DAILY RECURRING SUBSCRIPTIONS',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.1,
-                                ),
+                                isTelugu ? 'డైలీ సభ్యత్వాలు' : 'Daily Subscriptions',
+                                style: UiText.h1.copyWith(fontSize: 22, color: UiTone.ink),
                               ),
-                              const SizedBox(height: 3),
+                              const SizedBox(height: 2),
                               Text(
-                                isTelugu ? 'ఉదయం డోర్‌స్టెప్ డ్రాప్‌లు 🥛' : 'Morning Doorstep Drops 🥛',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16.5,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                                isTelugu ? 'ప్రతిరోజూ ఉదయం 06:00 AM డోర్‌స్టెప్ డెలివరీ' : 'Guaranteed 06:00 AM morning doorstep deliveries',
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: UiTone.secondary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(UiRadius.sm),
-                              border: Border.all(color: UiTone.secondary),
+                              color: UiTone.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: UiTone.primary.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('⚡ ', style: TextStyle(fontSize: 10)),
+                                const Text('🥛', style: TextStyle(fontSize: 12)),
+                                const SizedBox(width: 4),
                                 Text(
-                                  isTelugu ? 'తదుపరి: $_countdownStr' : 'Next in $_countdownStr',
-                                  style: TextStyle(
-                                    color: UiTone.secondary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                                  'Pamba Daily',
+                                  style: TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.w800),
                                 ),
                               ],
                             ),
@@ -181,110 +98,242 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _summaryStat(
-                              isTelugu ? 'యాక్టివ్ ప్లాన్‌లు' : 'Active Plans',
-                              '${activeSubs.length}',
-                              Icons.calendar_today_rounded,
+
+                      // ── 1. Header Summary Card with Live Dispatch Countdown ──
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: UiGradient.primary,
+                          borderRadius: BorderRadius.circular(UiRadius.xl),
+                          boxShadow: UiShadow.elevated,
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isTelugu ? 'డైలీ రికరింగ్ సబ్‌స్క్రిప్షన్‌లు' : 'DAILY RECURRING SUBSCRIPTIONS',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      isTelugu ? 'ఉదయం డోర్‌స్టెప్ డ్రాప్‌లు 🥛' : 'Morning Doorstep Drops 🥛',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.5,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                _DeliveryCountdownWidget(isTelugu: isTelugu),
+                              ],
                             ),
-                          ),
-                          Container(width: 1, height: 32, color: Colors.white24),
-                          Expanded(
-                            child: _summaryStat(
-                              isTelugu ? 'డైలీ వాల్యూమ్' : 'Daily Volume',
-                              '$totalDailyUnits Units',
-                              Icons.local_shipping_outlined,
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _summaryStat(
+                                    isTelugu ? 'యాక్టివ్ ప్లాన్‌లు' : 'Active Plans',
+                                    '${activeSubs.length}',
+                                    Icons.calendar_today_rounded,
+                                  ),
+                                ),
+                                Container(width: 1, height: 32, color: Colors.white24),
+                                Expanded(
+                                  child: _summaryStat(
+                                    isTelugu ? 'డైలీ వాల్యూమ్' : 'Daily Volume',
+                                    '$totalDailyUnits Units',
+                                    Icons.local_shipping_outlined,
+                                  ),
+                                ),
+                                Container(width: 1, height: 32, color: Colors.white24),
+                                Expanded(
+                                  child: _summaryStat(
+                                    isTelugu ? 'డైలీ డెబిట్' : 'Daily Spend',
+                                    UiFormat.price(totalDailyCost),
+                                    Icons.currency_rupee_rounded,
+                                  ),
+                                ),
+                                Container(width: 1, height: 32, color: Colors.white24),
+                                Expanded(
+                                  child: _summaryStat(
+                                    isTelugu ? 'సేవ్ చేయబడింది' : 'Saved',
+                                    '₹${totalMonthlySavings.toInt()}',
+                                    Icons.savings_rounded,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          Container(width: 1, height: 32, color: Colors.white24),
-                          Expanded(
-                            child: _summaryStat(
-                              isTelugu ? 'డైలీ డెబిట్' : 'Daily Spend',
-                              UiFormat.price(totalDailyCost),
-                              Icons.currency_rupee_rounded,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+              ),
 
-
-
-                // ── 3. Active vs Cancelled Segmented Filter ──
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(UiRadius.lg),
-                    border: Border.all(color: UiTone.surfaceBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _segmentButton(
-                          0,
-                          isTelugu ? 'యాక్టివ్ సభ్యత్వాలు (${activeSubs.length})' : 'Active Subscriptions (${activeSubs.length})',
-                        ),
-                      ),
-                      Expanded(
-                        child: _segmentButton(
-                          1,
-                          isTelugu ? 'రద్దు చేయబడినవి (${cancelledSubs.length})' : 'Cancelled (${cancelledSubs.length})',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                if (displayedSubs.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade200),
+              // ── 3. Active vs Cancelled Segmented Filter (Sticky) ──
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyFilterDelegate(
+                  child: Container(
+                    color: const Color(0xFFF8FAFC),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Container(
+                          height: 44,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(UiRadius.lg),
+                            border: Border.all(color: UiTone.surfaceBorder),
+                          ),
+                          child: Stack(
+                            children: [
+                              AnimatedPositioned(
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeInOut,
+                                left: _selectedSegment == 0 ? 0 : (constraints.maxWidth - 8) / 2,
+                                width: (constraints.maxWidth - 8) / 2,
+                                top: 0,
+                                bottom: 0,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: UiTone.primary,
+                                    borderRadius: BorderRadius.circular(UiRadius.md - 2),
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        setState(() => _selectedSegment = 0);
+                                      },
+                                      child: Center(
+                                        child: Text(
+                                          isTelugu ? 'యాక్టివ్ సభ్యత్వాలు (${activeSubs.length})' : 'Active Subscriptions (${activeSubs.length})',
+                                          style: TextStyle(
+                                            color: _selectedSegment == 0 ? Colors.white : Colors.grey.shade700,
+                                            fontSize: 12,
+                                            fontWeight: _selectedSegment == 0 ? FontWeight.w800 : FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        setState(() => _selectedSegment = 1);
+                                      },
+                                      child: Center(
+                                        child: Text(
+                                          isTelugu ? 'రద్దు చేయబడినవి (${cancelledSubs.length})' : 'Cancelled (${cancelledSubs.length})',
+                                          style: TextStyle(
+                                            color: _selectedSegment == 1 ? Colors.white : Colors.grey.shade700,
+                                            fontSize: 12,
+                                            fontWeight: _selectedSegment == 1 ? FontWeight.w800 : FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                     ),
+                  ),
+                ),
+              ),
+
+              // ── Subscriptions List ──
+              if (displayedSubs.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('🥛', style: TextStyle(fontSize: 48)),
-                        const SizedBox(height: 12),
-                        Text(
-                          isTelugu ? 'సభ్యత్వాలు లేవు' : 'No Subscriptions Found',
-                          style: UiText.h2.copyWith(fontSize: 16, color: UiTone.ink),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: UiTone.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(Icons.local_florist, size: 64, color: UiTone.primary.withValues(alpha: 0.2)),
+                              const Text('🥛', style: TextStyle(fontSize: 48)),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 24),
+                        Text(
+                          isTelugu ? 'మీ మొదటి సభ్యత్వాన్ని ప్రారంభించండి' : 'Start your first subscription',
+                          style: UiText.h2.copyWith(fontSize: 20, color: UiTone.ink),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
                         Text(
                           isTelugu
-                              ? 'మీ ఇష్టమైన పాలు మరియు డైరీ ఉత్పత్తులను ప్రతిరోజూ పొందడానికి సబ్‌స్క్రయిబ్ చేసుకోండి.'
-                              : 'Subscribe to farm-fresh milk and dairy for guaranteed 06:00 AM delivery.',
+                              ? 'ప్రతిరోజూ ఉదయం తాజా పాలు మీ గుమ్మానికి పంపిణీ చేయబడతాయి'
+                              : 'Fresh milk delivered to your doorstep every morning',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 32),
                         ElevatedButton.icon(
                           onPressed: () => widget.state.setTab(0),
-                          icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
-                          label: Text(isTelugu ? 'సబ్‌స్క్రిప్షన్‌ను ప్రారంభించండి' : 'Start a Subscription'),
+                          icon: const Icon(Icons.storefront_rounded, size: 20),
+                          label: Text(
+                            isTelugu ? 'ఉత్పత్తులను బ్రౌజ్ చేయండి' : 'Browse Products',
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: UiTone.primary,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
                           ),
                         ),
                       ],
                     ),
-                  )
-                else
-                  ...displayedSubs.map((sub) => _buildSubscriptionCard(context, sub, isTelugu)),
-              ],
-            ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+                  sliver: SliverList.builder(
+                    itemCount: displayedSubs.length,
+                    itemBuilder: (context, index) {
+                      return _buildSubscriptionCard(context, displayedSubs[index], isTelugu);
+                    },
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -316,31 +365,6 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     );
   }
 
-  Widget _segmentButton(int index, String label) {
-    final isSelected = _selectedSegment == index;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedSegment = index);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(UiRadius.md),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade700,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildSubscriptionCard(BuildContext context, SubscriptionModel sub, bool isTelugu) {
     final prod = sub.productDetail;
@@ -348,7 +372,15 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     final isPaused = sub.status == 'PAUSED';
     final isCancelled = sub.status == 'CANCELLED';
 
-    return Container(
+    int streakDays = 0;
+    if (!isCancelled && !isPaused && sub.startDate.isNotEmpty) {
+      try {
+        final start = DateTime.parse(sub.startDate);
+        streakDays = DateTime.now().difference(start).inDays;
+      } catch (_) {}
+    }
+
+    final cardContent = Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -395,6 +427,27 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   ],
                 ),
               ),
+              if (!isCancelled && !isPaused && streakDays > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🔥 ', style: TextStyle(fontSize: 10)),
+                      Text(
+                        isTelugu ? '$streakDays రోజులు' : '$streakDays days',
+                        style: const TextStyle(color: Colors.deepOrange, fontSize: 10, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -422,17 +475,6 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   ),
                 ),
               ),
-              if (!isCancelled) ...[
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                  tooltip: isTelugu ? 'సభ్యత్వాన్ని తొలగించండి' : 'Delete Subscription',
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  padding: EdgeInsets.zero,
-                  onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
-                ),
-              ],
             ],
           ),
           const Divider(height: 24),
@@ -457,54 +499,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               ),
             ],
           ),
-          if (!isCancelled) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      HapticFeedback.mediumImpact();
-                      await widget.state.toggleSubscriptionStatus(sub.id);
-                    },
-                    icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 16),
-                    label: Text(
-                      isPaused
-                          ? (isTelugu ? 'పునఃప్రారంభించండి' : 'Resume Plan ▶')
-                          : (isTelugu ? 'విరామం ఇవ్వండి' : 'Pause Plan ⏸'),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: isPaused ? UiTone.primary : Colors.orange.shade800,
-                      side: BorderSide(color: isPaused ? UiTone.primary : Colors.orange.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmDeleteSubscription(context, sub, isTelugu),
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
-                    label: Text(
-                      isTelugu ? 'తొలగించు' : 'Delete',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Colors.red),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: BorderSide(color: Colors.red.shade300),
-                      backgroundColor: Colors.red.withValues(alpha: 0.04),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
+          if (isCancelled) ...[
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -535,11 +530,127 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
         ],
       ),
     );
+
+    if (isCancelled) return cardContent;
+
+    return Dismissible(
+      key: ValueKey(sub.id),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.endToStart) {
+          await _confirmDeleteSubscription(context, sub, isTelugu);
+          return false;
+        } else {
+          HapticFeedback.mediumImpact();
+          await widget.state.toggleSubscriptionStatus(sub.id);
+          return false;
+        }
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.orange,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, color: Colors.white, size: 28),
+            const SizedBox(height: 4),
+            Text(isPaused ? 'Resume' : 'Pause', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+            SizedBox(height: 4),
+            Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+          ],
+        ),
+      ),
+      child: cardContent,
+    );
   }
 
   Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
     HapticFeedback.mediumImpact();
     final pName = sub.productDetail?.name ?? 'Subscription';
+
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isTelugu ? 'మీరు ఎందుకు రద్దు చేయాలనుకుంటున్నారు?' : 'Why are you cancelling?',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              ...['Too expensive', 'Quality issues', 'Going out of town', 'Switched to another brand', 'Other'].map(
+                (r) => ListTile(
+                  title: Text(r, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                  onTap: () => Navigator.pop(ctx, r),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (reason == null) return;
+    if (!context.mounted) return;
+
+    if (reason == 'Going out of town') {
+      final pause = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(isTelugu ? 'బదులుగా పాజ్ చేయాలా?' : 'Pause Instead?'),
+          content: Text(isTelugu ? 'మీరు విరామం తీసుకోవచ్చు. మీ ప్రణాళికను అలాగే ఉంచండి.' : 'You can pause your subscription while you are away instead of deleting it.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(isTelugu ? 'తొలగించు' : 'No, Delete', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: UiTone.primary, foregroundColor: Colors.white, elevation: 0),
+              child: Text(isTelugu ? 'పాజ్ చేయి' : 'Pause Plan'),
+            ),
+          ],
+        ),
+      );
+
+      if (pause == true) {
+        HapticFeedback.mediumImpact();
+        await widget.state.toggleSubscriptionStatus(sub.id);
+        return;
+      } else if (pause == null) {
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
+
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.white,
@@ -653,5 +764,95 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
         );
       }
     }
+  }
+}
+
+class _StickyFilterDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _StickyFilterDelegate({required this.child});
+
+  @override
+  double get minExtent => 60.0;
+  
+  @override
+  double get maxExtent => 60.0;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
+  }
+}
+
+class _DeliveryCountdownWidget extends StatefulWidget {
+  final bool isTelugu;
+  const _DeliveryCountdownWidget({super.key, required this.isTelugu});
+
+  @override
+  State<_DeliveryCountdownWidget> createState() => _DeliveryCountdownWidgetState();
+}
+
+class _DeliveryCountdownWidgetState extends State<_DeliveryCountdownWidget> {
+  late Timer _timer;
+  String _countdownStr = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _updateCountdown();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) => _updateCountdown());
+  }
+
+  void _updateCountdown() {
+    final now = DateTime.now();
+    var nextDelivery = DateTime(now.year, now.month, now.day, 6, 0);
+    if (now.isAfter(nextDelivery)) {
+      nextDelivery = nextDelivery.add(const Duration(days: 1));
+    }
+    final diff = nextDelivery.difference(now);
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes % 60;
+    if (mounted) {
+      setState(() {
+        _countdownStr = '${hours}h ${minutes}m';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: UiTone.secondary.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(UiRadius.sm),
+        border: Border.all(color: UiTone.secondary),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('⚡ ', style: TextStyle(fontSize: 10)),
+          Text(
+            widget.isTelugu ? 'తదుపరి: $_countdownStr' : 'Next in $_countdownStr',
+            style: const TextStyle(
+              color: UiTone.secondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

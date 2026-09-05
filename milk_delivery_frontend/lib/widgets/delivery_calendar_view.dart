@@ -35,6 +35,95 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Vacation Mode Banner
+          InkWell(
+            onTap: () async {
+              final DateTimeRange? picked = await showDateRangePicker(
+                context: context,
+                firstDate: now,
+                lastDate: DateTime(now.year + 1),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: UiTone.primary,
+                        onPrimary: Colors.white,
+                        onSurface: UiTone.ink,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              
+              if (picked != null) {
+                final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
+                
+                // Iterate through days
+                for (var i = 0; i <= picked.end.difference(picked.start).inDays; i++) {
+                  final date = picked.start.add(Duration(days: i));
+                  final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  
+                  for (var s in activeSubs) {
+                    await ApiService.pauseSubscription(s.id, dateStr, dateStr);
+                  }
+                  
+                  if (date.month == now.month && date.year == now.year) {
+                    setState(() {
+                      _customPausedDays.add(date.day);
+                    });
+                  }
+                }
+                
+                await widget.state.reloadAllData(silent: true);
+                if (mounted) {
+                  final startStr = '${picked.start.day} ${_getMonthName(picked.start.month)}';
+                  final endStr = '${picked.end.day} ${_getMonthName(picked.end.month)}';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: UiTone.warning,
+                      content: Text('⏸️ Deliveries paused from $startStr to $endStr.', style: const TextStyle(color: Colors.white)),
+                    ),
+                  );
+                }
+              }
+            },
+            borderRadius: BorderRadius.circular(UiRadius.md),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: UiTone.warningSoft,
+                borderRadius: BorderRadius.circular(UiRadius.md),
+                border: Border.all(color: UiTone.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('🏖️', style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Going on vacation?',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: UiTone.warning),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Tap to pause deliveries for a date range',
+                          style: TextStyle(fontSize: 11, color: UiTone.warning),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: UiTone.warning),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Month Header & Hold Status
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -102,9 +191,23 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
               final isPast = day < now.day;
               final isPaused = _customPausedDays.contains(day) || (widget.state.isVacationMode && widget.state.subscriptions.any((s) => s.status == 'PAUSED'));
 
+              final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+              final tasksForDay = widget.state.deliveries.where((d) => d.deliveryDate.startsWith(dateStr)).toList();
+              
+              bool hasDelivered = false;
+              bool hasFailed = false;
+              bool hasPhoto = false;
+              
+              if (tasksForDay.isNotEmpty) {
+                hasDelivered = tasksForDay.any((d) => d.status == 'DELIVERED');
+                hasFailed = tasksForDay.any((d) => d.status == 'FAILED' || d.status == 'SKIPPED');
+                hasPhoto = tasksForDay.any((d) => d.proofImageUrl.isNotEmpty);
+              }
+
               Color bgColor = Colors.transparent;
               Color textColor = UiTone.ink;
               Color dotColor = hasActiveSub ? UiTone.secondary : Colors.grey[300]!;
+              Widget? indicator;
 
               if (isToday) {
                 bgColor = UiTone.primary.withValues(alpha: 0.12);
@@ -113,20 +216,71 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
 
               if (isPast) {
                 textColor = Colors.grey[400]!;
-                dotColor = const Color(0xFF94A3B8);
+                if (isPaused) {
+                   indicator = Container(
+                     width: 14,
+                     height: 14,
+                     decoration: const BoxDecoration(color: UiTone.warning, shape: BoxShape.circle),
+                     child: const Icon(Icons.pause, size: 10, color: Colors.white),
+                   );
+                   bgColor = UiTone.warningSoft.withValues(alpha: 0.5);
+                } else if (hasFailed) {
+                   indicator = Container(
+                     width: 14,
+                     height: 14,
+                     decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
+                     child: const Icon(Icons.close, size: 10, color: Colors.white),
+                   );
+                } else {
+                   // Defaults to green checkmark for past non-paused days
+                   indicator = Stack(
+                     clipBehavior: Clip.none,
+                     children: [
+                       Container(
+                         width: 14,
+                         height: 14,
+                         decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
+                         child: const Icon(Icons.check, size: 10, color: Colors.white),
+                       ),
+                       if (hasPhoto)
+                         Positioned(
+                           right: -4,
+                           bottom: -4,
+                           child: Container(
+                             padding: const EdgeInsets.all(2),
+                             decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                             child: const Icon(Icons.camera_alt, size: 8, color: UiTone.primary),
+                           ),
+                         ),
+                     ],
+                   );
+                }
               } else if (isPaused) {
-                dotColor = UiTone.error;
-                bgColor = const Color(0xFFFFF1F2);
-                textColor = UiTone.error;
+                indicator = Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: UiTone.warning,
+                    shape: BoxShape.circle,
+                  ),
+                );
+                bgColor = UiTone.warningSoft;
+                textColor = UiTone.warning;
+              } else {
+                indicator = Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
+                );
               }
 
               return InkWell(
                 onTap: isPast
                     ? null
                     : () async {
-                        final now = DateTime.now();
-                        final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-                        
                         final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
                         final pausedSubs = widget.state.subscriptions.where((s) => s.status == 'PAUSED').toList();
                         
@@ -161,8 +315,8 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 duration: const Duration(seconds: 1),
-                                backgroundColor: UiTone.error,
-                                content: Text('⏸️ Delivery paused for $day $monthName.'),
+                                backgroundColor: UiTone.warning,
+                                content: Text('⏸️ Delivery paused for $day $monthName.', style: const TextStyle(color: Colors.white)),
                               ),
                             );
                           }
@@ -187,14 +341,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: dotColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                      if (indicator != null) indicator,
                     ],
                   ),
                 ),
@@ -210,7 +357,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildLegend(UiTone.secondary, 'Scheduled 06:00 AM'),
-              _buildLegend(UiTone.error, 'Paused / Hold'),
+              _buildLegend(UiTone.warning, 'Paused / Hold'),
               _buildLegend(const Color(0xFF94A3B8), 'Delivered'),
             ],
           ),

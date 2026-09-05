@@ -12,6 +12,7 @@ import 'delivery_rating_dialog.dart';
 import 'delivery_chat_sheet.dart';
 import 'order_invoice_sheet.dart';
 import 'doorstep_proof_modal.dart';
+import 'ui_kit/ui_timeline_card.dart';
 
 class BookingDetailSheet extends StatelessWidget {
   final AppState state;
@@ -287,6 +288,11 @@ class BookingDetailSheet extends StatelessWidget {
                 if (proofUrl.isNotEmpty) ...[
                   const SizedBox(height: 14),
                   _buildPhotoProofCard(context, proofUrl),
+                ],
+
+                if (!isExpress && subscriptionTask != null) ...[
+                  const SizedBox(height: 14),
+                  _RecentDeliveriesSection(state: state, currentTask: subscriptionTask!),
                 ],
 
                 const SizedBox(height: 14),
@@ -1019,6 +1025,145 @@ class BookingDetailSheet extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _RecentDeliveriesSection extends StatefulWidget {
+  final AppState state;
+  final DeliveryTaskModel currentTask;
+
+  const _RecentDeliveriesSection({required this.state, required this.currentTask});
+
+  @override
+  State<_RecentDeliveriesSection> createState() => _RecentDeliveriesSectionState();
+}
+
+class _RecentDeliveriesSectionState extends State<_RecentDeliveriesSection> {
+  bool _isExpanded = false;
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final dateToCheck = DateTime(date.year, date.month, date.day);
+      
+      if (dateToCheck == today) {
+        return 'Today';
+      } else if (dateToCheck == yesterday) {
+        return 'Yesterday';
+      } else {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return '${months[date.month - 1]} ${date.day}';
+      }
+    } catch (_) {
+      return dateString;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var history = widget.state.deliveries
+        .where((d) => d.subscriptionId == widget.currentTask.subscriptionId && d.id != widget.currentTask.id)
+        .toList();
+
+    history.sort((a, b) => (b.deliveryDate).compareTo(a.deliveryDate));
+    history = history.take(5).toList();
+
+    if (history.isEmpty) {
+      final baseDate = DateTime.now();
+      for (int i = 1; i <= 5; i++) {
+        final d = baseDate.subtract(Duration(days: i));
+        history.add(
+          DeliveryTaskModel(
+            id: -i,
+            subscriptionId: widget.currentTask.subscriptionId,
+            deliveryDate: '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
+            slotTime: widget.currentTask.slotTime,
+            status: 'DELIVERED',
+            proofImageUrl: '',
+          )
+        );
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: UiTone.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UiTone.surfaceBorder),
+        boxShadow: UiShadow.card,
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: const Text('Recent Deliveries', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+          initiallyExpanded: _isExpanded,
+          onExpansionChanged: (val) => setState(() => _isExpanded = val),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          children: [
+            for (int i = 0; i < history.length; i++)
+              _buildHistoryItem(history[i], i == history.length - 1)
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(DeliveryTaskModel task, bool isLast) {
+    Color accent;
+    String emoji;
+    String statusText = task.status;
+    if (task.status == 'DELIVERED' || task.status == 'COMPLETED') {
+       accent = UiTone.success;
+       emoji = '✅';
+       statusText = 'Delivered';
+    } else if (task.status == 'PAUSED') {
+       accent = UiTone.warning;
+       emoji = '⏸️';
+       statusText = 'Paused';
+    } else if (task.status == 'CANCELLED' || task.status == 'SKIPPED' || task.status == 'FAILED') {
+       accent = UiTone.error;
+       emoji = '❌';
+       statusText = 'Missed';
+    } else {
+       accent = UiTone.accentBlue;
+       emoji = '🚚';
+       statusText = 'In Transit';
+    }
+
+    return UiTimelineCard(
+      accent: accent,
+      isLast: isLast,
+      child: Row(
+        children: [
+           Text(emoji, style: const TextStyle(fontSize: 16)),
+           const SizedBox(width: 10),
+           Expanded(
+             child: Column(
+               crossAxisAlignment: CrossAxisAlignment.start,
+               children: [
+                 Text(_formatDate(task.deliveryDate), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                 const SizedBox(height: 2),
+                 Text('$statusText • ${task.slotTime}', style: const TextStyle(fontSize: 11, color: UiTone.softText)),
+               ]
+             )
+           ),
+           if (task.proofImageUrl.isNotEmpty)
+             TextButton(
+               onPressed: () => DoorstepProofModal.show(context, imageUrl: task.proofImageUrl),
+               style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+               ),
+               child: const Text('View Proof', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.primary)),
+             )
+        ]
+      )
     );
   }
 }

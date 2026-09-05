@@ -721,8 +721,9 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 void _showDriverLocationZoneSheet(BuildContext context, AppState state) {
