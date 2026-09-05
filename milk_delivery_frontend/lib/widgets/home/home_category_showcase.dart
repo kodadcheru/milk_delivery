@@ -16,11 +16,12 @@ class HomeCategoryShowcase extends StatelessWidget {
   Widget build(BuildContext context) {
     final backendCategories = state.categories.where((c) => c.isActive).toList();
 
-    // Calculate tile width for 3-column grid
+    // Calculate responsive tile width for category grid
     final screenWidth = MediaQuery.of(context).size.width;
     const horizontalPadding = 16.0 * 2;
     const spacing = 12.0;
-    final tileWidth = (screenWidth - horizontalPadding - spacing * 2) / 3;
+    final columns = screenWidth > 900 ? 6 : (screenWidth > 600 ? 4 : 3);
+    final tileWidth = (screenWidth - horizontalPadding - spacing * (columns - 1)) / columns;
     final isCovered = state.isLocationCovered;
 
     final List<Widget> categoryTiles;

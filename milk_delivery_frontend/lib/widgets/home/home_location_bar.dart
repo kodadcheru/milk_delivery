@@ -144,7 +144,6 @@ class _HomeLocationBarState extends State<HomeLocationBar>
 
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: hasAnyText ? 280 : 230),
       padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, hasAnyText ? 28 : 22),
       decoration: BoxDecoration(
         color: const Color(0xFF0E784D),

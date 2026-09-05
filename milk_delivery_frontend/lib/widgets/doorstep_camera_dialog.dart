@@ -127,7 +127,7 @@ class DoorstepCameraDialog extends StatefulWidget {
   final String deliveryAddress;
   final double latitude;
   final double longitude;
-  final Function(String proofImageUrl) onConfirmProof;
+  final Function onConfirmProof;
 
   const DoorstepCameraDialog({
     super.key,
@@ -144,7 +144,7 @@ class DoorstepCameraDialog extends StatefulWidget {
     required String deliveryAddress,
     required double latitude,
     required double longitude,
-    required Function(String proofImageUrl) onConfirmProof,
+    required Function onConfirmProof,
   }) {
     showModalBottomSheet(
       context: context,
@@ -425,6 +425,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       setState(() => _isCapturing = true);
 
                       // Upload geo-tagged & timestamped proof to backend Image Upload Service
+                      String? base64Str;
                       String? uploadedUrl;
                       try {
                         Uint8List? rawBytes;
@@ -464,7 +465,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                             customerName: widget.customerName,
                           );
 
-                          final base64Str = base64Encode(watermarkedBytes);
+                          base64Str = base64Encode(watermarkedBytes);
                           uploadedUrl = await ImageUploadService.uploadImageBase64(
                             base64Image: base64Str,
                             filename: 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png',
@@ -474,18 +475,26 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       } catch (_) {}
 
                       if (!mounted) return;
+                      
+                      // Offline Queue Fallback
+                      if (uploadedUrl == null && base64Str != null) {
+                        nav.pop();
+                        widget.onConfirmProof(null, base64Str);
+                        return;
+                      }
+
                       if (uploadedUrl == null) {
                         setState(() => _isCapturing = false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             backgroundColor: UiTone.error,
-                            content: Text('📷 Photo capture or upload failed. Please try again.'),
+                            content: Text('📷 Photo capture failed. Please try again.'),
                           ),
                         );
                         return;
                       }
                       nav.pop();
-                      widget.onConfirmProof(uploadedUrl);
+                      widget.onConfirmProof(uploadedUrl, null);
                     },
               icon: _isCapturing
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))

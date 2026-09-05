@@ -154,4 +154,34 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryTeal,
+        brightness: Brightness.dark,
+        primary: primaryMint,
+        secondary: primaryTeal,
+        surface: const Color(0xFF0F172A),
+      ),
+      scaffoldBackgroundColor: const Color(0xFF0B1120),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFF334155), width: 1),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF0B1120),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+    );
+  }
 }

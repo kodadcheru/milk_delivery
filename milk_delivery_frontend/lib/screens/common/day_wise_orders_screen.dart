@@ -60,6 +60,11 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
   Future<void> _loadDayOrders() async {
     setState(() => _isLoading = true);
     try {
+      // Auto-retry offline sync before loading new data
+      if (widget.state.pendingOfflineDeliveries.isNotEmpty) {
+        await widget.state.syncOfflineDeliveries();
+      }
+      
       final dateStr = _formattedDateStr;
       final tasks = await ApiService.fetchDeliveries(date: dateStr);
       final orders = await ApiService.fetchLiveOrders();
@@ -219,6 +224,51 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Offline Sync Indicator ──
+              if (widget.state.pendingOfflineDeliveries.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: UiTone.warningSoft,
+                    borderRadius: BorderRadius.circular(UiRadius.md),
+                    border: Border.all(color: UiTone.warning.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.sync_problem_rounded, color: UiTone.warning, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${widget.state.pendingOfflineDeliveries.length} Offline Deliveries Pending',
+                              style: UiText.bodyStrong.copyWith(color: UiTone.warning, fontSize: 13),
+                            ),
+                            Text(
+                              'Will auto-sync when network returns',
+                              style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _loadDayOrders(), // which calls syncOfflineDeliveries()
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: UiTone.warning,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('Retry', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+
               // ── 1. Date Selector Header Card ──
               Container(
                 padding: const EdgeInsets.all(16),
@@ -751,17 +801,36 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                         deliveryAddress: task.deliveryAddress,
                         latitude: task.customerLatitude,
                         longitude: task.customerLongitude,
-                        onConfirmProof: (proofUrl) async {
-                          final ok = await ApiService.completeDelivery(task.id, proofUrl);
-                          if (ok) {
+                        onConfirmProof: (proofUrl, localBase64) async {
+                          if (proofUrl == null && localBase64 != null) {
+                            // OFFLINE QUEUING
+                            widget.state.addOfflineDelivery(task.id, localBase64);
+                            // Optimistically mark as delivered in UI
+                            widget.state.updateDeliveryTaskStatus(task.id, 'DELIVERED');
                             _loadDayOrders();
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  backgroundColor: UiTone.primary,
-                                  content: Text('✅ Delivery completed!'),
+                                  backgroundColor: UiTone.warning,
+                                  content: Text('⚠️ Saved locally! Will automatically sync when connection returns.'),
                                 ),
                               );
+                            }
+                            return;
+                          }
+                          
+                          if (proofUrl != null) {
+                            final ok = await ApiService.completeDelivery(task.id, proofUrl);
+                            if (ok) {
+                              _loadDayOrders();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: UiTone.primary,
+                                    content: Text('✅ Delivery completed!'),
+                                  ),
+                                );
+                              }
                             }
                           }
                         },

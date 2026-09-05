@@ -35,7 +35,25 @@ class ApiService {
   static final http.Client _client = http.Client();
   
   /// Last error message from any API call — UI can read this for error display
-  static String? lastError;
+  static String? _lastErrorRaw;
+
+  static String? get lastError {
+    if (_lastErrorRaw == null) return null;
+    final lower = _lastErrorRaw!.toLowerCase();
+    if (lower.contains('socketexception') || 
+        lower.contains('timeoutexception') || 
+        lower.contains('network') || 
+        lower.contains('connection') || 
+        lower.contains('failed host lookup') ||
+        lower.contains('clientexception')) {
+      return 'network_error';
+    }
+    return _lastErrorRaw;
+  }
+
+  static set lastError(String? val) {
+    _lastErrorRaw = val;
+  }
 
   static String _extractErrorMsg(http.Response res) {
     try {
@@ -187,7 +205,7 @@ class ApiService {
         return {'success': false, 'error': err['detail'] ?? err['message'] ?? 'Failed to send OTP'};
       }
     } catch (e) {
-      return {'success': false, 'error': 'Network connection error. Please check your connection.'};
+      return {'success': false, 'error': 'network_error'};
     }
   }
 
@@ -210,7 +228,7 @@ class ApiService {
         return {'success': false, 'error': err['message'] ?? err['detail'] ?? 'Invalid OTP code'};
       }
     } catch (_) {
-      return {'success': false, 'error': 'Network connection error. Please try again.'};
+      return {'success': false, 'error': 'network_error'};
     }
   }
 
@@ -247,7 +265,7 @@ class ApiService {
         return {'success': false, 'error': err['detail'] ?? err['message'] ?? 'Registration failed'};
       }
     } catch (_) {
-      return {'success': false, 'error': 'Network connection error. Please try again.'};
+      return {'success': false, 'error': 'network_error'};
     }
   }
 

@@ -20,6 +20,7 @@ import '../models/storefront_config_model.dart';
 import '../models/category_model.dart';
 import '../services/api_service.dart';
 import '../services/hub_realtime_service.dart';
+import '../services/image_upload_service.dart';
 import '../services/location_service.dart';
 import '../services/permission_service.dart';
 
@@ -675,6 +676,57 @@ class AppState extends ChangeNotifier {
       lastError = 'Update failed. Please check your connection.';
       notifyListeners();
       return false;
+    }
+  }
+
+  // ── Offline Delivery Resilience ──
+  final List<Map<String, dynamic>> pendingOfflineDeliveries = [];
+
+  void addOfflineDelivery(int taskId, String base64Proof) {
+    // Only add if not already in queue
+    if (!pendingOfflineDeliveries.any((e) => e['taskId'] == taskId)) {
+      pendingOfflineDeliveries.add({
+        'taskId': taskId,
+        'base64Proof': base64Proof,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+      notifyListeners();
+    }
+  }
+
+  Future<void> syncOfflineDeliveries() async {
+    if (pendingOfflineDeliveries.isEmpty) return;
+    
+    final List<Map<String, dynamic>> toRemove = [];
+    
+    for (var pending in pendingOfflineDeliveries) {
+      try {
+        final taskId = pending['taskId'] as int;
+        final base64Proof = pending['base64Proof'] as String;
+        
+        // 1. Upload the saved proof image
+        final uploadedUrl = await ImageUploadService.uploadImageBase64(
+          base64Image: base64Proof,
+          filename: 'proof_offline_${taskId}_${DateTime.now().millisecondsSinceEpoch}.png',
+          folder: 'proofs',
+        );
+        
+        if (uploadedUrl != null) {
+          // 2. Complete delivery
+          final ok = await ApiService.completeDelivery(taskId, uploadedUrl);
+          if (ok) {
+            toRemove.add(pending);
+          }
+        }
+      } catch (_) {}
+    }
+    
+    if (toRemove.isNotEmpty) {
+      for (var item in toRemove) {
+        pendingOfflineDeliveries.remove(item);
+      }
+      await reloadAllData(silent: true);
+      notifyListeners();
     }
   }
 

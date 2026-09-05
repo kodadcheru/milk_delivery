@@ -138,6 +138,14 @@ class AppTranslations {
       'collect_cash': 'Collect Cash',
       'cash_collected': 'Cash Collected',
       'all_delivered': 'All Deliveries Completed!',
+      
+      // Features & Network
+      'vacation_mode': 'Vacation Mode',
+      'forecast_7_day': '7-Day Forecast',
+      'tomorrow_quantity': "Tomorrow's Quantity",
+      'offline_saved': 'Delivery saved offline. Will sync when back online.',
+      'driver_on_way': 'Driver is on the way!',
+      'network_error': 'Network connection error. Please try again.',
     },
     'te': {
       // Navigation
@@ -277,6 +285,14 @@ class AppTranslations {
       'collect_cash': 'నగదు స్వీకరించండి',
       'cash_collected': 'నగదు స్వీకరించబడింది',
       'all_delivered': 'అన్ని డెలివరీలు పూర్తయ్యాయి!',
+      
+      // Features & Network
+      'vacation_mode': 'సెలవు మోడ్',
+      'forecast_7_day': '7-రోజుల అంచనా',
+      'tomorrow_quantity': 'రేపటి పరిమాణం',
+      'offline_saved': 'డెలివరీ ఆఫ్లైన్లో సేవ్ చేయబడింది. ఆన్లైన్లోకి వచ్చినప్పుడు సింక్ అవుతుంది.',
+      'driver_on_way': 'డ్రైవర్ దారిలో ఉన్నారు!',
+      'network_error': 'నెట్వర్క్ కనెక్షన్ లోపం. దయచేసి మళ్ళీ ప్రయత్నించండి.',
     },
   };
 
