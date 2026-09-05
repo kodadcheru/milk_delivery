@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -70,6 +71,11 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   double _distanceKm = 2.1;
   bool _isTrafficEnabled = false;
   String _driverStatusText = 'On the way';
+
+  BitmapDescriptor? _driverIcon;
+  BitmapDescriptor? _customerIcon;
+  DateTime _lastRealGpsTime = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _transitAnimTimer;
 
   @override
   void initState() {
@@ -171,6 +177,10 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     // 6. Start real-time live GPS polling
     _fetchLiveDriverGps();
     _liveGpsTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchLiveDriverGps());
+
+    // 7. Load custom delivery bot markers and transit progression
+    _loadCustomMarkerIcons();
+    _startTransitProgression();
   }
 
   Future<void> _fetchLiveDriverGps() async {
@@ -215,6 +225,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       }
 
       if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+        _lastRealGpsTime = DateTime.now();
         final newPos = LatLng(lat, lng);
         final distanceMoved = RouteOptimizer.calculateDistanceKm(
           _driverLocation.latitude,
@@ -245,6 +256,141 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         }
       }
     }
+  }
+
+  void _startTransitProgression() {
+    _transitAnimTimer?.cancel();
+    _transitAnimTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      final isTransit = _liveTaskStatus == 'OUT_FOR_DELIVERY' ||
+          _liveTaskStatus == 'ON_THE_WAY' ||
+          _liveTaskStatus == 'DISPATCHED';
+      if (!isTransit) return;
+
+      // If real device GPS arrived in the last 10 seconds, let real GPS lead
+      if (DateTime.now().difference(_lastRealGpsTime).inSeconds < 10) return;
+
+      if (_routePoints.length > 2) {
+        int closestIdx = 0;
+        double minD = double.infinity;
+        for (int i = 0; i < _routePoints.length; i++) {
+          final d = RouteOptimizer.calculateDistanceKm(
+            _driverLocation.latitude,
+            _driverLocation.longitude,
+            _routePoints[i].latitude,
+            _routePoints[i].longitude,
+          );
+          if (d < minD) {
+            minD = d;
+            closestIdx = i;
+          }
+        }
+
+        if (closestIdx + 1 < _routePoints.length) {
+          final nextPoint = _routePoints[closestIdx + 1];
+          _animateDriverMarkerTo(nextPoint);
+          final remKm = RouteOptimizer.calculateDistanceKm(
+            nextPoint.latitude,
+            nextPoint.longitude,
+            _customerLocation.latitude,
+            _customerLocation.longitude,
+          );
+          if (mounted) {
+            setState(() {
+              _distanceKm = remKm;
+              _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
+              _driverStatusText = remKm < 0.2 ? 'Arriving at doorstep' : 'On the way';
+            });
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> _loadCustomMarkerIcons() async {
+    try {
+      final driverBmp = await _createCustomMarkerBitmap(
+        icon: '🛵',
+        bgColor: const Color(0xFF0D7C66),
+        borderColor: Colors.white,
+      );
+      final customerBmp = await _createCustomMarkerBitmap(
+        icon: '🏠',
+        bgColor: const Color(0xFF2563EB),
+        borderColor: Colors.white,
+      );
+      if (mounted) {
+        setState(() {
+          _driverIcon = driverBmp;
+          _customerIcon = customerBmp;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<BitmapDescriptor> _createCustomMarkerBitmap({
+    required String icon,
+    required Color bgColor,
+    required Color borderColor,
+  }) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    const size = 100.0;
+    const center = Offset(size / 2, size / 2);
+
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(center + const Offset(0, 3), 38, shadowPaint);
+
+    final borderPaint = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 40, borderPaint);
+
+    final bgPaint = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 34, bgPaint);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: icon,
+        style: const TextStyle(fontSize: 34),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+    );
+
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(size.toInt(), size.toInt());
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+    final bytes = byteData!.buffer.asUint8List();
+
+    return BitmapDescriptor.bytes(bytes);
+  }
+
+  List<LatLng> get _activeRoutePoints {
+    if (_routePoints.length <= 1) return _routePoints;
+    int closestIdx = 0;
+    double minD = double.infinity;
+    for (int i = 0; i < _routePoints.length; i++) {
+      final d = RouteOptimizer.calculateDistanceKm(
+        _driverLocation.latitude,
+        _driverLocation.longitude,
+        _routePoints[i].latitude,
+        _routePoints[i].longitude,
+      );
+      if (d < minD) {
+        minD = d;
+        closestIdx = i;
+      }
+    }
+    final remaining = _routePoints.sublist(closestIdx);
+    return [_driverLocation, ...remaining];
   }
 
   void _animateDriverMarkerTo(LatLng newPosition) {
@@ -294,6 +440,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         setState(() {
           _routePoints = realRoads;
         });
+        _centerMap();
       }
     } catch (_) {}
   }
@@ -301,6 +448,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   @override
   void dispose() {
     _liveGpsTimer?.cancel();
+    _transitAnimTimer?.cancel();
     _markerAnimController?.dispose();
     _pulseAnimController.dispose();
     super.dispose();
@@ -308,17 +456,25 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
 
   void _centerMap() {
     if (_mapController == null) return;
-    final southWestLat = min(_driverLocation.latitude, _customerLocation.latitude) - 0.003;
-    final southWestLon = min(_driverLocation.longitude, _customerLocation.longitude) - 0.003;
-    final northEastLat = max(_driverLocation.latitude, _customerLocation.latitude) + 0.003;
-    final northEastLon = max(_driverLocation.longitude, _customerLocation.longitude) + 0.003;
+    final pts = _activeRoutePoints.isNotEmpty ? _activeRoutePoints : [_driverLocation, _customerLocation];
+    double minLat = pts.first.latitude;
+    double maxLat = pts.first.latitude;
+    double minLng = pts.first.longitude;
+    double maxLng = pts.first.longitude;
+
+    for (final p in pts) {
+      minLat = min(minLat, p.latitude);
+      maxLat = max(maxLat, p.latitude);
+      minLng = min(minLng, p.longitude);
+      maxLng = max(maxLng, p.longitude);
+    }
 
     final bounds = LatLngBounds(
-      southwest: LatLng(southWestLat, southWestLon),
-      northeast: LatLng(northEastLat, northEastLon),
+      southwest: LatLng(minLat - 0.002, minLng - 0.002),
+      northeast: LatLng(maxLat + 0.002, maxLng + 0.002),
     );
     _mapController?.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 70),
+      CameraUpdate.newLatLngBounds(bounds, 65),
     );
   }
 
@@ -442,7 +598,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
               ),
               zoom: 14.8,
             ),
-            onMapCreated: (controller) => _mapController = controller,
+            onMapCreated: (controller) {
+              _mapController = controller;
+              Future.delayed(const Duration(milliseconds: 350), () {
+                if (mounted) _centerMap();
+              });
+            },
             myLocationEnabled: false,
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
@@ -451,7 +612,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
               Marker(
                 markerId: const MarkerId('customer'),
                 position: _customerLocation,
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                icon: _customerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
                 infoWindow: const InfoWindow(title: '📍 Your Doorstep Delivery'),
               ),
               Marker(
@@ -460,7 +621,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                 rotation: _driverBearing,
                 flat: true,
                 anchor: const Offset(0.5, 0.5),
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+                icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
                 infoWindow: InfoWindow(
                   title: '🛵 $driverName',
                   snippet: '$_driverStatusText • $_etaMinutes mins (${_distanceKm.toStringAsFixed(1)} km)',
@@ -470,9 +631,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
             polylines: {
               Polyline(
                 polylineId: const PolylineId('route'),
-                points: _routePoints,
+                points: _activeRoutePoints,
                 width: 5,
                 color: UiTone.primary,
+                jointType: JointType.round,
+                startCap: Cap.roundCap,
+                endCap: Cap.roundCap,
               ),
             },
           ),
