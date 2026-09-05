@@ -80,7 +80,7 @@ class MilkBackendAPITests(TestCase):
 
     def test_wallet_topup(self):
         url = reverse("wallet_topup")
-        res = self.client.post(url, {"amount": "250.00", "description": "Test Topup"}, format="json")
+        res = self.client.post(url, {"amount": "250.00", "description": "Test Topup", "payment_reference": "TXN123456"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertEqual(self.user.wallet_balance, Decimal("750.00"))
@@ -112,7 +112,10 @@ class MilkBackendAPITests(TestCase):
         )
 
         url = reverse("delivery_complete", kwargs={"pk": task.id})
+        self.user.is_staff = True
         res = self.client.post(url, {"proof_image_url": "https://example.com/doorstep.jpg"}, format="json")
+        self.user.is_staff = False
+        
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         task.refresh_from_db()

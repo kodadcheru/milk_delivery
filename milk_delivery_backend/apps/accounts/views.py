@@ -202,6 +202,10 @@ class DriverLocationUpdateView(APIView):
 
     def post(self, request):
         user = request.user
+        # Only delivery partners / drivers can update location
+        if not hasattr(user, 'role') or user.role not in (User.Roles.DELIVERY_PARTNER, 'DRIVER'):
+            return Response({'detail': 'Only delivery partners can update location.'}, status=status.HTTP_403_FORBIDDEN)
+
         lat = request.data.get("latitude")
         lng = request.data.get("longitude")
         status_val = request.data.get("status", "ON_DUTY")
@@ -281,9 +285,17 @@ class DriverLocationByOrderView(APIView):
                     driver_status="ACTIVE",
                 ).first()
 
-        # 5. Universal fallback driver so endpoint NEVER crashes with NoneType error
+        # 5. No driver found — return proper unassigned response
         if not driver:
-            driver = User.objects.filter(role__in=[User.Roles.DELIVERY_PARTNER, "DRIVER"]).first()
+            return Response({
+                'driver_assigned': False,
+                'detail': 'No delivery partner assigned yet.',
+                'latitude': 0,
+                'longitude': 0,
+                'driver_status': 'UNASSIGNED',
+                'task_status': getattr(task, 'status', None) or getattr(order, 'status', None) or 'PENDING',
+                'last_location_updated': None,
+            }, status=status.HTTP_200_OK)
 
         # Calculate dynamic drops ahead if task exists
         drops_ahead = 0

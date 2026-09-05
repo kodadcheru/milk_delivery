@@ -72,6 +72,12 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
   bool _isTrafficEnabled = false;
   String _driverStatusText = 'On the way';
 
+  bool _isPolling = false;
+  DateTime? _lastDriverUpdateTime;
+  String _liveDriverName = '';
+  String _liveDriverPhone = '';
+  String _liveVehicleNumber = '';
+
   BitmapDescriptor? _driverIcon;
   BitmapDescriptor? _customerIcon;
   DateTime _lastRealGpsTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -185,76 +191,108 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
 
   Future<void> _fetchLiveDriverGps() async {
     if (!mounted) return;
+    if (_isPolling) return;
+    _isPolling = true;
 
-    final orderId = widget.liveOrder?.id ?? widget.subscriptionTask?.id.toString();
-    final driverId = widget.subscriptionTask?.driverId ?? widget.subscriptionTask?.driverDetail?.id;
+    try {
+      final orderId = widget.liveOrder?.id ?? widget.subscriptionTask?.id.toString();
+      final driverId = widget.subscriptionTask?.driverId ?? widget.subscriptionTask?.driverDetail?.id;
 
-    final locData = await ApiService.fetchDriverLiveLocation(
-      orderId: orderId,
-      driverId: driverId,
-    );
+      final locData = await ApiService.fetchDriverLiveLocation(
+        orderId: orderId,
+        driverId: driverId,
+      );
 
-    if (locData != null && mounted) {
-      final lat = (locData['latitude'] is num)
-          ? (locData['latitude'] as num).toDouble()
-          : double.tryParse(locData['latitude']?.toString() ?? '');
-      final lng = (locData['longitude'] is num)
-          ? (locData['longitude'] as num).toDouble()
-          : double.tryParse(locData['longitude']?.toString() ?? '');
-
-      if (mounted) {
-        setState(() {
-          if (locData['driver_status'] != null) {
-            _driverStatusText = locData['driver_status'].toString();
-          }
-          if (locData['task_status'] != null) {
-            _liveTaskStatus = locData['task_status'].toString();
-          }
-          if (locData['drops_ahead'] != null) {
-            _dropsAhead = int.tryParse(locData['drops_ahead'].toString()) ?? _dropsAhead;
-          }
-          if (locData['hub_name'] != null && locData['hub_name'].toString().isNotEmpty) {
-            _hubName = locData['hub_name'].toString();
-          }
-          final hLat = double.tryParse(locData['hub_latitude']?.toString() ?? '');
-          final hLng = double.tryParse(locData['hub_longitude']?.toString() ?? '');
-          if (hLat != null && hLng != null && hLat != 0.0 && hLng != 0.0) {
-            _assignedHubLocation = LatLng(hLat, hLng);
-          }
-        });
-      }
-
-      if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
-        _lastRealGpsTime = DateTime.now();
-        final newPos = LatLng(lat, lng);
-        final distanceMoved = RouteOptimizer.calculateDistanceKm(
-          _driverLocation.latitude,
-          _driverLocation.longitude,
-          lat,
-          lng,
-        );
-
-        if (distanceMoved > 0.003) {
-          _animateDriverMarkerTo(newPos);
-          final remainingKm = RouteOptimizer.calculateDistanceKm(
-            lat,
-            lng,
-            _customerLocation.latitude,
-            _customerLocation.longitude,
-          );
-
+      if (locData != null && mounted) {
+        // Handle 'no driver assigned' response
+        if (locData['driver_assigned'] == false) {
           if (mounted) {
             setState(() {
-              _distanceKm = remainingKm;
-              _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
+              _driverStatusText = 'Waiting for driver';
+              if (locData['task_status'] != null) {
+                _liveTaskStatus = locData['task_status'].toString();
+              }
             });
           }
+          return;
+        }
 
-          if (distanceMoved > 0.03) {
-            _fetchRealRoadNetwork();
+        final lat = (locData['latitude'] is num)
+            ? (locData['latitude'] as num).toDouble()
+            : double.tryParse(locData['latitude']?.toString() ?? '');
+        final lng = (locData['longitude'] is num)
+            ? (locData['longitude'] as num).toDouble()
+            : double.tryParse(locData['longitude']?.toString() ?? '');
+
+        if (mounted) {
+          setState(() {
+            if (locData['driver_status'] != null) {
+              _driverStatusText = locData['driver_status'].toString();
+            }
+            if (locData['task_status'] != null) {
+              _liveTaskStatus = locData['task_status'].toString();
+            }
+            if (locData['drops_ahead'] != null) {
+              _dropsAhead = int.tryParse(locData['drops_ahead'].toString()) ?? _dropsAhead;
+            }
+            if (locData['hub_name'] != null && locData['hub_name'].toString().isNotEmpty) {
+              _hubName = locData['hub_name'].toString();
+            }
+            if (locData['driver_name'] != null && locData['driver_name'].toString().isNotEmpty) {
+              _liveDriverName = locData['driver_name'].toString();
+            }
+            if (locData['driver_phone'] != null && locData['driver_phone'].toString().isNotEmpty) {
+              _liveDriverPhone = locData['driver_phone'].toString();
+            }
+            if (locData['vehicle_number'] != null && locData['vehicle_number'].toString().isNotEmpty) {
+              _liveVehicleNumber = locData['vehicle_number'].toString();
+            }
+            if (locData['last_location_updated'] != null) {
+              _lastDriverUpdateTime = DateTime.tryParse(locData['last_location_updated'].toString());
+            }
+
+            final hLat = double.tryParse(locData['hub_latitude']?.toString() ?? '');
+            final hLng = double.tryParse(locData['hub_longitude']?.toString() ?? '');
+            if (hLat != null && hLng != null && hLat != 0.0 && hLng != 0.0) {
+              _assignedHubLocation = LatLng(hLat, hLng);
+            }
+          });
+        }
+
+        if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+          _lastRealGpsTime = DateTime.now();
+          final newPos = LatLng(lat, lng);
+          final distanceMoved = RouteOptimizer.calculateDistanceKm(
+            _driverLocation.latitude,
+            _driverLocation.longitude,
+            lat,
+            lng,
+          );
+
+          if (distanceMoved > 0.003) {
+            _animateDriverMarkerTo(newPos);
+            final remainingKm = RouteOptimizer.calculateDistanceKm(
+              lat,
+              lng,
+              _customerLocation.latitude,
+              _customerLocation.longitude,
+            );
+
+            if (mounted) {
+              setState(() {
+                _distanceKm = remainingKm;
+                _etaMinutes = ((_distanceKm / 22.0) * 60).ceil().clamp(1, 60);
+              });
+            }
+
+            if (distanceMoved > 0.2) {
+              _fetchRealRoadNetwork();
+            }
           }
         }
       }
+    } finally {
+      _isPolling = false;
     }
   }
 
@@ -267,8 +305,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
           _liveTaskStatus == 'DISPATCHED';
       if (!isTransit) return;
 
-      // If real device GPS arrived in the last 10 seconds, let real GPS lead
-      if (DateTime.now().difference(_lastRealGpsTime).inSeconds < 10) return;
+      // If real device GPS arrived in the last 25 seconds, let real GPS lead
+      if (DateTime.now().difference(_lastRealGpsTime).inSeconds < 25) return;
 
       if (_routePoints.length > 2) {
         int closestIdx = 0;
@@ -480,9 +518,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
 
   void _callDriver() async {
     HapticFeedback.lightImpact();
-    final phone = widget.driverPhone.isNotEmpty
+    final phone = _liveDriverPhone.isNotEmpty ? _liveDriverPhone : (widget.driverPhone.isNotEmpty
         ? widget.driverPhone
-        : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
+        : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? ''));
 
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
     if (cleanPhone.isEmpty) {
@@ -515,9 +553,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
 
   void _sendWhatsAppMessage() async {
     HapticFeedback.lightImpact();
-    final phone = widget.driverPhone.isNotEmpty
+    final phone = _liveDriverPhone.isNotEmpty ? _liveDriverPhone : (widget.driverPhone.isNotEmpty
         ? widget.driverPhone
-        : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? '');
+        : (widget.liveOrder?.driverPhone ?? widget.subscriptionTask?.driverDetail?.phone ?? ''));
 
     String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     if (cleanPhone.isEmpty) {
@@ -539,9 +577,9 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       cleanPhone = '91${cleanPhone.substring(1)}';
     }
 
-    final dName = widget.driverName.isNotEmpty
+    final dName = _liveDriverName.isNotEmpty ? _liveDriverName : (widget.driverName.isNotEmpty
         ? widget.driverName
-        : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner');
+        : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Delivery Partner'));
     final orderId = widget.liveOrder?.id ?? (widget.subscriptionTask != null ? '#${widget.subscriptionTask!.id}' : '');
 
     final msgText = 'Hi $dName, I am tracking my Pamba Express Order $orderId. Please deliver to: ${widget.deliveryAddress}. Thank you!';
@@ -581,7 +619,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
         (widget.liveOrder?.status == 'DELIVERED') ||
         (widget.subscriptionTask?.status == 'DELIVERED');
 
-    final driverName = widget.driverName.isNotEmpty ? widget.driverName : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Assigned Partner');
+    final driverName = _liveDriverName.isNotEmpty ? _liveDriverName : (widget.driverName.isNotEmpty ? widget.driverName : (widget.liveOrder?.driverName ?? widget.subscriptionTask?.driverDetail?.firstName ?? 'Assigned Partner'));
     final resolvedAddress = widget.deliveryAddress.isNotEmpty ? widget.deliveryAddress : 'Doorstep Delivery Location';
     final otp = widget.deliveryOtp.isNotEmpty ? widget.deliveryOtp : (widget.liveOrder?.deliveryOtp ?? '');
 
@@ -806,6 +844,13 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                     '${_distanceKm.toStringAsFixed(1)} km away • Farm Chilled 4°C',
                                     style: UiText.caption.copyWith(color: Colors.white70, fontSize: 11.5),
                                   ),
+                                  if (_lastDriverUpdateTime != null && DateTime.now().difference(_lastDriverUpdateTime!).inSeconds > 60) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '📡 Last seen ${DateTime.now().difference(_lastDriverUpdateTime!).inMinutes} min ago',
+                                      style: UiText.caption.copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -1046,7 +1091,7 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '🛵 ${widget.liveOrder?.driverVehicle ?? "Electric Scooter (TS 09 EB 4092)"} • Hub Delivery Partner',
+                                      '🛵 ${_liveVehicleNumber.isNotEmpty ? _liveVehicleNumber : (widget.liveOrder?.driverVehicle ?? "Electric Scooter")} • Hub Delivery Partner',
                                       style: UiText.caption.copyWith(fontSize: 10.5, color: UiTone.primary, fontWeight: FontWeight.w700),
                                     ),
                                   ],

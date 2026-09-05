@@ -66,6 +66,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   final _searchController = TextEditingController();
   String _selectedShift = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-switches to EVENING after 12:00 PM, MORNING after 12:00 AM
   Timer? _gpsSyncTimer;
+  double? _lastGoodLat;
+  double? _lastGoodLng;
 
   @override
   void initState() {
@@ -108,11 +110,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           final position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high,
           ).timeout(
-            const Duration(seconds: 5),
+            const Duration(seconds: 10),
             onTimeout: () => throw Exception('GPS timeout'),
           );
           lat = position.latitude;
           lng = position.longitude;
+          _lastGoodLat = lat;
+          _lastGoodLng = lng;
         } else {
           // Permission denied — use profile coordinates as fallback
           if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
@@ -122,11 +126,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         }
       }
     } catch (_) {
-      // GPS error — fall back to pending delivery or profile coordinates
-      final pendingDeliveries = widget.state.deliveries.where((d) => d.status == 'PENDING').toList();
-      if (pendingDeliveries.isNotEmpty) {
-        lat = pendingDeliveries.first.customerLatitude;
-        lng = pendingDeliveries.first.customerLongitude;
+      // GPS error — fall back to last good or hub coordinates
+      if (_lastGoodLat != null && _lastGoodLng != null) {
+        lat = _lastGoodLat!;
+        lng = _lastGoodLng!;
+      } else if (widget.state.locationHubs.isNotEmpty) {
+        lat = widget.state.locationHubs.first['latitude'] ?? 17.001734;
+        lng = widget.state.locationHubs.first['longitude'] ?? 79.9625;
       } else if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
         lat = widget.state.currentUser!.latitude;
         lng = widget.state.currentUser!.longitude;
