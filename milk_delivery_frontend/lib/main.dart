@@ -318,10 +318,12 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
               },
             ),
           ],
+        ),
         body: IndexedStack(
           index: _driverTab.clamp(0, driverScreens.length - 1),
           children: driverScreens,
         ),
+        bottomNavigationBar: NextGenBottomNavBar(
           selectedIndex: _driverTab.clamp(0, driverScreens.length - 1),
           onItemSelected: (idx) {
             setState(() => _driverTab = idx);
