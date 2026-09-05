@@ -67,6 +67,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   Timer? _gpsSyncTimer;
   double? _lastGoodLat;
   double? _lastGoodLng;
+  bool _locationWarning = false;
 
   @override
   void initState() {
@@ -91,6 +92,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     try {
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      LocationPermission permission = await Geolocator.checkPermission();
+      bool hasPermission = permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+      if (mounted) {
+        setState(() => _locationWarning = !serviceEnabled || !hasPermission);
+      }
       if (!serviceEnabled) {
         // Fall back to profile coordinates
         if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
@@ -379,7 +385,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Expanded(
                       child: Text(
                         '💵 CASH ON DELIVERY: Collect ₹${order.totalAmount.toStringAsFixed(0)} cash at doorstep!',
-                        style: UiText.caption.copyWith(color: UiTone.warning, fontWeight: FontWeight.bold, fontSize: 11.5),
+                        style: UiText.caption.copyWith(color: UiTone.warning, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ),
                   ],
@@ -624,10 +630,31 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       );
     }).toList();
 
-    return RefreshIndicator(
-      color: UiTone.primary,
-      onRefresh: () => widget.state.reloadAllData(),
-      child: SingleChildScrollView(
+    return Column(
+      children: [
+        if (_locationWarning)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: UiTone.error,
+            child: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '⚠️ Location services are off. Hub manager cannot track your location.',
+                    style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: RefreshIndicator(
+            color: UiTone.primary,
+            onRefresh: () => widget.state.reloadAllData(),
+            child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
         child: Column(
@@ -678,7 +705,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                   ),
                                   Text(
                                     'Broadcasting real-time stops to customers',
-                                    style: UiText.caption.copyWith(color: Colors.white.withValues(alpha: 0.78), fontSize: 10.5),
+                                    style: UiText.caption.copyWith(color: Colors.white.withValues(alpha: 0.78), fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -775,7 +802,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               );
                             },
                             icon: const Icon(Icons.inventory_2_rounded, size: 15, color: Colors.white),
-                            label: Text('Crate Checklist 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 11, color: Colors.white)),
+                            label: Text('Crate Checklist 📦', style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 12.5, color: Colors.white)),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.2),
                               backgroundColor: Colors.white.withValues(alpha: 0.12),
@@ -801,7 +828,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               );
                             },
                             icon: const Icon(Icons.calendar_month_rounded, size: 15, color: Colors.white),
-                            label: Text('Shift Calendar 📅', style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 11, color: Colors.white)),
+                            label: Text('Shift Calendar 📅', style: UiText.label.copyWith(fontWeight: FontWeight.w800, fontSize: 12.5, color: Colors.white)),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.2),
                               backgroundColor: Colors.white.withValues(alpha: 0.12),
@@ -847,7 +874,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         children: [
                           Text(
                             '${_selectedShift == "EVENING" ? "Evening" : "Morning"} Route Completion: $totalCompletedCount of $totalAllStops Stops',
-                            style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.w700, color: UiTone.softText),
+                            style: UiText.label.copyWith(fontSize: 13, fontWeight: FontWeight.w700, color: UiTone.softText),
                           ),
                           Text(
                             '${(progressPct * 100).toStringAsFixed(0)}%',
@@ -894,7 +921,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                     ],
                                   ),
                                   if (codPending > 0)
-                                    Text('To Collect: ₹${codPending.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11, fontWeight: FontWeight.w600)),
+                                    Text('To Collect: ₹${codPending.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 12.5, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ),
@@ -957,7 +984,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 action: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                  child: Text('HIGH PRIORITY', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                  child: Text('HIGH PRIORITY', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 11, fontWeight: FontWeight.w900)),
                 ),
               ),
               ...expressOrders.map((order) => _buildExpressOrderCard(order)),
@@ -1054,7 +1081,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       style: UiText.caption.copyWith(
                         color: const Color(0xFF0D7C66),
                         fontWeight: FontWeight.w900,
-                        fontSize: 10.5,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -1068,7 +1095,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 ),
                 child: Text(
                   group.slotTime.isNotEmpty ? group.slotTime : '05:30 AM',
-                  style: UiText.caption.copyWith(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                  style: UiText.caption.copyWith(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -1089,7 +1116,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       group.deliveryAddress,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: UiText.caption.copyWith(color: Colors.white.withValues(alpha: 0.88), fontSize: 11.5, height: 1.3),
+                      style: UiText.caption.copyWith(color: Colors.white.withValues(alpha: 0.88), fontSize: 13, height: 1.3),
                     ),
                   ],
                 ),
@@ -1132,7 +1159,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 ),
                 child: Text(
                   '$prodIcon $qty x $prodName ($packSize)',
-                  style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
+                  style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5),
                 ),
               );
             }).toList(),
@@ -1225,7 +1252,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         color: UiTone.ink,
                         borderRadius: BorderRadius.circular(UiRadius.xs),
                       ),
-                      child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5)),
+                      child: Text('STOP #${idx + 1}', style: UiText.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12)),
                     ),
                     const SizedBox(width: 6),
                     Flexible(
@@ -1240,7 +1267,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: UiText.caption.copyWith(
-                            fontSize: 10,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w800,
                             color: isEvening ? const Color(0xFF7C3AED) : const Color(0xFF0D7C66),
                           ),
@@ -1281,7 +1308,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w900),
                     ),
-                    Text(custPhone, maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.caption.copyWith(fontSize: 11, color: UiTone.softText)),
+                    Text(custPhone, maxLines: 1, overflow: TextOverflow.ellipsis, style: UiText.caption.copyWith(fontSize: 12.5, color: UiTone.softText)),
                   ],
                 ),
               ),
@@ -1295,7 +1322,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ),
                   child: Text(
                     '${group.tasks.length} PKGS',
-                    style: UiText.caption.copyWith(fontSize: 9, fontWeight: FontWeight.w900, color: UiTone.primary),
+                    style: UiText.caption.copyWith(fontSize: 10.5, fontWeight: FontWeight.w900, color: UiTone.primary),
                   ),
                 ),
               // In-App Live Chat Button
@@ -1385,7 +1412,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           const SizedBox(width: 4),
                           Text(
                             '${lat.toStringAsFixed(4)}° N, ${lon.toStringAsFixed(4)}° E',
-                            style: UiText.caption.copyWith(color: UiTone.accentBlue, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: UiText.caption.copyWith(color: UiTone.accentBlue, fontSize: 11.5, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -1399,7 +1426,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         children: [
                           const Icon(Icons.navigation_rounded, size: 12, color: UiTone.accentBlue),
                           const SizedBox(width: 4),
-                          Text('Navigate Map', style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.accentBlue)),
+                          Text('Navigate Map', style: UiText.caption.copyWith(fontSize: 12.5, fontWeight: FontWeight.bold, color: UiTone.accentBlue)),
                         ],
                       ),
                     ),
@@ -1435,7 +1462,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(color: UiTone.successSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                    child: Text('CHILLED', style: UiText.caption.copyWith(fontSize: 9.5, fontWeight: FontWeight.bold, color: UiTone.success)),
+                    child: Text('CHILLED', style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.success)),
                   ),
                 ],
               ),
@@ -1461,7 +1488,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       'Note: $instructions',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: UiTone.warning),
+                      style: UiText.caption.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600, color: UiTone.warning),
                     ),
                   ),
                 ],
@@ -1486,7 +1513,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         side: BorderSide(color: UiTone.error.withValues(alpha: 0.35)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.md)),
                       ),
-                      child: Text('Skip Stop ⏭️', style: UiText.label.copyWith(fontSize: 11.5, fontWeight: FontWeight.bold, color: UiTone.error)),
+                      child: Text('Skip Stop ⏭️', style: UiText.label.copyWith(fontSize: 13, fontWeight: FontWeight.bold, color: UiTone.error)),
                     ),
                   ),
                 ),
@@ -1585,18 +1612,18 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(color: UiTone.infoSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                        child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 11.5)),
+                        child: Text(order.id, style: UiText.caption.copyWith(color: UiTone.accentBlue, fontWeight: FontWeight.w900, fontSize: 13)),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(color: UiTone.errorSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                        child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                        child: Text('30-MIN EXPRESS', style: UiText.caption.copyWith(color: UiTone.error, fontSize: 11, fontWeight: FontWeight.w900)),
                       ),
                       if (order.isCod) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(color: UiTone.warningSoft, borderRadius: BorderRadius.circular(UiRadius.xs)),
-                          child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                          child: Text('💵 COD: ₹${order.totalAmount.toStringAsFixed(0)}', style: UiText.caption.copyWith(color: UiTone.warning, fontSize: 11, fontWeight: FontWeight.w900)),
                         ),
                       ],
                     ],
@@ -1629,7 +1656,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               : (order.status == 'PICKED_UP'
                                   ? const Color(0xFF0D7C66)
                                   : (order.status == 'OUT_FOR_DELIVERY' ? const Color(0xFF7C3AED) : UiTone.warning)),
-                          fontSize: 10,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1660,7 +1687,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               'Items: ${order.items.map((i) => "${i.quantity}x ${i.product.name}").join(", ")}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5),
+              style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 13),
             ),
             const SizedBox(height: 12),
 
@@ -1672,7 +1699,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _callCustomer(context, order.customerPhone),
                       icon: const Icon(Icons.phone, size: 13),
-                      label: Text('Call', style: UiText.label.copyWith(fontSize: 11, color: UiTone.primary)),
+                      label: Text('Call', style: UiText.label.copyWith(fontSize: 12.5, color: UiTone.primary)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: UiTone.primary,
                         side: const BorderSide(color: UiTone.primary),
@@ -1687,7 +1714,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => DriverOrderDetailsSheet.launchMapsNavigation(order.deliveryLatitude, order.deliveryLongitude),
                       icon: const Icon(Icons.navigation_rounded, size: 13, color: Color(0xFF0D7C66)),
-                      label: const Text('Map 🗺️', style: TextStyle(fontSize: 11, color: Color(0xFF0D7C66), fontWeight: FontWeight.w800)),
+                      label: const Text('Map 🗺️', style: TextStyle(fontSize: 12.5, color: Color(0xFF0D7C66), fontWeight: FontWeight.w800)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF0D7C66),
                         side: const BorderSide(color: Color(0xFF0D7C66)),
@@ -1717,7 +1744,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               }
                             },
                             icon: const Icon(Icons.inventory_2_rounded, size: 13),
-                            label: Text('Order Picked 📦', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                            label: Text('Order Picked 📦', style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0D7C66),
                               foregroundColor: Colors.white,
@@ -1741,7 +1768,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                               }
                             },
                             icon: const Icon(Icons.navigation_rounded, size: 13),
-                            label: Text('On The Way 🛵', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                            label: Text('On The Way 🛵', style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF7C3AED),
                               foregroundColor: Colors.white,
@@ -1754,7 +1781,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                           return ElevatedButton.icon(
                             onPressed: () => _handleCompleteExpressOrder(context, order),
                             icon: const Icon(Icons.pin_rounded, size: 13),
-                            label: Text('Verify OTP & Deliver', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                            label: Text('Verify OTP & Deliver', style: UiText.label.copyWith(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: UiTone.primary,
                               foregroundColor: Colors.white,
@@ -1795,7 +1822,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 10, fontWeight: FontWeight.w500),
+          style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11.5, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -1825,7 +1852,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: UiText.label.copyWith(
                   color: isSel ? UiTone.primary : Colors.white,
-                  fontSize: 11.5,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
               ),

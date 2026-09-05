@@ -233,22 +233,69 @@ class _WalletTabState extends State<WalletTab> {
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryMint.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                          border: Border.all(color: AppTheme.primaryMint),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.bolt_rounded, color: AppTheme.primaryMint, size: 12),
-                            SizedBox(width: 2),
-                            Text(
-                              'Auto-Debit 🟢',
-                              style: TextStyle(color: AppTheme.primaryMint, fontSize: 9.5, fontWeight: FontWeight.bold),
+                      GestureDetector(
+                        onTap: () {
+                          AppTheme.hapticLight();
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.darkSlate,
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl)),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.security_rounded, color: AppTheme.primaryMint, size: 48),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Auto-Debit Secure',
+                                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Your wallet balance is automatically debited only after each successful doorstep delivery. You are never charged in advance.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: UiTone.softText, fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppTheme.primaryMint,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                                      ),
+                                      child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                              ),
                             ),
-                          ],
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryMint.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
+                            border: Border.all(color: AppTheme.primaryMint),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.bolt_rounded, color: AppTheme.primaryMint, size: 12),
+                              SizedBox(width: 2),
+                              Text(
+                                'Auto-Debit 🟢',
+                                style: TextStyle(color: AppTheme.primaryMint, fontSize: 9.5, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -364,13 +411,24 @@ class _WalletTabState extends State<WalletTab> {
                   borderRadius: BorderRadius.circular(UiRadius.lg),
                   border: Border.all(color: AppTheme.borderSubtle),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    Text('🧾', style: TextStyle(fontSize: 36)),
-                    SizedBox(height: 8),
-                    Text(
+                    const Text('🧾', style: TextStyle(fontSize: 36)),
+                    const SizedBox(height: 8),
+                    const Text(
                       'No transactions yet',
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => _showRechargeModal(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryMint,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Top Up Now', style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ),

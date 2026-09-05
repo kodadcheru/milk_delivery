@@ -11,6 +11,7 @@
 library;
 
 export '../../theme/ui_status.dart';
+export 'ui_button.dart';
 export 'ui_empty_state.dart';
 export 'ui_filter_chip_bar.dart';
 export 'ui_hero_card.dart';

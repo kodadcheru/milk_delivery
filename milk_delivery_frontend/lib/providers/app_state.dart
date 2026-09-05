@@ -28,6 +28,12 @@ class AppState extends ChangeNotifier {
   String currentRole = 'CUSTOMER';
   bool isLoading = false;
   String? errorMessage;
+  String? lastError;
+
+  void clearError() {
+    lastError = null;
+    notifyListeners();
+  }
   bool isDriverOnDuty = true;
 
   void setDriverOnDuty(bool val) {
@@ -641,8 +647,9 @@ class AppState extends ChangeNotifier {
       // Rollback optimistic update on failure
       if (idx != -1 && old != null) {
         liveOrders[idx] = old;
-        notifyListeners();
       }
+      lastError = 'Update failed. Please check your connection.';
+      notifyListeners();
       return false;
     }
   }
@@ -664,8 +671,9 @@ class AppState extends ChangeNotifier {
       // Rollback optimistic update on failure
       if (idx != -1 && old != null) {
         deliveries[idx] = old;
-        notifyListeners();
       }
+      lastError = 'Update failed. Please check your connection.';
+      notifyListeners();
       return false;
     }
   }
@@ -728,7 +736,16 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  bool needsPermissionExplanation = false;
+
   Future<void> initDevicePermissionsAndLocation() async {
+    needsPermissionExplanation = true;
+    notifyListeners();
+  }
+
+  Future<void> requestPermissionsAfterExplanation() async {
+    needsPermissionExplanation = false;
+    notifyListeners();
     hasNotificationPermission = await PermissionService.requestNotificationPermission();
     isSessionLocationSelected = false; // Reset on app open
     await requestDeviceGPS(isStartup: true);

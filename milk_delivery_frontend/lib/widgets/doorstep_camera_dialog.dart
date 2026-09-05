@@ -443,12 +443,15 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
 
                         // If user cancelled camera or on simulator, download preset image bytes as base
                         if (rawBytes == null) {
-                          try {
-                            final res = await http.get(Uri.parse(activePreset.imageUrl)).timeout(const Duration(seconds: 4));
-                            if (res.statusCode == 200) {
-                              rawBytes = res.bodyBytes;
-                            }
-                          } catch (_) {}
+                          if (!mounted) return;
+                          setState(() => _isCapturing = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: UiTone.error,
+                              content: Text('Camera is required for delivery proof. Please try again.'),
+                            ),
+                          );
+                          return;
                         }
 
                         if (rawBytes != null) {

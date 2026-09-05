@@ -122,14 +122,6 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0D7C66)),
-                          tooltip: 'Refresh Orders',
-                          onPressed: () async {
-                            HapticFeedback.lightImpact();
-                            await widget.state.reloadAllData();
-                          },
-                        ),
                       ],
                     ),
                     const SizedBox(height: 14),

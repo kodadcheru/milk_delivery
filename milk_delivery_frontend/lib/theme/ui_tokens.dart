@@ -30,6 +30,14 @@ class UiSpace {
   static const EdgeInsets screen = EdgeInsets.fromLTRB(16, 14, 16, 24);
   static const EdgeInsets section = EdgeInsets.fromLTRB(16, 14, 16, 12);
 
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 24;
+  static const double xxl = 32;
+  static const double xxxl = 48;
+
   /// Standard horizontal screen gutter used across customer screens.
   static const double gutter = 16;
   static const EdgeInsets hGutter = EdgeInsets.symmetric(horizontal: 16);

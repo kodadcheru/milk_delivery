@@ -40,6 +40,7 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   double _driverHeading = 0.0;
   List<LatLng> _realRoadPolylinePoints = [];
   bool _isLoadingRoadGeometry = false;
+  bool _locationWarning = false;
 
   // Depot location — read from driver assigned hub, fallback to tasks hub
   LatLng get _depotLocation {
@@ -156,9 +157,14 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   Future<void> _startLiveGpsTracking() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-
       LocationPermission permission = await Geolocator.checkPermission();
+      
+      bool hasPermission = permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+      if (mounted) {
+        setState(() => _locationWarning = !serviceEnabled || !hasPermission);
+      }
+      
+      if (!serviceEnabled) return;
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
@@ -358,8 +364,29 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
           ),
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
+          if (_locationWarning)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: UiTone.error,
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚠️ Location services are off. Hub manager cannot track your location.',
+                      style: UiText.bodyStrong.copyWith(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: Stack(
+              children: [
           // ── Google Maps View ──
           GoogleMap(
             initialCameraPosition: CameraPosition(
@@ -684,6 +711,9 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
                 ),
               ),
             ),
+        ],
+            ),
+          ),
         ],
       ),
     );

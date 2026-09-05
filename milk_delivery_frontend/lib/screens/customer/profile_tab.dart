@@ -52,7 +52,10 @@ class ProfileTab extends StatelessWidget {
                     const Text('Profile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () => _showEditProfileDialog(context, state, fullName, email, phone),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        _showEditProfileDialog(context, state, fullName, email, phone);
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
@@ -95,15 +98,21 @@ class ProfileTab extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38BDF8),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                      SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF38BDF8),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+                          ),
                         ),
-                        child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
                       ),
                     ],
                   ),
@@ -397,7 +406,10 @@ class ProfileTab extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           child: Row(
@@ -469,6 +481,7 @@ void _showEditProfileDialog(
   String selectedSlot = user?.deliverySlotPreference.isNotEmpty == true
       ? user!.deliverySlotPreference
       : '05:30 AM - 07:00 AM';
+  bool isSaving = false;
 
   showModalBottomSheet(
     context: context,
@@ -701,7 +714,7 @@ void _showEditProfileDialog(
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: () async {
+                            onPressed: isSaving ? null : () async {
                               final first = firstNameCtrl.text.trim();
                               final last = lastNameCtrl.text.trim();
                               final email = emailCtrl.text.trim();
@@ -717,6 +730,7 @@ void _showEditProfileDialog(
                                 return;
                               }
 
+                              setSheetState(() => isSaving = true);
                               await state.updateUserProfile(
                                 firstName: first,
                                 lastName: last,
@@ -724,6 +738,7 @@ void _showEditProfileDialog(
                                 phone: phone,
                                 slotPreference: selectedSlot,
                               );
+                              setSheetState(() => isSaving = false);
 
                               if (context.mounted) {
                                 Navigator.pop(ctx);
@@ -742,17 +757,19 @@ void _showEditProfileDialog(
                               elevation: 0,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_circle_rounded, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Save Profile Changes',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
-                                ),
-                              ],
-                            ),
+                            child: isSaving
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.check_circle_rounded, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Save Profile Changes',
+                                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                                      ),
+                                    ],
+                                  ),
                           ),
                         ),
                       ],

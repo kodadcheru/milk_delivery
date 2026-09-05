@@ -118,6 +118,18 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
     }
   }
 
+  void _launchGoogleMapsNavigation(double lat, double lon) async {
+    final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving';
+    final uri = Uri.parse(googleMapsUrl);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {}
+  }
+
   void _callPhone(String phone) async {
     final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$clean');
@@ -687,6 +699,13 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
             // Action Row
             Row(
               children: [
+                IconButton(
+                  onPressed: () => _launchGoogleMapsNavigation(task.customerLatitude, task.customerLongitude),
+                  icon: const Icon(Icons.directions, color: UiTone.accentBlue, size: 20),
+                  tooltip: 'Navigate',
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.only(right: 12),
+                ),
                 IconButton(
                   onPressed: () => _callPhone(phone),
                   icon: const Icon(Icons.phone_rounded, color: UiTone.primary, size: 20),

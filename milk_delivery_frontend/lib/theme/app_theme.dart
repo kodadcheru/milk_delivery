@@ -1,33 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'ui_tokens.dart';
 
 /// Next-Gen Design Tokens, Color Palette, and Styling Utilities for Pamba
 class AppTheme {
   // ── 🎨 Core Color Palette ──
   // Kept in lockstep with UiTone (lib/theme/ui_tokens.dart) so the Material
   // ColorScheme seed matches the teal painted on custom surfaces app-wide.
-  static const Color primaryTeal = Color(0xFF0D7C66); // == UiTone.primary
-  static const Color primaryMint = Color(0xFF10B766); // == UiTone.secondary
+  static const Color primaryTeal = UiTone.primary;
+  static const Color primaryMint = UiTone.secondary;
   static const Color primaryDark = Color(0xFF0D5C56); // Rich Forest Teal
   static const Color accentAmber = Color(0xFFF59E0B); // Solar Amber Glow
   static const Color accentCyan = Color(0xFF06B6D4);  // Pure Spring Cyan
   static const Color accentViolet = Color(0xFF8B5CF6); // Lavender Frost
 
   // Surface & Neutrals
-  static const Color bgPorcelain = Color(0xFFF8FAFC); // Clean Canvas Background
-  static const Color bgSurface = Color(0xFFFFFFFF);   // Card Background
-  static const Color bgSurfaceMuted = Color(0xFFF1F5F9); // Muted Pill Background
-  static const Color darkSlate = Color(0xFF0F172A);   // Deep Contrast Slate
+  static const Color bgPorcelain = UiTone.shellBackground;
+  static const Color bgSurface = UiTone.surface;
+  static const Color bgSurfaceMuted = UiTone.surfaceMuted;
+  static const Color darkSlate = UiTone.ink;
   static const Color darkCard = Color(0xFF1E293B);    // Premium Dark Container
 
   // Text Colors
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF475569);
+  static const Color textPrimary = UiTone.ink;
+  static const Color textSecondary = UiTone.softText;
   static const Color textMuted = Color(0xFF94A3B8);
-  static const Color textLight = Color(0xFFFFFFFF);
+  static const Color textLight = UiTone.surface;
 
   // Border & Divider
-  static const Color borderSubtle = Color(0xFFE2E8F0);
+  static const Color borderSubtle = UiTone.surfaceBorder;
   static const Color borderGlow = Color(0xFFCBD5E1);
 
   // ── 🌈 Signature Gradients ──

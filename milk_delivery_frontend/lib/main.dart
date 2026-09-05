@@ -162,8 +162,8 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
     for (final n in widget.state.notifications) {
       _seenNotifIds.add(n.id);
     }
-    // Real-time notification & in-app chat poller (every 4 seconds)
-    _notifPollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _pollLiveNotifications());
+    // Real-time notification & in-app chat poller (every 30 seconds)
+    _notifPollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _pollLiveNotifications());
   }
 
   @override
@@ -674,9 +674,16 @@ class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver
       ProfileTab(state: widget.state, onLogout: widget.onLogout),
     ];
 
-    return Scaffold(
-      extendBody: false,
-      body: screens[widget.state.currentTabIndex],
+    return PopScope(
+      canPop: widget.state.currentTabIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          widget.state.setTab(0);
+        }
+      },
+      child: Scaffold(
+        extendBody: false,
+        body: screens[widget.state.currentTabIndex],
       bottomNavigationBar: NextGenBottomNavBar(
         selectedIndex: widget.state.currentTabIndex,
         onItemSelected: (idx) => widget.state.setTab(idx),
