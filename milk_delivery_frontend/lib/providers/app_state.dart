@@ -582,6 +582,9 @@ class AppState extends ChangeNotifier {
     // 1. Send to Backend API
     final itemsPayload = cartProductsList.map((e) => {
       'product_id': e.key.id,
+      'name': e.key.name,
+      'product_name': e.key.name,
+      'category': e.key.category,
       'quantity': e.value,
       'pack_size': e.key.unitQuantity,
       'unit_price': e.key.pricePerUnit,

@@ -251,8 +251,12 @@ class ExpressOrderListCreateView(APIView):
             
             prod = None
             raw_id = item_entry.get("product_id") or (item_entry.get("product", {}).get("id") if isinstance(item_entry.get("product"), dict) else None)
+            prod_name = item_entry.get("name") or item_entry.get("product_name") or (item_entry.get("product", {}).get("name") if isinstance(item_entry.get("product"), dict) else None)
+            pack_size = item_entry.get("pack_size") or ""
+            category = item_entry.get("category") or ""
             qty = int(item_entry.get("quantity", 1))
 
+            # 1. Direct PK lookup
             if raw_id is not None:
                 try:
                     clean_id = int(re.sub(r'\D', '', str(raw_id))) if any(c.isdigit() for c in str(raw_id)) else None
@@ -261,26 +265,75 @@ class ExpressOrderListCreateView(APIView):
                 except Exception:
                     prod = None
 
-            if not prod:
-                prod_name = item_entry.get("name") or (item_entry.get("product", {}).get("name") if isinstance(item_entry.get("product"), dict) else None)
-                if prod_name:
-                    prod = Product.objects.filter(name__iexact=str(prod_name).strip()).first() or Product.objects.filter(name__icontains=str(prod_name).strip()).first()
+            # 2. Try match by product name keywords
+            if not prod and prod_name:
+                p_name_clean = str(prod_name).strip()
+                prod = Product.objects.filter(name__iexact=p_name_clean).first()
+                if not prod:
+                    prod = Product.objects.filter(name__icontains=p_name_clean).first()
+                if not prod:
+                    # Token-level match
+                    tokens = [t for t in p_name_clean.split() if len(t) > 3]
+                    for token in tokens:
+                        prod = Product.objects.filter(name__icontains=token).first()
+                        if prod:
+                            break
 
+            # 3. Match by pack size hints (e.g. eggs, 20L can, curd, ghee)
+            p_size_lower = str(pack_size).lower()
+            if not prod and p_size_lower:
+                if "egg" in p_size_lower:
+                    prod = Product.objects.filter(name__icontains="egg").first()
+                elif "can" in p_size_lower or "water" in p_size_lower:
+                    prod = Product.objects.filter(name__icontains="water").first() or Product.objects.filter(name__icontains="can").first()
+                elif "curd" in p_size_lower or "dahi" in p_size_lower:
+                    prod = Product.objects.filter(name__icontains="curd").first() or Product.objects.filter(name__icontains="dahi").first()
+                elif "ghee" in p_size_lower or "butter" in p_size_lower or "makkhan" in p_size_lower:
+                    prod = Product.objects.filter(name__icontains="ghee").first() or Product.objects.filter(name__icontains="butter").first()
+                elif "chicken" in p_size_lower or "meat" in p_size_lower or "mutton" in p_size_lower:
+                    prod = Product.objects.filter(name__icontains="meat").first() or Product.objects.filter(name__icontains="chicken").first() or Product.objects.filter(name__icontains="mutton").first()
+                elif "buffalo" in p_size_lower:
+                    prod = Product.objects.filter(name__icontains="buffalo").first()
+
+            # 4. Match by category hint
+            if not prod and category:
+                cat_upper = str(category).upper()
+                if "EGG" in cat_upper:
+                    prod = Product.objects.filter(name__icontains="egg").first()
+                elif "WATER" in cat_upper:
+                    prod = Product.objects.filter(name__icontains="water").first()
+                elif "MEAT" in cat_upper:
+                    prod = Product.objects.filter(name__icontains="meat").first() or Product.objects.filter(name__icontains="chicken").first()
+                elif "GHEE" in cat_upper:
+                    prod = Product.objects.filter(name__icontains="ghee").first() or Product.objects.filter(name__icontains="butter").first()
+                elif "CURD" in cat_upper:
+                    prod = Product.objects.filter(name__icontains="curd").first()
+
+            # 5. Fallback only as absolute last resort
             if not prod:
                 prod = Product.objects.filter(is_available=True).first() or Product.objects.first()
 
             if not prod:
                 continue
 
-            pack_size = item_entry.get("pack_size") or getattr(prod, "unit_quantity", "1 Litre")
-            p_size_lower = str(pack_size).lower()
-            base_price = prod.price_per_unit
-            if "500" in p_size_lower:
-                unit_price = round(base_price * Decimal("0.5"), 2)
-            elif "2" in p_size_lower and ("litre" in p_size_lower or "liter" in p_size_lower or "kg" in p_size_lower):
-                unit_price = round(base_price * Decimal("2.0"), 2)
+            if not pack_size:
+                pack_size = getattr(prod, "unit_quantity", "1 Litre")
+
+            # Resolve unit price accurately from cart or product pricing
+            raw_price = item_entry.get("unit_price")
+            if raw_price is not None:
+                try:
+                    unit_price = Decimal(str(raw_price))
+                except Exception:
+                    unit_price = prod.price_per_unit
             else:
-                unit_price = base_price
+                base_price = prod.price_per_unit
+                if "500" in p_size_lower:
+                    unit_price = round(base_price * Decimal("0.5"), 2)
+                elif "2" in p_size_lower and ("litre" in p_size_lower or "liter" in p_size_lower or "kg" in p_size_lower):
+                    unit_price = round(base_price * Decimal("2.0"), 2)
+                else:
+                    unit_price = base_price
 
             total_amount += unit_price * qty
             parsed_items.append({
