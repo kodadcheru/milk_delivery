@@ -600,12 +600,17 @@ class ApiService {
   }
 
   // ── 6. Wallet & Transactions ──
-  static Future<bool> topUpWallet(double amount, String description) async {
+  static Future<bool> topUpWallet(double amount, String description, {String? paymentReference}) async {
     try {
+      final ref = paymentReference ?? 'PAY_${DateTime.now().millisecondsSinceEpoch}';
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/wallet/topup/'),
             headers: _headers,
-            body: jsonEncode({'amount': amount.toStringAsFixed(2), 'description': description}),
+            body: jsonEncode({
+              'amount': amount.toStringAsFixed(2),
+              'description': description,
+              'payment_reference': ref,
+            }),
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return true;

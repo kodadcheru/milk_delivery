@@ -146,7 +146,9 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                     f"Hub daily capacity limit reached for {prod_obj.name}. "
                     f"Only {inv.available_slots} slot(s) available at {hub.name}."
                 )
-            inv.booked_slots += int(req_qty * volume_multiplier)
+            import math
+            slots_to_book = max(1, int(math.ceil(req_qty * volume_multiplier)))
+            inv.booked_slots += slots_to_book
             inv.save(update_fields=["booked_slots"])
 
         # Determine effective start date based on shift cutoff
@@ -253,14 +255,10 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         if not user or not user.is_authenticated:
             return Subscription.objects.none()
-        if user.is_superuser:
+        if user.is_superuser or user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
             return Subscription.objects.all()
-        if getattr(user, "role", "") == User.Roles.CUSTOMER:
-            return Subscription.objects.filter(customer=user)
-        if getattr(user, "assigned_hub", None):
+        if getattr(user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER") and getattr(user, "assigned_hub", None):
             return Subscription.objects.filter(hub=user.assigned_hub)
-        if user.is_staff or getattr(user, "role", "") in (User.Roles.ADMIN, "ADMIN"):
-            return Subscription.objects.all()
         return Subscription.objects.filter(customer=user)
 
     def perform_update(self, serializer):
@@ -330,8 +328,13 @@ class SubscriptionPauseView(APIView):
 
         is_allowed = (
             sub.customer == request.user
+            or request.user.is_superuser
             or request.user.is_staff
-            or getattr(request.user, "role", "") in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER", "ADMIN")
+            or getattr(request.user, "role", "") in (User.Roles.ADMIN, "ADMIN")
+            or (
+                getattr(request.user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER")
+                and getattr(request.user, "assigned_hub", None) == sub.hub
+            )
         )
         if not is_allowed:
             return Response({"detail": "Permission denied for pausing subscription."}, status=status.HTTP_403_FORBIDDEN)
@@ -402,8 +405,13 @@ class SubscriptionResumeView(APIView):
 
         is_allowed = (
             sub.customer == request.user
+            or request.user.is_superuser
             or request.user.is_staff
-            or getattr(request.user, "role", "") in (User.Roles.ADMIN, User.Roles.HUB_MANAGER, "PROVIDER", "ADMIN")
+            or getattr(request.user, "role", "") in (User.Roles.ADMIN, "ADMIN")
+            or (
+                getattr(request.user, "role", "") in (User.Roles.HUB_MANAGER, "PROVIDER")
+                and getattr(request.user, "assigned_hub", None) == sub.hub
+            )
         )
         if not is_allowed:
             return Response({"detail": "Permission denied for resuming subscription."}, status=status.HTTP_403_FORBIDDEN)

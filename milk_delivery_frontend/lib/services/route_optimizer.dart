@@ -94,9 +94,8 @@ class RouteOptimizer {
 
     final optimizedDistance = calculateLoopDistance(hub, orderedStops);
 
-    // If optimized distance is slightly higher due to small sample, cap savings realistically
     final rawSavedKm = unoptimizedDistance - optimizedDistance;
-    final distanceSavedKm = rawSavedKm > 0 ? rawSavedKm : (unoptimizedDistance * 0.35); // Estimated 35% minimum cluster savings
+    final distanceSavedKm = rawSavedKm > 0 ? rawSavedKm : 0.0;
 
     // 0.035 Liters/km consumption for delivery scooter, petrol @ ₹105/L, 2.31 kg CO2/L
     final fuelSavedLiters = distanceSavedKm * 0.035;

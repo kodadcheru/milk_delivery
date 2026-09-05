@@ -28,6 +28,14 @@ class AppState extends ChangeNotifier {
   String currentRole = 'CUSTOMER';
   bool isLoading = false;
   String? errorMessage;
+  bool isDriverOnDuty = true;
+
+  void setDriverOnDuty(bool val) {
+    if (isDriverOnDuty != val) {
+      isDriverOnDuty = val;
+      notifyListeners();
+    }
+  }
 
   // ── Language & Localization State ──
   String _currentLanguage = 'en';
@@ -575,6 +583,8 @@ class AppState extends ChangeNotifier {
     final itemsPayload = cartProductsList.map((e) => {
       'product_id': e.key.id,
       'quantity': e.value,
+      'pack_size': e.key.unitQuantity,
+      'unit_price': e.key.pricePerUnit,
     }).toList();
 
     final targetLat = activeAddress?.latitude ?? currentLat;
@@ -601,16 +611,30 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void updateOrderStatus(String orderId, String newStatus, {String? deliveryOtp}) async {
+  Future<bool> updateOrderStatus(String orderId, String newStatus, {String? deliveryOtp}) async {
     final idx = liveOrders.indexWhere((o) => o.id == orderId);
+    LiveOrderModel? old;
     if (idx != -1) {
-      final old = liveOrders[idx];
+      old = liveOrders[idx];
       liveOrders[idx] = old.copyWith(status: newStatus);
       notifyListeners();
     }
 
-    await ApiService.updateLiveOrderStatus(orderId, newStatus, deliveryOtp: deliveryOtp);
-    await reloadAllData();
+    final updated = await ApiService.updateLiveOrderStatus(orderId, newStatus, deliveryOtp: deliveryOtp);
+    if (updated != null) {
+      if (idx != -1) {
+        liveOrders[idx] = updated;
+      }
+      await reloadAllData();
+      return true;
+    } else {
+      // Rollback optimistic update on failure
+      if (idx != -1 && old != null) {
+        liveOrders[idx] = old;
+        notifyListeners();
+      }
+      return false;
+    }
   }
 
   Future<void> checkoutCart({
@@ -866,7 +890,7 @@ class AppState extends ChangeNotifier {
             currentLat = activeAddress!.latitude;
             currentLon = activeAddress!.longitude;
           }
-        } else if (!hasLocationPermission) {
+        } else if (!hasLocationPermission && !isSessionLocationSelected) {
           // Only fallback to saved default if device GPS was unavailable or denied
           final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
           activeAddress = defaultAddr;
@@ -905,8 +929,8 @@ class AppState extends ChangeNotifier {
       if (fetchedAreas.isNotEmpty) {
         serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
         selectedServiceArea = serviceAreas.first;
-      isVacationMode = subscriptions.isNotEmpty && subscriptions.any((sub) => sub.status == 'PAUSED');
       }
+      isVacationMode = subscriptions.isNotEmpty && subscriptions.any((sub) => sub.status == 'PAUSED');
 
       // No automatic fallback address - address is explicitly determined by customer selection
 
@@ -1253,38 +1277,59 @@ class AppState extends ChangeNotifier {
     await reloadAllData();
   }
 
-  Future<void> topUpWallet(double amount, String method) async {
-    if (currentUser != null) {
-      double newBal = currentUser!.walletBalance + amount;
-      currentUser = currentUser!.copyWith(walletBalance: newBal);
-      transactions.insert(
+  Future<bool> topUpWallet(double amount, String method) async {
+    final prevBalance = currentUser?.walletBalance;
+    final tempTxnId = DateTime.now().millisecondsSinceEpoch % 10000;
+    final tempTxn = WalletTransactionModel(
+      id: tempTxnId,
+      amount: amount,
+      transactionType: 'CREDIT',
+      description: 'Recharge via $method',
+      createdAt: 'Just now',
+    );
+
+    if (currentUser != null && prevBalance != null) {
+      currentUser = currentUser!.copyWith(walletBalance: prevBalance + amount);
+      transactions.insert(0, tempTxn);
+      notifyListeners();
+    }
+
+    final paymentRef = 'TOPUP_${DateTime.now().millisecondsSinceEpoch}';
+    bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method', paymentReference: paymentRef);
+    if (ok) {
+      notifications.insert(
         0,
-        WalletTransactionModel(
-          id: DateTime.now().millisecondsSinceEpoch % 10000,
-          amount: amount,
-          transactionType: 'CREDIT',
-          description: 'Recharge via $method',
+        NotificationModel(
+          id: DateTime.now().millisecondsSinceEpoch,
+          title: '⚡ Wallet Top-Up Successful! ₹${amount.toStringAsFixed(0)}',
+          message: '₹${amount.toStringAsFixed(0)} credited to your prepaid milk wallet via $method.',
+          notificationType: 'WALLET',
+          isRead: false,
+          createdAt: 'Just now',
+        ),
+      );
+      await reloadAllData();
+      return true;
+    } else {
+      // Rollback optimistic balance and remove temporary transaction
+      if (currentUser != null && prevBalance != null) {
+        currentUser = currentUser!.copyWith(walletBalance: prevBalance);
+        transactions.removeWhere((t) => t.id == tempTxnId);
+        notifyListeners();
+      }
+      notifications.insert(
+        0,
+        NotificationModel(
+          id: DateTime.now().millisecondsSinceEpoch,
+          title: '❌ Wallet Top-Up Failed',
+          message: ApiService.lastError ?? 'Recharge failed. Please try again.',
+          notificationType: 'WALLET',
+          isRead: false,
           createdAt: 'Just now',
         ),
       );
       notifyListeners();
-    }
-
-    notifications.insert(
-      0,
-      NotificationModel(
-        id: DateTime.now().millisecondsSinceEpoch,
-        title: '⚡ Wallet Top-Up Successful! ₹${amount.toStringAsFixed(0)}',
-        message: '₹${amount.toStringAsFixed(0)} credited to your prepaid milk wallet via $method.',
-        notificationType: 'WALLET',
-        isRead: false,
-        createdAt: 'Just now',
-      ),
-    );
-
-    bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method');
-    if (ok) {
-      await reloadAllData();
+      return false;
     }
   }
 
@@ -1427,6 +1472,12 @@ class AppState extends ChangeNotifier {
       return ok;
     }
     return false;
+  }
+
+  Future<bool> pauseTomorrow(int subId) async {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final tomorrowStr = tomorrow.toString().split(' ')[0];
+    return await pauseSubscriptionWithDates(subId, tomorrowStr, tomorrowStr, 'Paused for tomorrow');
   }
 
   Future<bool> pauseSubscriptionWithDates(int subId, String startDate, String endDate, String reason) async {

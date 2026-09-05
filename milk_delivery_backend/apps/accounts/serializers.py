@@ -36,7 +36,18 @@ class UserSerializer(serializers.ModelSerializer):
             "assigned_hub_code",
             "last_location_updated",
         ]
-        read_only_fields = ["id", "customer_code", "driver_code", "wallet_balance", "assigned_hub_name", "assigned_hub_code"]
+        read_only_fields = [
+            "id",
+            "customer_code",
+            "driver_code",
+            "wallet_balance",
+            "assigned_hub_name",
+            "assigned_hub_code",
+            "role",
+            "assigned_hub",
+            "monthly_salary",
+            "driver_status",
+        ]
 
 
 class RegisterSerializer(serializers.ModelSerializer):

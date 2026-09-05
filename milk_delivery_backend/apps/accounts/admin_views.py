@@ -1093,9 +1093,11 @@ class AdminSubscriptionsResetView(APIView):
 
 
 class AdminDatabaseCompleteResetView(APIView):
-    permission_classes = [IsAdminOrStaff]
+    permission_classes = [permissions.IsAdminUser]
 
     def post(self, request):
+        if not request.user.is_superuser:
+            return Response({"detail": "Only system superusers can perform a full database reset."}, status=status.HTTP_403_FORBIDDEN)
         try:
             from django.core.management import call_command
             from django.db import connection

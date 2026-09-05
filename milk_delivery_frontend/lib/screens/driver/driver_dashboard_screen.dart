@@ -59,7 +59,8 @@ class DriverDashboardScreen extends StatefulWidget {
 
 class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   int _selectedFilterIndex = 0; // 0: Upcoming, 1: Pending, 2: Delivered, 3: Express Orders
-  bool _isGpsBroadcastActive = true;
+  bool get _isGpsBroadcastActive => widget.state.isDriverOnDuty;
+  set _isGpsBroadcastActive(bool val) => widget.state.setDriverOnDuty(val);
   String _searchQuery = '';
   final _searchController = TextEditingController();
   String _selectedShift = DateTime.now().hour >= 12 ? 'EVENING' : 'MORNING'; // Auto-switches to EVENING after 12:00 PM, MORNING after 12:00 AM

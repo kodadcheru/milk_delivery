@@ -260,10 +260,11 @@ class LiveOrderItem(models.Model):
     order = models.ForeignKey(LiveOrder, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey("products.Product", on_delete=models.CASCADE, related_name="order_items")
     quantity = models.PositiveIntegerField(default=1)
+    pack_size = models.CharField(max_length=50, default="1 Litre", blank=True)
     unit_price = models.DecimalField(max_digits=8, decimal_places=2)
 
     def __str__(self):
-        return f"{self.order.id}: {self.quantity}x {self.product.name} @ ₹{self.unit_price}"
+        return f"{self.order.id}: {self.quantity}x {self.product.name} ({self.pack_size}) @ ₹{self.unit_price}"
 
 
 class BottleReturn(models.Model):

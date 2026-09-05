@@ -57,30 +57,16 @@ def _resolve_customer_user(request):
             if found_user:
                 return found_user
     
-    # 2. Authenticated user
+    # 2. Authenticated user (strictly scoped to own account)
     if user and user.is_authenticated:
         return user
-
-    # 3. Fallback for unauthenticated / token-refresh gap
-    if raw_cust_id:
-        try:
-            found_user = User.objects.filter(id=int(raw_cust_id)).first()
-            if found_user:
-                return found_user
-        except (ValueError, TypeError):
-            pass
-
-    if raw_phone:
-        found_user = _find_user_by_phone(raw_phone)
-        if found_user:
-            return found_user
 
     return None
 
 
 class CustomerAddressListCreateView(generics.ListCreateAPIView):
     serializer_class = CustomerAddressSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = _resolve_customer_user(self.request)
@@ -130,15 +116,12 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
             user.latitude = addr.latitude
             user.longitude = addr.longitude
             user.save(update_fields=["address", "latitude", "longitude"])
-            if clean_digits:
-                User.objects.filter(phone__endswith=clean_digits).exclude(id=user.id).update(
-                    address=user.address, latitude=user.latitude, longitude=user.longitude
-                )
+            user.save(update_fields=["address", "latitude", "longitude"])
 
 
 class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CustomerAddressSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         if self.request.user and self.request.user.is_authenticated and self.request.user.is_staff:
@@ -155,8 +138,8 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user and is_default:
             CustomerAddress.objects.filter(customer=user).exclude(pk=serializer.instance.pk).update(is_default=False)
 
-        addr = serializer.save(user=user if user else serializer.instance.user)
-        target_user = user or addr.user
+        addr = serializer.save(customer=user if user else serializer.instance.customer)
+        target_user = user or addr.customer
 
         if target_user and (addr.is_default or not target_user.address):
             target_user.address = addr.street_address or target_user.address
@@ -181,7 +164,7 @@ class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CustomerAddressSetDefaultView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         user = request.user if request.user and request.user.is_authenticated else _resolve_customer_user(request)

@@ -258,9 +258,23 @@ class ExpressOrderListCreateView(APIView):
             except Product.DoesNotExist:
                 continue
 
-            unit_price = prod.price_per_unit
+            pack_size = item_entry.get("pack_size") or getattr(prod, "unit_quantity", "1 Litre")
+            p_size_lower = str(pack_size).lower()
+            base_price = prod.price_per_unit
+            if "500" in p_size_lower:
+                unit_price = round(base_price * Decimal("0.5"), 2)
+            elif "2" in p_size_lower and ("litre" in p_size_lower or "liter" in p_size_lower or "kg" in p_size_lower):
+                unit_price = round(base_price * Decimal("2.0"), 2)
+            else:
+                unit_price = base_price
+
             total_amount += unit_price * qty
-            parsed_items.append({"product": prod, "quantity": qty, "unit_price": unit_price})
+            parsed_items.append({
+                "product": prod,
+                "quantity": qty,
+                "unit_price": unit_price,
+                "pack_size": pack_size,
+            })
 
         if not parsed_items:
             return Response({"detail": "Invalid products in order payload."}, status=status.HTTP_400_BAD_REQUEST)
@@ -323,6 +337,7 @@ class ExpressOrderListCreateView(APIView):
                     order=order,
                     product=item["product"],
                     quantity=item["quantity"],
+                    pack_size=item.get("pack_size", "1 Litre"),
                     unit_price=item["unit_price"],
                 )
                 # Atomically book slots in HubProductInventory
@@ -409,15 +424,20 @@ class ExpressOrderDetailView(APIView):
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
 
         is_customer = order.customer == request.user
-        is_staff = request.user.is_staff
+        is_staff = request.user.is_staff or getattr(request.user, 'role', '') in ('ADMIN', 'HUB_MANAGER')
         is_assigned_driver = (order.driver == request.user) or \
             DeliveryTask.objects.filter(order=order, driver=request.user).exists()
-        is_driver_role = getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER')
+        is_hub_driver = (
+            getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER')
+            and getattr(request.user, 'assigned_hub', None) is not None
+            and order.hub == request.user.assigned_hub
+        )
 
-        if not (is_customer or is_staff or is_assigned_driver or is_driver_role):
+        if not (is_customer or is_staff or is_assigned_driver or is_hub_driver):
             return Response({"detail": "Not authorized to modify this order."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = request.data.get("status")
+        old_status = order.status
 
         # 1. Customer Role Authorization Check (Bug 3)
         if is_customer and not (is_staff or is_assigned_driver):
@@ -433,11 +453,12 @@ class ExpressOrderDetailView(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-        # 2. OTP Verification for any party marking DELIVERED
-        if new_status == 'DELIVERED':
+        # 2. Strict OTP Verification for marking DELIVERED
+        if new_status in ('DELIVERED', LiveOrder.Statuses.DELIVERED):
             submitted_otp = str(request.data.get('delivery_otp', '')).strip()
-            if submitted_otp and submitted_otp != order.delivery_otp and not is_staff:
-                return Response({"detail": "Invalid delivery OTP code."}, status=status.HTTP_400_BAD_REQUEST)
+            if order.delivery_otp and not is_staff:
+                if not submitted_otp or submitted_otp != str(order.delivery_otp).strip():
+                    return Response({"detail": "Valid 4-digit delivery OTP code is required to complete delivery."}, status=status.HTTP_400_BAD_REQUEST)
                 
         if new_status == "DISPATCHED":
             new_status = LiveOrder.Statuses.OUT_FOR_DELIVERY
@@ -456,8 +477,8 @@ class ExpressOrderDetailView(APIView):
                     if cash_collected:
                         order.payment_status = "PAID (Cash Collected)"
 
-            # Bug 2 Part A: Restore booked inventory capacity slots on order cancellation
-            if new_status == LiveOrder.Statuses.CANCELLED:
+            # Bug 2 Part A: Restore booked inventory capacity slots on order cancellation (idempotent)
+            if new_status == LiveOrder.Statuses.CANCELLED and old_status != LiveOrder.Statuses.CANCELLED:
                 if order.hub:
                     from apps.products.models import HubProductInventory
                     from django.db.models import Case, When, Value, IntegerField

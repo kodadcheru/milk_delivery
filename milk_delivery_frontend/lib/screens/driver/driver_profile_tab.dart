@@ -27,7 +27,7 @@ class DriverProfileTab extends StatefulWidget {
 }
 
 class _DriverProfileTabState extends State<DriverProfileTab> {
-  bool _isOnDuty = true;
+  bool get _isOnDuty => widget.state.isDriverOnDuty;
 
   @override
   Widget build(BuildContext context) {
@@ -485,12 +485,11 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
   // ── Interactive Modals & Handlers ──
 
   void _toggleDutyStatus(BuildContext context) async {
-    setState(() {
-      _isOnDuty = !_isOnDuty;
-    });
+    final nextDuty = !_isOnDuty;
+    widget.state.setDriverOnDuty(nextDuty);
 
     final driverUser = widget.state.currentUser;
-    final statusStr = _isOnDuty ? 'ON_DUTY' : 'OFFLINE';
+    final statusStr = nextDuty ? 'ON_DUTY' : 'OFFLINE';
 
     double lat = 17.001734;
     double lng = 79.9625;

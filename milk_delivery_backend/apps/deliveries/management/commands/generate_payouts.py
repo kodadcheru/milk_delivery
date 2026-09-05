@@ -86,9 +86,12 @@ class Command(BaseCommand):
 
             # Calculate revenue from completed deliveries
             total_revenue = Decimal("0")
-            for task in completed_tasks.select_related("subscription__product"):
+            for task in completed_tasks.select_related("subscription__product", "order"):
                 if task.subscription:
-                    total_revenue += task.subscription.product.price_per_unit * task.subscription.quantity
+                    pr = task.subscription.effective_unit_price or (task.subscription.product.price_per_unit if task.subscription.product else Decimal("0.00"))
+                    total_revenue += Decimal(str(pr)) * task.subscription.quantity
+                elif task.order:
+                    total_revenue += task.order.total_amount
 
             # Calculate driver salaries for the hub
             hub_drivers = User.objects.filter(
@@ -100,8 +103,8 @@ class Command(BaseCommand):
             # Platform commission
             platform_commission = total_revenue * commission_rate
 
-            # Net payout to provider
-            net_payout = total_revenue - driver_salaries - platform_commission
+            # Net payout to provider (non-negative)
+            net_payout = max(Decimal("0.00"), total_revenue - driver_salaries - platform_commission)
 
             # Find hub manager
             manager = User.objects.filter(
@@ -110,7 +113,7 @@ class Command(BaseCommand):
             ).first()
 
             if not dry_run:
-                ProviderPayout.objects.create(
+                payout = ProviderPayout.objects.create(
                     hub=hub,
                     manager=manager,
                     period_start=period_start,
@@ -122,6 +125,7 @@ class Command(BaseCommand):
                     net_payout=net_payout,
                     status=ProviderPayout.Statuses.PENDING,
                 )
+                completed_tasks.update(payout=payout)
 
             total_payouts += net_payout
             self.stdout.write(

@@ -159,16 +159,21 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
         if not task_address and hasattr(sub.customer, "addresses"):
             task_address = sub.customer.addresses.filter(is_default=True).first() or sub.customer.addresses.first()
 
-        DeliveryTask.objects.create(
+        task, created = DeliveryTask.objects.get_or_create(
             subscription=sub,
-            hub=hub,
-            driver=driver,
-            address=task_address,
             delivery_date=target_date,
-            slot_time=slot,
-            status=DeliveryTask.Statuses.PENDING,
+            defaults={
+                "hub": hub,
+                "driver": driver,
+                "address": task_address,
+                "slot_time": slot,
+                "status": DeliveryTask.Statuses.PENDING,
+            },
         )
-        created_count += 1
+        if created:
+            created_count += 1
+        else:
+            skipped_count += 1
 
     # Auto-link active quality batch if present
     batches = DailyMilkBatch.objects.filter(batch_date=target_date)

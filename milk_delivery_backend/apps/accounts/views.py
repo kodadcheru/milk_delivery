@@ -70,7 +70,17 @@ class WalletTopUpView(APIView):
             amount = serializer.validated_data["amount"]
             desc = serializer.validated_data["description"]
             payment_method = serializer.validated_data.get("payment_method", "UPI")
-            payment_ref = serializer.validated_data.get("payment_reference", "")
+            payment_ref = serializer.validated_data.get("payment_reference", "").strip()
+
+            if amount > Decimal("10000.00"):
+                return Response({"detail": "Maximum single top-up limit is ₹10,000.00."}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not payment_ref or len(payment_ref) < 6:
+                return Response({"detail": "Valid payment transaction/UTR reference is required for recharge."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Prevent duplicate top-ups with the same transaction reference
+            if WalletTransaction.objects.filter(description__icontains=payment_ref).exists():
+                return Response({"detail": "This payment reference has already been processed."}, status=status.HTTP_400_BAD_REQUEST)
 
             user = request.user
 

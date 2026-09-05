@@ -100,7 +100,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
               final day = index - (firstWeekday - 1) + 1;
               final isToday = day == now.day;
               final isPast = day < now.day;
-              final isPaused = widget.state.isVacationMode || _customPausedDays.contains(day);
+              final isPaused = _customPausedDays.contains(day) || (widget.state.isVacationMode && widget.state.subscriptions.any((s) => s.status == 'PAUSED'));
 
               Color bgColor = Colors.transparent;
               Color textColor = UiTone.ink;
@@ -127,17 +127,18 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                         final now = DateTime.now();
                         final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
                         
-                        // Find first active subscription to pause/resume
                         final activeSubs = widget.state.subscriptions.where((s) => s.status == 'ACTIVE').toList();
+                        final pausedSubs = widget.state.subscriptions.where((s) => s.status == 'PAUSED').toList();
                         
-                        if (_customPausedDays.contains(day)) {
+                        if (isPaused) {
                           // Resume delivery for this day
-                          if (activeSubs.isNotEmpty) {
-                            await ApiService.resumeSubscription(activeSubs.first.id);
+                          for (var s in pausedSubs) {
+                            await ApiService.resumeSubscription(s.id);
                           }
                           setState(() {
                             _customPausedDays.remove(day);
                           });
+                          await widget.state.reloadAllData(silent: true);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -149,12 +150,13 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                           }
                         } else {
                           // Pause delivery for this day
-                          if (activeSubs.isNotEmpty) {
-                            await ApiService.pauseSubscription(activeSubs.first.id, dateStr, dateStr);
+                          for (var s in activeSubs) {
+                            await ApiService.pauseSubscription(s.id, dateStr, dateStr);
                           }
                           setState(() {
                             _customPausedDays.add(day);
                           });
+                          await widget.state.reloadAllData(silent: true);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(

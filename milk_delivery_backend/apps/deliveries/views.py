@@ -102,9 +102,14 @@ class DeliveryTaskCompleteView(APIView):
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Authorization: only assigned driver or staff can complete, or auto-claim unassigned task
-        if task.driver and task.driver != request.user and not request.user.is_staff:
-            return Response({"detail": "Only the assigned driver can complete this delivery."}, status=status.HTTP_403_FORBIDDEN)
+        # Authorization: only assigned driver, staff, or hub manager can complete
+        if task.driver and task.driver != request.user and not request.user.is_staff and getattr(request.user, "role", "") not in (User.Roles.ADMIN, User.Roles.HUB_MANAGER):
+            return Response({"detail": "Only the assigned driver or manager can complete this delivery."}, status=status.HTTP_403_FORBIDDEN)
+        if not task.driver:
+            if request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
+                task.driver = request.user
+            elif not request.user.is_staff and getattr(request.user, "role", "") not in (User.Roles.ADMIN, User.Roles.HUB_MANAGER):
+                return Response({"detail": "Customers cannot complete delivery tasks."}, status=status.HTTP_403_FORBIDDEN)
 
         # Strict Hub Check for Delivery Partner
         if request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER") and getattr(request.user, "assigned_hub", None):
@@ -113,9 +118,6 @@ class DeliveryTaskCompleteView(APIView):
                 return Response({
                     "detail": f"You are strictly assigned to {request.user.assigned_hub.name} and cannot complete deliveries for {task_hub.name}."
                 }, status=status.HTTP_403_FORBIDDEN)
-
-        if not task.driver and request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
-            task.driver = request.user
 
         # Prevent double-completion
         if task.status == DeliveryTask.Statuses.DELIVERED:
@@ -138,9 +140,7 @@ class DeliveryTaskCompleteView(APIView):
             if proof_url:
                 task.order.proof_image_url = proof_url
             if getattr(task.order, "is_cod", False):
-                task.order.cash_collected = bool(cash_collected)
-                if cash_collected:
-                    task.order.payment_status = "PAID (Cash Collected)"
+                task.order.payment_status = "PAID"
             task.order.save()
 
         # Deduct wallet balance for subscription deliveries
@@ -179,7 +179,9 @@ class DeliveryTaskCompleteView(APIView):
                     notification_type=Notification.Types.DELIVERY,
                 )
             else:
-                # Insufficient balance — record debt
+                # Insufficient balance — record debt and sync balance
+                User.objects.filter(pk=customer.pk).update(wallet_balance=F("wallet_balance") - total_cost)
+                customer.refresh_from_db(fields=["wallet_balance"])
                 WalletTransaction.objects.create(
                     user=customer,
                     transaction_type=WalletTransaction.Types.DEBIT,
@@ -221,9 +223,14 @@ class DeliveryTaskSkipView(APIView):
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Authorization: only assigned driver or staff can skip, or auto-claim unassigned task
-        if task.driver and task.driver != request.user and not request.user.is_staff:
-            return Response({"detail": "Only the assigned driver can skip this delivery."}, status=status.HTTP_403_FORBIDDEN)
+        # Authorization: only assigned driver, staff, or hub manager can skip
+        if task.driver and task.driver != request.user and not request.user.is_staff and getattr(request.user, "role", "") not in (User.Roles.ADMIN, User.Roles.HUB_MANAGER):
+            return Response({"detail": "Only the assigned driver or manager can skip this delivery."}, status=status.HTTP_403_FORBIDDEN)
+        if not task.driver:
+            if request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER"):
+                task.driver = request.user
+            elif not request.user.is_staff and getattr(request.user, "role", "") not in (User.Roles.ADMIN, User.Roles.HUB_MANAGER):
+                return Response({"detail": "Customers cannot skip delivery tasks."}, status=status.HTTP_403_FORBIDDEN)
 
         # Strict Hub Check for Delivery Partner
         if request.user.role in (User.Roles.DELIVERY_PARTNER, "DRIVER") and getattr(request.user, "assigned_hub", None):
@@ -242,10 +249,31 @@ class DeliveryTaskSkipView(APIView):
             
         task.save()
 
-        # Update linked LiveOrder if express order task
+        # Update linked LiveOrder if express order task with wallet refund & inventory restoration
         if task.order:
-            task.order.status = LiveOrder.Statuses.CANCELLED
-            task.order.save(update_fields=["status"])
+            order = task.order
+            if order.status != LiveOrder.Statuses.CANCELLED:
+                order.status = LiveOrder.Statuses.CANCELLED
+                order.save(update_fields=["status"])
+                # Restore hub product inventory
+                if order.hub:
+                    for item in order.items.select_related("product"):
+                        from apps.products.models import HubProductInventory
+                        inv = HubProductInventory.objects.filter(hub=order.hub, product=item.product).first()
+                        if inv and inv.booked_slots >= item.quantity:
+                            inv.booked_slots -= item.quantity
+                            inv.save(update_fields=["booked_slots"])
+                # Refund customer wallet if paid online/wallet
+                if order.customer and order.payment_method == "WALLET" and not order.is_cod:
+                    from apps.accounts.models import WalletTransaction
+                    User.objects.filter(pk=order.customer.pk).update(wallet_balance=F("wallet_balance") + order.total_amount)
+                    order.customer.refresh_from_db(fields=["wallet_balance"])
+                    WalletTransaction.objects.create(
+                        user=order.customer,
+                        amount=order.total_amount,
+                        transaction_type=WalletTransaction.Types.CREDIT,
+                        description=f"Refund for Skipped Express Delivery #{order.id}",
+                    )
 
         # Notify customer about skipped drop with exact reason
         if task.target_customer:
@@ -287,17 +315,24 @@ class DeliveryTaskStatusUpdateView(APIView):
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Authorization: only assigned driver, hub staff, or admin can update status
+        if task.driver and task.driver != request.user and not request.user.is_staff and getattr(request.user, "role", "") not in (User.Roles.ADMIN, User.Roles.HUB_MANAGER):
+            return Response({"detail": "Only the assigned driver or hub manager can update task status."}, status=status.HTTP_403_FORBIDDEN)
+        if not task.driver and request.user.role not in (User.Roles.DELIVERY_PARTNER, "DRIVER", User.Roles.ADMIN, User.Roles.HUB_MANAGER) and not request.user.is_staff:
+            return Response({"detail": "Customers cannot update delivery task status."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Transition guard: never allow changing status of an already DELIVERED task
+        if task.status == DeliveryTask.Statuses.DELIVERED:
+            return Response({"detail": "Cannot change status of an already DELIVERED delivery task."}, status=status.HTTP_400_BAD_REQUEST)
+
         new_status = request.data.get("status")
         valid_statuses = [
             DeliveryTask.Statuses.PENDING,
             DeliveryTask.Statuses.PICKED_UP,
             DeliveryTask.Statuses.ON_THE_WAY,
-            DeliveryTask.Statuses.DELIVERED,
-            DeliveryTask.Statuses.SKIPPED,
-            DeliveryTask.Statuses.FAILED,
         ]
         if new_status not in valid_statuses:
-            return Response({"detail": f"Invalid status '{new_status}'. Must be one of {valid_statuses}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": f"Invalid in-transit status '{new_status}'. Use /complete/ or /skip/ endpoints for terminal status."}, status=status.HTTP_400_BAD_REQUEST)
 
         task.status = new_status
         task.save(update_fields=["status"])

@@ -854,7 +854,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                                 keyboardType: TextInputType.number,
                                 maxLength: 4,
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. ${ord.deliveryOtp}',
+                                  hintText: 'Enter 4-digit OTP',
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                 ),
@@ -864,23 +864,33 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                           actions: [
                             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                             ElevatedButton(
-                              onPressed: () {
-                                if (otpController.text.trim() == ord.deliveryOtp) {
+                              onPressed: () async {
+                                final enteredOtp = otpController.text.trim();
+                                if (enteredOtp.isNotEmpty && (ord.deliveryOtp.isEmpty || enteredOtp == ord.deliveryOtp)) {
                                   Navigator.pop(ctx);
-                                  widget.state.updateOrderStatus(ord.id, 'DELIVERED');
+                                  final ok = await widget.state.updateOrderStatus(ord.id, 'DELIVERED', deliveryOtp: enteredOtp);
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: UiTone.primary,
-                                        content: Text('🎉 Express Order ${ord.id} Delivered Successfully!'),
-                                      ),
-                                    );
+                                    if (ok) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: UiTone.primary,
+                                          content: Text('🎉 Express Order ${ord.id} Delivered Successfully!'),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          backgroundColor: UiTone.error,
+                                          content: Text('❌ Failed to verify OTP with server.'),
+                                        ),
+                                      );
+                                    }
                                   }
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       backgroundColor: UiTone.error,
-                                      content: Text('❌ Invalid OTP.'),
+                                      content: Text('❌ Invalid OTP. Please enter correct 4-digit OTP.'),
                                     ),
                                   );
                                 }

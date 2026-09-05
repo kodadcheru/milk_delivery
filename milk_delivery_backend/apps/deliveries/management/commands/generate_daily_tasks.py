@@ -172,14 +172,19 @@ class Command(BaseCommand):
             driver = self._get_next_driver(hub, hub_drivers, hub_driver_indices)
 
             if not dry_run:
-                DeliveryTask.objects.create(
+                task, created = DeliveryTask.objects.get_or_create(
                     subscription=sub,
-                    hub=hub,
-                    driver=driver,
                     delivery_date=target_date,
-                    slot_time=sub.delivery_slot or sub.customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
-                    status=DeliveryTask.Statuses.PENDING,
+                    defaults={
+                        "hub": hub,
+                        "driver": driver,
+                        "slot_time": sub.delivery_slot or sub.customer.delivery_slot_preference or "05:30 AM - 07:00 AM",
+                        "status": DeliveryTask.Statuses.PENDING,
+                    },
                 )
+                if not created:
+                    skipped_count += 1
+                    continue
 
             driver_name = f"{driver.first_name} {driver.last_name}".strip() if driver else "Unassigned"
             shift_tag = "🌙 Evening" if is_evening else "☀️ Morning"
@@ -205,6 +210,9 @@ class Command(BaseCommand):
         if sub.schedule_type == Subscription.Schedules.CUSTOM:
             # Default custom schedule: Mon, Wed, Fri (0=Mon, 2=Wed, 4=Fri)
             return target_date.weekday() in (0, 2, 4)
+
+        if sub.schedule_type == 'WEEKDAYS':
+            return target_date.weekday() < 5  # Mon-Fri (0-4)
 
         if sub.schedule_type == Subscription.Schedules.ONCE:
             # Only create task if none has been created yet

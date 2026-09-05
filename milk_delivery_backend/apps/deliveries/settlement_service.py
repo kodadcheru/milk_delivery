@@ -176,6 +176,8 @@ def calculate_hub_earnings(hub: LocationHub, start_date: date = None, end_date: 
             period_end__gte=start_date,
         )
     already_settled_amount = sum((p.net_payout for p in payouts_in_period), Decimal("0.00"))
+    if not unsettled_only:
+        net_withdrawable = max(Decimal("0.00"), net_withdrawable - already_settled_amount)
 
     # Format product stats for JSON serialization
     serialized_product_stats = {}
@@ -279,8 +281,26 @@ def execute_hub_payout_settlement(hub: LocationHub, manager_user: User, amount: 
             paid_at=timezone.now(),
         )
 
-        # 6. Stamp all settled tasks with this payout FK to prevent double-settlement
-        unsettled_tasks.update(payout=payout)
+        # 6. Stamp settled tasks with this payout FK to prevent double-settlement
+        if amount is not None and payout_amount < available_withdrawable:
+            # Greedily stamp only tasks covered by this partial payout
+            stamped_ids = []
+            running_total = Decimal("0.00")
+            for t in unsettled_tasks:
+                stamped_ids.append(t.id)
+                t_rev = Decimal("0.00")
+                if t.subscription:
+                    pr = t.subscription.effective_unit_price or (t.subscription.product.price_per_unit if t.subscription.product else Decimal("0.00"))
+                    t_rev = Decimal(str(pr)) * t.subscription.quantity
+                elif t.order:
+                    t_rev = t.order.total_amount
+                t_net = t_rev * (Decimal("1.00") - PLATFORM_COMMISSION_RATE)
+                running_total += t_net
+                if running_total >= payout_amount:
+                    break
+            DeliveryTask.objects.filter(id__in=stamped_ids).update(payout=payout)
+        else:
+            unsettled_tasks.update(payout=payout)
 
         # 7. Notify Hub Manager
         if manager_user:

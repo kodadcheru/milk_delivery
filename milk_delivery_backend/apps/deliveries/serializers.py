@@ -326,7 +326,7 @@ class LiveOrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         from apps.deliveries.models import LiveOrderItem
         model = LiveOrderItem
-        fields = ["id", "product", "product_id", "quantity", "unit_price"]
+        fields = ["id", "product", "product_id", "quantity", "pack_size", "unit_price"]
 
 
 class LiveOrderSerializer(serializers.ModelSerializer):

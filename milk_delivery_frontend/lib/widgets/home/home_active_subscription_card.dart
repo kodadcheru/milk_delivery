@@ -232,7 +232,11 @@ class HomeActiveSubscriptionCard extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        await state.toggleSubscriptionStatus(sub.id);
+                        if (sub.status == 'ACTIVE') {
+                          await state.pauseTomorrow(sub.id);
+                        } else {
+                          await state.toggleSubscriptionStatus(sub.id);
+                        }
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

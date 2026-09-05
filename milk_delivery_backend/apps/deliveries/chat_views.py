@@ -10,20 +10,59 @@ def _get_delivery_chat_cache_key(channel_key):
     return f"deliv_chat_{channel_key}"
 
 
+def _is_user_authorized_for_chat(user, task_obj=None, order_obj=None, channel_key=""):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or user.is_staff or getattr(user, "role", "") in ("ADMIN", "STAFF"):
+        return True
+    
+    if task_obj:
+        if getattr(task_obj, "target_customer", None) == user or task_obj.driver == user:
+            return True
+        if task_obj.hub and getattr(user, "assigned_hub", None) == task_obj.hub:
+            return True
+            
+    if order_obj:
+        if order_obj.customer == user or order_obj.driver == user:
+            return True
+        if order_obj.hub and getattr(user, "assigned_hub", None) == order_obj.hub:
+            return True
+
+    if not task_obj and not order_obj and channel_key:
+        if channel_key.startswith("delivery_task_"):
+            try:
+                t_id = int(channel_key.replace("delivery_task_", ""))
+                t = DeliveryTask.objects.filter(pk=t_id).first()
+                if t and (getattr(t, "target_customer", None) == user or t.driver == user or (t.hub and getattr(user, "assigned_hub", None) == t.hub)):
+                    return True
+            except Exception:
+                pass
+        elif channel_key.startswith("delivery_order_"):
+            try:
+                o_id = channel_key.replace("delivery_order_", "")
+                o = LiveOrder.objects.filter(pk=o_id).first()
+                if o and (o.customer == user or o.driver == user or (o.hub and getattr(user, "assigned_hub", None) == o.hub)):
+                    return True
+            except Exception:
+                pass
+
+    return False
+
+
 class DeliveryChatSendView(APIView):
     """
     Send an in-app message between Driver and Customer for a delivery.
     POST /api/deliveries/chat/send/
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         channel_key = request.data.get("channel_key") or request.data.get("channel") or ""
         task_id = request.data.get("task_id")
         order_id = request.data.get("order_id")
         sender_role = request.data.get("sender_role", "DRIVER").upper()  # 'DRIVER' or 'CUSTOMER'
-        sender_name = request.data.get("sender_name", "Delivery Partner")
-        sender_phone = request.data.get("sender_phone", "")
+        sender_name = request.data.get("sender_name") or request.user.get_full_name() or request.user.username or "User"
+        sender_phone = request.data.get("sender_phone") or getattr(request.user, "phone", "")
         text = request.data.get("text", "").strip()
 
         if not channel_key and task_id:
@@ -50,6 +89,12 @@ class DeliveryChatSendView(APIView):
                 order_obj = LiveOrder.objects.filter(pk=str(order_id)).first()
             except Exception:
                 pass
+
+        if not _is_user_authorized_for_chat(request.user, task_obj=task_obj, order_obj=order_obj, channel_key=channel_key):
+            return Response(
+                {"detail": "You do not have permission to send messages in this delivery chat."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # 1. Save to PostgreSQL
         msg = DeliveryChatMessage.objects.create(
@@ -81,8 +126,8 @@ class DeliveryChatSendView(APIView):
             recipient_user = None
             if sender_role == "DRIVER":
                 # Find customer user
-                if task_obj and task_obj.user:
-                    recipient_user = task_obj.user
+                if task_obj and getattr(task_obj, "target_customer", None):
+                    recipient_user = task_obj.target_customer
                 elif order_obj and getattr(order_obj, "customer", None):
                     recipient_user = order_obj.customer
                 elif sender_phone:
@@ -142,12 +187,26 @@ class DeliveryChatHistoryView(APIView):
     Retrieve real-time conversation history for a delivery channel.
     GET /api/deliveries/chat/history/?channel=...&task_id=...
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         channel_key = request.query_params.get("channel") or request.query_params.get("channel_key") or ""
         task_id = request.query_params.get("task_id")
         order_id = request.query_params.get("order_id")
+
+        task_obj = None
+        if task_id:
+            try:
+                task_obj = DeliveryTask.objects.filter(pk=int(task_id)).first()
+            except (ValueError, TypeError):
+                pass
+
+        order_obj = None
+        if order_id:
+            try:
+                order_obj = LiveOrder.objects.filter(pk=str(order_id)).first()
+            except Exception:
+                pass
 
         if not channel_key and task_id:
             channel_key = f"delivery_task_{task_id}"
@@ -158,6 +217,12 @@ class DeliveryChatHistoryView(APIView):
             return Response(
                 {"error": "channel or task_id required"},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not _is_user_authorized_for_chat(request.user, task_obj=task_obj, order_obj=order_obj, channel_key=channel_key):
+            return Response(
+                {"detail": "You do not have permission to view this delivery chat."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         cache_key = _get_delivery_chat_cache_key(channel_key)
