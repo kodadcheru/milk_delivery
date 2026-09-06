@@ -111,7 +111,6 @@ class _DriverShellState extends State<DriverShell> {
 
   @override
   Widget build(BuildContext context) {
-    final activeHub = widget.state.driverAssignedHub;
     final hubName = widget.state.driverHubName;
     final pendingDeliveries = widget.state.deliveries.where((d) => d.status == "PENDING").length;
     final pendingExpress = widget.state.liveOrders.where((o) => o.status != 'DELIVERED' && o.status != 'CANCELLED').length;

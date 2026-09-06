@@ -231,7 +231,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                      decoration: const BoxDecoration(color: UiTone.error, shape: BoxShape.circle),
                      child: const Icon(Icons.close, size: 10, color: Colors.white),
                    );
-                } else {
+                } else if (hasDelivered || tasksForDay.isEmpty) {
                    // Defaults to green checkmark for past non-paused days
                    indicator = Stack(
                      clipBehavior: Clip.none,
@@ -254,6 +254,13 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                          ),
                      ],
                    );
+                } else {
+                  indicator = Container(
+                    width: 14,
+                    height: 14,
+                    decoration: const BoxDecoration(color: UiTone.secondary, shape: BoxShape.circle),
+                    child: const Icon(Icons.check, size: 10, color: Colors.white),
+                  );
                 }
               } else if (isPaused) {
                 indicator = Container(
@@ -341,7 +348,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      if (indicator != null) indicator,
+                      indicator,
                     ],
                   ),
                 ),

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../services/image_upload_service.dart';
 import '../theme/ui_tokens.dart';
@@ -455,15 +454,14 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           return;
                         }
 
-                        if (rawBytes != null) {
-                          // Burn permanent timestamp, GPS coordinates & address onto photo pixels
-                          final watermarkedBytes = await stampWatermarkOnImageBytes(
-                            imageBytes: rawBytes,
-                            latitude: widget.latitude,
-                            longitude: widget.longitude,
-                            address: widget.deliveryAddress,
-                            customerName: widget.customerName,
-                          );
+                        // Burn permanent timestamp, GPS coordinates & address onto photo pixels
+                        final watermarkedBytes = await stampWatermarkOnImageBytes(
+                          imageBytes: rawBytes,
+                          latitude: widget.latitude,
+                          longitude: widget.longitude,
+                          address: widget.deliveryAddress,
+                          customerName: widget.customerName,
+                        );
 
                           base64Str = base64Encode(watermarkedBytes);
                           uploadedUrl = await ImageUploadService.uploadImageBase64(
@@ -471,7 +469,6 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                             filename: 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png',
                             folder: 'proofs',
                           );
-                        }
                       } catch (_) {}
 
                       if (!mounted) return;
