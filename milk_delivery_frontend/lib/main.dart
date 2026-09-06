@@ -38,6 +38,7 @@ class MilkDeliveryApp extends StatefulWidget {
 }
 
 class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
+  static final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final AppState _appState;
   bool _isLoggedIn = false;
   bool _isInitializing = true;
@@ -77,6 +78,21 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     }
   }
 
+  void _handleLogout() {
+    // 1. Instantly pop any modal dialogs, sheets, or pushed screens back to root
+    _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+
+    // 2. Flip logged-in state to false synchronously — immediate redirect to login!
+    if (mounted) {
+      setState(() {
+        _isLoggedIn = false;
+      });
+    }
+
+    // 3. Clear auth token, user cache, addresses, and state in background
+    _appState.logout();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_showSplash || _isInitializing) {
@@ -95,24 +111,25 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     }
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
+      key: ValueKey('app_root_$_isLoggedIn'),
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: !_isLoggedIn
           ? PhoneLoginScreen(
-              key: const ValueKey('phone_login_screen_root'),
+              key: UniqueKey(),
               state: _appState,
-              onLoginSuccess: () => setState(() => _isLoggedIn = true),
+              onLoginSuccess: () {
+                if (mounted) {
+                  setState(() => _isLoggedIn = true);
+                }
+              },
             )
           : MainAppShell(
               key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
               state: _appState,
-              onLogout: () async {
-                await _appState.logout();
-                if (mounted) {
-                  setState(() => _isLoggedIn = false);
-                }
-              },
+              onLogout: _handleLogout,
             ),
     );
   }
