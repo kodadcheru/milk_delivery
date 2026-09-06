@@ -112,13 +112,12 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      key: ValueKey('app_root_$_isLoggedIn'),
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: !_isLoggedIn
           ? PhoneLoginScreen(
-              key: UniqueKey(),
+              key: const ValueKey('phone_login_screen_root'),
               state: _appState,
               onLoginSuccess: () {
                 if (mounted) {

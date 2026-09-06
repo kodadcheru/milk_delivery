@@ -201,9 +201,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         // Existing user: sync & login
         if (res['user'] != null) {
           final user = UserModel.fromJson(res['user']);
-          await widget.state.onUserAuthenticated(user);
+          try {
+            await widget.state.onUserAuthenticated(user);
+          } catch (_) {}
         } else {
-          await widget.state.reloadAllData();
+          try {
+            await widget.state.reloadAllData();
+          } catch (_) {}
         }
         widget.onLoginSuccess();
       }
@@ -264,9 +268,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     if (res['success'] == true) {
       if (res['user'] != null) {
         final user = UserModel.fromJson(res['user']);
-        await widget.state.onUserAuthenticated(user);
+        try {
+          await widget.state.onUserAuthenticated(user);
+        } catch (_) {}
       } else {
-        await widget.state.reloadAllData();
+        try {
+          await widget.state.reloadAllData();
+        } catch (_) {}
       }
       widget.onLoginSuccess();
       if (mounted) {
