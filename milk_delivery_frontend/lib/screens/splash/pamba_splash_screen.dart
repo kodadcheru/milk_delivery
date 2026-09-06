@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Real-world inspired, sleek brand splash screen for Pamba Fresh
+/// Modeled after modern quick-commerce and dairy apps (Zepto, Swiggy, Starbucks, Country Delight)
 class PambaSplashScreen extends StatefulWidget {
   final VoidCallback onFinish;
 
@@ -12,79 +14,73 @@ class PambaSplashScreen extends StatefulWidget {
 }
 
 class _PambaSplashScreenState extends State<PambaSplashScreen> with TickerProviderStateMixin {
-  late final AnimationController _masterController;
+  late final AnimationController _entranceController;
   late final AnimationController _pulseController;
-  late final AnimationController _shimmerController;
 
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<double> _slideAnimation;
-  late final Animation<double> _glowAnimation;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _logoFade;
+  late final Animation<Offset> _textSlide;
+  late final Animation<double> _textFade;
+  late final Animation<double> _bottomFade;
 
-  int _currentTagIndex = 0;
-  Timer? _tagTimer;
-
-  final List<String> _features = [
-    '✨ 100% Pure Certified Vedic Dairy',
-    '🌿 Farm-Fresh Organic Groceries & Vegetables',
-    '☀️ Guaranteed 05:30 AM Doorstep Drop',
-    '❄️ 4.0°C Monitored Cold Chain Logistics',
-  ];
+  Timer? _exitTimer;
 
   @override
   void initState() {
     super.initState();
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
 
-    _masterController = AnimationController(
+    // 1. Fluid brand entrance animation (850ms)
+    _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 850),
     );
 
+    // 2. Subtle ambient breathing glow
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
 
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
-
-    _scaleAnimation = CurvedAnimation(
-      parent: _masterController,
-      curve: const Interval(0.0, 0.60, curve: Curves.easeOutBack),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _masterController,
-      curve: const Interval(0.05, 0.70, curve: Curves.easeIn),
-    );
-
-    _slideAnimation = Tween<double>(begin: 24.0, end: 0.0).animate(
+    _logoScale = Tween<double>(begin: 0.82, end: 1.0).animate(
       CurvedAnimation(
-        parent: _masterController,
-        curve: const Interval(0.15, 0.75, curve: Curves.easeOutCubic),
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.75, curve: Curves.easeOutBack),
       ),
     );
 
-    _glowAnimation = CurvedAnimation(
-      parent: _masterController,
-      curve: const Interval(0.2, 0.85, curve: Curves.easeInOut),
+    _logoFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.50, curve: Curves.easeIn),
+      ),
     );
 
-    _masterController.forward();
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.25, 0.85, curve: Curves.easeOutCubic),
+      ),
+    );
 
-    _tagTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentTagIndex = (_currentTagIndex + 1) % _features.length;
-        });
-      }
-    });
+    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.25, 0.80, curve: Curves.easeIn),
+      ),
+    );
 
-    // Auto-proceed callback
-    Future.delayed(const Duration(milliseconds: 2600), () {
+    _bottomFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.50, 1.0, curve: Curves.easeIn),
+      ),
+    );
+
+    _entranceController.forward();
+
+    // Snappy, modern total display duration: ~1350ms
+    _exitTimer = Timer(const Duration(milliseconds: 1350), () {
       if (mounted) {
         widget.onFinish();
       }
@@ -93,10 +89,9 @@ class _PambaSplashScreenState extends State<PambaSplashScreen> with TickerProvid
 
   @override
   void dispose() {
-    _tagTimer?.cancel();
-    _masterController.dispose();
+    _exitTimer?.cancel();
+    _entranceController.dispose();
     _pulseController.dispose();
-    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -105,43 +100,41 @@ class _PambaSplashScreenState extends State<PambaSplashScreen> with TickerProvid
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF03160F), // Deep Forest Emerald
+      backgroundColor: const Color(0xFF074B3E),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── 1. Deep Forest Emerald Textured Gradient Base ──
+          // ── 1. Rich Signature Brand Teal Gradient Background ──
           Container(
             decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.0, -0.2),
-                radius: 1.2,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0D3829), // Rich Forest Green Center
-                  Color(0xFF062319), // Deep Emerald Mid
-                  Color(0xFF02120C), // Dark Obsidian Base
+                  Color(0xFF074B3E), // Deep Forest Teal
+                  Color(0xFF0D7C66), // Iconic Brand Teal
+                  Color(0xFF085445), // Grounded Rich Teal
                 ],
                 stops: [0.0, 0.55, 1.0],
               ),
             ),
           ),
 
-          // ── 2. Faint Morning Sunbeam Light Streaks (Top Ambient) ──
-          Positioned(
-            top: -size.width * 0.35,
-            left: -size.width * 0.1,
-            right: -size.width * 0.1,
+          // ── 2. Subtle Radial Light Accent Behind Centerpiece ──
+          Center(
             child: AnimatedBuilder(
               animation: _pulseController,
               builder: (context, child) {
-                final glow = 0.18 + (_pulseController.value * 0.08);
+                final glow = 0.12 + (_pulseController.value * 0.08);
                 return Container(
-                  height: size.width * 1.3,
+                  width: size.width * 0.85,
+                  height: size.width * 0.85,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFFE5B54F).withValues(alpha: glow), // Radiant Golden Beam
-                        const Color(0xFF10B981).withValues(alpha: glow * 0.4),
+                        const Color(0xFF34D399).withValues(alpha: glow),
+                        const Color(0xFF0D7C66).withValues(alpha: glow * 0.4),
                         Colors.transparent,
                       ],
                       stops: const [0.0, 0.45, 1.0],
@@ -152,294 +145,182 @@ class _PambaSplashScreenState extends State<PambaSplashScreen> with TickerProvid
             ),
           ),
 
-          // Subtle Bottom Ambient Reflection
-          Positioned(
-            bottom: -size.width * 0.4,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: size.width * 0.9,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF10B981).withValues(alpha: 0.08),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.7],
-                ),
-              ),
-            ),
-          ),
-
-          // ── 3. Centered Brand Identity & Golden Line-Art Logo ──
+          // ── 3. Centered Brand Identity ──
           Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Embossed Golden Brand Icon Emblem
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Soft Golden Ambient Shimmer Halo
-                        AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 175 + (_pulseController.value * 18),
-                              height: 175 + (_pulseController.value * 18),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color(0xFFE5B54F).withValues(alpha: 0.22 - (_pulseController.value * 0.12)),
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFE5B54F).withValues(alpha: 0.12 + (_pulseController.value * 0.08)),
-                                    blurRadius: 32,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Circular Brand Emblem with Soft Elevation & Ambient Ring
+                FadeTransition(
+                  opacity: _logoFade,
+                  child: ScaleTransition(
+                    scale: _logoScale,
+                    child: Container(
+                      width: 130,
+                      height: 130,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF34D399).withValues(alpha: 0.25),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                        border: Border.all(
+                          color: const Color(0xFFFDE68A).withValues(alpha: 0.4),
+                          width: 2.5,
                         ),
-
-                        // Outer Luxury Golden Border Ring
-                        FadeTransition(
-                          opacity: _glowAnimation,
-                          child: Container(
-                            width: 160,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const SweepGradient(
-                                colors: [
-                                  Color(0xFFFFF6D6),
-                                  Color(0xFFE5B54F),
-                                  Color(0xFF8C6218),
-                                  Color(0xFFF9DC7D),
-                                  Color(0xFFFFF6D6),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFE5B54F).withValues(alpha: 0.35),
-                                  blurRadius: 28,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(2.5),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Color(0xFF041C13), // Deep inner emerald base
-                              ),
-                            ),
+                      ),
+                      child: ClipOval(
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Image.asset(
+                            'assets/icons/pamba_logo.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/icons/app_icon.png',
+                                fit: BoxFit.cover,
+                              );
+                            },
                           ),
                         ),
+                      ),
+                    ),
+                  ),
+                ),
 
-                        // Brand Circular Logo Asset (Rising sun, cow silhouette, wicker harvest basket, milk bottle)
-                        Container(
-                          width: 154,
-                          height: 154,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
+                const SizedBox(height: 26),
+
+                // Brand Name & Tagline
+                FadeTransition(
+                  opacity: _textFade,
+                  child: SlideTransition(
+                    position: _textSlide,
+                    child: Column(
+                      children: [
+                        // Wordmark: "Pamba Fresh"
+                        const Text(
+                          'Pamba Fresh',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2.0,
+                            height: 1.1,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                blurRadius: 12,
+                                offset: Offset(0, 3),
                               ),
                             ],
                           ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/icons/pamba_logo.png',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/icons/app_icon.png',
-                                  fit: BoxFit.cover,
-                                );
-                              },
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Subtitle: "Farm to Doorstep, Every Morning"
+                        const Text(
+                          'Farm to Doorstep, Every Morning',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFCCFBEF), // Soft mint
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Telugu Cultural Authenticity Chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              width: 1,
                             ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('🌾', style: TextStyle(fontSize: 12)),
+                              SizedBox(width: 6),
+                              Text(
+                                'కోదాడ & పరిసర గ్రామాల తాజా పాలు',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 36),
-
-                  // ── 4. Brand Naming & Subtitle in High-Contrast Gold Typography ──
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: AnimatedBuilder(
-                      animation: _slideAnimation,
-                      builder: (context, child) {
-                        return Transform.translate(
-                          offset: Offset(0, _slideAnimation.value),
-                          child: child,
-                        );
-                      },
-                      child: Column(
-                        children: [
-                          // Primary Title: "Pamba Fresh" in Shimmering Gold
-                          ShaderMask(
-                            shaderCallback: (bounds) {
-                              return const LinearGradient(
-                                colors: [
-                                  Color(0xFFFFF9E6), // Bright highlight
-                                  Color(0xFFF3C76A), // Rich radiant gold
-                                  Color(0xFFE5B54F), // Metallic gold
-                                  Color(0xFFC9952E), // Deep gold edge
-                                ],
-                                stops: [0.0, 0.35, 0.70, 1.0],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ).createShader(bounds);
-                            },
-                            child: const Text(
-                              'Pamba Fresh',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 36,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 2.2,
-                                height: 1.1,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          // Secondary Tagline: "Farm-Fresh Dairy, Groceries & Vegetables"
-                          const Text(
-                            'Farm-Fresh Dairy, Groceries & Vegetables',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(0xFFE2C98F), // Soft Warm Gold
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.8,
-                              height: 1.2,
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Telugu Cultural Freshness Chip
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE5B54F).withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFFE5B54F).withValues(alpha: 0.30),
-                                width: 1,
-                              ),
-                            ),
-                            child: const Text(
-                              '🌾 కోదాడ & చుట్టుపక్కల గ్రామాల నుంచి తాజా సరఫరా',
-                              style: TextStyle(
-                                color: Color(0xFFF3C76A),
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 38),
-
-                  // ── 5. Animated Rotating Feature Pill Tracker ──
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 320),
-                      transitionBuilder: (child, anim) {
-                        return FadeTransition(
-                          opacity: anim,
-                          child: SlideTransition(
-                            position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(anim),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Container(
-                        key: ValueKey<int>(_currentTagIndex),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF042116).withValues(alpha: 0.85),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: const Color(0xFFE5B54F).withValues(alpha: 0.25),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          _features[_currentTagIndex],
-                          style: const TextStyle(
-                            color: Color(0xFFFFF6D6),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
-          // ── 6. Bottom Elegant Minimal Progress Indicator & Version ──
+          // ── 4. Bottom Watermark & Minimal Native Loader ──
           Positioned(
-            bottom: 40,
+            bottom: 44,
             left: 0,
             right: 0,
             child: FadeTransition(
-              opacity: _fadeAnimation,
+              opacity: _bottomFade,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: 120,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: const LinearProgressIndicator(
-                        minHeight: 2.0,
-                        backgroundColor: Color(0x33E5B54F),
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE5B54F)),
-                      ),
-                    ),
+                  // Minimal 3-dot pulse animation
+                  AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(3, (index) {
+                          final delay = index * 0.3;
+                          final animValue = ((_pulseController.value + delay) % 1.0);
+                          final opacity = 0.3 + (animValue * 0.7);
+                          final scale = 0.8 + (animValue * 0.4);
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: 5 * scale,
+                            height: 5 * scale,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: opacity),
+                            ),
+                          );
+                        }),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Pamba Fresh v1.0.0 • Pure Vedic Farm Heritage',
+                    'PAMBA DAIRIES • 100% PURE & FRESH',
                     style: TextStyle(
-                      color: const Color(0xFFE5B54F).withValues(alpha: 0.65),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.6,
+                      color: Colors.white.withValues(alpha: 0.65),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.8,
                     ),
                   ),
                 ],

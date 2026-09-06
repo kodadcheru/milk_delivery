@@ -95,41 +95,40 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showSplash || _isInitializing) {
-      return MaterialApp(
-        title: '${AppConfig.appName} 🥛',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(scaffoldBackgroundColor: const Color(0xFF060911)),
-        home: PambaSplashScreen(
-          onFinish: () {
-            if (mounted) {
-              setState(() => _showSplash = false);
-            }
-          },
-        ),
-      );
-    }
-
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: !_isLoggedIn
-          ? PhoneLoginScreen(
-              key: const ValueKey('phone_login_screen_root'),
-              state: _appState,
-              onLoginSuccess: () {
-                if (mounted) {
-                  setState(() => _isLoggedIn = true);
-                }
-              },
-            )
-          : MainAppShell(
-              key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
-              state: _appState,
-              onLogout: _handleLogout,
-            ),
+      home: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 450),
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
+        child: (_showSplash || _isInitializing)
+            ? PambaSplashScreen(
+                key: const ValueKey('pamba_splash_screen'),
+                onFinish: () {
+                  if (mounted) {
+                    setState(() => _showSplash = false);
+                  }
+                },
+              )
+            : (!_isLoggedIn
+                ? PhoneLoginScreen(
+                    key: const ValueKey('phone_login_screen_root'),
+                    state: _appState,
+                    onLoginSuccess: () {
+                      if (mounted) {
+                        setState(() => _isLoggedIn = true);
+                      }
+                    },
+                  )
+                : MainAppShell(
+                    key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
+                    state: _appState,
+                    onLogout: _handleLogout,
+                  )),
+      ),
     );
   }
 }
