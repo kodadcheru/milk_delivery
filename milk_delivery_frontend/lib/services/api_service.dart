@@ -321,6 +321,24 @@ class ApiService {
     return null;
   }
 
+  /// Permanently delete user account and wipe server data (Apple App Store 5.1.1(v) compliance)
+  static Future<bool> deleteUserAccount() async {
+    try {
+      final res = await _executeWithRetry(
+        () => _client.delete(Uri.parse('$baseUrl/auth/me/'), headers: _headers),
+      );
+      if (res.statusCode == 200 || res.statusCode == 204) {
+        await clearAuthToken();
+        return true;
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      lastError = e.toString();
+    }
+    return false;
+  }
+
   static List _extractList(dynamic decoded) {
     if (decoded is List) return decoded;
     if (decoded is Map && decoded['results'] is List) {

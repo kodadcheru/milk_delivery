@@ -1282,6 +1282,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Delete user account permanently from backend and clean up all state
+  Future<bool> deleteAccount() async {
+    final success = await ApiService.deleteUserAccount();
+    if (success) {
+      await logout();
+      return true;
+    }
+    return false;
+  }
+
   Future<void> updateUserProfile({
     String? firstName,
     String? lastName,

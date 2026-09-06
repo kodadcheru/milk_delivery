@@ -9,6 +9,7 @@ import '../../theme/ui_text.dart';
 import '../../theme/ui_format.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
 import '../../widgets/order_status_tracker.dart';
+import '../../widgets/ui_kit/ui_list_skeleton.dart';
 
 class DayWiseOrdersScreen extends StatefulWidget {
   final AppState state;
@@ -502,12 +503,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
 
               // ── 5. Orders List ──
               if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(color: UiTone.primary),
-                  ),
-                )
+                const UiListSkeleton(itemCount: 4, itemHeight: 96)
               else if (filteredTasks.isEmpty && filteredExpress.isEmpty)
                 Container(
                   width: double.infinity,

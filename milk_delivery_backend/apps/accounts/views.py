@@ -41,12 +41,17 @@ class RegisterView(generics.CreateAPIView):
             )
 
 
-class UserProfileView(generics.RetrieveUpdateAPIView):
+class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.delete()
+        return Response({"message": "Account deleted successfully."}, status=status.HTTP_200_OK)
 
 
 class WalletBalanceView(APIView):

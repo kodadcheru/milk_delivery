@@ -7,6 +7,7 @@ import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/home/home_product_card.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
   final String? categoryKey;
@@ -392,7 +393,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 const SizedBox(height: 12),
 
                 // Category Products Grid
-                if (categoryProducts.isEmpty)
+                if (widget.state.isLoading && categoryProducts.isEmpty)
+                  const ProductGridSkeleton()
+                else if (categoryProducts.isEmpty)
                   _buildEmptyState()
                 else
                   GridView.builder(

@@ -169,6 +169,7 @@ urlpatterns = [
     path("api/auth/token/", RobustTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/me/", UserProfileView.as_view(), name="auth_me"),
+    path("api/auth/profile/", UserProfileView.as_view(), name="auth_profile"),
     path("api/driver/location/", DriverLocationUpdateView.as_view(), name="driver_location_update"),
     path("api/driver/location/<str:order_id>/", DriverLocationByOrderView.as_view(), name="driver_location_by_order"),
     # Customer Address Book endpoints
