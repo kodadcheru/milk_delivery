@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/category_model.dart';
 import '../../providers/app_state.dart';
 import '../../screens/customer/category_products_screen.dart';
 import '../../theme/category_catalog.dart';
@@ -35,6 +36,7 @@ class HomeCategoryShowcase extends StatelessWidget {
           width: tileWidth,
           child: _buildCategoryTile(
             context: context,
+            category: bCat,
             categoryKey: bCat.slug,
             title: bCat.name,
             icon: effectiveIcon,
@@ -90,6 +92,7 @@ class HomeCategoryShowcase extends StatelessWidget {
 
   Widget _buildCategoryTile({
     required BuildContext context,
+    CategoryModel? category,
     required String categoryKey,
     required String title,
     required String icon,
@@ -101,7 +104,11 @@ class HomeCategoryShowcase extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (ctx) => CategoryProductsScreen(categoryKey: categoryKey, state: state),
+            builder: (ctx) => CategoryProductsScreen(
+              category: category,
+              categoryKey: categoryKey,
+              state: state,
+            ),
           ),
         );
       },

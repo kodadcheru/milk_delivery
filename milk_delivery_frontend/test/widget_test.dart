@@ -5,5 +5,6 @@ void main() {
   testWidgets('App boots with Pamba branding smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const MilkDeliveryApp());
     expect(find.byType(MilkDeliveryApp), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
   });
 }

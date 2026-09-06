@@ -182,6 +182,32 @@ const Map<String, CategoryMeta> kCategoryCatalog = {
   ),
 };
 
-/// Metadata for [key], falling back to `MILK` for unknown keys.
-CategoryMeta categoryMetaFor(String key) =>
-    kCategoryCatalog[key.toUpperCase()] ?? kCategoryCatalog['MILK']!;
+/// Metadata for [key], normalizing slugs and falling back intelligently.
+CategoryMeta categoryMetaFor(String key) {
+  final norm = key.toUpperCase().replaceAll('-', '_').trim();
+  if (kCategoryCatalog.containsKey(norm)) {
+    return kCategoryCatalog[norm]!;
+  }
+  if (norm.contains('WATER') || norm.contains('CAN')) {
+    return kCategoryCatalog['WATER_CAN']!;
+  }
+  if (norm.contains('DAIRY') || norm.contains('GHEE') || norm.contains('BUTTER')) {
+    return kCategoryCatalog['GHEE']!;
+  }
+  if (norm.contains('EGG')) {
+    return kCategoryCatalog['EGGS']!;
+  }
+  if (norm.contains('MEAT') || norm.contains('CHICKEN') || norm.contains('MUTTON')) {
+    return kCategoryCatalog['MEAT']!;
+  }
+  if (norm.contains('PANEER')) {
+    return kCategoryCatalog['PANEER']!;
+  }
+  if (norm.contains('CURD') || norm.contains('DAHI')) {
+    return kCategoryCatalog['CURD']!;
+  }
+  if (norm.contains('BREAD') || norm.contains('BAKERY')) {
+    return kCategoryCatalog['BAKERY']!;
+  }
+  return kCategoryCatalog['MILK']!;
+}

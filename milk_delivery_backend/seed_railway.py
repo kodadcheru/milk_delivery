@@ -165,25 +165,75 @@ def seed():
     admin.save()
     print("🛡️ [Super Admin Initialized]: admin / admin123 (Phone: +91 8919548905)")
 
-    # 2. Ensure initial active categories exist if empty
+    # 2. Ensure active categories exist and have rich presentation metadata
     try:
         from apps.products.models import Category
-        if Category.objects.count() == 0:
-            default_categories = [
-                {"name": "Fresh Milk", "slug": "milk", "icon": "🥛", "subtitle": "Pure 4°C Raw Cow & Buffalo Milk", "quality_badge_title": "100% Antibiotic & Preservative-Free", "display_order": 1},
-                {"name": "Country Eggs", "slug": "eggs", "icon": "🥚", "subtitle": "Free-Range Organic Desi Eggs", "quality_badge_title": "Direct from Native Farms", "display_order": 2},
-                {"name": "Tender Meat", "slug": "meat", "icon": "🥩", "subtitle": "Fresh Cut Certified Hygienic", "quality_badge_title": "FSSAI Inspected • Zero Frozen", "display_order": 3},
-                {"name": "Water Cans", "slug": "water_can", "icon": "💧", "subtitle": "20L RO UV Purified Mineral Cans", "quality_badge_title": "Daily Sanitized Food-Grade Cans", "display_order": 4},
-                {"name": "Fresh Paneer", "slug": "paneer", "icon": "🧀", "subtitle": "Soft Malai Paneer Made Daily", "quality_badge_title": "100% Pure Buffalo Milk", "display_order": 5},
-                {"name": "Desi Ghee", "slug": "ghee", "icon": "🧈", "subtitle": "Bilona Churned Golden Ghee", "quality_badge_title": "A2 Traditional Vedic Churning", "display_order": 6},
-                {"name": "Fresh Curd", "slug": "curd", "icon": "🥣", "subtitle": "Thick Traditional Clay-Pot Dahi", "quality_badge_title": "Active Live Cultures", "display_order": 7},
-                {"name": "Bakery & Breads", "slug": "bakery", "icon": "🍞", "subtitle": "Fresh Sourdough & Brown Breads", "quality_badge_title": "Zero Palm Oil • Artisanal", "display_order": 8},
-            ]
-            for cat_data in default_categories:
+        core_categories = [
+            {
+                "name": "Fresh Milk",
+                "slug": "milk",
+                "icon": "🥛",
+                "subtitle": "⚡ Milked at 3 AM • Delivered by 6 AM",
+                "quality_badge_title": "100% PURE & CERTIFIED QUALITY",
+                "description": "Farm Fresh A2 Desi Cow and Buffalo Milk in glass bottles and pouches",
+                "display_order": 1,
+            },
+            {
+                "name": "Farm Eggs",
+                "slug": "eggs",
+                "icon": "🥚",
+                "subtitle": "Daily Dawn Harvested • Free-Range & Organic",
+                "quality_badge_title": "100% ANTIBIOTIC-FREE EGGS",
+                "description": "Free-Range Country Brown and Farm Graded table eggs",
+                "display_order": 2,
+            },
+            {
+                "name": "Water Cans",
+                "slug": "water-can",
+                "icon": "💧",
+                "subtitle": "8-Stage RO + UV Purified • Daily Sanitized",
+                "quality_badge_title": "100% FOOD-GRADE MINERAL WATER",
+                "description": "20L RO Purified & UV Treated Mineral Drinking Water Cans",
+                "display_order": 3,
+            },
+            {
+                "name": "Fresh Dairy",
+                "slug": "dairy",
+                "icon": "🧈",
+                "subtitle": "Traditional Bilona Churned • 100% Pure Vedic",
+                "quality_badge_title": "ARTISANAL FARM DAIRY",
+                "description": "Artisanal Bilona Desi Ghee & Fresh White Butter",
+                "display_order": 4,
+            },
+        ]
+        for cat_data in core_categories:
+            cat = Category.objects.filter(slug=cat_data["slug"]).first()
+            if not cat:
+                cat = Category.objects.filter(name__iexact=cat_data["name"]).first()
+            if cat:
+                for k, v in cat_data.items():
+                    setattr(cat, k, v)
+                cat.save()
+            else:
                 Category.objects.create(**cat_data)
-            print(f"📦 [Railway DB Initializer] Seeded {len(default_categories)} default core categories.")
+        print(f"📦 [Railway DB Initializer] Core categories ensured with rich backend metadata.")
     except Exception as e:
         print("Category seeding notice:", e)
+
+    # 2b. Ensure valid CDN image URLs for products
+    try:
+        from apps.products.models import Product
+        ghee_prod = Product.objects.filter(name__icontains="Ghee").first()
+        if ghee_prod and ("photo-1589927986076" in (ghee_prod.image_url or "") or not ghee_prod.image_url):
+            ghee_prod.image_url = "https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=800&q=80"
+            ghee_prod.save()
+
+        water_prod = Product.objects.filter(name__icontains="Bisleri").first()
+        if water_prod and ("photo-1548839140" in (water_prod.image_url or "") or not water_prod.image_url):
+            water_prod.image_url = "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=800&q=80"
+            water_prod.save()
+    except Exception as e:
+        print("Product image URL fix notice:", e)
 
     # 3. Ensure Hub Coverage & Service Areas
     try:

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/category_model.dart';
+import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
 import '../../theme/category_catalog.dart';
 import '../../theme/ui_text.dart';
@@ -7,12 +9,14 @@ import '../../widgets/floating_cart_bar.dart';
 import '../../widgets/home/home_product_card.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
-  final String categoryKey;
+  final String? categoryKey;
+  final CategoryModel? category;
   final AppState state;
 
   const CategoryProductsScreen({
     super.key,
-    required this.categoryKey,
+    this.categoryKey,
+    this.category,
     required this.state,
   });
 
@@ -31,42 +35,174 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     super.dispose();
   }
 
-  bool _matchesCategory(String pCat, String catKey) {
-    final c = pCat.toUpperCase().replaceAll('&', 'AND').replaceAll('-', '_');
-    final k = catKey.toUpperCase().replaceAll('-', '_');
-    if (c == k) return true;
-    if (k == 'MILK' && (c.contains('MILK') || c.contains('DAIRY'))) return true;
-    if (k == 'EGGS' && (c.contains('EGG') || c.contains('COUNTRY'))) return true;
-    if (k == 'MEAT' && (c.contains('MEAT') || c.contains('CHICKEN') || c.contains('MUTTON') || c.contains('POULTRY'))) return true;
-    if (k == 'WATER_CAN' && (c.contains('WATER') || c.contains('CAN') || c.contains('MINERAL'))) return true;
-    if (k == 'PANEER' && c.contains('PANEER')) return true;
-    if (k == 'GHEE' && (c.contains('GHEE') || c.contains('BUTTER'))) return true;
-    if (k == 'CURD' && (c.contains('CURD') || c.contains('DAHI') || c.contains('YOGURT'))) return true;
-    if (k == 'BAKERY' && (c.contains('BREAD') || c.contains('BAKERY'))) return true;
+  /// Resolve the active category completely from backend data.
+  CategoryModel get activeCategory {
+    if (widget.category != null) return widget.category!;
+    final raw = (widget.categoryKey ?? '').trim();
+    if (raw.isEmpty) {
+      return widget.state.categories.isNotEmpty
+          ? widget.state.categories.first
+          : const CategoryModel(id: 0, name: 'Products', slug: 'products', icon: '🥛');
+    }
+
+    final key = raw.toLowerCase();
+    final normKey = key.replaceAll('-', '_');
+
+    return widget.state.categories.firstWhere(
+      (c) {
+        final cSlug = c.slug.toLowerCase();
+        final cName = c.name.toLowerCase();
+        final cNorm = cSlug.replaceAll('-', '_');
+        return cSlug == key ||
+            cName == key ||
+            cNorm == normKey ||
+            c.id.toString() == key;
+      },
+      orElse: () {
+        final meta = categoryMetaFor(raw);
+        return CategoryModel(
+          id: 0,
+          name: meta.longTitle,
+          slug: raw,
+          icon: meta.icon,
+          description: meta.banner,
+          qualityBadgeTitle: '100% QUALITY ASSURED',
+        );
+      },
+    );
+  }
+
+  /// Match product to category accurately using backend ID, name, or slug.
+  bool _matchesCategory(ProductModel p, CategoryModel cat) {
+    if (cat.id > 0 && p.categoryId == cat.id) return true;
+
+    final pCat = p.category.trim().toLowerCase();
+    final catName = cat.name.trim().toLowerCase();
+    final catSlug = cat.slug.trim().toLowerCase();
+
+    if (pCat == catName || pCat == catSlug) return true;
+
+    final normP = pCat.replaceAll('&', 'and').replaceAll('-', '_');
+    final normSlug = catSlug.replaceAll('&', 'and').replaceAll('-', '_');
+    final normName = catName.replaceAll('&', 'and').replaceAll('-', '_');
+
+    if (normP == normSlug || normP == normName) return true;
+
+    // Semantic fallbacks if backend category mapping is loosely labeled
+    if (normSlug.contains('water') && (normP.contains('water') || p.name.toLowerCase().contains('water'))) return true;
+    if (normSlug.contains('egg') && (normP.contains('egg') || p.name.toLowerCase().contains('egg'))) return true;
+    if (normSlug.contains('dairy') && (normP.contains('dairy') || normP.contains('ghee') || normP.contains('butter') || normP.contains('makkhan'))) return true;
+    if (normSlug.contains('milk') && !normSlug.contains('dairy') && normP.contains('milk') && !normP.contains('butter') && !normP.contains('ghee')) return true;
+    if (normSlug.contains('meat') && (normP.contains('meat') || normP.contains('chicken') || normP.contains('mutton'))) return true;
+    if (normSlug.contains('paneer') && normP.contains('paneer')) return true;
+    if (normSlug.contains('ghee') && (normP.contains('ghee') || normP.contains('butter'))) return true;
+    if (normSlug.contains('curd') && (normP.contains('curd') || normP.contains('dahi'))) return true;
+    if (normSlug.contains('bakery') && (normP.contains('bread') || normP.contains('bakery'))) return true;
+
     return false;
+  }
+
+  /// Dynamically derive subtag filter chips from the actual products in this category.
+  List<String> _deriveSubtags(List<ProductModel> products) {
+    final tags = <String>{'ALL'};
+    for (final p in products) {
+      if (p.badgeText.isNotEmpty && p.badgeText != 'Bestseller' && p.badgeText.length <= 16) {
+        final clean = p.badgeText.replaceAll(RegExp(r'[^\w\s]'), '').trim().toUpperCase();
+        if (clean.isNotEmpty && clean.length > 2) tags.add(clean);
+      }
+      if (p.unitQuantity.isNotEmpty) {
+        tags.add(p.unitQuantity.toUpperCase());
+      }
+    }
+
+    // Contextual keywords present in product names
+    for (final p in products) {
+      final nameUpper = p.name.toUpperCase();
+      for (final kw in [
+        'COW MILK',
+        'BUFFALO',
+        'A2 VEDIC',
+        'TONED',
+        '20L CAN',
+        'DISPENSER',
+        'MINERAL',
+        'COUNTRY',
+        'ORGANIC',
+        'BROWN',
+        'WHITE',
+        'PACK OF 12',
+        'PACK OF 6',
+        'BUTTER',
+        'BILONA GHEE',
+        'PANEER',
+        'CURD'
+      ]) {
+        if (nameUpper.contains(kw)) {
+          tags.add(kw);
+        }
+      }
+    }
+    return tags.take(7).toList();
+  }
+
+  /// Select a harmonious visual palette based on category theme.
+  (Color accent, List<Color> gradient) _resolveTheme(CategoryModel cat) {
+    final slug = cat.slug.toLowerCase().replaceAll('-', '_');
+    if (slug.contains('water')) {
+      return (const Color(0xFF0D9488), [const Color(0xFF0F766E), const Color(0xFF0D9488)]);
+    } else if (slug.contains('egg')) {
+      return (const Color(0xFFD97706), [const Color(0xFFB45309), const Color(0xFFD97706)]);
+    } else if (slug.contains('meat')) {
+      return (const Color(0xFFDC2626), [const Color(0xFF991B1B), const Color(0xFFDC2626)]);
+    } else if (slug.contains('dairy') || slug.contains('ghee') || slug.contains('butter')) {
+      return (const Color(0xFFD97706), [const Color(0xFFD97706), const Color(0xFFF59E0B)]);
+    } else if (slug.contains('paneer')) {
+      return (const Color(0xFF7C3AED), [const Color(0xFF6D28D9), const Color(0xFF8B5CF6)]);
+    } else if (slug.contains('curd')) {
+      return (const Color(0xFF0D7C66), [const Color(0xFF0D9488), const Color(0xFF14B8A6)]);
+    } else if (slug.contains('bakery')) {
+      return (const Color(0xFFB45309), [const Color(0xFFB45309), const Color(0xFFD97706)]);
+    }
+    return (const Color(0xFF0284C7), [const Color(0xFF0369A1), const Color(0xFF0284C7)]);
   }
 
   @override
   Widget build(BuildContext context) {
-    final meta = categoryMetaFor(widget.categoryKey);
-    final accent = meta.accent;
-    final gradient = meta.gradient;
-    final subtags = meta.subtags;
+    final cat = activeCategory;
+    final (accent, gradient) = _resolveTheme(cat);
+
+    // All products matching this category
+    final matchingProducts = widget.state.products.where((p) => _matchesCategory(p, cat)).toList();
+
+    // Dynamically derived subtags from actual product data
+    final subtags = _deriveSubtags(matchingProducts);
 
     // Filter products dynamically for this category + search + subtag
-    final categoryProducts = widget.state.products.where((p) {
-      if (!_matchesCategory(p.category, widget.categoryKey)) return false;
-
+    final categoryProducts = matchingProducts.where((p) {
       final matchesQuery = _searchQuery.isEmpty ||
           p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           p.description.toLowerCase().contains(_searchQuery.toLowerCase());
 
       final matchesTag = _filterTag == 'ALL' ||
           p.name.toUpperCase().contains(_filterTag) ||
+          p.badgeText.toUpperCase().contains(_filterTag) ||
+          p.unitQuantity.toUpperCase().contains(_filterTag) ||
           p.description.toUpperCase().contains(_filterTag);
 
       return matchesQuery && matchesTag;
     }).toList();
+
+    final categoryName = widget.state.translateCategory(cat.name);
+    final categoryIcon = cat.icon.isNotEmpty ? cat.icon : '🥛';
+    final bannerHeadline = cat.description.isNotEmpty ? cat.description : cat.name;
+    final bannerSubtitle = cat.subtitle.isNotEmpty
+        ? cat.subtitle
+        : (widget.state.isTelugu
+            ? '⚡ నాణ్యమైన ఉత్పత్తులు • ఉదయం 6 గంటలకు డెలివరీ'
+            : '⚡ Milked/Harvested Fresh • Delivered by 6 AM');
+    final qualityBadge = cat.qualityBadgeTitle.isNotEmpty
+        ? cat.qualityBadgeTitle
+        : (widget.state.isTelugu ? '100% నాణ్యతా హామీ' : '100% QUALITY ASSURED');
 
     return Scaffold(
       appBar: AppBar(
@@ -80,10 +216,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           children: [
             Row(
               children: [
-                Text(meta.icon, style: const TextStyle(fontSize: 18)),
+                Text(categoryIcon, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: 8),
                 Text(
-                  widget.state.translateCategory(meta.longTitle),
+                  categoryName,
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                 ),
               ],
@@ -104,8 +240,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 SnackBar(
                   content: Text(
                     widget.state.isTelugu
-                        ? '🔗 ${widget.state.translateCategory(meta.longTitle)} కేటలాగ్ లింక్ షేర్ చేయండి!'
-                        : '🔗 Sharing link to ${meta.longTitle} catalog!',
+                        ? '🔗 $categoryName కేటలాగ్ లింక్ షేర్ చేయండి!'
+                        : '🔗 Sharing link to $categoryName catalog!',
                   ),
                 ),
               );
@@ -116,11 +252,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
+            // Extra bottom padding (140) ensures bottom cards are NEVER covered by the floating cart bar
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Category Hero Banner
+                // Category Hero Banner (100% sourced from backend Category model)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -136,7 +273,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                        child: Text(meta.icon, style: const TextStyle(fontSize: 32)),
+                        child: Text(categoryIcon, style: const TextStyle(fontSize: 32)),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -147,20 +284,18 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(UiRadius.xs)),
                               child: Text(
-                                widget.state.isTelugu ? '100% నాణ్యతా హామీ' : '100% QUALITY ASSURED',
+                                qualityBadge,
                                 style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w800),
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              meta.banner,
+                              bannerHeadline,
                               style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              widget.state.isTelugu
-                                  ? '⚡ తెల్లవారుజామున 3 గంటలకు ప్యాకింగ్ • ఉదయం 6 గంటలకు డెలివరీ'
-                                  : '⚡ Milked/Packed at 3 AM • Delivered by 6 AM',
+                              bannerSubtitle,
                               style: const TextStyle(color: Colors.white70, fontSize: 10.5),
                             ),
                           ],
@@ -177,9 +312,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   style: UiText.body,
                   decoration: InputDecoration(
-                    hintText: widget.state.isTelugu
-                        ? '${widget.state.translateCategory(meta.longTitle)} వెతకండి...'
-                        : 'Search ${meta.longTitle}...',
+                    hintText: widget.state.isTelugu ? '$categoryName వెతకండి...' : 'Search $categoryName...',
                     hintStyle: const TextStyle(color: UiText.muted, fontSize: 13, fontWeight: FontWeight.w500),
                     prefixIcon: const Icon(Icons.search_rounded, color: UiTone.primary, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -199,38 +332,39 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Subtag Quick Filters
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: subtags.map((tag) {
-                      final isSelected = _filterTag == tag;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: InkWell(
-                          onTap: () => setState(() => _filterTag = tag),
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: isSelected ? accent : UiTone.surfaceMuted,
-                              borderRadius: BorderRadius.circular(UiRadius.sm),
-                              border: Border.all(color: isSelected ? accent : UiTone.surfaceBorder),
-                            ),
-                            child: Text(
-                              tag == 'ALL' ? (widget.state.isTelugu ? 'అన్నీ' : 'All Varieties') : tag,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : UiTone.ink,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                // Dynamic Subtag Quick Filters (from actual products)
+                if (subtags.length > 1)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: subtags.map((tag) {
+                        final isSelected = _filterTag == tag;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            onTap: () => setState(() => _filterTag = tag),
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isSelected ? accent : UiTone.surfaceMuted,
+                                borderRadius: BorderRadius.circular(UiRadius.sm),
+                                border: Border.all(color: isSelected ? accent : UiTone.surfaceBorder),
+                              ),
+                              child: Text(
+                                tag == 'ALL' ? (widget.state.isTelugu ? 'అన్నీ' : 'All Varieties') : tag,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : UiTone.ink,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
                 const SizedBox(height: 16),
 
                 // Products Count Header
@@ -294,7 +428,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 
   Widget _buildEmptyState() {
-    // Distinguish "nothing matches the active search/filter" from an empty category.
     final isFiltered = _searchQuery.isNotEmpty || _filterTag != 'ALL';
     return Padding(
       padding: const EdgeInsets.all(40),
