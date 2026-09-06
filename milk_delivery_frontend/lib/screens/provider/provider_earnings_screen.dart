@@ -1140,9 +1140,9 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
   Widget _buildProductItemRow(Map<String, dynamic> p, double totalRev, bool isTelugu) {
     final name = p['name']?.toString() ?? 'Fresh Milk';
     final icon = p['icon']?.toString() ?? '🥛';
-    final qty = (p['qty'] as num?)?.toInt() ?? 1;
-    final litres = (p['litres'] as num?)?.toDouble() ?? 1.0;
-    final rev = (p['revenue'] as num?)?.toDouble() ?? 65.0;
+    final qty = (p['qty'] as num?)?.toInt() ?? 0;
+    final litres = (p['litres'] as num?)?.toDouble() ?? 0.0;
+    final rev = (p['revenue'] as num?)?.toDouble() ?? 0.0;
     final isLiquid = p['isLiquid'] == true;
     final percent = totalRev > 0 ? (rev / totalRev).clamp(0.0, 1.0) : 0.0;
 

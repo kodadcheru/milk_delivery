@@ -21,6 +21,7 @@ import 'provider_earnings_screen.dart';
 import '../driver/morning_batch_screen.dart';
 import '../common/day_wise_orders_screen.dart';
 import '../../widgets/booking_detail_sheet.dart';
+import '../../widgets/provider/revenue_chart_widget.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   final AppState state;
@@ -323,10 +324,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     
     for (final task in widget.state.deliveries) {
       if (task.status == 'DELIVERED' || task.status == 'COMPLETED') {
-        final price = task.subscriptionDetail?.productDetail?.pricePerUnit ?? 65.0;
-        final qty = task.subscriptionDetail?.quantity ?? 1;
+        final sub = task.subscriptionDetail;
+        final prod = sub?.productDetail;
+        final fallbackPrice = widget.state.products.isNotEmpty ? widget.state.products.first.pricePerUnit : 0.0;
+        final price = prod?.pricePerUnit ?? sub?.effectiveUnitPrice ?? fallbackPrice;
+        final qty = sub?.quantity ?? 1;
         final date = task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today';
         revenueByDay[date] = (revenueByDay[date] ?? 0) + (price * qty);
+      }
+    }
+
+    for (final ord in widget.state.liveOrders) {
+      if (ord.status == 'DELIVERED' || ord.status == 'COMPLETED') {
+        final date = ord.deliveryDate.isNotEmpty ? ord.deliveryDate : 'Today';
+        revenueByDay[date] = (revenueByDay[date] ?? 0) + ord.totalAmount;
       }
     }
     
@@ -1058,7 +1069,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             _buildFleetDriversSection(),
           ] else ...[
             // Tab 2: Batch Quality & Inventory
+            _buildRealTimeEarningsCard(context),
+            const SizedBox(height: 14),
+
             _buildDailyBatchLabCard(context),
+            const SizedBox(height: 14),
+
+            // 7-Day Revenue Velocity Chart
+            RevenueChartWidget(data: _getRevenueData()),
             const SizedBox(height: 14),
 
             // Quick Hub Admin Actions Grid
@@ -1120,6 +1138,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             const SizedBox(height: 14),
 
             _buildBottleReturnsSection(),
+            const SizedBox(height: 14),
+
+            _buildPayoutLedgerSection(),
+            const SizedBox(height: 14),
+
+            _buildBroadcastAlertsSection(),
           ],
 
           const SizedBox(height: 30),
@@ -1638,7 +1662,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final sub = task.subscriptionDetail;
     final product = sub?.productDetail;
     final isDone = task.status == 'DELIVERED';
-    final custPhone = task.customerPhone.isNotEmpty ? task.customerPhone : '+91 9876543210';
+    final custPhone = task.customerPhone.trim();
 
     return UiInsetCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1666,7 +1690,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         style: UiText.bodyStrong.copyWith(fontSize: 13.5, fontWeight: FontWeight.w900),
                       ),
                       Text(
-                        'Phone: $custPhone',
+                        custPhone.isNotEmpty ? 'Phone: $custPhone' : 'Phone: Not provided',
                         style: UiText.body.copyWith(fontSize: 10.5),
                       ),
                     ],
@@ -1756,7 +1780,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   ),
                 ),
                 Text(
-                  UiFormat.price((sub?.displayPrice ?? 40) * (sub?.quantity ?? 1)),
+                  UiFormat.price((sub?.displayPrice ?? (sub?.productDetail?.pricePerUnit ?? 0.0)) * (sub?.quantity ?? 1)),
                   style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900, color: UiTone.primary),
                 ),
               ],
@@ -1856,12 +1880,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _callPhone(context, custPhone),
+                  onPressed: custPhone.isNotEmpty ? () => _callPhone(context, custPhone) : null,
                   icon: const Icon(Icons.phone_rounded, size: 13),
-                  label: Text('Call Customer', style: UiText.label.copyWith(fontSize: 11, color: UiTone.primary)),
+                  label: Text(
+                    'Call Customer',
+                    style: UiText.label.copyWith(
+                      fontSize: 11,
+                      color: custPhone.isNotEmpty ? UiTone.primary : UiTone.softText,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: UiTone.primary,
-                    side: const BorderSide(color: UiTone.primary),
+                    side: BorderSide(
+                      color: custPhone.isNotEmpty ? UiTone.primary : UiTone.surfaceBorder,
+                    ),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
                   ),
                 ),
@@ -1869,16 +1901,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _sendWhatsAppMessage(
-                    context,
-                    task.customerName,
-                    custPhone,
-                    'Hello ${task.customerName}! Your daily morning subscription (${product?.name}) from $_activeHubName has been dispatched.',
-                  ),
+                  onPressed: custPhone.isNotEmpty
+                      ? () => _sendWhatsAppMessage(
+                            context,
+                            task.customerName,
+                            custPhone,
+                            'Hello ${task.customerName}! Your daily morning subscription (${product?.name ?? "Milk"}) from $_activeHubName has been dispatched.',
+                          )
+                      : null,
                   icon: const Icon(Icons.chat_rounded, size: 13),
                   label: Text('WhatsApp Ping', style: UiText.label.copyWith(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.surface)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: UiTone.secondary,
+                    backgroundColor: custPhone.isNotEmpty ? UiTone.secondary : UiTone.surfaceMuted,
                     foregroundColor: UiTone.surface,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.xs)),
@@ -2185,18 +2219,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             children: [
               TextField(
                 controller: fnCtrl,
-                decoration: const InputDecoration(labelText: 'First Name', hintText: 'e.g. Ramesh'),
+                decoration: const InputDecoration(labelText: 'First Name', hintText: 'Driver first name'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: lnCtrl,
-                decoration: const InputDecoration(labelText: 'Last Name', hintText: 'e.g. Varma'),
+                decoration: const InputDecoration(labelText: 'Last Name', hintText: 'Driver last name'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone Number', hintText: '+91 98765 00000'),
+                decoration: const InputDecoration(labelText: 'Phone Number', hintText: '10-digit mobile number'),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -2293,6 +2327,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             itemBuilder: (ctx, idx) {
               final drv = drivers[idx];
               final hubNameText = drv['hub'] ?? _activeHubName;
+              final drvName = drv['name'] ?? drv['username'] ?? 'Delivery Partner';
+              final drvRoute = drv['route'] ?? (drv['hub_code'] != null ? 'Route (${drv['hub_code']})' : 'Assigned Route');
+              final drvStatus = drv['status'] ?? (drv['driver_status'] != null ? '🟢 ${drv['driver_status']}' : '🟢 Active');
+              final rawSalary = drv['raw_salary'] as num?;
+              final salaryText = drv['salary']?.toString().isNotEmpty == true
+                  ? drv['salary'].toString()
+                  : (rawSalary != null ? '₹${rawSalary.toInt()}/mo' : 'Salaried Partner');
+              final totalStops = drv['assigned_stops'] ?? drv['stops'] ?? 0;
+              final completedStops = drv['completed_stops'] ?? 0;
+              final stopsText = '$completedStops/$totalStops Drops';
+              final drvPhone = drv['phone']?.toString() ?? '';
+              final hasDrvPhone = drvPhone.isNotEmpty && drvPhone != '—';
+
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -2312,23 +2359,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(drv['name'] ?? 'Driver', style: UiText.bodyStrong.copyWith(fontSize: 13)),
+                          Text(drvName, style: UiText.bodyStrong.copyWith(fontSize: 13)),
                           Text('📍 $hubNameText', style: UiText.label.copyWith(fontSize: 10.5, fontWeight: FontWeight.w700, color: UiTone.primary)),
-                          Text(drv['route'] ?? 'Sector Route', style: UiText.body.copyWith(fontSize: 10)),
+                          Text(drvRoute, style: UiText.body.copyWith(fontSize: 10)),
                           const SizedBox(height: 2),
-                          Text(drv['status'] ?? '🟢 Active', style: UiText.label.copyWith(fontSize: 10, color: UiTone.primary)),
+                          Text(drvStatus, style: UiText.label.copyWith(fontSize: 10, color: UiTone.primary)),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(drv['salary'] ?? '₹15,000/mo', style: UiText.bodyStrong.copyWith(fontSize: 13, fontWeight: FontWeight.w900, color: UiTone.primary)),
-                        Text(drv['stops'] ?? '12 Stops', style: UiText.body.copyWith(fontSize: 10)),
+                        Text(salaryText, style: UiText.bodyStrong.copyWith(fontSize: 12.5, fontWeight: FontWeight.w900, color: UiTone.primary)),
+                        Text(stopsText, style: UiText.body.copyWith(fontSize: 10)),
                         const SizedBox(height: 4),
                         IconButton(
-                          icon: const Icon(Icons.phone_rounded, size: 16, color: UiTone.primary),
-                          onPressed: () => _callPhone(context, drv['phone'] ?? '+91 9123456789'),
+                          icon: Icon(Icons.phone_rounded, size: 16, color: hasDrvPhone ? UiTone.primary : UiTone.softText),
+                          onPressed: hasDrvPhone ? () => _callPhone(context, drvPhone) : null,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
@@ -2387,15 +2434,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildHubInventoryCard(Map<String, dynamic> inv, {VoidCallback? onUpdated}) {
-    final productName = inv['product_name'] ?? 'Unknown Product';
-    final dailyCapacity = inv['daily_capacity_slots'] ?? 150;
-    final booked = inv['booked_slots'] ?? 0;
-    final available = inv['available_slots'] ?? (dailyCapacity - booked);
+    final productName = inv['product_name'] ?? 'Product';
+    final dailyCapacity = (inv['daily_capacity_slots'] as int?) ?? 0;
+    final booked = (inv['booked_slots'] as int?) ?? 0;
+    final available = (inv['available_slots'] as int?) ?? (dailyCapacity >= booked ? dailyCapacity - booked : 0);
     final isAvailable = inv['is_available'] ?? true;
-    final productId = inv['product'] ?? 0;
+    final productId = inv['product'] ?? inv['product_id'] ?? 0;
     final icon = inv['icon'] ?? '🥛';
-    final unit = inv['unit'] ?? '500 ml';
-    final price = inv['price'] ?? 35;
+    final unit = (inv['unit']?.toString().isNotEmpty == true) ? inv['unit'].toString() : '';
+    final price = (inv['price'] as num?)?.toDouble() ?? 0.0;
     final fillPercent = dailyCapacity > 0 ? (booked / dailyCapacity).clamp(0.0, 1.0) : 0.0;
 
     return Container(
@@ -2819,7 +2866,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ],
         ),
         const SizedBox(height: 10),
-        ..._broadcastAlerts.map((b) => UiInsetCard(
+        if (_broadcastAlerts.isEmpty)
+          UiEmptyState(
+            icon: Icons.campaign_outlined,
+            title: 'No broadcasts sent today',
+            message: 'Send instant push alerts to all morning & evening subscribers in your hub depot zone.',
+            action: ElevatedButton.icon(
+              onPressed: () => _showBroadcastDialog(context),
+              icon: const Icon(Icons.send_rounded, size: 14),
+              label: Text('Send Customer Broadcast', style: UiText.label.copyWith(fontWeight: FontWeight.bold, fontSize: 11, color: UiTone.surface)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: UiTone.primary,
+                foregroundColor: UiTone.surface,
+              ),
+            ),
+          )
+        else
+          ..._broadcastAlerts.map((b) => UiInsetCard(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(12),
               shadow: UiShadow.card,
@@ -3195,8 +3258,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget _buildRealTimeEarningsCard(BuildContext context) {
     final state = widget.state;
     final isTelugu = state.isTelugu;
-    final totalRev = state.totalDailyRevenue > 0 ? state.totalDailyRevenue : 14250.0;
-    final totalVol = state.totalDailyMilkVolume > 0 ? state.totalDailyMilkVolume : 215.0;
+    final totalRev = state.totalDailyRevenue;
+    final totalVol = state.totalDailyMilkVolume;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -3325,14 +3388,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Widget _buildDailyBatchLabCard(BuildContext context) {
     final batches = widget.state.dailyMilkBatches;
     final latestBatch = batches.isNotEmpty ? batches.first : null;
+    final hasBatch = latestBatch != null;
 
-    final fat = latestBatch?['fat_percentage'] != null ? '${latestBatch!['fat_percentage']}%' : '6.8%';
-    final snf = latestBatch?['snf_percentage'] != null ? '${latestBatch!['snf_percentage']}%' : '9.0%';
-    final water = latestBatch?['water_percentage'] != null ? '${latestBatch!['water_percentage']}%' : '0.0%';
-    final parsedP = latestBatch?['price_per_litre'] != null ? (double.tryParse(latestBatch!['price_per_litre'].toString()) ?? 68.0) : 68.0;
-    final price = '${UiFormat.price(parsedP)}/L';
-    final product = latestBatch?['product_name']?.toString() ?? 'Pure Buffalo Milk';
-    final batchCode = latestBatch?['batch_code']?.toString() ?? 'BATCH-KDD-01';
+    final fat = hasBatch && latestBatch['fat_percentage'] != null ? '${latestBatch['fat_percentage']}%' : '—';
+    final snf = hasBatch && latestBatch['snf_percentage'] != null ? '${latestBatch['snf_percentage']}%' : '—';
+    final water = hasBatch && latestBatch['water_percentage'] != null ? '${latestBatch['water_percentage']}%' : '—';
+    final parsedP = hasBatch && latestBatch['price_per_litre'] != null
+        ? double.tryParse(latestBatch['price_per_litre'].toString())
+        : null;
+    final price = parsedP != null ? '${UiFormat.price(parsedP)}/L' : '—';
+    final product = hasBatch
+        ? (latestBatch['product_name']?.toString() ?? 'Daily Milk')
+        : (widget.state.products.isNotEmpty ? widget.state.products.first.name : 'Daily Batch');
+    final batchCode = hasBatch
+        ? (latestBatch['batch_code']?.toString() ?? 'BATCH-CERTIFIED')
+        : 'Pending Certification';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -3479,13 +3549,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   void _showBatchLabQualityDialog(BuildContext context, {bool isGeneratingDeliveries = false}) {
-    String selectedProduct = 'Pure Buffalo Milk';
+    final products = widget.state.products;
+    String selectedProduct = products.isNotEmpty ? products.first.name : 'Pure Buffalo Milk';
     DateTime selectedDate = DateTime.now();
+    final initialPrice = products.isNotEmpty ? products.first.pricePerUnit.toInt().toString() : '68';
+    final initialVolume = widget.state.totalDailyMilkVolume > 0 ? widget.state.totalDailyMilkVolume.toInt().toString() : '200';
     final fatCtrl = TextEditingController(text: '6.8');
     final snfCtrl = TextEditingController(text: '9.0');
     final waterCtrl = TextEditingController(text: '0.0');
-    final priceCtrl = TextEditingController(text: '68');
-    final volumeCtrl = TextEditingController(text: '450');
+    final priceCtrl = TextEditingController(text: initialPrice);
+    final volumeCtrl = TextEditingController(text: initialVolume);
     bool isSubmitting = false;
 
     showModalBottomSheet(
@@ -3617,29 +3690,35 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         child: DropdownButton<String>(
                           value: selectedProduct,
                           isExpanded: true,
-                          items: const [
-                            DropdownMenuItem(value: 'Pure Buffalo Milk', child: Text('🥛 Pure Buffalo Milk (Standard 6.8% Fat)')),
-                            DropdownMenuItem(value: 'Vedic A2 Desi Cow Milk', child: Text('🐄 Vedic A2 Desi Cow Milk (4.5% Fat)')),
-                            DropdownMenuItem(value: 'Farm Fresh Cow Milk', child: Text('🥛 Farm Fresh Cow Milk (4.2% Fat)')),
-                            DropdownMenuItem(value: 'Fresh Malai Paneer', child: Text('🧀 Fresh Malai Paneer (22.0% Fat)')),
-                            DropdownMenuItem(value: 'Vedic Bilona Ghee', child: Text('🧈 Vedic Bilona Ghee (99.7% Fat)')),
-                          ],
+                          items: (products.isNotEmpty
+                                  ? products.map((p) => p.name).toList()
+                                  : [
+                                      'Pure Buffalo Milk',
+                                      'Vedic A2 Desi Cow Milk',
+                                      'Farm Fresh Cow Milk',
+                                    ])
+                              .map((pName) => DropdownMenuItem(
+                                    value: pName,
+                                    child: Text('🥛 $pName'),
+                                  ))
+                              .toList(),
                           onChanged: (val) {
                             if (val != null) {
                               setModalState(() {
                                 selectedProduct = val;
+                                final matched = products.where((p) => p.name == val).firstOrNull;
+                                if (matched != null) {
+                                  priceCtrl.text = matched.pricePerUnit.toInt().toString();
+                                }
                                 if (val.contains('Buffalo')) {
                                   fatCtrl.text = '6.8';
                                   snfCtrl.text = '9.0';
-                                  priceCtrl.text = '68';
                                 } else if (val.contains('A2') || val.contains('Desi')) {
                                   fatCtrl.text = '4.5';
                                   snfCtrl.text = '8.8';
-                                  priceCtrl.text = '85';
                                 } else if (val.contains('Cow')) {
                                   fatCtrl.text = '4.2';
                                   snfCtrl.text = '8.5';
-                                  priceCtrl.text = '60';
                                 }
                               });
                             }
@@ -3724,11 +3803,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                             ? null
                             : () async {
                                 setModalState(() => isSubmitting = true);
+                                final matchedProd = products.where((p) => p.name == selectedProduct).firstOrNull;
+                                final defaultPrice = matchedProd?.pricePerUnit ?? (products.isNotEmpty ? products.first.pricePerUnit : 68.0);
+                                final defaultVolume = widget.state.totalDailyMilkVolume > 0 ? widget.state.totalDailyMilkVolume : 200.0;
                                 final fat = double.tryParse(fatCtrl.text) ?? 6.8;
                                 final snf = double.tryParse(snfCtrl.text) ?? 9.0;
                                 final water = double.tryParse(waterCtrl.text) ?? 0.0;
-                                final price = double.tryParse(priceCtrl.text) ?? 68.0;
-                                final volume = double.tryParse(volumeCtrl.text) ?? 450.0;
+                                final price = double.tryParse(priceCtrl.text) ?? defaultPrice;
+                                final volume = double.tryParse(volumeCtrl.text) ?? defaultVolume;
 
                                 // Submit daily batch lab report
                                 await ApiService.submitDailyMilkBatch(

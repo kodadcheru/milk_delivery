@@ -274,7 +274,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${_selectedDriver!['hub']} • ₹15,000 / mo',
+                                '${_selectedDriver!['hub'] ?? "Hub Depot"} • ${_selectedDriver!['salary'] ?? (_selectedDriver!['raw_salary'] != null ? "₹${(_selectedDriver!['raw_salary'] as num).toInt()}/mo" : "Salaried Partner")}',
                                 style: UiText.body.copyWith(fontSize: 12),
                               ),
                               const SizedBox(height: 4),
@@ -309,7 +309,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                             borderRadius: BorderRadius.circular(UiRadius.xs),
                           ),
                           child: Text(
-                            '${_selectedDriver!['completed_stops'] ?? 10}/${_selectedDriver!['assigned_stops'] ?? 12} Drops',
+                            '${_selectedDriver!['completed_stops'] ?? 0}/${_selectedDriver!['assigned_stops'] ?? 0} Drops',
                             style: UiText.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w800, color: UiTone.primary),
                           ),
                         ),
@@ -329,7 +329,7 @@ class _ProviderFleetMapScreenState extends State<ProviderFleetMapScreen> {
                             label: Text('Call Partner', style: UiText.label.copyWith(fontWeight: FontWeight.w700, color: UiTone.surface)),
                             onPressed: () {
                               final phone = _selectedDriver?['phone']?.toString();
-                              if (phone != null && phone.trim().isNotEmpty) {
+                              if (phone != null && phone.trim().isNotEmpty && phone != '—') {
                                 _callDriver(phone);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
