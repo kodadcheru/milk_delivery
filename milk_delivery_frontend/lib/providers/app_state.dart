@@ -385,6 +385,8 @@ class AppState extends ChangeNotifier {
   List<SubscriptionModel> subscriptions = [];
   List<WalletTransactionModel> transactions = [];
   List<DeliveryTaskModel> deliveries = [];
+  List<DeliveryTaskModel> get subscriptionDeliveries => deliveries.where((d) => d.isSubscription).toList();
+  List<DeliveryTaskModel> get expressDeliveries => deliveries.where((d) => d.isExpressOrder).toList();
   List<LiveOrderModel> liveOrders = [];
   List<NotificationModel> notifications = [];
   List<Map<String, dynamic>> hubInventory = [];

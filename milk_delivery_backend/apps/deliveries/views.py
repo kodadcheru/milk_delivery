@@ -45,7 +45,14 @@ class DeliveryTaskListView(generics.ListAPIView):
                     qs = qs.filter(delivery_date=filter_date)
                 except (ValueError, TypeError):
                     pass
-            return qs.filter(Q(subscription__customer=user) | Q(order__customer=user)).order_by("-delivery_date", "-id")
+            task_type = self.request.query_params.get("type", None)
+            if task_type == "subscription":
+                qs = qs.filter(subscription__customer=user, order__isnull=True)
+            elif task_type == "express":
+                qs = qs.filter(order__customer=user, subscription__isnull=True)
+            else:
+                qs = qs.filter(Q(subscription__customer=user) | Q(order__customer=user))
+            return qs.order_by("-delivery_date", "-id")
 
         hub_code = self.request.query_params.get("hub_code") or self.request.query_params.get("hub")
         if hub_code:

@@ -91,7 +91,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
   Widget build(BuildContext context) {
     final isTelugu = widget.state.isTelugu;
     final liveOrders = widget.state.liveOrders;
-    final subTasks = widget.state.deliveries;
+    final subTasks = widget.state.subscriptionDeliveries;
 
     return SafeArea(
       child: Scaffold(
@@ -959,7 +959,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildSubscriptionDeliveriesView(BuildContext context, bool isTelugu) {
     // Filter daily fulfillment delivery drops (daily orders)
-    final tasks = widget.state.deliveries.where((task) {
+    final tasks = widget.state.subscriptionDeliveries.where((task) {
       if (_searchQuery.isNotEmpty) {
         final matchesName = task.productName.toLowerCase().contains(_searchQuery);
         final matchesAddr = task.deliveryAddress.toLowerCase().contains(_searchQuery);
@@ -1433,7 +1433,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                   child: Image.network(
                     imageUrl,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (context, error, stackTrace) => Container(
                       padding: const EdgeInsets.all(32),
                       color: const Color(0xFF1E293B),
                       child: const Column(

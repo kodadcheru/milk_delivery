@@ -192,7 +192,7 @@ class _DeliveryCalendarViewState extends State<DeliveryCalendarView> {
               final isPaused = _customPausedDays.contains(day) || (widget.state.isVacationMode && widget.state.subscriptions.any((s) => s.status == 'PAUSED'));
 
               final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-              final tasksForDay = widget.state.deliveries.where((d) => d.deliveryDate.startsWith(dateStr)).toList();
+              final tasksForDay = widget.state.subscriptionDeliveries.where((d) => d.deliveryDate.startsWith(dateStr)).toList();
               
               bool hasDelivered = false;
               bool hasFailed = false;
