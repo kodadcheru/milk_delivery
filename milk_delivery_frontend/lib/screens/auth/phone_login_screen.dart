@@ -6,6 +6,7 @@ import '../../models/user_model.dart';
 import '../../services/api_service.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
+import '../common/legal_terms_screen.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
   final AppState state;
@@ -336,10 +337,29 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               // Footer Notice
               Padding(
                 padding: const EdgeInsets.fromLTRB(32, 4, 32, 14),
-                child: Text(
-                  widget.state.tr('terms_notice'),
-                  textAlign: TextAlign.center,
-                  style: UiText.caption,
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalTermsScreen(state: widget.state, initialTab: LegalTab.terms),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      widget.state.tr('terms_notice'),
+                      textAlign: TextAlign.center,
+                      style: UiText.caption.copyWith(
+                        color: const Color(0xFF64748B),
+                        decoration: TextDecoration.underline,
+                        decorationColor: const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

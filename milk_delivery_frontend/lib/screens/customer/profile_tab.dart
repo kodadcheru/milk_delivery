@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
+import '../common/legal_terms_screen.dart';
 import 'address_book_screen.dart';
 import 'help_support_screen.dart';
 
@@ -315,24 +316,46 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.info_outline_rounded,
                     iconBg: const Color(0xFFF1F5F9),
                     iconFg: const Color(0xFF475569),
-                    label: 'About us',
-                    onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('About Us'), content: const Text('Pamba Fresh is a farm-to-home pure milk and dairy delivery service.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])),
+                    label: state.isTelugu ? 'మా గురించి' : 'About Us',
+                    subtitle: state.isTelugu ? 'పాంబ పాడి కథ & ప్రమాణాలు' : 'Farm-to-doorstep dairy promise',
+                    onTap: () => _showAboutUsSheet(context, state),
                   ),
                   _buildDivider(),
                   _buildMenuTile(
-                    icon: Icons.shield_outlined,
-                    iconBg: const Color(0xFFE0F7F3),
-                    iconFg: const Color(0xFF0D9488),
-                    label: 'Privacy & Terms',
-                    onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('Privacy & Terms'), content: const Text('By using this app, you agree to our terms of service.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])),
+                    icon: Icons.shield_rounded,
+                    iconBg: const Color(0xFFE0F2FE),
+                    iconFg: const Color(0xFF0284C7),
+                    label: state.isTelugu ? 'గోప్యతా విధానం' : 'Privacy Policy',
+                    subtitle: state.isTelugu ? 'డేటా రక్షణ & వినియోగదారు హక్కులు' : 'Data protection & privacy rights',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalTermsScreen(state: state, initialTab: LegalTab.privacy),
+                      ),
+                    ),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
+                    icon: Icons.gavel_rounded,
+                    iconBg: const Color(0xFFFEF3C7),
+                    iconFg: const Color(0xFFD97706),
+                    label: state.isTelugu ? 'నిబంధనలు & షరతులు' : 'Terms & Conditions',
+                    subtitle: state.isTelugu ? 'డెలివరీ, వాలెట్ & రీఫండ్ నిబంధనలు' : 'Service rules, wallet & refund policy',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalTermsScreen(state: state, initialTab: LegalTab.terms),
+                      ),
+                    ),
                   ),
                   _buildDivider(),
                   _buildMenuTile(
                     icon: Icons.delete_outline_rounded,
                     iconBg: const Color(0xFFFEE2E2),
                     iconFg: const Color(0xFFDC2626),
-                    label: 'Delete Account',
-                    trailingBadge: 'Irreversible',
+                    label: state.isTelugu ? 'ఖాతా తొలగించండి' : 'Delete Account',
+                    subtitle: state.isTelugu ? 'శాశ్వతంగా డేటా తుడిచివేయబడుతుంది' : 'Permanently wipe your account & data',
+                    trailingBadge: state.isTelugu ? 'శాశ్వతం' : 'Irreversible',
                     isDestructive: true,
                     onTap: () => _confirmDeleteAccountSheet(context, state, onLogout),
                   ),
@@ -411,6 +434,7 @@ class ProfileTab extends StatelessWidget {
     required Color iconFg,
     required String label,
     required VoidCallback onTap,
+    String? subtitle,
     String? trailingBadge,
     bool isDestructive = false,
   }) {
@@ -422,7 +446,7 @@ class ProfileTab extends StatelessWidget {
           onTap();
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           child: Row(
             children: [
               Container(
@@ -436,13 +460,29 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: isDestructive ? const Color(0xFFDC2626) : const Color(0xFF1A2B23),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: isDestructive ? const Color(0xFFDC2626) : const Color(0xFF1A2B23),
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 1.5),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDestructive ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (trailingBadge != null) ...[
@@ -471,6 +511,143 @@ class ProfileTab extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showAboutUsSheet(BuildContext context, AppState state) {
+    final isTe = state.isTelugu;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F5F0),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text('🥛', style: TextStyle(fontSize: 24)),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pamba Fresh Dairy',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        isTe ? 'పొలం నుండి నేరుగా మీ గుమ్మానికి' : 'Pure Farm-to-Home Dawn Delivery',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0D7C66)),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'v2.4.0',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF475569)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isTe
+                  ? 'పాంబ ఫ్రెష్ అనేది స్వచ్ఛమైన, రసాయనాలు లేని పాలను తెల్లవారుజామునే మీ ఇంటి గుమ్మానికి చేర్చే ఆధునిక డైరీ సేవ. మేము పాలను సేకరించిన 12 గంటల లోపే కచ్చితమైన కోల్డ్ చైన్ పద్ధతిలో మీకు అందిస్తాము.'
+                  : 'Pamba Fresh is a farm-to-doorstep dairy platform committed to delivering pure, unadulterated milk and fresh breakfast essentials to your family within 12 hours of milking, preserved in a continuous chilled cold chain (<4°C).',
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), height: 1.45),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  _buildAboutPillar(Icons.science_outlined, isTe ? '24 ల్యాబ్ నాణ్యతా పరీక్షలు' : '24 Rigorous Lab Tests', isTe ? 'కల్తీ లేని స్వచ్ఛత' : 'Zero adulteration & zero antibiotics'),
+                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                  _buildAboutPillar(Icons.ac_unit_rounded, isTe ? 'కచ్చితమైన కోల్డ్ చైన్ (<4°C)' : 'Strict Chilled Chain (<4°C)', isTe ? 'పాలు తోడుకోకుండా తాజాగా' : 'From farm chiller to your door'),
+                  const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                  _buildAboutPillar(Icons.alarm_on_rounded, isTe ? 'ఉదయం 07:30 లోపు డ్రాప్' : 'Guaranteed Before 7:30 AM', isTe ? 'నిశ్శబ్ద డెలివరీ హామీ' : 'Silent doorstep delivery guaranteed'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D7C66),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isTe ? 'అర్థమైంది' : 'Got it',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAboutPillar(IconData icon, String title, String subtitle) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE6F5F0),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: const Color(0xFF0D7C66)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              Text(subtitle, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
