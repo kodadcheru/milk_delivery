@@ -25,22 +25,36 @@ class DeliveryTrackerTab extends StatefulWidget {
 
 typedef BookingsTab = DeliveryTrackerTab;
 
-class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTickerProviderStateMixin {
+class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProviderStateMixin {
   late TabController _tabController;
   int _selectedFilterIndex = 0; // 0: All, 1: Active, 2: Delivered, 3: Cancelled/Skipped
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
+  late AnimationController _pulseController;
+  late AnimationController _staggerController;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _pulseController.dispose();
+    _staggerController.dispose();
     super.dispose();
   }
 
@@ -134,8 +148,15 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 4,
+                            
+                          )
+                        ]
                       ),
                       child: TabBar(
                         controller: _tabController,
@@ -145,8 +166,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: UiTone.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
+                              color: UiTone.primary.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              spreadRadius: 1,
                               offset: const Offset(0, 2),
                             ),
                           ],
@@ -169,8 +191,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.white24,
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 2,
+                                        )
+                                      ],
                                     ),
                                     child: Text(
                                       '${liveOrders.length}',
@@ -193,8 +221,14 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.white24,
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 2,
+                                        )
+                                      ],
                                     ),
                                     child: Text(
                                       '${subTasks.length}',
@@ -260,13 +294,23 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       physics: const BouncingScrollPhysics(),
                       child: Row(
                         children: [
-                          _filterPill(0, isTelugu ? 'అన్నీ' : 'All'),
-                          const SizedBox(width: 8),
-                          _filterPill(1, isTelugu ? 'యాక్టివ్ / డెలివరీలో' : 'Active / In-Transit'),
-                          const SizedBox(width: 8),
-                          _filterPill(2, isTelugu ? 'పూర్తయినవి' : 'Delivered'),
-                          const SizedBox(width: 8),
-                          _filterPill(3, isTelugu ? 'రద్దు / స్కిప్ చేయబడినవి' : 'Cancelled / Skipped'),
+                          Builder(builder: (context) {
+                            final allCount = liveOrders.length + subTasks.length;
+                            final activeCount = liveOrders.where((o) => _isActiveOrder(o.status)).length + subTasks.where((t) => _isActiveTask(t.status)).length;
+                            final deliveredCount = liveOrders.where((o) => _isDeliveredOrder(o.status)).length + subTasks.where((t) => _isDeliveredTask(t.status)).length;
+                            final cancelledCount = liveOrders.where((o) => _isCancelledOrder(o.status)).length + subTasks.where((t) => _isCancelledTask(t.status)).length;
+                            return Row(
+                              children: [
+                                _filterPill(0, isTelugu ? 'అన్నీ' : 'All', allCount),
+                                const SizedBox(width: 8),
+                                _filterPill(1, isTelugu ? 'యాక్టివ్ / డెలివరీలో' : 'Active / In-Transit', activeCount),
+                                const SizedBox(width: 8),
+                                _filterPill(2, isTelugu ? 'పూర్తయినవి' : 'Delivered', deliveredCount),
+                                const SizedBox(width: 8),
+                                _filterPill(3, isTelugu ? 'రద్దు / స్కిప్ చేయబడినవి' : 'Cancelled / Skipped', cancelledCount),
+                              ],
+                            );
+                          }),
                         ],
                       ),
                     ),
@@ -306,6 +350,10 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
 
     final activeOrdersCount = liveOrders.where((o) => _isActiveOrder(o.status)).length;
     final activeTasksCount = subTasks.where((t) => _isActiveTask(t.status)).length;
+    final totalActive = activeOrdersCount + activeTasksCount;
+    final deliveredOrders = liveOrders.where((o) => _isDeliveredOrder(o.status)).length;
+    final deliveredTasks = subTasks.where((t) => _isDeliveredTask(t.status)).length;
+    final totalDelivered = deliveredOrders + deliveredTasks;
 
     if (inTransitOrder != null) {
       return Container(
@@ -325,191 +373,299 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
             ),
           ],
         ),
-        child: Row(
+        child: Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: Colors.white24,
-                shape: BoxShape.circle,
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
-              child: const Text('🛵', style: TextStyle(fontSize: 22)),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text('🛵', style: TextStyle(fontSize: 22)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF4ADE80),
-                          shape: BoxShape.circle,
-                        ),
+                      Row(
+                        children: [
+                          AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) {
+                              return Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4ADE80).withValues(alpha: 0.5 + (_pulseController.value * 0.5)),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4ADE80).withValues(alpha: _pulseController.value * 0.5),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    )
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isTelugu ? 'డ్రైవర్ దారిలో ఉన్నారు!' : 'Driver on the way!',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isTelugu ? 'డ్రైవర్ దారిలో ఉన్నారు!' : 'Driver on the way!',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13.5,
-                        ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Text(
+                            'Order #${inTransitOrder.id} • ',
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '🕐 ~${inTransitOrder.etaMinutes} min',
+                              style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Order #${inTransitOrder.id} • ${inTransitOrder.deliverySlot}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LiveDriverTrackingScreen(
-                      state: widget.state,
-                      liveOrder: inTransitOrder,
-                      orderTitle: 'Express Order #${inTransitOrder!.id}',
-                      deliveryAddress: inTransitOrder.deliveryAddress,
-                      driverName: inTransitOrder.driverName,
-                      driverPhone: inTransitOrder.driverPhone,
-                      deliveryOtp: inTransitOrder.deliveryOtp,
-                    ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF0D7C66),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-              child: Text(
-                isTelugu ? 'లైవ్ మ్యాప్ 🗺️' : 'Live Map 🗺️',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
-              ),
+                ),
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.2 + (_pulseController.value * 0.3)),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          )
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LiveDriverTrackingScreen(
+                                state: widget.state,
+                                liveOrder: inTransitOrder,
+                                orderTitle: 'Express Order #${inTransitOrder!.id}',
+                                deliveryAddress: inTransitOrder.deliveryAddress,
+                                driverName: inTransitOrder.driverName,
+                                driverPhone: inTransitOrder.driverPhone,
+                                deliveryOtp: inTransitOrder.deliveryOtp,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0D7C66),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        ),
+                        child: Text(
+                          isTelugu ? 'లైవ్ మ్యాప్ 🗺️' : 'Live Map 🗺️',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+                        ),
+                      ),
+                    );
+                  }
+                ),
+              ],
             ),
           ],
         ),
       );
     }
 
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: UiTone.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Text('✨', style: TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isTelugu ? 'మీ తదుపరి డెలివరీలు ట్రాక్ చేయండి' : 'Track your deliveries',
+                      style: TextStyle(
+                        color: UiTone.ink,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isTelugu
+                          ? 'మీ యాక్టివ్ ఆర్డర్లు మరియు సబ్‌స్క్రిప్షన్‌లను ఇక్కడ చూడండి.'
+                          : 'View your active orders and upcoming subscriptions here.',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildMiniStatCard(
+                icon: '📦',
+                count: totalActive.toString(),
+                label: isTelugu ? 'యాక్టివ్' : 'Active',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildMiniStatCard(
+                icon: '✅',
+                count: totalDelivered.toString(),
+                label: isTelugu ? 'పూర్తయినవి' : 'Delivered',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildMiniStatCard(
+                icon: '⏱️',
+                count: '06:00 AM',
+                label: isTelugu ? 'తదుపరి డ్రాప్' : 'Next Drop',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniStatCard({required String icon, required String count, required String label}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: UiTone.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text('⚡', style: TextStyle(fontSize: 18)),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isTelugu ? 'లైవ్ బుకింగ్స్ ట్రాకర్' : 'Live Bookings Tracker',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: UiTone.ink),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isTelugu
-                        ? '$activeOrdersCount తక్షణ • $activeTasksCount డైలీ డ్రాప్స్'
-                        : '$activeOrdersCount Express • $activeTasksCount Daily Active',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                  ),
-                ],
-              ),
-            ],
+          Text(icon, style: const TextStyle(fontSize: 18)),
+          const SizedBox(height: 6),
+          Text(
+            count,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D7C66).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.alarm_rounded, size: 12, color: Color(0xFF0D7C66)),
-                const SizedBox(width: 4),
-                Text(
-                  '06:00 AM Drop',
-                  style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10.5, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 
-  Widget _filterPill(int index, String label) {
+  Widget _filterPill(int index, String label, int count) {
     final isSelected = _selectedFilterIndex == index;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedFilterIndex = index);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? UiTone.primary : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? UiTone.primary : Colors.grey.shade300),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: UiTone.primary.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade700,
-            fontWeight: FontWeight.w700,
-            fontSize: 11.5,
+    return AnimatedScale(
+      scale: isSelected ? 1.05 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _selectedFilterIndex = index);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? const LinearGradient(colors: [Color(0xFF0D7C66), Color(0xFF14B8A6)])
+                : null,
+            color: isSelected ? null : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: isSelected ? null : Border.all(color: Colors.grey.shade300),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0D7C66).withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Text(
+            count > 0 ? '$label ($count)' : label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // TAB 1: EXPRESS ORDERS VIEW
-  // ══════════════════════════════════════════════════════════════════════════
   Widget _buildExpressOrdersView(BuildContext context, bool isTelugu) {
     final orders = widget.state.liveOrders.where((order) {
       if (_searchQuery.isNotEmpty) {
@@ -537,9 +693,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 padding: const EdgeInsets.all(32),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  gradient: const LinearGradient(colors: [Color(0xFFF0FDF4), Color(0xFFECFDF5)]),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: const Color(0xFFD1FAE5)),
                 ),
                 child: Column(
                   children: [
@@ -556,6 +712,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           : 'Order fresh milk, curd, paneer, and pure water cans with instant dispatch.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildFeatureChip('🌅 06:00 AM'),
+                        const SizedBox(width: 8),
+                        _buildFeatureChip('🚛 Daily'),
+                        const SizedBox(width: 8),
+                        _buildFeatureChip('🧪 Lab Tested'),
+                      ],
                     ),
                     const SizedBox(height: 18),
                     ElevatedButton.icon(
@@ -579,7 +746,21 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     );
   }
 
-  Widget _buildExpressOrderCard(BuildContext context, LiveOrderModel order, bool isTelugu) {
+    Widget _buildFeatureChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFD1FAE5)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF0D7C66)),
+      ),
+    );
+  }
+  Widget _buildExpressOrderCard(BuildContext context, LiveOrderModel order, bool isTelugu, {int index = 0}) {
     final isDelivered = _isDeliveredOrder(order.status);
     final isOutForDelivery = order.status == 'OUT_FOR_DELIVERY';
     final isPlaced = _isActiveOrder(order.status) && !isOutForDelivery;
@@ -592,7 +773,18 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
       statusText = isTelugu ? 'డెలివరీ భాగస్వామి దారిలో ఉన్నారు' : 'OUT FOR DELIVERY';
     }
 
-    return InkWell(
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 80)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
         BookingDetailSheet.showForLiveOrder(context, widget.state, order);
@@ -641,7 +833,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        order.deliverySlot,
+                        _timeAgo(order.createdAt),
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ],
@@ -900,6 +1092,23 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       ] else if (isDelivered) ...[
                         Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              widget.state.setTab(0);
+                            },
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            label: Text(isTelugu ? 'మళ్లీ ఆర్డర్ చేయండి' : 'Reorder 🔄'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: UiTone.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
                               showModalBottomSheet(
@@ -951,8 +1160,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ══════════════════════════════════════════════════════════════════════════
   // TAB 2: SUBSCRIPTION DELIVERIES VIEW
@@ -988,13 +1198,21 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 padding: const EdgeInsets.all(32),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  gradient: const LinearGradient(colors: [Color(0xFFF0FDF4), Color(0xFFECFDF5)]),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: const Color(0xFFD1FAE5)),
                 ),
                 child: Column(
                   children: [
-                    const Text('🥛', style: TextStyle(fontSize: 48)),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.8, end: 1.0),
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.elasticOut,
+                      builder: (context, value, child) => Transform.scale(
+                        scale: value,
+                        child: const Text('🥛', style: TextStyle(fontSize: 48)),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       isTelugu ? 'డైలీ ఆర్డర్లు ఏవీ లేవు' : 'No Daily Orders Found',
@@ -1007,6 +1225,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           : 'Subscribe to farm fresh milk & dairy for guaranteed 06:00 AM morning doorstep delivery.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildFeatureChip('🌅 06:00 AM'),
+                        const SizedBox(width: 8),
+                        _buildFeatureChip('🚛 Daily'),
+                        const SizedBox(width: 8),
+                        _buildFeatureChip('🧪 Lab Tested'),
+                      ],
                     ),
                     const SizedBox(height: 18),
                     ElevatedButton.icon(
@@ -1037,7 +1266,15 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 ),
                 child: Column(
                   children: [
-                    const Text('🥛', style: TextStyle(fontSize: 44)),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.8, end: 1.0),
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.elasticOut,
+                      builder: (context, value, child) => Transform.scale(
+                        scale: value,
+                        child: const Text('🥛', style: TextStyle(fontSize: 44)),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       isTelugu ? 'డైలీ ఆర్డర్లు షెడ్యూల్ చేయబడ్డాయి' : 'Daily Drops Scheduled',
@@ -1050,6 +1287,17 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                           : 'Your active subscription is scheduled for guaranteed 06:00 AM morning doorstep delivery.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildFeatureChip('🌅 06:00 AM'),
+                        const SizedBox(width: 8),
+                        _buildFeatureChip('🚛 Daily'),
+                        const SizedBox(width: 8),
+                        _buildFeatureChip('🧪 Lab Tested'),
+                      ],
                     ),
                     const SizedBox(height: 14),
                     OutlinedButton.icon(
@@ -1090,7 +1338,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                 ],
               ),
               const SizedBox(height: 12),
-              ...tasks.map((task) => _buildSubscriptionTaskCard(context, task, isTelugu)),
+              ...tasks.asMap().entries.map((e) => _buildSubscriptionTaskCard(context, e.value, isTelugu, index: e.key)),
             ],
           ],
         ),
@@ -1098,26 +1346,23 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
     );
   }
 
-  String _formatTaskDate(String deliveryDate, String slotTime, bool isTelugu) {
-    final now = DateTime.now();
-    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final yesterday = now.subtract(const Duration(days: 1));
-    final yesterdayStr = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
-
-    if (deliveryDate == todayStr) {
-      return '${isTelugu ? 'ఈరోజు' : 'Today'} • $slotTime';
-    } else if (deliveryDate == yesterdayStr) {
-      return '${isTelugu ? 'నిన్న' : 'Yesterday'} • $slotTime';
-    }
-    return '$deliveryDate • $slotTime';
-  }
-
-  Widget _buildSubscriptionTaskCard(BuildContext context, DeliveryTaskModel task, bool isTelugu) {
+  Widget _buildSubscriptionTaskCard(BuildContext context, DeliveryTaskModel task, bool isTelugu, {int index = 0}) {
     final isDelivered = _isDeliveredTask(task.status);
     final statusColor = _getStatusColor(task.status);
     final pName = task.productName.isNotEmpty ? task.productName : 'Fresh Cow Milk';
 
-    return InkWell(
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 80)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
         BookingDetailSheet.showForSubscriptionTask(context, widget.state, task);
@@ -1165,9 +1410,16 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        _formatTaskDate(task.deliveryDate, task.slotTime, isTelugu),
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _formatCalendarDate(task.deliveryDate),
+                          style: TextStyle(color: Colors.grey.shade700, fontSize: 10, fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ],
                   ),
@@ -1245,6 +1497,19 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                       ),
                     ],
                   ),
+                  if (task.fatPercentage > 0)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '🥛 Fat: ${task.fatPercentage}% | SNF: ${task.snfPercentage}% | 🌡️ ${task.temperatureCelsius}°C',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
+                      ),
+                    ),
                   const Divider(height: 20),
 
                   // Address & Route
@@ -1345,10 +1610,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                         ),
                         if (task.proofImageUrl.isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.photo_camera_rounded, color: Color(0xFF0284C7)),
-                            tooltip: 'Doorstep Proof',
-                            onPressed: () {
+                          GestureDetector(
+                            onTap: () {
                               _showDoorstepProofLightbox(
                                 context,
                                 task.proofImageUrl,
@@ -1356,6 +1619,21 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
                                 '${task.productName} • ${task.deliveryDate}',
                               );
                             },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                task.proofImageUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, err, stack) => Container(
+                                  width: 36,
+                                  height: 36,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.broken_image, size: 16),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -1367,8 +1645,9 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showDoorstepProofLightbox(BuildContext context, String imageUrl, String title, String subtitle) {
     showDialog(
@@ -1477,5 +1756,30 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with SingleTick
         ),
       ),
     );
+  }
+
+  String _timeAgo(String createdAt) {
+    try {
+      final dt = DateTime.parse(createdAt);
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      if (diff.inDays == 1) return 'Yesterday';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      return createdAt.split('T').first;
+    } catch (_) {
+      return createdAt;
+    }
+  }
+
+  String _formatCalendarDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr);
+      final days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${days[dt.weekday - 1]}, ${dt.day} ${months[dt.month - 1]}';
+    } catch (_) {
+      return dateStr;
+    }
   }
 }
