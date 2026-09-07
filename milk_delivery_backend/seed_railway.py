@@ -87,6 +87,10 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS bank_ifsc VARCHAR(20) DEFAULT '';
                     ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS bank_name VARCHAR(150) DEFAULT '';
                     ALTER TABLE deliveries_locationhub ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100) DEFAULT '';
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS delivered_latitude NUMERIC(15, 8);
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS delivered_longitude NUMERIC(15, 8);
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_latitude NUMERIC(15, 8);
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_longitude NUMERIC(15, 8);
                 """)
             elif vendor == 'sqlite':
                 cursor.execute("""

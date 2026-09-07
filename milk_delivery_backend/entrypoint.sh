@@ -2,7 +2,7 @@
 set -e
 
 echo "🚀 [1/4] Running database migrations..."
-python manage.py migrate --noinput || true
+python manage.py migrate --noinput || echo "⚠️ WARNING: Database migrations failed! Check logs above."
 
 echo "🌱 [2/4] Seeding default superusers and hub catalogs..."
 python seed_railway.py || true
