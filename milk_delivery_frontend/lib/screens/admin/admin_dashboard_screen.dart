@@ -198,8 +198,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _showStorefrontBannerDialog(context),
-                  icon: const Icon(Icons.palette_rounded, size: 16),
-                  label: const Text('🏪 Store Banner', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.storefront_rounded, size: 16),
+                  label: const Text('🏪 Storefront', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
@@ -227,7 +227,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           const SizedBox(height: 18),
 
-          // ── 3.1 PAYMENT CONTROLS (COD & WALLET ON/OFF) ──
+          // ── 3.1 STOREFRONT & PAYMENT CONTROLS ──
           AnimatedBuilder(
             animation: widget.state,
             builder: (context, _) {
@@ -258,10 +258,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.tune_rounded, color: Color(0xFF0D7C66), size: 18),
+                            Icon(Icons.storefront_rounded, color: Color(0xFF0D7C66), size: 18),
                             SizedBox(width: 8),
                             Text(
-                              'Payment Controls',
+                              'Storefront & Payments',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
@@ -270,30 +270,54 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: (isCod && isWallet)
-                                ? const Color(0xFFDCFCE7)
-                                : (!isCod && !isWallet
-                                    ? const Color(0xFFFEE2E2)
-                                    : const Color(0xFFFEF3C7)),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            (isCod && isWallet)
-                                ? 'All Active'
-                                : (!isCod && !isWallet ? 'All Suspended' : 'Restricted'),
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              color: (isCod && isWallet)
-                                  ? const Color(0xFF15803D)
-                                  : (!isCod && !isWallet
-                                      ? const Color(0xFFB91C1C)
-                                      : const Color(0xFFB45309)),
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: () => _showStorefrontBannerDialog(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.tune_rounded, size: 12, color: Color(0xFF2563EB)),
+                                    SizedBox(width: 4),
+                                    Text('Banner & Branding', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: (isCod && isWallet)
+                                    ? const Color(0xFFDCFCE7)
+                                    : (!isCod && !isWallet
+                                        ? const Color(0xFFFEE2E2)
+                                        : const Color(0xFFFEF3C7)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                (isCod && isWallet)
+                                    ? 'All Active'
+                                    : (!isCod && !isWallet ? 'All Suspended' : 'Restricted'),
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: (isCod && isWallet)
+                                      ? const Color(0xFF15803D)
+                                      : (!isCod && !isWallet
+                                          ? const Color(0xFFB91C1C)
+                                          : const Color(0xFFB45309)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

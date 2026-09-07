@@ -738,6 +738,9 @@
       <button class="btn btn-secondary" onclick="loadAllData()">
         <i class="fa-solid fa-rotate-right"></i> Refresh Data
       </button>
+      <button class="btn btn-secondary" onclick="switchTab('storefront', document.getElementById('tabBtnStorefront'))" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.45); color: #10B981; font-weight: 700;">
+        <i class="fa-solid fa-store"></i> Storefront & Payments
+      </button>
       <button class="btn btn-primary" onclick="openBroadcastModal()">
         <i class="fa-solid fa-bullhorn"></i> Broadcast Notification
       </button>
@@ -760,18 +763,18 @@
     <!-- Tab Bar -->
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Overview & Demand</button>
-      <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-store"></i> Location Hubs & Balancer</button>
+      <button class="tab-btn" id="tabBtnStorefront" onclick="switchTab('storefront', this)" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399;"><i class="fa-solid fa-store"></i> <b>Storefront & Payments</b></button>
+      <button class="tab-btn" onclick="switchTab('products', this)"><i class="fa-solid fa-box-open"></i> Product Catalog</button>
+      <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-warehouse"></i> Location Hubs & Balancer</button>
       <button class="tab-btn" onclick="switchTab('service-areas', this)"><i class="fa-solid fa-map-location-dot"></i> Service Areas & Map</button>
       <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-truck-ramp-box"></i> Live Deliveries & Proofs</button>
       <button class="tab-btn" onclick="switchTab('subscriptions', this)"><i class="fa-solid fa-repeat"></i> Subscriptions Manager</button>
       <button class="tab-btn" onclick="switchTab('fleet', this)"><i class="fa-solid fa-motorcycle"></i> Salaried Fleet Partners</button>
-      <button class="tab-btn" onclick="switchTab('products', this)"><i class="fa-solid fa-box-open"></i> Product Catalog</button>
       <button class="tab-btn" onclick="switchTab('customers', this)"><i class="fa-solid fa-users"></i> Customers & Wallets</button>
       <button class="tab-btn" onclick="switchTab('express-orders', this)"><i class="fa-solid fa-bolt"></i> Express Orders</button>
       <button class="tab-btn" onclick="switchTab('bottle-returns', this)"><i class="fa-solid fa-wine-bottle"></i> Bottle Returns</button>
       <button class="tab-btn" onclick="switchTab('payouts', this)"><i class="fa-solid fa-money-bill-transfer"></i> Provider Payouts</button>
       <button class="tab-btn" onclick="switchTab('lab-batches', this)"><i class="fa-solid fa-flask-vial"></i> Daily Lab Batches</button>
-      <button class="tab-btn" onclick="switchTab('storefront', this)"><i class="fa-solid fa-paintbrush"></i> Storefront & App Banner</button>
       <button class="tab-btn" onclick="switchTab('support', this)"><i class="fa-solid fa-headset"></i> Support Desk & Live Chat</button>
       <button class="tab-btn" id="tabBtnProfile" onclick="switchTab('profile', this)"><i class="fa-solid fa-user-shield"></i> Admin Profile & Security</button>
     </div>
@@ -802,6 +805,27 @@
           <div class="kpi-value" id="kpi-fulfillment">100.0%</div>
           <div class="kpi-desc">Verified with Doorstep Photo Proof</div>
         </div>
+      </div>
+
+      <!-- Storefront & Customer Checkout Controls Banner -->
+      <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(13, 124, 102, 0.22) 100%); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 14px; padding: 14px 20px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #10B981; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 14.5px; color: #fff; display: flex; align-items: center; gap: 8px;">
+              Storefront & Customer App Controls
+              <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 11px; padding: 2px 8px; border-radius: 6px;">Live Settings</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+              Manage Hero Banners, Promo Chips, Dispatch Tags, and toggle <b>Cash on Delivery (COD)</b> & <b>Pamba Wallet</b>.
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('storefront', document.getElementById('tabBtnStorefront'))" style="padding: 9px 20px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-sliders"></i> Open Storefront Settings <i class="fa-solid fa-arrow-right"></i>
+        </button>
       </div>
 
       <div class="section-card">
