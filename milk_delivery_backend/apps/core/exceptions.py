@@ -58,6 +58,8 @@ def custom_exception_handler(exc, context):
         }
     else:
         # Unhandled 500 server exceptions
+        import traceback
+        tb_str = traceback.format_exc()
         logger.error(f"Unhandled Exception in {context.get('view')}: {str(exc)}", exc_info=True)
         response = Response(
             {
@@ -65,6 +67,8 @@ def custom_exception_handler(exc, context):
                 "code": "INTERNAL_SERVER_ERROR",
                 "message": "An internal server error occurred. Our engineering team has been notified.",
                 "errors": {},
+                "debug_error": str(exc),
+                "debug_traceback": tb_str,
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
