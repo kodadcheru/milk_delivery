@@ -96,6 +96,8 @@ class ExpressOrderListCreateView(APIView):
 
         if user and user.is_authenticated and user.role == User.Roles.CUSTOMER:
             customer_orders = orders.filter(customer=user)
+            if not customer_orders.exists() and getattr(user, "phone", None):
+                customer_orders = orders.filter(customer__phone=user.phone)
             paginator = StandardResultsSetPagination()
             page = paginator.paginate_queryset(customer_orders, request)
             if page is not None:

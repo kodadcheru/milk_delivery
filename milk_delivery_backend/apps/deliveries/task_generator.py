@@ -40,7 +40,7 @@ def _get_next_driver(hub, hub_drivers, hub_driver_indices):
     return driver
 
 
-def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"):
+def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all", force=False):
     """
     Idempotent automated task generator.
     Generates delivery tasks for target_date (defaults to tomorrow) for all eligible active subscriptions.
@@ -49,6 +49,7 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
     - Skips active vacation pauses.
     - Round-robin assigns drivers per hub.
     - Automatically links quality batches.
+    - If force=True, ignores time-of-day cutoffs to ensure tasks are generated for same-day delivery.
     Returns dict: {'created': int, 'skipped': int, 'target_date': str}
     """
     if target_date is None:
@@ -83,6 +84,8 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
     skipped_count = 0
     hub_drivers = {}
     hub_driver_indices = {}
+
+    default_fallback_hub = LocationHub.objects.first()
 
     for sub in active_subs:
         # Check start date: don't generate tasks if subscription starts in the future
@@ -126,9 +129,7 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
             continue
 
         # Resolve hub & driver
-        hub = sub.hub or getattr(sub.customer, "assigned_hub", None) or target_hub
-        if not hub and target_hub:
-            hub = target_hub
+        hub = sub.hub or getattr(sub.customer, "assigned_hub", None) or target_hub or default_fallback_hub
         if hub and not sub.hub:
             sub.hub = hub
             sub.save(update_fields=["hub"])
@@ -143,17 +144,18 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
         if shift == "evening" and not is_evening:
             continue
 
-        # Cutoff check: if generating for today, respect shift cutoffs
-        from django.utils import timezone
-        import datetime
-        now_local = timezone.localtime()
-        if target_date == now_local.date():
-            if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0)):
-                skipped_count += 1
-                continue
-            if is_evening and now_local.hour >= 12:
-                skipped_count += 1
-                continue
+        # Cutoff check: if generating for today, respect shift cutoffs unless force=True
+        if not force:
+            from django.utils import timezone
+            import datetime
+            now_local = timezone.localtime()
+            if target_date == now_local.date():
+                if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0)):
+                    skipped_count += 1
+                    continue
+                if is_evening and now_local.hour >= 12:
+                    skipped_count += 1
+                    continue
 
         task_address = sub.address
         if not task_address and hasattr(sub.customer, "addresses"):

@@ -83,7 +83,13 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
 
   bool _isActiveTask(String status) {
     final s = status.toUpperCase();
-    return s == 'PENDING' || s == 'OUT_FOR_DELIVERY' || s == 'ACTIVE';
+    return s == 'PENDING' ||
+        s == 'OUT_FOR_DELIVERY' ||
+        s == 'ON_THE_WAY' ||
+        s == 'PICKED_UP' ||
+        s == 'ACTIVE' ||
+        s == 'CONFIRMED' ||
+        s == 'PROCESSING';
   }
 
   bool _isDeliveredTask(String status) {
@@ -344,7 +350,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
     LiveOrderModel? inTransitOrder;
     for (final o in liveOrders) {
       final s = o.status.toUpperCase();
-      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT') {
+      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT' || s == 'ON_THE_WAY') {
         inTransitOrder = o;
         break;
       }
@@ -353,7 +359,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
     DeliveryTaskModel? inTransitTask;
     for (final t in subTasks) {
       final s = t.status.toUpperCase();
-      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT') {
+      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT' || s == 'ON_THE_WAY' || s == 'PICKED_UP') {
         inTransitTask = t;
         break;
       }

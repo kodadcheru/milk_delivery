@@ -34,7 +34,7 @@ class DeliveryTaskListView(generics.ListAPIView):
                 has_active = Subscription.objects.filter(customer=user, status=Subscription.Statuses.ACTIVE).exists()
                 if has_active and not DeliveryTask.objects.filter(subscription__customer=user, delivery_date=today).exists():
                     from apps.deliveries.task_generator import generate_daily_tasks_for_date
-                    generate_daily_tasks_for_date(target_date=today)
+                    generate_daily_tasks_for_date(target_date=today, force=True)
             except Exception:
                 pass
 
@@ -94,7 +94,7 @@ class DeliveryTaskListView(generics.ListAPIView):
                     # Self-heal: auto-generate if active subscriptions exist but 0 tasks for this date
                     if not DeliveryTask.objects.filter(delivery_date=f_date).exists():
                         from apps.deliveries.task_generator import generate_daily_tasks_for_date
-                        generate_daily_tasks_for_date(target_date=f_date)
+                        generate_daily_tasks_for_date(target_date=f_date, force=True)
             except Exception:
                 pass
         return super().list(request, *args, **kwargs)
