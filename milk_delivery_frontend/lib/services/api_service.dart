@@ -703,12 +703,23 @@ class ApiService {
     return [];
   }
 
-  static Future<bool> completeDelivery(int taskId, String proofUrl) async {
+  static Future<bool> completeDelivery(
+    int taskId,
+    String proofUrl, {
+    double? deliveredLatitude,
+    double? deliveredLongitude,
+  }) async {
     try {
+      final payload = <String, dynamic>{
+        'proof_image_url': proofUrl,
+      };
+      if (deliveredLatitude != null) payload['delivered_latitude'] = deliveredLatitude;
+      if (deliveredLongitude != null) payload['delivered_longitude'] = deliveredLongitude;
+
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/deliveries/$taskId/complete/'),
             headers: _headers,
-            body: jsonEncode({'proof_image_url': proofUrl}),
+            body: jsonEncode(payload),
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
         return true;

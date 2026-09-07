@@ -132,10 +132,22 @@ class DeliveryTaskCompleteView(APIView):
 
         proof_url = request.data.get("proof_image_url", "")
         cash_collected = request.data.get("cash_collected", True)
+        delivered_lat = request.data.get("delivered_latitude")
+        delivered_lng = request.data.get("delivered_longitude")
 
         task.status = DeliveryTask.Statuses.DELIVERED
         task.proof_image_url = proof_url
         task.delivered_at = timezone.now()
+        if delivered_lat is not None:
+            try:
+                task.delivered_latitude = float(delivered_lat)
+            except (ValueError, TypeError):
+                pass
+        if delivered_lng is not None:
+            try:
+                task.delivered_longitude = float(delivered_lng)
+            except (ValueError, TypeError):
+                pass
         if task.is_cod or (task.order and getattr(task.order, "is_cod", False)):
             task.cash_collected = bool(cash_collected)
         task.save()
@@ -146,6 +158,16 @@ class DeliveryTaskCompleteView(APIView):
             task.order.delivered_at = timezone.now()
             if proof_url:
                 task.order.proof_image_url = proof_url
+            if delivered_lat is not None:
+                try:
+                    task.order.delivered_latitude = float(delivered_lat)
+                except (ValueError, TypeError):
+                    pass
+            if delivered_lng is not None:
+                try:
+                    task.order.delivered_longitude = float(delivered_lng)
+                except (ValueError, TypeError):
+                    pass
             if getattr(task.order, "is_cod", False):
                 task.order.payment_status = "PAID"
             task.order.save()

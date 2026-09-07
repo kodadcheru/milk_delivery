@@ -252,6 +252,8 @@ class AdminCustomerDetailView(APIView):
                 "driver_name": driver_name,
                 "proof_image_url": t.proof_image_url,
                 "delivered_at": t.delivered_at.strftime("%I:%M %p") if t.delivered_at else "",
+                "delivered_latitude": float(t.delivered_latitude) if t.delivered_latitude else None,
+                "delivered_longitude": float(t.delivered_longitude) if t.delivered_longitude else None,
             })
 
         return Response({
@@ -937,6 +939,8 @@ class AdminSubscriptionDetailView(APIView):
                 "driver_phone": t.driver.phone if t.driver else "",
                 "proof_image_url": t.proof_image_url or "",
                 "delivered_at": t.delivered_at.strftime("%d %b %Y, %I:%M %p") if t.delivered_at else None,
+                "delivered_latitude": float(t.delivered_latitude) if t.delivered_latitude else None,
+                "delivered_longitude": float(t.delivered_longitude) if t.delivered_longitude else None,
             })
 
         vacations_data = []

@@ -3450,15 +3450,26 @@
 
   <!-- ── Modal: Doorstep Photo Proof Viewer ── -->
   <div class="modal-overlay" id="proofModal">
-    <div class="modal-card" style="max-width: 480px; text-align: center;">
+    <div class="modal-card" style="max-width: 520px; text-align: center;">
       <div class="modal-title"><i class="fa-solid fa-camera" style="color: var(--primary-accent);"></i> Doorstep GPS Photo Proof</div>
-      <div style="margin: 16px 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);">
-        <img id="proofImage" src="" alt="Doorstep Proof" style="width: 100%; height: 260px; object-fit: cover;">
+      <div style="margin: 16px 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: #000;">
+        <img id="proofImage" src="" alt="Doorstep Proof" style="width: 100%; max-height: 380px; object-fit: contain;">
       </div>
-      <div id="proofMeta" style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 16px;">
+      <div id="proofMeta" style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
         📍 GPS Watermarked • Verified at Doorstep
       </div>
-      <button class="btn btn-secondary" onclick="closeModal('proofModal')">Close Proof</button>
+      <div id="proofGpsSection" style="margin-bottom: 16px; padding: 10px 14px; background: rgba(14, 165, 233, 0.08); border-radius: 10px; border: 1px solid rgba(14, 165, 233, 0.25); display: flex; align-items: center; justify-content: space-between;">
+        <div style="text-align: left;">
+          <div style="font-size: 11px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-location-crosshairs"></i> Exact Delivery GPS</div>
+          <div id="proofCoordinatesText" style="font-size: 13px; font-weight: 600; color: var(--text-primary); font-family: monospace;">--</div>
+        </div>
+        <a id="proofMapBtn" href="#" target="_blank" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; border-radius: 8px;">
+          <i class="fa-solid fa-map-location-dot"></i> Open in Google Maps
+        </a>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button class="btn btn-secondary" onclick="closeModal('proofModal')">Close Proof</button>
+      </div>
     </div>
   </div>
 
@@ -5926,9 +5937,16 @@
             <td><span class="status-tag ${statusClass}">${t.status}</span></td>
             <td>
               ${proofImg ? `
-                <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}')">
-                  <i class="fa-solid fa-camera"></i> Proof
-                </button>
+                <div style="display:inline-flex; align-items:center; gap:4px;">
+                  <button class="btn btn-secondary" style="padding: 4px 8px; font-size:11px;" onclick="viewProof('${proofImg}', '#${t.id} - ${cust.username}', ${t.delivered_latitude || t.customer_latitude || 'null'}, ${t.delivered_longitude || t.customer_longitude || 'null'})">
+                    <i class="fa-solid fa-camera"></i> Proof
+                  </button>
+                  ${(t.delivered_latitude || t.customer_latitude) ? `
+                    <a href="https://www.google.com/maps?q=${t.delivered_latitude || t.customer_latitude},${t.delivered_longitude || t.customer_longitude}" target="_blank" class="btn btn-secondary" style="padding: 4px 7px; font-size: 11px; color: #0284c7; text-decoration: none;" title="Open GPS in Google Maps">
+                      <i class="fa-solid fa-map-location-dot"></i>
+                    </a>
+                  ` : ''}
+                </div>
               ` : `<span style="font-size: 11px; color: var(--text-muted);">No Proof</span>`}
             </td>
             <td>
@@ -6418,9 +6436,16 @@
                 <td>${t.delivered_at || (isDelivered ? 'Delivered' : '<span style="color:var(--text-muted);">-</span>')}</td>
                 <td>
                   ${t.proof_image_url ? `
-                    <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 10.5px;" onclick="viewProof('${t.proof_image_url}', 'Task #${t.id} - ${t.delivery_date}')">
-                      <i class="fa-solid fa-camera"></i> Proof
-                    </button>
+                    <div style="display:inline-flex; align-items:center; gap:4px;">
+                      <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 10.5px;" onclick="viewProof('${t.proof_image_url}', 'Task #${t.id} - ${t.delivery_date}', ${t.delivered_latitude || 'null'}, ${t.delivered_longitude || 'null'})">
+                        <i class="fa-solid fa-camera"></i> Proof
+                      </button>
+                      ${t.delivered_latitude ? `
+                        <a href="https://www.google.com/maps?q=${t.delivered_latitude},${t.delivered_longitude}" target="_blank" class="btn btn-secondary" style="padding: 3px 6px; font-size: 10.5px; color: #0284c7; text-decoration: none;" title="Open GPS in Google Maps">
+                          <i class="fa-solid fa-map-location-dot"></i>
+                        </a>
+                      ` : ''}
+                    </div>
                   ` : `<span style="color:var(--text-muted); font-size:11px;">None</span>`}
                 </td>
               </tr>
@@ -8498,7 +8523,10 @@
         deliveries.forEach(d => {
           const statusClass = d.status === 'DELIVERED' ? 'status-delivered' : (d.status === 'SKIPPED' ? 'status-skipped' : 'status-pending');
           const proofBtn = d.proof_image_url 
-            ? `<button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="viewProof('${d.proof_image_url}', '#${d.id} - ${d.product_name}')"><i class="fa-solid fa-camera"></i> Proof</button>`
+            ? `<div style="display:inline-flex; align-items:center; gap:4px;">
+                 <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="viewProof('${d.proof_image_url}', '#${d.id} - ${d.product_name}', ${d.delivered_latitude || 'null'}, ${d.delivered_longitude || 'null'})"><i class="fa-solid fa-camera"></i> Proof</button>
+                 ${d.delivered_latitude ? `<a href="https://www.google.com/maps?q=${d.delivered_latitude},${d.delivered_longitude}" target="_blank" class="btn btn-secondary" style="padding:3px 6px; font-size:11px; color:#0284c7; text-decoration:none;" title="Open GPS in Google Maps"><i class="fa-solid fa-map-location-dot"></i></a>` : ''}
+               </div>`
             : '<small style="color:var(--text-muted);">Pending</small>';
 
           delTbody.innerHTML += `
@@ -8838,9 +8866,24 @@
       loadSubscriptions();
     }
 
-    function viewProof(url, meta) {
+    function viewProof(url, meta, lat, lng) {
       document.getElementById('proofImage').src = url;
       document.getElementById('proofMeta').innerText = meta + ' • GPS Watermarked Doorstep Photo';
+      const gpsSec = document.getElementById('proofGpsSection');
+      const coordsText = document.getElementById('proofCoordinatesText');
+      const mapBtn = document.getElementById('proofMapBtn');
+      const numLat = lat ? Number(lat) : null;
+      const numLng = lng ? Number(lng) : null;
+
+      if (numLat && numLng && !isNaN(numLat) && !isNaN(numLng) && numLat !== 0 && numLng !== 0) {
+        gpsSec.style.display = 'flex';
+        coordsText.innerText = `${numLat.toFixed(5)}° N, ${numLng.toFixed(5)}° E`;
+        mapBtn.href = `https://www.google.com/maps?q=${numLat},${numLng}`;
+        mapBtn.style.display = 'inline-flex';
+      } else {
+        gpsSec.style.display = 'none';
+        mapBtn.href = '#';
+      }
       document.getElementById('proofModal').style.display = 'flex';
     }
 

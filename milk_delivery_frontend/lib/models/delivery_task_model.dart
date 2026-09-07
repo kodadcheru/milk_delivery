@@ -17,6 +17,8 @@ class DeliveryTaskModel {
   final String status; // PENDING, DELIVERED, SKIPPED
   final String proofImageUrl;
   final String? deliveredAt;
+  final double? deliveredLatitude;
+  final double? deliveredLongitude;
   final double customerLatitude;
   final double customerLongitude;
   final String productName;
@@ -57,6 +59,8 @@ class DeliveryTaskModel {
     required this.status,
     required this.proofImageUrl,
     this.deliveredAt,
+    this.deliveredLatitude,
+    this.deliveredLongitude,
     this.customerLatitude = 17.4319,
     this.customerLongitude = 78.4073,
     this.productName = 'Farm Fresh Cow Milk',
@@ -151,6 +155,8 @@ class DeliveryTaskModel {
       status: json['status'] ?? 'PENDING',
       proofImageUrl: json['proof_image_url'] ?? '',
       deliveredAt: json['delivered_at'],
+      deliveredLatitude: json['delivered_latitude'] != null ? double.tryParse(json['delivered_latitude'].toString()) : null,
+      deliveredLongitude: json['delivered_longitude'] != null ? double.tryParse(json['delivered_longitude'].toString()) : null,
       customerLatitude: parsedLat,
       customerLongitude: parsedLon,
       productName: json['product_name'] ?? (subDetail?.productDetail?.name ?? 'Farm Fresh Cow Milk'),
@@ -175,6 +181,8 @@ class DeliveryTaskModel {
     String? status,
     String? proofImageUrl,
     String? deliveredAt,
+    double? deliveredLatitude,
+    double? deliveredLongitude,
     double? fatPercentage,
     double? snfPercentage,
     double? waterPercentage,
@@ -206,6 +214,8 @@ class DeliveryTaskModel {
       status: status ?? this.status,
       proofImageUrl: proofImageUrl ?? this.proofImageUrl,
       deliveredAt: deliveredAt ?? this.deliveredAt,
+      deliveredLatitude: deliveredLatitude ?? this.deliveredLatitude,
+      deliveredLongitude: deliveredLongitude ?? this.deliveredLongitude,
       customerLatitude: customerLatitude,
       customerLongitude: customerLongitude,
       productName: productName,

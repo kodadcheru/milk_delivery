@@ -1658,8 +1658,18 @@ class AppState extends ChangeNotifier {
     return ok;
   }
 
-  Future<void> markDeliveryCompleted(int taskId, String proofUrl) async {
-    bool ok = await ApiService.completeDelivery(taskId, proofUrl);
+  Future<void> markDeliveryCompleted(
+    int taskId,
+    String proofUrl, {
+    double? deliveredLatitude,
+    double? deliveredLongitude,
+  }) async {
+    bool ok = await ApiService.completeDelivery(
+      taskId,
+      proofUrl,
+      deliveredLatitude: deliveredLatitude,
+      deliveredLongitude: deliveredLongitude,
+    );
     if (ok) {
       notifications.insert(
         0,
@@ -1675,7 +1685,13 @@ class AppState extends ChangeNotifier {
 
       deliveries = deliveries.map((d) {
         if (d.id == taskId) {
-          return d.copyWith(status: 'DELIVERED', proofImageUrl: proofUrl, deliveredAt: '06:25 AM');
+          return d.copyWith(
+            status: 'DELIVERED',
+            proofImageUrl: proofUrl,
+            deliveredAt: '06:25 AM',
+            deliveredLatitude: deliveredLatitude,
+            deliveredLongitude: deliveredLongitude,
+          );
         }
         return d;
       }).toList();

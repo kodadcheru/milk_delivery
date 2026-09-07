@@ -82,6 +82,8 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "cash_amount",
             "proof_image_url",
             "delivered_at",
+            "delivered_latitude",
+            "delivered_longitude",
         ]
         read_only_fields = ["id", "delivered_at"]
 
@@ -376,6 +378,8 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "cash_amount",
             "proof_image_url",
             "delivered_at",
+            "delivered_latitude",
+            "delivered_longitude",
             "created_at",
             "updated_at",
             "items",

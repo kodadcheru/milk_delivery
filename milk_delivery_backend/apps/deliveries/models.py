@@ -141,6 +141,8 @@ class DeliveryTask(models.Model):
     cash_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     proof_image_url = models.URLField(blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
+    delivered_latitude = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
+    delivered_longitude = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
     payout = models.ForeignKey('ProviderPayout', on_delete=models.SET_NULL, null=True, blank=True, related_name='delivery_tasks')
 
     class Meta:
@@ -233,6 +235,8 @@ class LiveOrder(models.Model):
     cash_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     proof_image_url = models.URLField(blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
+    delivered_latitude = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
+    delivered_longitude = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

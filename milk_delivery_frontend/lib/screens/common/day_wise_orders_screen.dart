@@ -797,7 +797,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                         deliveryAddress: task.deliveryAddress,
                         latitude: task.customerLatitude,
                         longitude: task.customerLongitude,
-                        onConfirmProof: (proofUrl, localBase64) async {
+                        onConfirmProof: (proofUrl, localBase64, [lat, lng]) async {
                           if (proofUrl == null && localBase64 != null) {
                             // OFFLINE QUEUING
                             widget.state.addOfflineDelivery(task.id, localBase64);
@@ -816,7 +816,12 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                           }
                           
                           if (proofUrl != null) {
-                            final ok = await ApiService.completeDelivery(task.id, proofUrl);
+                            final ok = await ApiService.completeDelivery(
+                              task.id,
+                              proofUrl,
+                              deliveredLatitude: lat is double ? lat : null,
+                              deliveredLongitude: lng is double ? lng : null,
+                            );
                             if (ok) {
                               _loadDayOrders();
                               if (mounted) {

@@ -3,8 +3,10 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/image_upload_service.dart';
+import '../services/permission_service.dart';
 import '../theme/ui_tokens.dart';
 import '../theme/ui_text.dart';
 
@@ -198,11 +200,32 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
 
   late int _selectedPresetIndex;
   bool _isCapturing = false;
+  double? _deviceLat;
+  double? _deviceLng;
+  bool _isLocating = true;
 
   @override
   void initState() {
     super.initState();
     _selectedPresetIndex = 0;
+    _fetchLiveLocation();
+  }
+
+  Future<void> _fetchLiveLocation() async {
+    try {
+      final pos = await PermissionService.getDeviceCoordinates();
+      if (pos != null && mounted) {
+        setState(() {
+          _deviceLat = pos.latitude;
+          _deviceLng = pos.longitude;
+          _isLocating = false;
+        });
+        return;
+      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isLocating = false);
+    }
   }
 
   @override
@@ -282,41 +305,58 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                     top: 10,
                     left: 10,
                     right: 10,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(UiRadius.xs),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.gps_fixed_rounded, size: 12, color: UiTone.secondary),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${widget.latitude.toStringAsFixed(4)}° N, ${widget.longitude.toStringAsFixed(4)}° E',
-                                style: UiText.caption.copyWith(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    child: Builder(
+                      builder: (context) {
+                        final displayLat = _deviceLat ?? widget.latitude;
+                        final displayLng = _deviceLng ?? widget.longitude;
+                        final isRealLock = _deviceLat != null && _deviceLng != null;
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.75),
+                                borderRadius: BorderRadius.circular(UiRadius.xs),
                               ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: UiTone.error,
-                            borderRadius: BorderRadius.circular(UiRadius.xs),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.circle, color: Colors.white, size: 6),
-                              const SizedBox(width: 4),
-                              Text('GEO-TAGGED', style: UiText.caption.copyWith(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
-                            ],
-                          ),
-                        ),
-                      ],
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isRealLock ? Icons.gps_fixed_rounded : Icons.gps_not_fixed_rounded,
+                                    size: 12,
+                                    color: isRealLock ? const Color(0xFF00E676) : UiTone.secondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _isLocating
+                                        ? 'Acquiring Device GPS...'
+                                        : '${displayLat.toStringAsFixed(5)}° N, ${displayLng.toStringAsFixed(5)}° E',
+                                    style: UiText.caption.copyWith(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isRealLock ? const Color(0xFF00C853) : UiTone.error,
+                                borderRadius: BorderRadius.circular(UiRadius.xs),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.circle, color: Colors.white, size: 6),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isRealLock ? 'REAL DEVICE GPS' : 'GEO-TAGGED',
+                                    style: UiText.caption.copyWith(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
 
@@ -426,6 +466,8 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       // Upload geo-tagged & timestamped proof to backend Image Upload Service
                       String? base64Str;
                       String? uploadedUrl;
+                      double finalLat = _deviceLat ?? widget.latitude;
+                      double finalLng = _deviceLng ?? widget.longitude;
                       try {
                         Uint8List? rawBytes;
                         try {
@@ -454,21 +496,41 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           return;
                         }
 
-                        // Burn permanent timestamp, GPS coordinates & address onto photo pixels
+                        // Fetch freshest high-accuracy GPS coordinates of delivery boy at capture instant
+                        try {
+                          final livePos = await Geolocator.getCurrentPosition(
+                            locationSettings: const LocationSettings(
+                              accuracy: LocationAccuracy.high,
+                              timeLimit: Duration(seconds: 3),
+                            ),
+                          );
+                          finalLat = livePos.latitude;
+                          finalLng = livePos.longitude;
+                        } catch (_) {
+                          try {
+                            final lastPos = await PermissionService.getDeviceCoordinates();
+                            if (lastPos != null) {
+                              finalLat = lastPos.latitude;
+                              finalLng = lastPos.longitude;
+                            }
+                          } catch (_) {}
+                        }
+
+                        // Burn permanent timestamp, EXACT delivery boy GPS coordinates & address onto photo pixels
                         final watermarkedBytes = await stampWatermarkOnImageBytes(
                           imageBytes: rawBytes,
-                          latitude: widget.latitude,
-                          longitude: widget.longitude,
+                          latitude: finalLat,
+                          longitude: finalLng,
                           address: widget.deliveryAddress,
                           customerName: widget.customerName,
                         );
 
-                          base64Str = base64Encode(watermarkedBytes);
-                          uploadedUrl = await ImageUploadService.uploadImageBase64(
-                            base64Image: base64Str,
-                            filename: 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png',
-                            folder: 'proofs',
-                          );
+                        base64Str = base64Encode(watermarkedBytes);
+                        uploadedUrl = await ImageUploadService.uploadImageBase64(
+                          base64Image: base64Str,
+                          filename: 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png',
+                          folder: 'proofs',
+                        );
                       } catch (_) {}
 
                       if (!mounted) return;
@@ -476,7 +538,15 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                       // Offline Queue Fallback
                       if (uploadedUrl == null && base64Str != null) {
                         nav.pop();
-                        widget.onConfirmProof(null, base64Str);
+                        try {
+                          widget.onConfirmProof(null, base64Str, finalLat, finalLng);
+                        } catch (_) {
+                          try {
+                            widget.onConfirmProof(null, base64Str);
+                          } catch (_) {
+                            widget.onConfirmProof(null);
+                          }
+                        }
                         return;
                       }
 
@@ -491,7 +561,15 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                         return;
                       }
                       nav.pop();
-                      widget.onConfirmProof(uploadedUrl, null);
+                      try {
+                        widget.onConfirmProof(uploadedUrl, null, finalLat, finalLng);
+                      } catch (_) {
+                        try {
+                          widget.onConfirmProof(uploadedUrl, null);
+                        } catch (_) {
+                          widget.onConfirmProof(uploadedUrl);
+                        }
+                      }
                     },
               icon: _isCapturing
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))

@@ -584,10 +584,22 @@ class ExpressOrderDetailView(APIView):
                     order.driver = request.user
 
             proof_url = request.data.get("proof_image_url", "")
+            delivered_lat = request.data.get("delivered_latitude")
+            delivered_lng = request.data.get("delivered_longitude")
             if new_status == LiveOrder.Statuses.DELIVERED:
                 order.delivered_at = timezone.now()
                 if proof_url:
                     order.proof_image_url = proof_url
+                if delivered_lat is not None:
+                    try:
+                        order.delivered_latitude = float(delivered_lat)
+                    except (ValueError, TypeError):
+                        pass
+                if delivered_lng is not None:
+                    try:
+                        order.delivered_longitude = float(delivered_lng)
+                    except (ValueError, TypeError):
+                        pass
                 # Bug 8: Update COD status & cash collected flag
                 if order.is_cod:
                     cash_collected = request.data.get("cash_collected", True)
@@ -668,13 +680,19 @@ class ExpressOrderDetailView(APIView):
                 task_status = DeliveryTask.Statuses.ON_THE_WAY
             else:
                 task_status = DeliveryTask.Statuses.PENDING
-            DeliveryTask.objects.filter(order=order).update(
-                status=task_status,
-                driver=order.driver,
-                proof_image_url=proof_url if proof_url else "",
-                cash_collected=order.cash_collected if order.is_cod else False,
-                delivered_at=timezone.now() if new_status == LiveOrder.Statuses.DELIVERED else None,
-            )
+            task_update_kwargs = {
+                "status": task_status,
+                "driver": order.driver,
+                "proof_image_url": proof_url if proof_url else "",
+                "cash_collected": order.cash_collected if order.is_cod else False,
+                "delivered_at": timezone.now() if new_status == LiveOrder.Statuses.DELIVERED else None,
+            }
+            if new_status == LiveOrder.Statuses.DELIVERED:
+                if order.delivered_latitude is not None:
+                    task_update_kwargs["delivered_latitude"] = order.delivered_latitude
+                if order.delivered_longitude is not None:
+                    task_update_kwargs["delivered_longitude"] = order.delivered_longitude
+            DeliveryTask.objects.filter(order=order).update(**task_update_kwargs)
 
         try:
             from apps.core.consumers import broadcast_hub_event

@@ -313,8 +313,13 @@ class _MorningBatchScreenState extends State<MorningBatchScreen> with WidgetsBin
       deliveryAddress: stop.deliveryAddress,
       latitude: stop.customerLatitude,
       longitude: stop.customerLongitude,
-      onConfirmProof: (proofUrl, [localBase64]) async {
-        widget.state.markDeliveryCompleted(stop.id, proofUrl ?? '');
+      onConfirmProof: (proofUrl, [localBase64, lat, lng]) async {
+        widget.state.markDeliveryCompleted(
+          stop.id,
+          proofUrl ?? '',
+          deliveredLatitude: lat is double ? lat : null,
+          deliveredLongitude: lng is double ? lng : null,
+        );
         
         // Sync bottle returns to backend
         if (_currentStopBottles > 0) {

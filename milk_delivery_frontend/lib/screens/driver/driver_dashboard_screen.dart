@@ -218,9 +218,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       deliveryAddress: group.deliveryAddress,
       latitude: group.customerLatitude,
       longitude: group.customerLongitude,
-      onConfirmProof: (proofUrl, [localBase64]) {
+      onConfirmProof: (proofUrl, [localBase64, lat, lng]) {
         for (final task in group.tasks) {
-          widget.state.markDeliveryCompleted(task.id, proofUrl ?? '');
+          widget.state.markDeliveryCompleted(
+            task.id,
+            proofUrl ?? '',
+            deliveredLatitude: lat is double ? lat : null,
+            deliveredLongitude: lng is double ? lng : null,
+          );
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
