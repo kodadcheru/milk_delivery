@@ -7,6 +7,8 @@ class StorefrontConfigModel {
   final String dispatchTag;
   final String promoChip;
   final String ctaText;
+  final bool isCodEnabled;
+  final bool isWalletEnabled;
   final bool isActive;
 
   const StorefrontConfigModel({
@@ -18,6 +20,8 @@ class StorefrontConfigModel {
     this.dispatchTag = 'MORNING DROP 05:30 AM ☀️',
     this.promoChip = '🥛 FRESH TODAY',
     this.ctaText = 'SUBSCRIBE NOW ➔',
+    this.isCodEnabled = true,
+    this.isWalletEnabled = true,
     this.isActive = true,
   });
 
@@ -33,6 +37,8 @@ class StorefrontConfigModel {
       dispatchTag: json['dispatch_tag'] != null ? (json['dispatch_tag'] as String) : 'MORNING DROP 05:30 AM ☀️',
       promoChip: json['promo_chip'] != null ? (json['promo_chip'] as String) : '🥛 FRESH TODAY',
       ctaText: json['cta_text'] != null ? (json['cta_text'] as String) : 'SUBSCRIBE NOW ➔',
+      isCodEnabled: json['is_cod_enabled'] as bool? ?? true,
+      isWalletEnabled: json['is_wallet_enabled'] as bool? ?? true,
       isActive: json['is_active'] as bool? ?? true,
     );
   }
@@ -46,6 +52,36 @@ class StorefrontConfigModel {
     'dispatch_tag': dispatchTag,
     'promo_chip': promoChip,
     'cta_text': ctaText,
+    'is_cod_enabled': isCodEnabled,
+    'is_wallet_enabled': isWalletEnabled,
     'is_active': isActive,
   };
+
+  StorefrontConfigModel copyWith({
+    int? id,
+    String? bannerImageUrl,
+    String? rawBannerImageUrl,
+    String? headline,
+    String? subtitle,
+    String? dispatchTag,
+    String? promoChip,
+    String? ctaText,
+    bool? isCodEnabled,
+    bool? isWalletEnabled,
+    bool? isActive,
+  }) {
+    return StorefrontConfigModel(
+      id: id ?? this.id,
+      bannerImageUrl: bannerImageUrl ?? this.bannerImageUrl,
+      rawBannerImageUrl: rawBannerImageUrl ?? this.rawBannerImageUrl,
+      headline: headline ?? this.headline,
+      subtitle: subtitle ?? this.subtitle,
+      dispatchTag: dispatchTag ?? this.dispatchTag,
+      promoChip: promoChip ?? this.promoChip,
+      ctaText: ctaText ?? this.ctaText,
+      isCodEnabled: isCodEnabled ?? this.isCodEnabled,
+      isWalletEnabled: isWalletEnabled ?? this.isWalletEnabled,
+      isActive: isActive ?? this.isActive,
+    );
+  }
 }

@@ -125,7 +125,11 @@ class FloatingCartBar extends StatelessWidget {
     final slotController = TextEditingController(text: slot);
     String _deliveryMode = 'INSTANT';
     final initialWallet = state.currentUser?.walletBalance ?? 0.0;
-    String _paymentMethod = (initialWallet >= state.totalCartPrice && initialWallet > 0) ? 'WALLET' : 'COD';
+    final isCodAllowed = state.storefrontConfig.isCodEnabled;
+    final isWalletAllowed = state.storefrontConfig.isWalletEnabled;
+    String _paymentMethod = (isWalletAllowed && initialWallet >= state.totalCartPrice && initialWallet > 0)
+        ? 'WALLET'
+        : (isCodAllowed ? 'COD' : (isWalletAllowed ? 'WALLET' : 'COD'));
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -859,127 +863,164 @@ class FloatingCartBar extends StatelessWidget {
                           // Option 1: Prepaid Wallet Card
                           Builder(
                             builder: (context) {
+                              final isWalletEnabled = state.storefrontConfig.isWalletEnabled;
                               final walletBal = state.currentUser?.walletBalance ?? 0.0;
-                              final isWalletSelected = _paymentMethod == 'WALLET';
+                              final isWalletSelected = _paymentMethod == 'WALLET' && isWalletEnabled;
                               final hasSufficientBal = walletBal >= total;
                               final deficit = total - walletBal;
 
-                              return InkWell(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  setSheetState(() => _paymentMethod = 'WALLET');
-                                },
-                                borderRadius: BorderRadius.circular(UiRadius.md),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: isWalletSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted,
-                                    borderRadius: BorderRadius.circular(UiRadius.md),
-                                    border: Border.all(
-                                      color: isWalletSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
-                                      width: isWalletSelected ? 2 : 1,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: isWalletSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300,
-                                              borderRadius: BorderRadius.circular(10),
+                              return Opacity(
+                                opacity: isWalletEnabled ? 1.0 : 0.55,
+                                child: InkWell(
+                                  onTap: isWalletEnabled
+                                      ? () {
+                                          HapticFeedback.selectionClick();
+                                          setSheetState(() => _paymentMethod = 'WALLET');
+                                        }
+                                      : () {
+                                          HapticFeedback.lightImpact();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(state.isTelugu
+                                                  ? 'వాలెట్ చెల్లింపు ప్రస్తుతం స్టోర్ అడ్మిన్ ద్వారా నిలిపివేయబడింది.'
+                                                  : 'Pamba Wallet payment is currently disabled by store admin.'),
+                                              duration: const Duration(seconds: 2),
                                             ),
-                                            child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      state.isTelugu ? 'పాంబ వాలెట్' : 'Pamba Wallet',
-                                                      style: TextStyle(
-                                                        fontWeight: FontWeight.w900,
-                                                        fontSize: 13,
-                                                        color: isWalletSelected ? const Color(0xFF0D7C66) : UiTone.ink,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: hasSufficientBal ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
-                                                        borderRadius: BorderRadius.circular(4),
-                                                      ),
-                                                      child: Text(
-                                                        'Bal: ₹${walletBal.toStringAsFixed(0)}',
+                                          );
+                                        },
+                                  borderRadius: BorderRadius.circular(UiRadius.md),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: isWalletSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted,
+                                      borderRadius: BorderRadius.circular(UiRadius.md),
+                                      border: Border.all(
+                                        color: isWalletSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+                                        width: isWalletSelected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: isWalletSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300,
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        state.isTelugu ? 'పాంబ వాలెట్' : 'Pamba Wallet',
                                                         style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight: FontWeight.w800,
-                                                          color: hasSufficientBal ? const Color(0xFF059669) : const Color(0xFFD97706),
+                                                          fontWeight: FontWeight.w900,
+                                                          fontSize: 13,
+                                                          color: isWalletSelected ? const Color(0xFF0D7C66) : UiTone.ink,
                                                         ),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  hasSufficientBal
-                                                      ? (state.isTelugu ? 'తగినంత నిల్వ ఉంది • 1-ట్యాప్ చెల్లింపు' : 'Sufficient balance • 1-Tap auto-debit')
-                                                      : (state.isTelugu ? 'నిల్వ తక్కువగా ఉంది (₹${deficit.toStringAsFixed(0)} అవసరం)' : 'Low balance (₹${deficit.toStringAsFixed(0)} short)'),
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: hasSufficientBal ? const Color(0xFF059669) : const Color(0xFFD97706),
+                                                      const SizedBox(width: 8),
+                                                      if (!isWalletEnabled)
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(0xFFFEE2E2),
+                                                            borderRadius: BorderRadius.circular(4),
+                                                          ),
+                                                          child: const Text(
+                                                            'Disabled',
+                                                            style: TextStyle(
+                                                              fontSize: 9.5,
+                                                              fontWeight: FontWeight.w800,
+                                                              color: Color(0xFFDC2626),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      else
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                          decoration: BoxDecoration(
+                                                            color: hasSufficientBal ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                                                            borderRadius: BorderRadius.circular(4),
+                                                          ),
+                                                          child: Text(
+                                                            'Bal: ₹${walletBal.toStringAsFixed(0)}',
+                                                            style: TextStyle(
+                                                              fontSize: 10,
+                                                              fontWeight: FontWeight.w800,
+                                                              color: hasSufficientBal ? const Color(0xFF059669) : const Color(0xFFD97706),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                    ],
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          if (!hasSufficientBal) ...[
-                                            InkWell(
-                                              onTap: () {
-                                                HapticFeedback.lightImpact();
-                                                _showQuickTopUpDialog(
-                                                  context,
-                                                  state,
-                                                  deficit,
-                                                  () => setSheetState(() {}),
-                                                );
-                                              },
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFF0D7C66),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(Icons.add_rounded, color: Colors.white, size: 14),
-                                                    const SizedBox(width: 2),
-                                                    Text(
-                                                      state.isTelugu ? 'టాప్ అప్' : 'Top Up',
-                                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    !isWalletEnabled
+                                                        ? (state.isTelugu ? 'స్టోర్ ద్వారా నిలిపివేయబడింది' : 'Temporarily disabled by store')
+                                                        : (hasSufficientBal
+                                                            ? (state.isTelugu ? 'తగినంత నిల్వ ఉంది • 1-ట్యాప్ చెల్లింపు' : 'Sufficient balance • 1-Tap auto-debit')
+                                                            : (state.isTelugu ? 'నిల్వ తక్కువగా ఉంది (₹${deficit.toStringAsFixed(0)} అవసరం)' : 'Low balance (₹${deficit.toStringAsFixed(0)} short)')),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: !isWalletEnabled
+                                                          ? Colors.grey.shade500
+                                                          : (hasSufficientBal ? const Color(0xFF059669) : const Color(0xFFD97706)),
                                                     ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ] else ...[
-                                            Icon(
-                                              isWalletSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                              color: isWalletSelected ? const Color(0xFF0D7C66) : Colors.grey.shade400,
-                                              size: 20,
-                                            ),
+                                            if (isWalletEnabled && !hasSufficientBal) ...[
+                                              InkWell(
+                                                onTap: () {
+                                                  HapticFeedback.lightImpact();
+                                                  _showQuickTopUpDialog(
+                                                    context,
+                                                    state,
+                                                    deficit,
+                                                    () => setSheetState(() {}),
+                                                  );
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF0D7C66),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.add_rounded, color: Colors.white, size: 14),
+                                                      const SizedBox(width: 2),
+                                                      Text(
+                                                        state.isTelugu ? 'టాప్ అప్' : 'Top Up',
+                                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ] else ...[
+                                              Icon(
+                                                isWalletSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                                color: isWalletSelected ? const Color(0xFF0D7C66) : Colors.grey.shade400,
+                                                size: 20,
+                                              ),
+                                            ],
                                           ],
-                                        ],
-                                      ),
-                                    ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
@@ -988,78 +1029,115 @@ class FloatingCartBar extends StatelessWidget {
                           const SizedBox(height: 10),
 
                           // Option 2: Cash on Delivery / UPI at Doorstep Card
-                          InkWell(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              setSheetState(() => _paymentMethod = 'COD');
-                            },
-                            borderRadius: BorderRadius.circular(UiRadius.md),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: _paymentMethod == 'COD' ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted,
-                                borderRadius: BorderRadius.circular(UiRadius.md),
-                                border: Border.all(
-                                  color: _paymentMethod == 'COD' ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
-                                  width: _paymentMethod == 'COD' ? 2 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
+                          Builder(
+                            builder: (context) {
+                              final isCodEnabled = state.storefrontConfig.isCodEnabled;
+                              final isCodSelected = _paymentMethod == 'COD' && isCodEnabled;
+
+                              return Opacity(
+                                opacity: isCodEnabled ? 1.0 : 0.55,
+                                child: InkWell(
+                                  onTap: isCodEnabled
+                                      ? () {
+                                          HapticFeedback.selectionClick();
+                                          setSheetState(() => _paymentMethod = 'COD');
+                                        }
+                                      : () {
+                                          HapticFeedback.lightImpact();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(state.isTelugu
+                                                  ? 'క్యాష్ ఆన్ డెలివరీ ప్రస్తుతం స్టోర్ అడ్మిన్ ద్వారా నిలిపివేయబడింది.'
+                                                  : 'Cash on Delivery is currently disabled by store admin.'),
+                                              duration: const Duration(seconds: 2),
+                                            ),
+                                          );
+                                        },
+                                  borderRadius: BorderRadius.circular(UiRadius.md),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: _paymentMethod == 'COD' ? const Color(0xFF0D7C66) : Colors.grey.shade300,
-                                      borderRadius: BorderRadius.circular(10),
+                                      color: isCodSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted,
+                                      borderRadius: BorderRadius.circular(UiRadius.md),
+                                      border: Border.all(
+                                        color: isCodSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+                                        width: isCodSelected ? 2 : 1,
+                                      ),
                                     ),
-                                    child: const Icon(Icons.payments_rounded, color: Colors.white, size: 18),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                    child: Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              state.isTelugu ? 'క్యాష్ / UPI ఆన్ డెలివరీ' : 'Cash / UPI on Delivery',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 13,
-                                                color: _paymentMethod == 'COD' ? const Color(0xFF0D7C66) : UiTone.ink,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFDCFCE7),
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                state.isTelugu ? 'రుసుము లేదు' : 'No Extra Fee',
-                                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF059669)),
-                                              ),
-                                            ),
-                                          ],
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: isCodSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: const Icon(Icons.payments_rounded, color: Colors.white, size: 18),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          state.isTelugu ? 'డోర్‌స్టెప్ వద్ద నగదు లేదా QR స్కాన్ ద్వారా చెల్లించండి' : 'Pay via Cash, GPay, PhonePe or Paytm QR at doorstep',
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    state.isTelugu ? 'క్యాష్ / UPI ఆన్ డెలివరీ' : 'Cash / UPI on Delivery',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 13,
+                                                      color: isCodSelected ? const Color(0xFF0D7C66) : UiTone.ink,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  if (!isCodEnabled)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFFEE2E2),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: const Text(
+                                                        'Disabled',
+                                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                                                      ),
+                                                    )
+                                                  else
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFDCFCE7),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        state.isTelugu ? 'రుసుము లేదు' : 'No Extra Fee',
+                                                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF059669)),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                !isCodEnabled
+                                                    ? (state.isTelugu ? 'స్టోర్ ద్వారా నిలిపివేయబడింది' : 'Temporarily disabled by store')
+                                                    : (state.isTelugu ? 'డోర్‌స్టెప్ వద్ద నగదు లేదా QR స్కాన్ ద్వారా చెల్లించండి' : 'Pay via Cash, GPay, PhonePe or Paytm QR at doorstep'),
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(
+                                          isCodSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                          color: isCodSelected ? const Color(0xFF0D7C66) : Colors.grey.shade400,
+                                          size: 20,
                                         ),
                                       ],
                                     ),
                                   ),
-                                  Icon(
-                                    _paymentMethod == 'COD' ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                    color: _paymentMethod == 'COD' ? const Color(0xFF0D7C66) : Colors.grey.shade400,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 16),
 
@@ -1157,16 +1235,60 @@ class FloatingCartBar extends StatelessWidget {
 
                               var effectivePaymentMethod = _paymentMethod;
                               final walletBalance = state.currentUser?.walletBalance ?? 0.0;
-                              if (_paymentMethod == 'WALLET' && walletBalance < total) {
-                                effectivePaymentMethod = 'COD';
-                                setSheetState(() => _paymentMethod = 'COD');
+                              final isCodAllowed = state.storefrontConfig.isCodEnabled;
+                              final isWalletAllowed = state.storefrontConfig.isWalletEnabled;
+
+                              if (!isCodAllowed && !isWalletAllowed) {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: Text(state.isTelugu
-                                      ? 'వాలెట్ బ్యాలెన్స్ తక్కువగా ఉంది, క్యాష్ ఆన్ డెలివరీ (COD) ఎంచుకోబడింది.'
-                                      : 'Wallet balance insufficient (₹${walletBalance.toStringAsFixed(0)}). Switched to Cash on Delivery (COD).'),
-                                  backgroundColor: UiTone.primary,
-                                  duration: const Duration(seconds: 3),
+                                      ? 'చెల్లింపు విధానాలు ప్రస్తుతం నిర్వహణలో ఉన్నాయి. దయచేసి సహాయాన్ని సంప్రదించండి.'
+                                      : 'Payment methods are currently unavailable. Please contact support.'),
+                                  backgroundColor: const Color(0xFFDC2626),
                                 ));
+                                return;
+                              }
+
+                              if (effectivePaymentMethod == 'COD' && !isCodAllowed) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text(state.isTelugu
+                                      ? 'క్యాష్ ఆన్ డెలివరీ ప్రస్తుతం నిలిపివేయబడింది. దయచేసి వాలెట్ ఉపయోగించండి.'
+                                      : 'Cash on Delivery (COD) is currently disabled. Please use Pamba Wallet.'),
+                                  backgroundColor: const Color(0xFFDC2626),
+                                ));
+                                return;
+                              }
+
+                              if (effectivePaymentMethod == 'WALLET' && !isWalletAllowed) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text(state.isTelugu
+                                      ? 'వాలెట్ చెల్లింపు ప్రస్తుతం నిలిపివేయబడింది. దయచేసి క్యాష్ ఆన్ డెలివరీ ఎంచుకోండి.'
+                                      : 'Pamba Wallet is currently disabled. Please select Cash on Delivery.'),
+                                  backgroundColor: const Color(0xFFDC2626),
+                                ));
+                                return;
+                              }
+
+                              if (_paymentMethod == 'WALLET' && walletBalance < total) {
+                                if (isCodAllowed) {
+                                  effectivePaymentMethod = 'COD';
+                                  setSheetState(() => _paymentMethod = 'COD');
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(state.isTelugu
+                                        ? 'వాలెట్ బ్యాలెన్స్ తక్కువగా ఉంది, క్యాష్ ఆన్ డెలివరీ (COD) ఎంచుకోబడింది.'
+                                        : 'Wallet balance insufficient (₹${walletBalance.toStringAsFixed(0)}). Switched to Cash on Delivery (COD).'),
+                                    backgroundColor: UiTone.primary,
+                                    duration: const Duration(seconds: 3),
+                                  ));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(state.isTelugu
+                                        ? 'వాలెట్ బ్యాలెన్స్ తక్కువగా ఉంది (₹${walletBalance.toStringAsFixed(0)}). దయచేసి టాప్ అప్ చేయండి.'
+                                        : 'Insufficient wallet balance (₹${walletBalance.toStringAsFixed(0)}). Please top up your wallet.'),
+                                    backgroundColor: const Color(0xFFDC2626),
+                                    duration: const Duration(seconds: 3),
+                                  ));
+                                  return;
+                                }
                               }
 
                               setSheetState(() => _isSubmitting = true);

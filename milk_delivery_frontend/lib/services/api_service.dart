@@ -1623,6 +1623,8 @@ class ApiService {
     String? dispatchTag,
     String? promoChip,
     String? ctaText,
+    bool? isCodEnabled,
+    bool? isWalletEnabled,
   }) async {
     try {
       final payload = <String, dynamic>{};
@@ -1632,6 +1634,8 @@ class ApiService {
       if (dispatchTag != null) payload['dispatch_tag'] = dispatchTag;
       if (promoChip != null) payload['promo_chip'] = promoChip;
       if (ctaText != null) payload['cta_text'] = ctaText;
+      if (isCodEnabled != null) payload['is_cod_enabled'] = isCodEnabled;
+      if (isWalletEnabled != null) payload['is_wallet_enabled'] = isWalletEnabled;
 
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/storefront/config/'),

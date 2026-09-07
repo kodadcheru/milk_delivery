@@ -153,6 +153,8 @@ class StorefrontConfigSerializer(serializers.ModelSerializer):
             "dispatch_tag",
             "promo_chip",
             "cta_text",
+            "is_cod_enabled",
+            "is_wallet_enabled",
             "is_active",
             "updated_at",
         ]

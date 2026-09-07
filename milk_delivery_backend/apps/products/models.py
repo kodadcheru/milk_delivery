@@ -142,6 +142,14 @@ class StorefrontConfig(models.Model):
     dispatch_tag = models.CharField(max_length=100, blank=True, default="MORNING DROP 05:30 AM ☀️")
     promo_chip = models.CharField(max_length=100, blank=True, default="🥛 FRESH TODAY")
     cta_text = models.CharField(max_length=100, blank=True, default="SUBSCRIBE NOW ➔")
+    is_cod_enabled = models.BooleanField(
+        default=True,
+        help_text="Allow customers to select Cash on Delivery (COD) / Doorstep UPI",
+    )
+    is_wallet_enabled = models.BooleanField(
+        default=True,
+        help_text="Allow customers to pay using prepaid Pamba Wallet",
+    )
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 

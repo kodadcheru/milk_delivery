@@ -365,15 +365,44 @@ class ExpressOrderListCreateView(APIView):
                     )
 
         # 2. Payment Method Handling (Wallet vs COD)
-        payment_method = request.data.get("payment_method", "WALLET").upper()
-        if payment_method not in ("WALLET", "UPI", "COD"):
+        from apps.products.models import StorefrontConfig
+        store_cfg = StorefrontConfig.get_active()
+
+        raw_payment_method = str(request.data.get("payment_method", "WALLET")).upper()
+        if "COD" in raw_payment_method or "CASH" in raw_payment_method:
+            payment_method = "COD"
+        elif "UPI" in raw_payment_method:
+            payment_method = "UPI"
+        else:
             payment_method = "WALLET"
         is_cod = (payment_method == "COD")
 
+        # Admin controls enforcement
+        if is_cod and not store_cfg.is_cod_enabled:
+            return Response(
+                {"detail": "Cash on Delivery (COD) is temporarily disabled by admin. Please pay using Pamba Wallet."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if not is_cod and not store_cfg.is_wallet_enabled:
+            if store_cfg.is_cod_enabled:
+                is_cod = True
+                payment_method = "COD"
+            else:
+                return Response(
+                    {"detail": "Online/Wallet checkout is temporarily disabled. Please contact customer support."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         if not is_cod and user.wallet_balance < total_amount:
-            # Auto-fallback to COD instead of rejecting
-            is_cod = True
-            payment_method = "COD"
+            if store_cfg.is_cod_enabled:
+                # Auto-fallback to COD instead of rejecting when COD is enabled
+                is_cod = True
+                payment_method = "COD"
+            else:
+                return Response(
+                    {"detail": f"Insufficient wallet balance (₹{user.wallet_balance:.2f}). Required: ₹{total_amount:.2f}. Please top up your wallet."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         try:
             with transaction.atomic():

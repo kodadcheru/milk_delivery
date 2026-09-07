@@ -91,6 +91,8 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS delivered_longitude NUMERIC(15, 8);
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_latitude NUMERIC(15, 8);
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_longitude NUMERIC(15, 8);
+                    ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_cod_enabled BOOLEAN DEFAULT TRUE;
+                    ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_wallet_enabled BOOLEAN DEFAULT TRUE;
                 """)
             elif vendor == 'sqlite':
                 cursor.execute("""
@@ -127,6 +129,11 @@ def auto_heal_schema():
                 item_cols = [c.name for c in connection.introspection.get_table_description(cursor, 'deliveries_liveorderitem')]
                 if 'pack_size' not in item_cols:
                     cursor.execute("ALTER TABLE deliveries_liveorderitem ADD COLUMN pack_size VARCHAR(50) DEFAULT '1 Litre';")
+                sf_cols = [c.name for c in connection.introspection.get_table_description(cursor, 'products_storefrontconfig')]
+                if 'is_cod_enabled' not in sf_cols:
+                    cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_cod_enabled BOOLEAN DEFAULT TRUE;")
+                if 'is_wallet_enabled' not in sf_cols:
+                    cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_wallet_enabled BOOLEAN DEFAULT TRUE;")
             print("✅ [Railway DB Initializer] Database tables and columns verified.")
         except Exception as e:
             print("Schema auto-heal notice:", e)

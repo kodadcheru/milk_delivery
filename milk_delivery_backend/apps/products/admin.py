@@ -37,3 +37,23 @@ class CategoryAdmin(admin.ModelAdmin):
             "fields": ["subtitle", "quality_badge_title", "quality_specs", "tracking_badges"],
         }),
     ]
+
+
+from apps.products.models import StorefrontConfig
+
+@admin.register(StorefrontConfig)
+class StorefrontConfigAdmin(admin.ModelAdmin):
+    list_display = ["id", "headline", "is_cod_enabled", "is_wallet_enabled", "is_active", "updated_at"]
+    list_editable = ["is_cod_enabled", "is_wallet_enabled", "is_active"]
+    fields = [
+        "is_cod_enabled",
+        "is_wallet_enabled",
+        "is_active",
+        "headline",
+        "subtitle",
+        "dispatch_tag",
+        "promo_chip",
+        "cta_text",
+        "banner_image_url",
+        "banner_image",
+    ]

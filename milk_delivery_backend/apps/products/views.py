@@ -265,6 +265,20 @@ class StorefrontConfigView(APIView):
         if banner_file:
             config.banner_image = banner_file
 
+        is_cod_enabled = request.data.get("is_cod_enabled")
+        if is_cod_enabled is not None:
+            if isinstance(is_cod_enabled, str):
+                config.is_cod_enabled = is_cod_enabled.strip().lower() in ("true", "1", "yes", "t")
+            else:
+                config.is_cod_enabled = bool(is_cod_enabled)
+
+        is_wallet_enabled = request.data.get("is_wallet_enabled")
+        if is_wallet_enabled is not None:
+            if isinstance(is_wallet_enabled, str):
+                config.is_wallet_enabled = is_wallet_enabled.strip().lower() in ("true", "1", "yes", "t")
+            else:
+                config.is_wallet_enabled = bool(is_wallet_enabled)
+
         config.save()
         serializer = StorefrontConfigSerializer(config, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

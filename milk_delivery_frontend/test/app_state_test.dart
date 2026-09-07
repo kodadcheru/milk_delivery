@@ -4,6 +4,7 @@ import 'package:milk_delivery_frontend/models/user_model.dart';
 import 'package:milk_delivery_frontend/models/delivery_task_model.dart';
 import 'package:milk_delivery_frontend/models/live_order_model.dart';
 import 'package:milk_delivery_frontend/models/customer_address_model.dart';
+import 'package:milk_delivery_frontend/models/storefront_config_model.dart';
 import 'package:milk_delivery_frontend/providers/app_state.dart';
 
 void main() {
@@ -272,6 +273,27 @@ void main() {
       expect(addr.longitude, 79.9750);
       expect(addr.isDefault, true);
       expect(addr.icon, '🏠');
+    });
+
+    test('StorefrontConfigModel parses and toggles COD and Wallet settings', () {
+      final json = {
+        'id': 1,
+        'headline': 'Fresh Milk Delivery',
+        'is_cod_enabled': false,
+        'is_wallet_enabled': true,
+      };
+
+      final config = StorefrontConfigModel.fromJson(json);
+      expect(config.isCodEnabled, false);
+      expect(config.isWalletEnabled, true);
+
+      final serialized = config.toJson();
+      expect(serialized['is_cod_enabled'], false);
+      expect(serialized['is_wallet_enabled'], true);
+
+      final updated = config.copyWith(isCodEnabled: true, isWalletEnabled: false);
+      expect(updated.isCodEnabled, true);
+      expect(updated.isWalletEnabled, false);
     });
   });
 }

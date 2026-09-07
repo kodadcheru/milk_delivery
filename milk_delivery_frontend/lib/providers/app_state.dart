@@ -1769,6 +1769,8 @@ class AppState extends ChangeNotifier {
     String? dispatchTag,
     String? promoChip,
     String? ctaText,
+    bool? isCodEnabled,
+    bool? isWalletEnabled,
   }) async {
     final updated = await ApiService.updateStorefrontConfig(
       bannerImageUrl: bannerImageUrl,
@@ -1777,6 +1779,8 @@ class AppState extends ChangeNotifier {
       dispatchTag: dispatchTag,
       promoChip: promoChip,
       ctaText: ctaText,
+      isCodEnabled: isCodEnabled,
+      isWalletEnabled: isWalletEnabled,
     );
     if (updated != null) {
       storefrontConfig = updated;
@@ -1784,6 +1788,35 @@ class AppState extends ChangeNotifier {
       return true;
     }
     return false;
+  }
+
+  Future<bool> togglePaymentMethod({bool? isCodEnabled, bool? isWalletEnabled}) async {
+    final prev = storefrontConfig;
+    final targetCod = isCodEnabled ?? prev.isCodEnabled;
+    final targetWallet = isWalletEnabled ?? prev.isWalletEnabled;
+
+    // Optimistic UI update
+    storefrontConfig = prev.copyWith(
+      isCodEnabled: targetCod,
+      isWalletEnabled: targetWallet,
+    );
+    notifyListeners();
+
+    final updated = await ApiService.updateStorefrontConfig(
+      isCodEnabled: targetCod,
+      isWalletEnabled: targetWallet,
+    );
+
+    if (updated != null) {
+      storefrontConfig = updated;
+      notifyListeners();
+      return true;
+    } else {
+      // Rollback on failure
+      storefrontConfig = prev;
+      notifyListeners();
+      return false;
+    }
   }
 }
 

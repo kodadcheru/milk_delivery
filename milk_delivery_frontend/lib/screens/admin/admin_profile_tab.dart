@@ -226,6 +226,15 @@ class AdminProfileTab extends StatelessWidget {
                   ),
                   _buildDivider(),
                   _buildMenuTile(
+                    icon: Icons.payments_rounded,
+                    iconBg: const Color(0xFFDCFCE7),
+                    iconFg: const Color(0xFF16A34A),
+                    label: 'Payment Gateways & Controls',
+                    subtitle: 'Toggle Cash on Delivery (COD) & Pamba Wallet',
+                    onTap: () => _showPaymentControlsModal(context, state),
+                  ),
+                  _buildDivider(),
+                  _buildMenuTile(
                     icon: Icons.inventory_2_rounded,
                     iconBg: const Color(0xFFFFF3E6),
                     iconFg: const Color(0xFFE67E22),
@@ -426,6 +435,173 @@ class AdminProfileTab extends StatelessWidget {
             child: const Text('Log Out'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showPaymentControlsModal(BuildContext context, AppState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => AnimatedBuilder(
+        animation: state,
+        builder: (ctx, _) {
+          final isCod = state.storefrontConfig.isCodEnabled;
+          final isWallet = state.storefrontConfig.isWalletEnabled;
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE6F5F0),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.payments_rounded, color: Color(0xFF0D7C66), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Payment Gateways Control', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                          Text('Manage live checkout options for all mobile users', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // COD Switch
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isCod ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isCod ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('💵', style: TextStyle(fontSize: 24)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cash on Delivery (COD) / UPI',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: isCod ? const Color(0xFF0F172A) : Colors.grey.shade600),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isCod ? 'Active • Customers can pay at doorstep' : 'Disabled • Hidden in checkout',
+                              style: TextStyle(fontSize: 11, color: isCod ? const Color(0xFF16A34A) : Colors.grey.shade500),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch.adaptive(
+                        value: isCod,
+                        activeColor: const Color(0xFF16A34A),
+                        onChanged: (val) async {
+                          final ok = await state.togglePaymentMethod(isCodEnabled: val);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok ? 'COD ${val ? "Enabled" : "Disabled"}' : 'Failed to update COD'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Wallet Switch
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isWallet ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isWallet ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('👛', style: TextStyle(fontSize: 24)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pamba Wallet Auto-Debit',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: isWallet ? const Color(0xFF0F172A) : Colors.grey.shade600),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isWallet ? 'Active • 1-Tap prepaid wallet enabled' : 'Disabled • Hidden in checkout',
+                              style: TextStyle(fontSize: 11, color: isWallet ? const Color(0xFF2563EB) : Colors.grey.shade500),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch.adaptive(
+                        value: isWallet,
+                        activeColor: const Color(0xFF2563EB),
+                        onChanged: (val) async {
+                          final ok = await state.togglePaymentMethod(isWalletEnabled: val);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok ? 'Wallet ${val ? "Enabled" : "Disabled"}' : 'Failed to update Wallet'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F172A),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

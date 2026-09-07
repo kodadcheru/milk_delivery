@@ -351,6 +351,45 @@
       margin-bottom: 24px;
     }
 
+    /* iOS-Style Toggle Switches */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .3s;
+      border-radius: 26px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    input:checked + .slider {
+      background-color: #10B981;
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -1746,6 +1785,61 @@
             <div class="form-group" style="margin-bottom: 20px;">
               <label>CTA Button Text</label>
               <input type="text" id="sfCtaText" class="form-control" value="SUBSCRIBE NOW ➔" oninput="updateStorefrontLivePreview()">
+            </div>
+
+            <!-- ── Payment Methods Control (COD & Wallet ON/OFF) ── -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 18px; margin-bottom: 22px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-weight: 800; font-size: 14px; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-credit-card" style="color: #38bdf8;"></i> Payment Gateways & Checkout Controls
+                </div>
+                <span class="badge" id="sfPaymentOverallBadge" style="background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 11px; padding: 3px 8px; border-radius: 6px;">Live in App</span>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                Turn payment options ON or OFF for customers in the mobile app checkout. Changes sync in real-time.
+              </p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <!-- COD Toggle Card -->
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 22px;">💵</span>
+                      <div>
+                        <div style="font-weight: 800; font-size: 13px; color: #fff;">Cash on Delivery (COD)</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Doorstep cash & UPI QR scan</div>
+                      </div>
+                    </div>
+                    <label class="switch" style="margin: 0; flex-shrink: 0;">
+                      <input type="checkbox" id="sfCodToggle" onchange="updatePaymentToggleLabels()">
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div style="font-size: 11.5px; font-weight: 600;" id="sfCodStatusText">
+                    Status: <span style="color: #10B981;">Enabled</span>
+                  </div>
+                </div>
+
+                <!-- Wallet Toggle Card -->
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 22px;">👛</span>
+                      <div>
+                        <div style="font-weight: 800; font-size: 13px; color: #fff;">Pamba Wallet</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Prepaid instant auto-debit</div>
+                      </div>
+                    </div>
+                    <label class="switch" style="margin: 0; flex-shrink: 0;">
+                      <input type="checkbox" id="sfWalletToggle" onchange="updatePaymentToggleLabels()">
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div style="font-size: 11.5px; font-weight: 600;" id="sfWalletStatusText">
+                    Status: <span style="color: #10B981;">Enabled</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style="display: flex; gap: 12px;">
@@ -6932,11 +7026,61 @@
             document.getElementById('sfDispatchTag').value = currentStorefrontConfig.dispatch_tag !== null && currentStorefrontConfig.dispatch_tag !== undefined ? currentStorefrontConfig.dispatch_tag : '';
             document.getElementById('sfPromoChip').value = currentStorefrontConfig.promo_chip !== null && currentStorefrontConfig.promo_chip !== undefined ? currentStorefrontConfig.promo_chip : '';
             document.getElementById('sfCtaText').value = currentStorefrontConfig.cta_text !== null && currentStorefrontConfig.cta_text !== undefined ? currentStorefrontConfig.cta_text : '';
+            const codToggle = document.getElementById('sfCodToggle');
+            if (codToggle) {
+              codToggle.checked = currentStorefrontConfig.is_cod_enabled !== false;
+            }
+            const walletToggle = document.getElementById('sfWalletToggle');
+            if (walletToggle) {
+              walletToggle.checked = currentStorefrontConfig.is_wallet_enabled !== false;
+            }
+            updatePaymentToggleLabels();
             updateStorefrontLivePreview();
           }
         }
       } catch (err) {
         console.error('Error loading storefront config:', err);
+      }
+    }
+
+    function updatePaymentToggleLabels() {
+      const codToggle = document.getElementById('sfCodToggle');
+      const codStatus = document.getElementById('sfCodStatusText');
+      if (codToggle && codStatus) {
+        if (codToggle.checked) {
+          codStatus.innerHTML = 'Status: <span style="color: #10B981;">Enabled (Customers can pay at doorstep)</span>';
+        } else {
+          codStatus.innerHTML = 'Status: <span style="color: #EF4444;">Disabled (COD option disabled in app)</span>';
+        }
+      }
+
+      const walletToggle = document.getElementById('sfWalletToggle');
+      const walletStatus = document.getElementById('sfWalletStatusText');
+      if (walletToggle && walletStatus) {
+        if (walletToggle.checked) {
+          walletStatus.innerHTML = 'Status: <span style="color: #10B981;">Enabled (1-Tap prepaid payment)</span>';
+        } else {
+          walletStatus.innerHTML = 'Status: <span style="color: #EF4444;">Disabled (Wallet payment disabled in app)</span>';
+        }
+      }
+
+      const overallBadge = document.getElementById('sfPaymentOverallBadge');
+      if (overallBadge) {
+        const isCod = codToggle ? codToggle.checked : true;
+        const isWallet = walletToggle ? walletToggle.checked : true;
+        if (isCod && isWallet) {
+          overallBadge.innerText = 'All Methods Active';
+          overallBadge.style.color = '#10B981';
+          overallBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+        } else if (!isCod && !isWallet) {
+          overallBadge.innerText = 'Payments Suspended';
+          overallBadge.style.color = '#EF4444';
+          overallBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+        } else {
+          overallBadge.innerText = isCod ? 'COD Only' : 'Wallet Only';
+          overallBadge.style.color = '#F59E0B';
+          overallBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+        }
       }
     }
 
@@ -7043,6 +7187,11 @@
       formData.append('dispatch_tag', dispatchTag);
       formData.append('promo_chip', promoChip);
       formData.append('cta_text', ctaText);
+
+      const isCod = document.getElementById('sfCodToggle') ? document.getElementById('sfCodToggle').checked : true;
+      const isWallet = document.getElementById('sfWalletToggle') ? document.getElementById('sfWalletToggle').checked : true;
+      formData.append('is_cod_enabled', isCod);
+      formData.append('is_wallet_enabled', isWallet);
 
       const headers = {};
       if (token && token !== 'null' && token !== 'undefined') {
