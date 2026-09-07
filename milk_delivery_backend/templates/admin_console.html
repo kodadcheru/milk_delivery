@@ -1835,7 +1835,7 @@
                       </div>
                     </div>
                     <label class="switch" style="margin: 0; flex-shrink: 0;">
-                      <input type="checkbox" id="sfCodToggle" onchange="updatePaymentToggleLabels()">
+                      <input type="checkbox" id="sfCodToggle" onchange="autoSavePaymentToggle('cod', this.checked)">
                       <span class="slider"></span>
                     </label>
                   </div>
@@ -1855,7 +1855,7 @@
                       </div>
                     </div>
                     <label class="switch" style="margin: 0; flex-shrink: 0;">
-                      <input type="checkbox" id="sfWalletToggle" onchange="updatePaymentToggleLabels()">
+                      <input type="checkbox" id="sfWalletToggle" onchange="autoSavePaymentToggle('wallet', this.checked)">
                       <span class="slider"></span>
                     </label>
                   </div>
@@ -7105,6 +7105,104 @@
           overallBadge.style.color = '#F59E0B';
           overallBadge.style.background = 'rgba(245, 158, 11, 0.2)';
         }
+      }
+    }
+
+    function showStorefrontToast(message, type = 'info') {
+      let toast = document.getElementById('sfToastNotification');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sfToastNotification';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '28px';
+        toast.style.right = '28px';
+        toast.style.zIndex = '99999';
+        toast.style.padding = '12px 20px';
+        toast.style.borderRadius = '10px';
+        toast.style.fontWeight = '700';
+        toast.style.fontSize = '13.5px';
+        toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+        toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '10px';
+        document.body.appendChild(toast);
+      }
+      
+      if (type === 'success') {
+        toast.style.background = '#064E3B';
+        toast.style.border = '1px solid #10B981';
+        toast.style.color = '#ECFDF5';
+      } else if (type === 'error') {
+        toast.style.background = '#7F1D1D';
+        toast.style.border = '1px solid #EF4444';
+        toast.style.color = '#FEF2F2';
+      } else {
+        toast.style.background = '#1E293B';
+        toast.style.border = '1px solid #64748B';
+        toast.style.color = '#F8FAFC';
+      }
+      
+      toast.innerHTML = message;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+      
+      if (window._sfToastTimer) clearTimeout(window._sfToastTimer);
+      window._sfToastTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+      }, 3500);
+    }
+
+    async function autoSavePaymentToggle(method, isEnabled) {
+      updatePaymentToggleLabels();
+      const codToggle = document.getElementById('sfCodToggle');
+      const walletToggle = document.getElementById('sfWalletToggle');
+      const isCod = codToggle ? codToggle.checked : true;
+      const isWallet = walletToggle ? walletToggle.checked : true;
+
+      const badge = document.getElementById('sfPaymentOverallBadge');
+      if (badge) {
+        badge.innerText = 'Syncing... ⏳';
+        badge.style.color = '#F59E0B';
+      }
+
+      showStorefrontToast(`Syncing ${method === 'cod' ? 'COD' : 'Wallet'} status to server...`, 'info');
+
+      try {
+        const payload = {};
+        if (method === 'cod') {
+          payload.is_cod_enabled = isEnabled;
+        } else if (method === 'wallet') {
+          payload.is_wallet_enabled = isEnabled;
+        } else {
+          payload.is_cod_enabled = isCod;
+          payload.is_wallet_enabled = isWallet;
+        }
+
+        const res = await fetch(`${baseUrl}/storefront/config/`, {
+          method: 'POST',
+          headers: getAdminHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentStorefrontConfig = data;
+          updatePaymentToggleLabels();
+          const label = method === 'cod' ? 'Cash on Delivery (COD)' : 'Pamba Wallet';
+          showStorefrontToast(`✓ ${label} is now <b>${isEnabled ? 'ENABLED' : 'DISABLED'}</b> for customers!`, 'success');
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (err) {
+        console.error('Failed to auto-save payment toggle:', err);
+        // Revert toggle UI
+        if (method === 'cod' && codToggle) codToggle.checked = !isEnabled;
+        if (method === 'wallet' && walletToggle) walletToggle.checked = !isEnabled;
+        updatePaymentToggleLabels();
+        showStorefrontToast(`❌ Failed to save setting: ${err.message}`, 'error');
+        alert(`Failed to save payment toggle to server: ${err.message}`);
       }
     }
 

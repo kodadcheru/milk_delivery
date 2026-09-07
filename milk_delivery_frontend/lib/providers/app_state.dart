@@ -1818,5 +1818,16 @@ class AppState extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<StorefrontConfigModel> refreshStorefrontConfig() async {
+    try {
+      final config = await ApiService.fetchStorefrontConfig();
+      storefrontConfig = config;
+      notifyListeners();
+      return config;
+    } catch (_) {
+      return storefrontConfig;
+    }
+  }
 }
 

@@ -139,6 +139,7 @@ class FloatingCartBar extends StatelessWidget {
     }
 
     bool _isSubmitting = false;
+    bool _hasRefreshedConfig = false;
 
     showModalBottomSheet(
       context: context,
@@ -147,6 +148,24 @@ class FloatingCartBar extends StatelessWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
+          if (!_hasRefreshedConfig) {
+            _hasRefreshedConfig = true;
+            state.refreshStorefrontConfig().then((cfg) {
+              if (ctx.mounted) {
+                setSheetState(() {
+                  if (_paymentMethod == 'WALLET' && !cfg.isWalletEnabled) {
+                    if (cfg.isCodEnabled) {
+                      _paymentMethod = 'COD';
+                    }
+                  } else if (_paymentMethod == 'COD' && !cfg.isCodEnabled) {
+                    if (cfg.isWalletEnabled) {
+                      _paymentMethod = 'WALLET';
+                    }
+                  }
+                });
+              }
+            });
+          }
           final items = state.cartProductsList;
           final total = state.totalCartPrice;
 
