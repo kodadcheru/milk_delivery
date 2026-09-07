@@ -9,6 +9,8 @@ import '../../theme/ui_tokens.dart';
 import '../../widgets/subscriptions/interactive_week_scrubber.dart';
 import '../../widgets/subscriptions/subscription_card.dart';
 import '../../widgets/delivery_calendar_view.dart';
+import '../../widgets/bookings/active_booking_live_map_card.dart';
+import '../../models/delivery_task_model.dart';
 import '../../services/api_service.dart';
 
 class SubscriptionsTab extends StatefulWidget {
@@ -48,6 +50,16 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
       }
     }
 
+    // Check if there is an active morning subscription delivery in-transit today
+    DeliveryTaskModel? activeMorningTask;
+    for (final t in widget.state.subscriptionDeliveries) {
+      final s = t.status.toUpperCase();
+      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT') {
+        activeMorningTask = t;
+        break;
+      }
+    }
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
@@ -63,6 +75,16 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── Service-Mobile Active Live Tracking Hero (when Morning Task is In-Transit) ──
+                      if (activeMorningTask != null) ...[
+                        ActiveBookingLiveMapCard(
+                          state: widget.state,
+                          subscriptionTask: activeMorningTask,
+                          isTelugu: isTelugu,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       // ── Header Title ──
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

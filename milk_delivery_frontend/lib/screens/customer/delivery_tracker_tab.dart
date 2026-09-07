@@ -12,6 +12,7 @@ import '../../widgets/delivery_rating_dialog.dart';
 import '../../widgets/order_invoice_sheet.dart';
 import '../../widgets/booking_detail_sheet.dart';
 import '../../widgets/order_status_tracker.dart';
+import '../../widgets/bookings/active_booking_live_map_card.dart';
 import 'live_driver_tracking_screen.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
@@ -342,8 +343,18 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
   ) {
     LiveOrderModel? inTransitOrder;
     for (final o in liveOrders) {
-      if (o.status.toUpperCase() == 'OUT_FOR_DELIVERY' || o.status.toUpperCase() == 'IN_TRANSIT') {
+      final s = o.status.toUpperCase();
+      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT') {
         inTransitOrder = o;
+        break;
+      }
+    }
+
+    DeliveryTaskModel? inTransitTask;
+    for (final t in subTasks) {
+      final s = t.status.toUpperCase();
+      if (s == 'OUT_FOR_DELIVERY' || s == 'IN_TRANSIT') {
+        inTransitTask = t;
         break;
       }
     }
@@ -355,156 +366,13 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
     final deliveredTasks = subTasks.where((t) => _isDeliveredTask(t.status)).length;
     final totalDelivered = deliveredOrders + deliveredTasks;
 
-    if (inTransitOrder != null) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0D7C66), Color(0xFF14B8A6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0D7C66).withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-            ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Colors.white24,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text('🛵', style: TextStyle(fontSize: 22)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          AnimatedBuilder(
-                            animation: _pulseController,
-                            builder: (context, child) {
-                              return Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4ADE80).withValues(alpha: 0.5 + (_pulseController.value * 0.5)),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF4ADE80).withValues(alpha: _pulseController.value * 0.5),
-                                      blurRadius: 4,
-                                      spreadRadius: 1,
-                                    )
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isTelugu ? 'డ్రైవర్ దారిలో ఉన్నారు!' : 'Driver on the way!',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Text(
-                            'Order #${inTransitOrder.id} • ',
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '🕐 ~${inTransitOrder.etaMinutes} min',
-                              style: const TextStyle(color: Color(0xFF0D7C66), fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                AnimatedBuilder(
-                  animation: _pulseController,
-                  builder: (context, child) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.2 + (_pulseController.value * 0.3)),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          )
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LiveDriverTrackingScreen(
-                                state: widget.state,
-                                liveOrder: inTransitOrder,
-                                orderTitle: 'Express Order #${inTransitOrder!.id}',
-                                deliveryAddress: inTransitOrder.deliveryAddress,
-                                driverName: inTransitOrder.driverName,
-                                driverPhone: inTransitOrder.driverPhone,
-                                deliveryOtp: inTransitOrder.deliveryOtp,
-                              ),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF0D7C66),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        ),
-                        child: Text(
-                          isTelugu ? 'లైవ్ మ్యాప్ 🗺️' : 'Live Map 🗺️',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
-                        ),
-                      ),
-                    );
-                  }
-                ),
-              ],
-            ),
-          ],
-        ),
+    // ── 1. If an express order or morning daily drop is actively out for delivery, show Service-Mobile Live Map Hero ──
+    if (inTransitOrder != null || inTransitTask != null) {
+      return ActiveBookingLiveMapCard(
+        state: widget.state,
+        liveOrder: inTransitOrder,
+        subscriptionTask: inTransitTask,
+        isTelugu: isTelugu,
       );
     }
 
