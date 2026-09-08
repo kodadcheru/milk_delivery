@@ -52,7 +52,7 @@ def _clean_and_validate_indian_phone(phone_raw: str):
 #     # 1. Super Admin (8919548905 only)
 #     if phone_last_10 == "8919548905":
 #         admin_user = (
-#             User.objects.filter(phone__endswith="8919548905").first()
+#             User.objects.filter(phone__in=["+91 8919548905", "+918919548905", "8919548905"]).first()
 #             or User.objects.filter(username="admin").first()
 #         )
 #         if not admin_user:
@@ -79,7 +79,7 @@ def _clean_and_validate_indian_phone(phone_raw: str):
 # 
 #     # 1b. Customer (7794893990 - ensure customer role, not admin/staff)
 #     if phone_last_10 == "7794893990":
-#         user_77 = User.objects.filter(phone__endswith="7794893990").first()
+#         user_77 = User.objects.filter(phone__in=["+91 7794893990", "+917794893990", "7794893990"]).first()
 #         if user_77 and (user_77.role != User.Roles.CUSTOMER or user_77.is_staff or user_77.is_superuser):
 #             user_77.role = User.Roles.CUSTOMER
 #             user_77.is_staff = False
@@ -93,7 +93,7 @@ def _clean_and_validate_indian_phone(phone_raw: str):
 #         clean_hub_phone = "".join(filter(str.isdigit, hub.manager_phone or ""))
 #         if clean_hub_phone and clean_hub_phone.endswith(phone_last_10):
 #             hub_user = (
-#                 User.objects.filter(phone__endswith=phone_last_10).first()
+#                 User.objects.filter(phone__in=[f"+91 {phone_last_10}", f"+91{phone_last_10}", phone_last_10]).first()
 #                 or User.objects.filter(username=f"hub_{hub.hub_code.lower()}").first()
 #             )
 #             if not hub_user:
@@ -128,16 +128,13 @@ class SendOTPView(APIView):
         phone = request.data.get("phone", "").strip()
         formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
         if err:
-            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": err, "detail": err}, status=status.HTTP_400_BAD_REQUEST)
 
         # FIX B2: Disabled hardcoded staff user auto-promotion
         # _get_or_create_staff_user_if_applicable(last_10)
 
-        is_existing = (
-            User.objects.filter(phone=phone).exists()
-            or User.objects.filter(phone=formatted_phone).exists()
-            or User.objects.filter(phone__endswith=last_10).exists()
-        )
+        phone_variants = [phone, formatted_phone, f"+91 {last_10}", f"+91{last_10}", last_10]
+        is_existing = User.objects.filter(phone__in=phone_variants).exists()
 
         response_data = {
             "success": True,
@@ -161,25 +158,22 @@ class VerifyOTPView(APIView):
         otp = request.data.get("otp", "").strip()
 
         if not phone or not otp:
-            return Response({"detail": "Phone and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Phone and OTP are required.", "detail": "Phone and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
         if err:
-            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": err, "detail": err}, status=status.HTTP_400_BAD_REQUEST)
 
         if otp != "1234":
-            return Response({"detail": "Invalid OTP code. Use test OTP '1234'."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid OTP code. Use test OTP '1234'.", "detail": "Invalid OTP code. Use test OTP '1234'."}, status=status.HTTP_400_BAD_REQUEST)
 
         # FIX B2: Disabled hardcoded staff user auto-promotion
         # _get_or_create_staff_user_if_applicable(last_10)
 
         formatted_phone = f"+91 {last_10}" if len(last_10) == 10 else phone
 
-        user = (
-            User.objects.filter(phone=phone).first()
-            or User.objects.filter(phone=formatted_phone).first()
-            or User.objects.filter(phone__endswith=last_10).first()
-        )
+        phone_variants = [phone, formatted_phone, f"+91 {last_10}", f"+91{last_10}", last_10]
+        user = User.objects.filter(phone__in=phone_variants).first()
 
         if user:
             refresh = RefreshToken.for_user(user)
@@ -219,31 +213,28 @@ class RegisterMobileUserView(APIView):
         city = request.data.get("city", "").strip()
 
         if not phone or not first_name:
-            return Response({"detail": "Phone and Name are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Phone and Name are required.", "detail": "Phone and Name are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if len(first_name) < 2:
-            return Response({"detail": "Full Name must be at least 2 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Full Name must be at least 2 characters long.", "detail": "Full Name must be at least 2 characters long."}, status=status.HTTP_400_BAD_REQUEST)
 
         formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
         if err:
-            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": err, "detail": err}, status=status.HTTP_400_BAD_REQUEST)
 
         # Email validation & duplicate check
         if email:
             try:
                 django_validate_email(email)
             except ValidationError:
-                return Response({"detail": "Please enter a valid email address (e.g. name@example.com)."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Please enter a valid email address (e.g. name@example.com).", "detail": "Please enter a valid email address (e.g. name@example.com)."}, status=status.HTTP_400_BAD_REQUEST)
 
             if User.objects.filter(email__iexact=email).exists():
-                return Response({"detail": "An account with this email address already exists. Please log in or use a different email."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "An account with this email address already exists. Please log in or use a different email.", "detail": "An account with this email address already exists. Please log in or use a different email."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if (
-            User.objects.filter(phone=phone).exists()
-            or User.objects.filter(phone=formatted_phone).exists()
-            or User.objects.filter(phone__endswith=last_10).exists()
-        ):
-            return Response({"detail": "User with this phone number already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        phone_variants = [phone, formatted_phone, f"+91 {last_10}", f"+91{last_10}", last_10]
+        if User.objects.filter(phone__in=phone_variants).exists():
+            return Response({"error": "User with this phone number already exists.", "detail": "User with this phone number already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
         username = f"cust_{last_10}"
 

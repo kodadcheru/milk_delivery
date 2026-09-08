@@ -123,7 +123,7 @@ class BookingDetailSheet extends StatelessWidget {
 
   void _copyOtp(BuildContext context, String otp) {
     Clipboard.setData(ClipboardData(text: otp));
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

@@ -268,7 +268,7 @@ class _ActiveBookingLiveMapCardState extends State<ActiveBookingLiveMapCard> wit
   }
 
   void _copyOtp(String otp) {
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
     Clipboard.setData(ClipboardData(text: otp));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

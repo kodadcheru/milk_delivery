@@ -379,6 +379,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                         sub: displayedSubs[index],
                         isTelugu: isTelugu,
                         onDeleteRequested: _confirmDeleteSubscription,
+                        onTogglePauseRequested: _confirmTogglePauseSubscription,
                       );
                     },
                   ),
@@ -652,6 +653,40 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
   String _getMonthName(int month) {
     const names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return (month >= 1 && month <= 12) ? names[month] : '';
+  }
+
+  Future<void> _confirmTogglePauseSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
+    final isPaused = sub.status == 'PAUSED';
+    final titleText = isTelugu
+        ? (isPaused ? 'సభ్యత్వాన్ని పునఃప్రారంభించాలా?' : 'సభ్యత్వాన్ని పాజ్ చేయాలా?')
+        : (isPaused ? 'Resume Subscription?' : 'Pause Subscription?');
+    final contentText = isTelugu
+        ? (isPaused
+            ? 'రేపటి నుండి మీ రోజువారీ డెలివరీలు పునఃప్రారంభించబడతాయి.'
+            : 'మీరు పునఃప్రారంభించే వరకు మీ రోజువారీ డెలివరీలు ఆగిపోతాయి.')
+        : (isPaused
+            ? 'Your daily deliveries will resume tomorrow.'
+            : 'Your daily deliveries will stop until you resume.');
+    final confirmBtnText = isTelugu
+        ? (isPaused ? 'పునఃప్రారంభించు' : 'పాజ్')
+        : (isPaused ? 'Resume' : 'Pause');
+    final cancelBtnText = isTelugu ? 'రద్దు' : 'Cancel';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(titleText),
+        content: Text(contentText),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(cancelBtnText)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(confirmBtnText)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    HapticFeedback.mediumImpact();
+    await widget.state.toggleSubscriptionStatus(sub.id);
   }
 
   Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {

@@ -117,7 +117,7 @@ class AppTheme {
   }
 
   static void hapticSuccess() {
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
   }
 
   // ── 🏷️ Global Flutter ThemeData ──

@@ -10,6 +10,7 @@ class SubscriptionCard extends StatelessWidget {
   final SubscriptionModel sub;
   final bool isTelugu;
   final Future<void> Function(BuildContext context, SubscriptionModel sub, bool isTelugu)? onDeleteRequested;
+  final Future<void> Function(BuildContext context, SubscriptionModel sub, bool isTelugu)? onTogglePauseRequested;
 
   const SubscriptionCard({
     super.key,
@@ -17,6 +18,7 @@ class SubscriptionCard extends StatelessWidget {
     required this.sub,
     required this.isTelugu,
     this.onDeleteRequested,
+    this.onTogglePauseRequested,
   });
 
   @override
@@ -275,8 +277,41 @@ class SubscriptionCard extends StatelessWidget {
           }
           return false;
         } else {
-          HapticFeedback.mediumImpact();
-          await state.toggleSubscriptionStatus(sub.id);
+          if (onTogglePauseRequested != null) {
+            await onTogglePauseRequested!(context, sub, isTelugu);
+          } else {
+            final isPaused = sub.status == 'PAUSED';
+            final titleText = isTelugu
+                ? (isPaused ? 'సభ్యత్వాన్ని పునఃప్రారంభించాలా?' : 'సభ్యత్వాన్ని పాజ్ చేయాలా?')
+                : (isPaused ? 'Resume Subscription?' : 'Pause Subscription?');
+            final contentText = isTelugu
+                ? (isPaused
+                    ? 'రేపటి నుండి మీ రోజువారీ డెలివరీలు పునఃప్రారంభించబడతాయి.'
+                    : 'మీరు పునఃప్రారంభించే వరకు మీ రోజువారీ డెలివరీలు ఆగిపోతాయి.')
+                : (isPaused
+                    ? 'Your daily deliveries will resume tomorrow.'
+                    : 'Your daily deliveries will stop until you resume.');
+            final confirmBtnText = isTelugu
+                ? (isPaused ? 'పునఃప్రారంభించు' : 'పాజ్')
+                : (isPaused ? 'Resume' : 'Pause');
+            final cancelBtnText = isTelugu ? 'రద్దు' : 'Cancel';
+
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(titleText),
+                content: Text(contentText),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(cancelBtnText)),
+                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(confirmBtnText)),
+                ],
+              ),
+            );
+            if (confirmed != true) return false;
+
+            HapticFeedback.mediumImpact();
+            await state.toggleSubscriptionStatus(sub.id);
+          }
           return false;
         }
       },

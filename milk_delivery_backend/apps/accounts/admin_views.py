@@ -84,8 +84,8 @@ class AdminCustomerListView(APIView):
         last_10 = phone_digits[-10:]
         clean_phone = f"+91 {last_10}"
 
-        if User.objects.filter(phone__endswith=last_10).exists():
-            return Response({"detail": f"A customer account with mobile number {clean_phone} already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(phone__in=[clean_phone, f"+91{last_10}", last_10]).exists():
+            return Response({"error": f"A customer account with mobile number {clean_phone} already exists.", "detail": f"A customer account with mobile number {clean_phone} already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
         username = f"cust_{last_10}"
         if User.objects.filter(username=username).exists():
@@ -165,20 +165,21 @@ class AdminCustomerDetailView(APIView):
         if not customer:
             clean_pk = "".join(filter(str.isdigit, str(pk)))
             if clean_pk:
-                customer = User.objects.filter(phone__endswith=clean_pk[-10:]).first()
+                pk_last_10 = clean_pk[-10:]
+                customer = User.objects.filter(phone__in=[f"+91 {pk_last_10}", f"+91{pk_last_10}", pk_last_10]).first()
         if not customer and request.query_params.get("phone"):
             clean_q = "".join(filter(str.isdigit, request.query_params.get("phone", "")))[-10:]
             if clean_q:
-                customer = User.objects.filter(phone__endswith=clean_q).first()
+                customer = User.objects.filter(phone__in=[f"+91 {clean_q}", f"+91{clean_q}", clean_q]).first()
         if not customer:
-            return Response({"detail": f"Customer/User #{pk} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"Customer/User #{pk} not found", "detail": f"Customer/User #{pk} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         from django.db.models import Q
 
         clean_digits = "".join(filter(str.isdigit, customer.phone or customer.username or ""))[-10:]
         user_query = Q(customer=customer)
         if clean_digits:
-            user_query |= Q(customer__phone__endswith=clean_digits) | Q(customer__username__icontains=clean_digits)
+            user_query |= Q(customer__phone__in=[f"+91 {clean_digits}", f"+91{clean_digits}", clean_digits]) | Q(customer__username__icontains=clean_digits)
 
         addresses = CustomerAddress.objects.filter(user_query).order_by("-is_default", "-id")
         
@@ -651,7 +652,7 @@ class AdminHubsView(APIView):
             from apps.accounts.models import User
             from decimal import Decimal
             hub_user = (
-                User.objects.filter(phone__endswith=mgr_last_10).first()
+                User.objects.filter(phone__in=[clean_phone, f"+91 {mgr_last_10}", f"+91{mgr_last_10}", mgr_last_10]).first()
                 or User.objects.filter(username=f"hub_{hub.hub_code.lower()}").first()
             )
             if not hub_user:

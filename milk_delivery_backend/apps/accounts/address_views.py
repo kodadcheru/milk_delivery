@@ -18,8 +18,7 @@ def _find_user_by_phone(phone_str):
     if not last_10:
         return None
     return (
-        User.objects.filter(phone__endswith=last_10).first()
-        or User.objects.filter(phone__icontains=last_10).first()
+        User.objects.filter(phone__in=[phone_str, f"+91 {last_10}", f"+91{last_10}", last_10]).first()
         or User.objects.filter(username=phone_str).first()
     )
 
@@ -157,18 +156,18 @@ class CustomerAddressSetDefaultView(APIView):
     def post(self, request, pk):
         user = request.user if request.user and request.user.is_authenticated else _resolve_customer_user(request)
         if not user:
-            return Response({"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Authentication required", "detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
             
         if request.user and request.user.is_authenticated and request.user.is_staff:
             try:
                 addr = CustomerAddress.objects.get(pk=pk)
             except CustomerAddress.DoesNotExist:
-                return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Address not found", "detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             try:
                 addr = CustomerAddress.objects.get(pk=pk, customer=user)
             except CustomerAddress.DoesNotExist:
-                return Response({"detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Address not found", "detail": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
 
         CustomerAddress.objects.filter(customer=addr.customer).update(is_default=False)
         addr.is_default = True

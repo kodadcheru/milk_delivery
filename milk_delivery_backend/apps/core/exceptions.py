@@ -28,6 +28,10 @@ def custom_exception_handler(exc, context):
         if isinstance(error_data, dict):
             if "detail" in error_data:
                 message = str(error_data["detail"])
+            elif "error" in error_data:
+                message = str(error_data["error"])
+            elif "message" in error_data:
+                message = str(error_data["message"])
             elif len(error_data) > 0:
                 first_key = list(error_data.keys())[0]
                 first_val = error_data[first_key]
@@ -54,6 +58,8 @@ def custom_exception_handler(exc, context):
             "status": "error",
             "code": code,
             "message": message,
+            "error": message,
+            "detail": message,
             "errors": error_data,
         }
     else:
@@ -64,6 +70,8 @@ def custom_exception_handler(exc, context):
                 "status": "error",
                 "code": "INTERNAL_SERVER_ERROR",
                 "message": "An internal server error occurred. Our engineering team has been notified.",
+                "error": "An internal server error occurred. Our engineering team has been notified.",
+                "detail": "An internal server error occurred. Our engineering team has been notified.",
                 "errors": {},
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
