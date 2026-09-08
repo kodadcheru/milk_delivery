@@ -93,6 +93,7 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_longitude NUMERIC(15, 8);
                     ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_cod_enabled BOOLEAN DEFAULT TRUE;
                     ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_wallet_enabled BOOLEAN DEFAULT TRUE;
+                    ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_online_payment_enabled BOOLEAN DEFAULT TRUE;
                     CREATE TABLE IF NOT EXISTS accounts_devicetoken (
                         id BIGSERIAL PRIMARY KEY,
                         token VARCHAR(512) UNIQUE NOT NULL,
