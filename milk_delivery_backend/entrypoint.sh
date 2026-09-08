@@ -2,6 +2,7 @@
 set -e
 
 echo "🚀 [1/4] Running database migrations..."
+python manage.py migrate token_blacklist --noinput || true
 python manage.py migrate --noinput || echo "⚠️ Warning: Database migrations completed with warnings."
 
 echo "🌱 [2/4] Seeding default superusers and hub catalogs..."
