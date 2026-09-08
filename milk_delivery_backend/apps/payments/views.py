@@ -217,8 +217,8 @@ class RazorpayVerifyPaymentView(APIView):
                         body=f"₹{payment.amount} credited to your prepaid wallet. New balance: ₹{user.wallet_balance}",
                         target_screen="WALLET",
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Notification failed: {e}")
 
             elif payment.purpose == RazorpayPayment.Purpose.ORDER_PAYMENT and payment.order:
                 payment.order.payment_method = "RAZORPAY"
@@ -297,6 +297,7 @@ class RazorpayWebhookView(APIView):
                                     description=f'Razorpay payment {payment_id} (webhook)',
                                 )
                     except RazorpayPayment.DoesNotExist:
+                        logger.warning(f"RazorpayPayment not found for order {order_id} in webhook")
                         pass
 
             elif event == 'payment.failed':
@@ -308,8 +309,9 @@ class RazorpayWebhookView(APIView):
                         razorpay_order_id=order_id,
                         status='PENDING'
                     ).update(status='FAILED')
-        except Exception:
-            pass  # Always return 200 to Razorpay
+        except Exception as e:
+            logger.error(f"Error processing Razorpay webhook: {e}", exc_info=True)
+            # Always return 200 to Razorpay to acknowledge webhook receipt
 
         return Response({'status': 'ok'}, status=200)
 

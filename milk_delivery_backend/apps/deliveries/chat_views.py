@@ -1,9 +1,12 @@
+import logging
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.cache import cache
 from .models import DeliveryChatMessage, DeliveryTask, LiveOrder
+
+logger = logging.getLogger(__name__)
 
 
 def _get_delivery_chat_cache_key(channel_key):
@@ -35,16 +38,16 @@ def _is_user_authorized_for_chat(user, task_obj=None, order_obj=None, channel_ke
                 t = DeliveryTask.objects.filter(pk=t_id).first()
                 if t and (getattr(t, "target_customer", None) == user or t.driver == user or (t.hub and getattr(user, "assigned_hub", None) == t.hub)):
                     return True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Error checking task auth for channel {channel_key}: {e}")
         elif channel_key.startswith("delivery_order_"):
             try:
                 o_id = channel_key.replace("delivery_order_", "")
                 o = LiveOrder.objects.filter(pk=o_id).first()
                 if o and (o.customer == user or o.driver == user or (o.hub and getattr(user, "assigned_hub", None) == o.hub)):
                     return True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Error checking order auth for channel {channel_key}: {e}")
 
     return False
 
@@ -87,8 +90,8 @@ class DeliveryChatSendView(APIView):
         if order_id:
             try:
                 order_obj = LiveOrder.objects.filter(pk=str(order_id)).first()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to lookup order '{order_id}': {e}")
 
         if not _is_user_authorized_for_chat(request.user, task_obj=task_obj, order_obj=order_obj, channel_key=channel_key):
             return Response(
@@ -160,8 +163,8 @@ class DeliveryChatSendView(APIView):
                             target_screen="CHAT",
                             target_param=channel_key,
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Notification failed: chat push: {e}")
             elif sender_role == "CUSTOMER":
                 # Find driver user
                 if task_obj and task_obj.driver:
@@ -190,10 +193,10 @@ class DeliveryChatSendView(APIView):
                             target_screen="CHAT",
                             target_param=channel_key,
                         )
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+                    except Exception as e:
+                        logger.warning(f"Notification failed: chat push: {e}")
+        except Exception as e:
+            logger.warning(f"Notification failed: chat notification processing: {e}")
 
         # 3. Update Redis Cache Stream
         cache_key = _get_delivery_chat_cache_key(channel_key)
@@ -229,8 +232,8 @@ class DeliveryChatHistoryView(APIView):
         if order_id:
             try:
                 order_obj = LiveOrder.objects.filter(pk=str(order_id)).first()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to lookup order '{order_id}': {e}")
 
         if not channel_key and task_id:
             channel_key = f"delivery_task_{task_id}"

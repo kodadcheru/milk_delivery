@@ -1,8 +1,11 @@
+import logging
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.subscriptions.models import Subscription, VacationPause
 from apps.subscriptions.serializers import SubscriptionSerializer, VacationPauseSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class SubscriptionListCreateView(generics.ListCreateAPIView):
@@ -94,8 +97,8 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                         f"({dist:.1f} km away, max coverage radius is {hub.coverage_radius_km} km). "
                         f"Please choose an address within the {hub.name} service area."
                     )
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                logger.debug(f"Failed to calculate geo-fence distance: {e}")
 
         if not hub:
             from rest_framework.exceptions import ValidationError
@@ -229,8 +232,8 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                         "status": DeliveryTask.Statuses.PENDING,
                     }
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to create initial delivery task for subscription {sub.id}: {e}", exc_info=True)
 
         # Broadcast real-time Redis event to Hub and Driver portals
         try:
@@ -242,8 +245,8 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 "product": prod_obj.name if 'prod_obj' in locals() and prod_obj else "Milk",
                 "slot": deliv_slot,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Notification failed: broadcast subscription_created failed: {e}")
 
 
 class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):

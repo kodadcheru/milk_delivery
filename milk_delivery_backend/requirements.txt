@@ -16,3 +16,5 @@ uvicorn>=0.28.0
 daphne>=4.1.0
 firebase-admin>=6.5.0
 razorpay>=1.4.1
+django-apscheduler>=0.6.2
+apscheduler>=3.10.0

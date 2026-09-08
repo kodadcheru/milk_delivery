@@ -935,6 +935,133 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _loadUserProfile() async {
+    final user = await ApiService.fetchUserProfile();
+    if (user != null) {
+      currentUser = user;
+      currentRole = user.role;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pamba_cached_user_role', user.role);
+      } catch (_) {}
+      if (!hasLocationPermission && !isSessionLocationSelected) {
+        if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
+          currentDeliveryAddress = user.address;
+        }
+        if (user.latitude != 0.0) currentLat = user.latitude;
+        if (user.longitude != 0.0) currentLon = user.longitude;
+      }
+    }
+  }
+
+  Future<void> _loadNotifications() async {
+    notifications = await ApiService.fetchNotifications();
+  }
+
+  Future<void> _loadAddresses({String? phone, int? customerId}) async {
+    final addrs = await ApiService.fetchCustomerAddresses(customerId: customerId, phone: phone);
+    if (addrs.isNotEmpty) {
+      savedAddresses = addrs;
+      if (isSessionLocationSelected && activeAddress != null) {
+        // User manually chose an address in this session: maintain it!
+        if (addrs.any((a) => a.id == activeAddress!.id)) {
+          activeAddress = addrs.firstWhere((a) => a.id == activeAddress!.id);
+          currentDeliveryAddress = activeAddress!.summaryAddress;
+          currentLat = activeAddress!.latitude;
+          currentLon = activeAddress!.longitude;
+        }
+      } else if (!hasLocationPermission && !isSessionLocationSelected) {
+        // Only fallback to saved default if device GPS was unavailable or denied
+        final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
+        activeAddress = defaultAddr;
+        currentDeliveryAddress = defaultAddr.summaryAddress;
+        currentLat = defaultAddr.latitude;
+        currentLon = defaultAddr.longitude;
+      }
+      _cacheAddressesLocally();
+    } else if (savedAddresses.isNotEmpty && !hasLocationPermission && !isSessionLocationSelected) {
+      // Network returned empty or timed out: preserve existing cached addresses in memory if GPS unavailable
+      if (activeAddress == null) {
+        final defaultAddr = savedAddresses.firstWhere((a) => a.isDefault, orElse: () => savedAddresses.first);
+        activeAddress = defaultAddr;
+        currentDeliveryAddress = defaultAddr.summaryAddress;
+        currentLat = defaultAddr.latitude;
+        currentLon = defaultAddr.longitude;
+      }
+    }
+  }
+
+  Future<void> _loadProducts() async {
+    final fetchedProds = await ApiService.fetchProducts();
+    if (fetchedProds.isNotEmpty) {
+      products = fetchedProds;
+    }
+    _cacheCatalogLocally();
+  }
+
+  Future<void> _loadCategories() async {
+    categories = await ApiService.fetchCategories();
+  }
+
+  Future<void> _loadSubscriptions({String? phone, int? customerId}) async {
+    subscriptions = await ApiService.fetchSubscriptions(phone: phone, customerId: customerId);
+    isVacationMode = subscriptions.isNotEmpty && subscriptions.any((sub) => sub.status == 'PAUSED');
+  }
+
+  Future<void> _loadDeliveries({bool isStaffOrDriver = false, String? date}) async {
+    deliveries = await ApiService.fetchDeliveries(
+      hubCode: activeHubCode,
+      date: isStaffOrDriver ? date : null,
+    );
+  }
+
+  Future<void> _loadLiveOrders() async {
+    liveOrders = await ApiService.fetchLiveOrders(hubCode: activeHubCode);
+  }
+
+  Future<void> _loadWalletTransactions() async {
+    transactions = await ApiService.fetchWalletTransactions();
+  }
+
+  Future<void> _loadHubs() async {
+    final fetchedHubs = await ApiService.fetchHubs();
+    if (fetchedHubs.isNotEmpty) {
+      locationHubs = fetchedHubs;
+    }
+  }
+
+  Future<void> _loadServiceAreas() async {
+    final fetchedAreas = await ApiService.fetchServiceAreas();
+    if (fetchedAreas.isNotEmpty) {
+      serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
+      selectedServiceArea = serviceAreas.first;
+    }
+  }
+
+  Future<void> _loadStorefrontConfig() async {
+    storefrontConfig = await ApiService.fetchStorefrontConfig();
+  }
+
+  Future<void> _loadHubInventory() async {
+    hubInventory = await ApiService.fetchHubInventory();
+  }
+
+  Future<void> _loadDailyMilkBatches() async {
+    dailyMilkBatches = await ApiService.fetchDailyMilkBatches();
+  }
+
+  Future<void> _loadAdminSummaryAndFleet() async {
+    final results = await Future.wait([
+      ApiService.fetchDeliverySummary(),
+      ApiService.fetchFleet(),
+    ]);
+    adminSummary = results[0] as Map<String, dynamic>? ?? adminSummary;
+    hubDrivers = (results[1] as List<Map<String, dynamic>>?) ?? hubDrivers;
+    if (_providerHeartbeatTimer == null) {
+      startProviderRealtimeSync();
+    }
+  }
+
   Future<void> reloadAllData({bool silent = false}) async {
     _errorMessage = null;
     if (!silent) {
@@ -944,117 +1071,81 @@ class AppState extends ChangeNotifier {
     try {
       final userPhone = currentUser?.phone;
       final userId = currentUser?.id;
-
-      final isStaffOrDriver = currentRole == 'DRIVER' || currentRole == 'DELIVERY_PARTNER' || currentRole == 'HUB_MANAGER';
+      final userRole = currentUser?.role;
+      final role = (userRole != null && userRole.isNotEmpty ? userRole : currentRole).toUpperCase();
       final todayStr = '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}';
 
-      final results = await Future.wait([
-        ApiService.fetchUserProfile(),
-        ApiService.fetchCustomerAddresses(customerId: userId, phone: userPhone),
-        ApiService.fetchProducts(),
-        ApiService.fetchSubscriptions(phone: userPhone, customerId: userId),
-        ApiService.fetchDeliveries(
-          hubCode: activeHubCode,
-          date: isStaffOrDriver ? todayStr : null,
-        ),
-        ApiService.fetchLiveOrders(hubCode: activeHubCode),
-        ApiService.fetchWalletTransactions(),
-        ApiService.fetchNotifications(),
-        ApiService.fetchHubs(),
-        ApiService.fetchServiceAreas(),
-        ApiService.fetchStorefrontConfig(),
-        ApiService.fetchHubInventory(),
-        ApiService.fetchDailyMilkBatches(),
-        ApiService.fetchCategories(),
-      ]);
+      // Common data for all roles
+      final commonFutures = <Future>[
+        _loadUserProfile(),
+        _loadNotifications(),
+        loadSavedRatings(),
+      ];
 
-      storefrontConfig = results[10] as StorefrontConfigModel? ?? const StorefrontConfigModel();
-      hubInventory = (results[11] as List<Map<String, dynamic>>?) ?? [];
-      dailyMilkBatches = (results[12] as List<Map<String, dynamic>>?) ?? [];
-      categories = (results[13] as List<CategoryModel>?) ?? [];
-      
-      await loadQualityHistory();
-      await loadSavedRatings();
-
-      final user = results[0] as UserModel?;
-      if (user != null) {
-        currentUser = user;
-        currentRole = user.role;
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('pamba_cached_user_role', user.role);
-        } catch (_) {}
-        if (!hasLocationPermission && !isSessionLocationSelected) {
-          if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
-            currentDeliveryAddress = user.address;
-          }
-          if (user.latitude != 0.0) currentLat = user.latitude;
-          if (user.longitude != 0.0) currentLon = user.longitude;
-        }
+      // Role-specific data
+      if (role == 'CUSTOMER') {
+        commonFutures.addAll([
+          _loadAddresses(phone: userPhone, customerId: userId),
+          _loadProducts(),
+          _loadCategories(),
+          _loadSubscriptions(phone: userPhone, customerId: userId),
+          _loadDeliveries(isStaffOrDriver: false),
+          _loadLiveOrders(),
+          _loadWalletTransactions(),
+          _loadHubs(),
+          _loadServiceAreas(),
+          _loadStorefrontConfig(),
+          _loadDailyMilkBatches(),
+        ]);
+      } else if (role == 'DRIVER' || role == 'DELIVERY_PARTNER') {
+        commonFutures.addAll([
+          _loadDeliveries(isStaffOrDriver: true, date: todayStr),
+          _loadDailyMilkBatches(),
+          _loadHubs(),
+        ]);
+      } else if (role == 'PROVIDER' || role == 'HUB_MANAGER') {
+        commonFutures.addAll([
+          _loadProducts(),
+          _loadSubscriptions(phone: userPhone, customerId: userId),
+          _loadDeliveries(isStaffOrDriver: true, date: todayStr),
+          _loadLiveOrders(),
+          _loadHubInventory(),
+          _loadDailyMilkBatches(),
+          _loadHubs(),
+          _loadAdminSummaryAndFleet(),
+        ]);
+      } else if (role == 'ADMIN') {
+        commonFutures.addAll([
+          _loadProducts(),
+          _loadCategories(),
+          _loadSubscriptions(phone: userPhone, customerId: userId),
+          _loadDeliveries(isStaffOrDriver: false, date: todayStr),
+          _loadLiveOrders(),
+          _loadHubs(),
+          _loadServiceAreas(),
+          _loadStorefrontConfig(),
+          _loadHubInventory(),
+          _loadDailyMilkBatches(),
+          _loadAdminSummaryAndFleet(),
+        ]);
+      } else {
+        // Fallback for unauthenticated or unknown role
+        commonFutures.addAll([
+          _loadAddresses(phone: userPhone, customerId: userId),
+          _loadProducts(),
+          _loadCategories(),
+          _loadSubscriptions(phone: userPhone, customerId: userId),
+          _loadDeliveries(isStaffOrDriver: false),
+          _loadLiveOrders(),
+          _loadWalletTransactions(),
+          _loadHubs(),
+          _loadServiceAreas(),
+          _loadStorefrontConfig(),
+          _loadDailyMilkBatches(),
+        ]);
       }
 
-      final addrs = results[1] as List<CustomerAddressModel>? ?? [];
-      if (addrs.isNotEmpty) {
-        savedAddresses = addrs;
-        if (isSessionLocationSelected && activeAddress != null) {
-          // User manually chose an address in this session: maintain it!
-          if (addrs.any((a) => a.id == activeAddress!.id)) {
-            activeAddress = addrs.firstWhere((a) => a.id == activeAddress!.id);
-            currentDeliveryAddress = activeAddress!.summaryAddress;
-            currentLat = activeAddress!.latitude;
-            currentLon = activeAddress!.longitude;
-          }
-        } else if (!hasLocationPermission && !isSessionLocationSelected) {
-          // Only fallback to saved default if device GPS was unavailable or denied
-          final defaultAddr = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs.first);
-          activeAddress = defaultAddr;
-          currentDeliveryAddress = defaultAddr.summaryAddress;
-          currentLat = defaultAddr.latitude;
-          currentLon = defaultAddr.longitude;
-        }
-        _cacheAddressesLocally();
-      } else if (savedAddresses.isNotEmpty && !hasLocationPermission && !isSessionLocationSelected) {
-        // Network returned empty or timed out: preserve existing cached addresses in memory if GPS unavailable
-        if (activeAddress == null) {
-          final defaultAddr = savedAddresses.firstWhere((a) => a.isDefault, orElse: () => savedAddresses.first);
-          activeAddress = defaultAddr;
-          currentDeliveryAddress = defaultAddr.summaryAddress;
-          currentLat = defaultAddr.latitude;
-          currentLon = defaultAddr.longitude;
-        }
-      }
-
-      final fetchedProds = (results[2] as List<ProductModel>?) ?? [];
-      if (fetchedProds.isNotEmpty) {
-        products = fetchedProds;
-      }
-      _cacheCatalogLocally();
-      subscriptions = (results[3] as List<SubscriptionModel>?) ?? [];
-      deliveries = (results[4] as List<DeliveryTaskModel>?) ?? [];
-      liveOrders = (results[5] as List<LiveOrderModel>?) ?? [];
-      transactions = (results[6] as List<WalletTransactionModel>?) ?? [];
-      notifications = (results[7] as List<NotificationModel>?) ?? [];
-      final fetchedHubs = (results[8] as List<Map<String, dynamic>>?) ?? [];
-      if (fetchedHubs.isNotEmpty) {
-        locationHubs = fetchedHubs;
-      }
-      // Notifications are fetched from API — no hardcoded fallbacks
-      final fetchedAreas = (results[9] as List<Map<String, dynamic>>?) ?? [];
-      if (fetchedAreas.isNotEmpty) {
-        serviceAreas = fetchedAreas.map((json) => ServiceAreaModel.fromJson(json)).toList();
-        selectedServiceArea = serviceAreas.first;
-      }
-      isVacationMode = subscriptions.isNotEmpty && subscriptions.any((sub) => sub.status == 'PAUSED');
-
-      // No automatic fallback address - address is explicitly determined by customer selection
-
-      if (currentRole == 'ADMIN' || currentRole == 'PROVIDER' || currentRole == 'HUB_MANAGER') {
-        adminSummary = await ApiService.fetchDeliverySummary();
-        hubDrivers = await ApiService.fetchFleet();
-        if (_providerHeartbeatTimer == null) {
-          startProviderRealtimeSync();
-        }
-      }
+      await Future.wait(commonFutures);
     } catch (e) {
       debugPrint('🚨 [Pamba Concurrent Reload Error]: $e');
       _errorMessage = 'Network error. Pull down to retry.';

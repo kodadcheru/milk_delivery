@@ -42,7 +42,8 @@ def resolve_period_dates(period: str, start_date_str=None, end_date_str=None):
             s = datetime.strptime(str(start_date_str).split("T")[0].strip(), "%Y-%m-%d").date()
             e = datetime.strptime(str(end_date_str).split("T")[0].strip(), "%Y-%m-%d").date()
             return min(s, e), max(s, e)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to parse custom settlement date range '{start_date_str}' - '{end_date_str}', defaulting to today: {e}")
             return today, today
 
     return today, today

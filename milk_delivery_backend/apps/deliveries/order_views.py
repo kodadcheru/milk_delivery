@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 import random
 import uuid
@@ -8,6 +9,8 @@ from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 
 from apps.core.pagination import StandardResultsSetPagination
 from apps.accounts.models import Notification, User, WalletTransaction
@@ -247,7 +250,8 @@ class ExpressOrderListCreateView(APIView):
                 import json
                 try:
                     item_entry = json.loads(item_entry)
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse item JSON string '{item_entry}': {e}")
                     continue
             if not isinstance(item_entry, dict):
                 continue
@@ -265,7 +269,8 @@ class ExpressOrderListCreateView(APIView):
                     clean_id = int(re.sub(r'\D', '', str(raw_id))) if any(c.isdigit() for c in str(raw_id)) else None
                     if clean_id:
                         prod = Product.objects.filter(pk=clean_id).first()
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"Failed to resolve product by raw_id {raw_id}: {e}")
                     prod = None
 
             # 2. Try match by product name keywords
@@ -431,7 +436,8 @@ class ExpressOrderListCreateView(APIView):
                             pack_size=item.get("pack_size", "1 Litre"),
                             unit_price=item["unit_price"],
                         )
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"LiveOrderItem create with pack_size failed, falling back: {e}")
                         LiveOrderItem.objects.create(
                             order=order,
                             product=item["product"],
@@ -445,8 +451,8 @@ class ExpressOrderListCreateView(APIView):
                             HubProductInventory.objects.filter(hub=active_hub, product=item["product"]).update(
                                 booked_slots=F("booked_slots") + item["quantity"]
                             )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Failed to update HubProductInventory booked_slots: {e}")
 
                 if payment_method == "WALLET":
                     try:
@@ -474,8 +480,8 @@ class ExpressOrderListCreateView(APIView):
                                 razorpay_order_id=rzp_order_id,
                                 user=user,
                             ).update(order=order)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.error(f"Failed to link RazorpayPayment {rzp_order_id} to order {order.id}: {e}")
 
                 try:
                     notif_title = f"⚡ Express Order {order_id} Confirmed!"
@@ -496,14 +502,14 @@ class ExpressOrderListCreateView(APIView):
                         target_screen="DELIVERIES",
                         target_param=order_id,
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Notification failed for order confirmation: {e}")
 
                 hub_driver = None
                 try:
                     hub_driver = auto_assign_hub_driver(order, active_hub=active_hub)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Driver auto-assignment failed for order {order_id}: {e}")
 
                 try:
                     DeliveryTask.objects.create(
@@ -517,7 +523,8 @@ class ExpressOrderListCreateView(APIView):
                         cash_amount=total_amount if is_cod else Decimal("0.00"),
                         cash_collected=False,
                     )
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to create full DeliveryTask, trying minimal schema: {e}")
                     try:
                         DeliveryTask.objects.create(
                             order=order,
@@ -527,8 +534,8 @@ class ExpressOrderListCreateView(APIView):
                             slot_time=delivery_slot,
                             status=DeliveryTask.Statuses.PENDING,
                         )
-                    except Exception:
-                        pass
+                    except Exception as inner_e:
+                        logger.error(f"Failed to create DeliveryTask for order {order.id}: {inner_e}", exc_info=True)
 
                 if hub_driver:
                     try:
@@ -549,8 +556,8 @@ class ExpressOrderListCreateView(APIView):
                             target_screen="DRIVER_ROUTE",
                             target_param=order.id,
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Notification failed for driver assignment: {e}")
 
             try:
                 from apps.core.consumers import broadcast_hub_event
@@ -560,8 +567,8 @@ class ExpressOrderListCreateView(APIView):
                     "customer": user.username,
                     "amount": float(total_amount),
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to broadcast order_created event: {e}")
 
             return Response(LiveOrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
@@ -707,8 +714,8 @@ class ExpressOrderDetailView(APIView):
                         target_param=order.id,
                     )
                     send_push_to_user(order.customer, t, m, target_screen="DELIVERIES", target_param=order.id)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Notification failed for order status change: {e}")
 
             # Bug 2 Part A: Restore booked inventory capacity slots on order cancellation (idempotent)
             if new_status == LiveOrder.Statuses.CANCELLED and old_status != LiveOrder.Statuses.CANCELLED:
@@ -753,8 +760,8 @@ class ExpressOrderDetailView(APIView):
                 )
                 try:
                     send_push_to_user(customer, ref_t, ref_m, target_screen="WALLET")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Notification failed for order refund push: {e}")
 
                 order.payment_status = "REFUNDED"
 
@@ -792,7 +799,7 @@ class ExpressOrderDetailView(APIView):
                 "order_id": order.id,
                 "status": new_status,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to broadcast order_updated event: {e}")
 
         return Response(LiveOrderSerializer(order).data)

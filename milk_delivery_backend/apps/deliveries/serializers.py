@@ -1,7 +1,10 @@
+import logging
 from rest_framework import serializers
 from apps.accounts.serializers import UserSerializer
 from apps.deliveries.models import DeliveryTask, LocationHub, ServiceArea
 from apps.subscriptions.serializers import SubscriptionSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class LocationHubSerializer(serializers.ModelSerializer):
@@ -409,8 +412,8 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             try:
                 from apps.deliveries.order_views import auto_assign_hub_driver
                 auto_assign_hub_driver(obj)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to auto-assign hub driver in serializer: {e}")
         if obj.driver:
             name = f"{obj.driver.first_name} {obj.driver.last_name}".strip()
             return name if name else obj.driver.username
@@ -423,8 +426,8 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             try:
                 from apps.deliveries.order_views import auto_assign_hub_driver
                 auto_assign_hub_driver(obj)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to auto-assign hub driver in serializer: {e}")
         return obj.driver.phone if obj.driver else ""
 
     def get_driver_vehicle(self, obj):

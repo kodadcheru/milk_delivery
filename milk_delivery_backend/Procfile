@@ -1,1 +1,2 @@
 web: sh ./entrypoint.sh
+worker: python manage.py run_scheduler

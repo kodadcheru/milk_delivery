@@ -1,8 +1,11 @@
+import logging
 from datetime import date, timedelta
 from django.db.models import Q
 from apps.accounts.models import User, Notification
 from apps.subscriptions.models import Subscription, VacationPause
 from apps.deliveries.models import DeliveryTask, LocationHub, DailyMilkBatch
+
+logger = logging.getLogger(__name__)
 
 
 def _get_next_driver(hub, hub_drivers, hub_driver_indices):
@@ -57,7 +60,8 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
     elif isinstance(target_date, str):
         try:
             target_date = date.fromisoformat(str(target_date).split("T")[0].strip())
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to parse target_date '{target_date}', defaulting to tomorrow: {e}")
             target_date = date.today() + timedelta(days=1)
 
     # 1. Auto-resume expired vacation pauses

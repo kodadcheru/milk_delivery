@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from decimal import Decimal
 from django.db import models, transaction
@@ -6,6 +7,8 @@ from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 
 from apps.core.pagination import LargeResultsSetPagination
 from apps.core.permissions import IsAdminOrStaff, IsAdminOrHubManager
@@ -235,8 +238,8 @@ class DeliveryTaskCompleteView(APIView):
                 "task_id": task.id,
                 "status": task.status,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to broadcast delivery_updated event: {e}")
 
         return Response(
             {
@@ -317,8 +320,8 @@ class DeliveryTaskSkipView(APIView):
                     message=f"Delivery #{task.id} could not be completed: {reason or 'Delivery partner skipped stop'}. Next drop will resume as scheduled.",
                     notification_type=Notification.Types.DELIVERY,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Notification failed for skipped delivery: {e}")
 
         try:
             from apps.core.consumers import broadcast_hub_event
@@ -327,8 +330,8 @@ class DeliveryTaskSkipView(APIView):
                 "task_id": task.id,
                 "status": task.status,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to broadcast delivery_updated event: {e}")
 
         return Response(
             {
@@ -388,8 +391,8 @@ class DeliveryTaskStatusUpdateView(APIView):
                         message=f"Your delivery #{task.id} is the next stop! Partner is navigating to your doorstep.",
                         notification_type=Notification.Types.DELIVERY,
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Notification failed for task status update: {e}")
 
         # Broadcast WebSocket event
         try:
@@ -400,8 +403,8 @@ class DeliveryTaskStatusUpdateView(APIView):
                 "status": task.status,
                 "driver": request.user.username,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to broadcast task_status_updated event: {e}")
 
         return Response({
             "message": f"Task #{task.id} status updated to {task.status}",
@@ -444,8 +447,8 @@ class DeliveryShiftStartRouteView(APIView):
                         message="Delivery partner has collected today's chilled farm batch and started the doorstep route!",
                         notification_type=Notification.Types.DELIVERY,
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Notification failed for route start: {e}")
 
         return Response({
             "message": f"Successfully picked up {updated_count} delivery stops for today's route.",
@@ -860,7 +863,8 @@ class ProviderPayoutListCreateView(APIView):
                 parsed_amount = Decimal(str(amount_req))
                 if parsed_amount <= Decimal("0"):
                     return Response({"detail": "Payout amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Invalid payout amount format '{amount_req}': {e}")
                 return Response({"detail": "Invalid payout amount format."}, status=status.HTTP_400_BAD_REQUEST)
 
         notes = request.data.get("notes", "")
@@ -920,7 +924,8 @@ class GenerateTodayTasksView(APIView):
         if target_date_str:
             try:
                 target_date = date.fromisoformat(str(target_date_str).split("T")[0].strip())
-            except Exception:
+            except Exception as e:
+                logger.error(f"Failed to parse target_date '{target_date_str}', defaulting to today: {e}")
                 target_date = date.today()
         else:
             target_date = date.today()
@@ -956,8 +961,8 @@ class GenerateTodayTasksView(APIView):
                     message=f"Your vacation pause has ended. Daily deliveries of {sub.product.name} resume from {target_date}.",
                     notification_type=Notification.Types.VACATION,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Notification failed for subscription resumed: {e}")
             resumed_count += 1
 
         # 4. Record & wire daily batch lab certification if provided
@@ -1327,7 +1332,8 @@ class DailyMilkBatchListCreateView(APIView):
             try:
                 from datetime import datetime
                 batch_date_val = datetime.strptime(str(payload.get("batch_date")).strip(), "%Y-%m-%d").date()
-            except Exception:
+            except Exception as e:
+                logger.error(f"Failed to parse batch_date '{payload.get('batch_date')}', defaulting to today: {e}")
                 batch_date_val = date_cls.today()
 
         batch_code = payload.get("batch_code") or f"BATCH-{batch_date_val.strftime('%Y%m%d')}-{random.randint(100, 999)}"
@@ -1384,7 +1390,7 @@ class DailyMilkBatchListCreateView(APIView):
                 order_qs = order_qs.filter(models.Q(hub=batch.hub) | models.Q(hub__isnull=True))
             order_qs.update(batch=batch)
         except Exception as e:
-            pass
+            logger.error(f"Failed to cascade batch {batch.batch_code} to tasks/orders: {e}")
 
         # Sync/Update matching product's unit price in database (Milk products only!)
         try:
@@ -1396,8 +1402,8 @@ class DailyMilkBatchListCreateView(APIView):
             for p in matching_products:
                 p.price_per_unit = litre_price
                 p.save(update_fields=["price_per_unit"])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to update matching product unit price for batch {batch.batch_code}: {e}")
 
         return Response({
             "status": "success",
@@ -1485,8 +1491,8 @@ class DailyMilkBatchDetailView(APIView):
                 models.Q(name__iexact=b.product_name) |
                 (models.Q(name__icontains=first_word) & models.Q(name__icontains="milk"))
             ).update(price_per_unit=b.price_per_litre)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to update product price for batch {b.batch_code}: {e}")
 
         return Response({
             "status": "success",

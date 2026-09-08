@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from django.db import transaction
 from django.db.models import F
@@ -5,6 +6,8 @@ from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 
 from apps.core.pagination import StandardResultsSetPagination
 from apps.accounts.models import DeviceToken, Notification, User, WalletTransaction
@@ -129,8 +132,8 @@ class WalletTopUpView(APIView):
                     body=f"₹{amount} credited to your prepaid wallet via {desc}. New balance: ₹{user.wallet_balance}",
                     target_screen="WALLET",
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Notification failed: {e}")
 
             return Response(
                 {
@@ -252,8 +255,8 @@ class DriverLocationUpdateView(APIView):
                     "longitude": float(user.longitude),
                     "status": user.driver_status,
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Notification failed: broadcast_hub_event failed: {e}")
 
         return Response({
             "message": "Driver location updated successfully",
