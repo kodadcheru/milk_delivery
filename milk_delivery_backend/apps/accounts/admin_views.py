@@ -1,7 +1,9 @@
 import uuid
 from decimal import Decimal
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -18,6 +20,7 @@ from apps.subscriptions.serializers import SubscriptionSerializer
 from apps.core.permissions import IsAdminOrStaff, IsAdminOrHubManager
 
 
+@method_decorator(login_required, name='dispatch')
 class AdminConsoleHTMLView(View):
     def get(self, request):
         return render(request, "admin_console.html")

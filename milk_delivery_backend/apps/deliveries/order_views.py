@@ -322,21 +322,8 @@ class ExpressOrderListCreateView(APIView):
             if not pack_size:
                 pack_size = getattr(prod, "unit_quantity", "1 Litre")
 
-            # Resolve unit price accurately from cart or product pricing
-            raw_price = item_entry.get("unit_price")
-            if raw_price is not None:
-                try:
-                    unit_price = Decimal(str(raw_price))
-                except Exception:
-                    unit_price = prod.price_per_unit
-            else:
-                base_price = prod.price_per_unit
-                if "500" in p_size_lower:
-                    unit_price = round(base_price * Decimal("0.5"), 2)
-                elif "2" in p_size_lower and ("litre" in p_size_lower or "liter" in p_size_lower or "kg" in p_size_lower):
-                    unit_price = round(base_price * Decimal("2.0"), 2)
-                else:
-                    unit_price = base_price
+            # Always use server-side product price
+            unit_price = prod.price_per_unit
 
             total_amount += unit_price * qty
             parsed_items.append({
@@ -408,7 +395,7 @@ class ExpressOrderListCreateView(APIView):
                 if payment_method == "COD":
                     initial_payment_status = "PENDING (Cash on Delivery)"
                 elif payment_method == "RAZORPAY":
-                    initial_payment_status = "PAID (Razorpay Online)"
+                    initial_payment_status = "PENDING_PAYMENT"
                 else:
                     initial_payment_status = "PAID (Prepaid Wallet)"
 
@@ -472,8 +459,12 @@ class ExpressOrderListCreateView(APIView):
                             transaction_type=WalletTransaction.Types.DEBIT,
                             description=f"Express Order {order_id} ({len(parsed_items)} items)",
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        order.delete()
+                        return Response(
+                            {"error": f"Wallet debit failed: {str(e)}"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
                 elif payment_method == "RAZORPAY":
                     rzp_order_id = request.data.get("razorpay_order_id")
                     if rzp_order_id:

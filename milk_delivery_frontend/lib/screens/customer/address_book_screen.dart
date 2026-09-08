@@ -944,7 +944,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                    validator: null,
                   ),
 
                   const SizedBox(height: 12),

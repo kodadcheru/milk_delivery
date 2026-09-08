@@ -140,8 +140,8 @@ class AppState extends ChangeNotifier {
 
   // Real-Time Location & Customer Address Book State
   String currentDeliveryAddress = 'Select Delivery Location';
-  double currentLat = 17.4319;
-  double currentLon = 78.4073;
+  double currentLat = 17.001734;
+  double currentLon = 79.962500;
   bool isDetectingLocation = false;
   bool hasLocationPermission = false;
   bool hasNotificationPermission = false;

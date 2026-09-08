@@ -12,7 +12,7 @@ class IsAdminOrStaff(permissions.BasePermission):
 
 
 class IsAdminOrHubManager(permissions.BasePermission):
-    """Allow access to admin users, staff, hub managers (PROVIDER role), or delivery partners."""
+    """Allow access to admin users, staff, or hub managers (PROVIDER role)."""
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
             return False
@@ -20,7 +20,7 @@ class IsAdminOrHubManager(permissions.BasePermission):
         return (
             request.user.is_staff
             or request.user.is_superuser
-            or role in ('ADMIN', 'PROVIDER', 'HUB_MANAGER', 'DRIVER', 'DELIVERY_PARTNER')
+            or role in ('ADMIN', 'PROVIDER', 'HUB_MANAGER')
         )
 
 

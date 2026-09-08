@@ -3,22 +3,22 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env if present
 load_dotenv(BASE_DIR / ".env")
 
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "t")
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "t")
 
 # Load SECRET_KEY securely from environment or generate random key in DEBUG
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     if DEBUG:
-        SECRET_KEY = "milk-delivery-dev-insecure-key-replace-in-production"
-    else:
+        from django.core.management.utils import get_random_secret_key
         SECRET_KEY = get_random_secret_key()
+    else:
+        raise ValueError("SECRET_KEY environment variable is required in production")
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 

@@ -30,3 +30,5 @@ ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
 *.xcworkspace
 *.xcuserdata
+.dartServer/
+.dart-tool/

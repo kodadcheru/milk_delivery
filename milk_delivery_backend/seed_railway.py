@@ -193,14 +193,15 @@ def seed():
             "longitude": 79.962500,
         },
     )
-    if not created:
+    if created:
+        admin.set_password("admin123")
+        admin.save()
+        print("🛡️ [Super Admin Initialized]: admin / admin123 (Phone: +91 8919548905)")
+    else:
         admin.role = User.Roles.ADMIN
         admin.is_staff = True
         admin.is_superuser = True
-
-    admin.set_password("admin123")
-    admin.save()
-    print("🛡️ [Super Admin Initialized]: admin / admin123 (Phone: +91 8919548905)")
+        admin.save()
 
     # 1b. Ensure Manideep Reddy (+91 7794893990) also has full Super Admin privileges
     owner_user = User.objects.filter(phone__endswith="7794893990").first()

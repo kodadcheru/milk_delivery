@@ -137,7 +137,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: UiTone.primary,
-            content: Text('⚡ OTP sent to your phone! Test OTP is 1234.'),
+            content: Text('⚡ OTP sent to your phone!'),
           ),
         );
       }
