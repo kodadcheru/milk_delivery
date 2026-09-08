@@ -129,7 +129,17 @@ class _DriverShellState extends State<DriverShell> {
       DriverProfileTab(state: widget.state, onLogout: widget.onLogout),
     ];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_driverTab != 0) {
+          setState(() {
+            _driverTab = 0;
+          });
+        }
+      },
+      child: Scaffold(
       extendBody: false,
       appBar: _driverTab == 0
           ? AppBar(
@@ -257,6 +267,7 @@ class _DriverShellState extends State<DriverShell> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }

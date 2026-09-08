@@ -36,7 +36,10 @@ class CustomerShell extends StatelessWidget {
       },
       child: Scaffold(
         extendBody: false,
-        body: screens[state.currentTabIndex],
+        body: IndexedStack(
+          index: state.currentTabIndex,
+          children: screens,
+        ),
         bottomNavigationBar: NextGenBottomNavBar(
           selectedIndex: state.currentTabIndex,
           onItemSelected: (idx) => state.setTab(idx),

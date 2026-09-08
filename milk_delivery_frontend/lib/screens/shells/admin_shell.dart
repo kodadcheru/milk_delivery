@@ -41,7 +41,17 @@ class _AdminShellState extends State<AdminShell> {
       AdminProfileTab(state: widget.state, onLogout: widget.onLogout),
     ];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_adminTab != 0) {
+          setState(() {
+            _adminTab = 0;
+          });
+        }
+      },
+      child: Scaffold(
       extendBody: false,
       appBar: _adminTab == 3
           ? null
@@ -120,7 +130,10 @@ class _AdminShellState extends State<AdminShell> {
           ),
         ],
       ),
-      body: adminScreens[_adminTab.clamp(0, adminScreens.length - 1)],
+      body: IndexedStack(
+        index: _adminTab.clamp(0, adminScreens.length - 1),
+        children: adminScreens,
+      ),
       bottomNavigationBar: NextGenBottomNavBar(
         selectedIndex: _adminTab.clamp(0, adminScreens.length - 1),
         onItemSelected: (idx) {
@@ -150,6 +163,7 @@ class _AdminShellState extends State<AdminShell> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }

@@ -48,7 +48,18 @@ class _ProviderShellState extends State<ProviderShell> {
       ProviderProfileTab(state: widget.state, onLogout: widget.onLogout),
     ];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_providerTab != 0) {
+          setState(() {
+            _providerTab = 0;
+          });
+          widget.state.syncProviderTab(0);
+        }
+      },
+      child: Scaffold(
       extendBody: false,
       appBar: _providerTab == 3
           ? null
@@ -165,7 +176,10 @@ class _ProviderShellState extends State<ProviderShell> {
           ),
         ],
       ),
-      body: providerScreens[_providerTab.clamp(0, providerScreens.length - 1)],
+      body: IndexedStack(
+        index: _providerTab.clamp(0, providerScreens.length - 1),
+        children: providerScreens,
+      ),
       bottomNavigationBar: NextGenBottomNavBar(
         selectedIndex: _providerTab.clamp(0, providerScreens.length - 1),
         onItemSelected: (idx) {
@@ -205,6 +219,7 @@ class _ProviderShellState extends State<ProviderShell> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
