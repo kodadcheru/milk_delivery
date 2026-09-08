@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/customer_address_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
@@ -995,6 +996,12 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
                         child: TextFormField(
                           controller: _pincodeController,
                           keyboardType: TextInputType.number,
+                          maxLength: 6,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
+                          validator: (val) => val != null && val.length == 6 ? null : 'Enter valid 6-digit PIN code',
                           decoration: InputDecoration(
                             labelText: widget.state.isTelugu ? 'పిన్ కోడ్' : 'PIN Code',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

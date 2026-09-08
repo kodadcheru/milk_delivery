@@ -29,7 +29,8 @@ class AppState extends ChangeNotifier {
   UserModel? currentUser;
   String currentRole = 'CUSTOMER';
   bool isLoading = false;
-  String? errorMessage;
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
   String? lastError;
 
   void clearError() {
@@ -866,7 +867,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> loginAndSync(String username, String password, String role) async {
     isLoading = true;
-    errorMessage = null;
+    _errorMessage = null;
     notifyListeners();
 
     currentRole = role;
@@ -875,7 +876,7 @@ class AppState extends ChangeNotifier {
     if (authRes['success'] == true) {
       await reloadAllData();
     } else {
-      errorMessage = authRes['error'] ?? 'Connection error';
+      _errorMessage = authRes['error'] ?? 'Connection error';
     }
 
     isLoading = false;
@@ -934,6 +935,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> reloadAllData({bool silent = false}) async {
+    _errorMessage = null;
     if (!silent) {
       isLoading = true;
       notifyListeners();
@@ -1054,6 +1056,8 @@ class AppState extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('🚨 [Pamba Concurrent Reload Error]: $e');
+      _errorMessage = 'Network error. Pull down to retry.';
+      notifyListeners();
     }
 
     isLoading = false;

@@ -44,4 +44,12 @@ class AppConfig {
   static const String defaultHubName = 'Central Operational Hub';
   static const String defaultHubAddress = 'Kodad, Telangana 508206, India';
   static const String defaultFssai = '13621014000342';
+
+  static String getWhatsAppUrl(String phone, {String text = ''}) {
+    String clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (clean.length == 10) clean = '91$clean';
+    if (clean.length == 12 && clean.startsWith('91')) { /* ok */ }
+    final encoded = Uri.encodeComponent(text);
+    return 'https://wa.me/$clean?text=$encoded';
+  }
 }

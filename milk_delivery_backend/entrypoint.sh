@@ -15,7 +15,7 @@ mkdir -p "${MEDIA_ROOT:-/app/media}/proofs" || true
 
 APP_PORT="${PORT:-8000}"
 echo "🌟 [4/4] Starting ASGI production server (WebSockets + HTTP) on port $APP_PORT..."
-exec gunicorn milk_backend.asgi:application \
+exec gunicorn -c gunicorn.conf.py milk_backend.asgi:application \
     -k uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:$APP_PORT \
     --workers 2 \

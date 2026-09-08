@@ -52,8 +52,9 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
-        user.delete()
-        return Response({"message": "Account deleted successfully."}, status=status.HTTP_200_OK)
+        user.is_active = False
+        user.save(update_fields=['is_active'])
+        return Response({'detail': 'Account deactivated successfully.'}, status=status.HTTP_200_OK)
 
 
 class WalletBalanceView(APIView):

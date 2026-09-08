@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'config/app_config.dart';
 import 'providers/app_state.dart';
 import 'services/api_service.dart';
@@ -16,6 +17,10 @@ import 'screens/shells/admin_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Production Global Crash & Error Boundary
   FlutterError.onError = (FlutterErrorDetails details) {
