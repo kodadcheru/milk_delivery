@@ -662,6 +662,57 @@ class ApiService {
     return false;
   }
 
+  // Fetch Razorpay config
+  static Future<Map<String, dynamic>> fetchRazorpayConfig() async {
+    try {
+      final res = await _client.get(
+        Uri.parse('${AppConfig.baseUrl}/api/payments/razorpay/config/'),
+        headers: _headers,
+      );
+      if (res.statusCode == 200) return jsonDecode(res.body);
+      return {'is_enabled': false};
+    } catch (e) {
+      debugPrint('ApiService error: $e');
+      return {'is_enabled': false};
+    }
+  }
+
+  // Create Razorpay order on backend
+  static Future<Map<String, dynamic>> createRazorpayOrder(double amount, {String purpose = 'WALLET_TOPUP', String? orderId}) async {
+    try {
+      final body = <String, dynamic>{'amount': amount.toString(), 'purpose': purpose};
+      if (orderId != null) body['order_id'] = orderId;
+      final res = await _client.post(
+        Uri.parse('${AppConfig.baseUrl}/api/payments/razorpay/create-order/'),
+        headers: _headers,
+        body: jsonEncode(body),
+      );
+      return jsonDecode(res.body);
+    } catch (e) {
+      debugPrint('ApiService error: $e');
+      return {'success': false, 'error': 'network_error'};
+    }
+  }
+
+  // Verify Razorpay payment
+  static Future<Map<String, dynamic>> verifyRazorpayPayment(String razorpayOrderId, String razorpayPaymentId, String razorpaySignature) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('${AppConfig.baseUrl}/api/payments/razorpay/verify/'),
+        headers: _headers,
+        body: jsonEncode({
+          'razorpay_order_id': razorpayOrderId,
+          'razorpay_payment_id': razorpayPaymentId,
+          'razorpay_signature': razorpaySignature,
+        }),
+      );
+      return jsonDecode(res.body);
+    } catch (e) {
+      debugPrint('ApiService error: $e');
+      return {'success': false, 'error': 'network_error'};
+    }
+  }
+
   static Future<List<WalletTransactionModel>> fetchWalletTransactions({int? page, int? pageSize}) async {
     try {
       final queryParams = <String, String>{};

@@ -111,7 +111,7 @@ class _WalletTabState extends State<WalletTab> {
                     AppTheme.hapticLight();
                     final amt = double.tryParse(ctrl.text.trim()) ?? 500.0;
                     Navigator.pop(ctx);
-                    await widget.state.topUpWallet(amt, 'UPI / Instant Pay');
+                    await widget.state.topUpWallet(amt, 'Razorpay');
                     if (context.mounted) {
                       AppTheme.hapticSuccess();
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,7 +133,7 @@ class _WalletTabState extends State<WalletTab> {
                     children: [
                       Icon(Icons.bolt_rounded, size: 20),
                       SizedBox(width: 6),
-                      Text('Proceed via UPI / Instant Pay', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800)),
+                      Text('Pay with Razorpay', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),

@@ -18,6 +18,11 @@ class AppConfig {
     );
   }
 
+  static String get baseUrl {
+    final base = apiBaseUrl;
+    return base.endsWith('/api') ? base.substring(0, base.length - 4) : base;
+  }
+
   /// Google Maps API Key — override via --dart-define=GOOGLE_MAPS_API_KEY=...
   static String get googleMapsApiKey {
     return const String.fromEnvironment(

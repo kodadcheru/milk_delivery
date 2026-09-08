@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../l10n/app_translations.dart';
@@ -1407,59 +1408,62 @@ class AppState extends ChangeNotifier {
     await reloadAllData();
   }
 
-  Future<bool> topUpWallet(double amount, String method) async {
-    final prevBalance = currentUser?.walletBalance;
-    final tempTxnId = DateTime.now().millisecondsSinceEpoch % 10000;
-    final tempTxn = WalletTransactionModel(
-      id: tempTxnId,
-      amount: amount,
-      transactionType: 'CREDIT',
-      description: 'Recharge via $method',
-      createdAt: 'Just now',
-    );
-
-    if (currentUser != null && prevBalance != null) {
-      currentUser = currentUser!.copyWith(walletBalance: prevBalance + amount);
-      transactions.insert(0, tempTxn);
-      notifyListeners();
-    }
-
-    final paymentRef = 'TOPUP_${DateTime.now().millisecondsSinceEpoch}';
-    bool ok = await ApiService.topUpWallet(amount, 'Recharge via $method', paymentReference: paymentRef);
-    if (ok) {
-      notifications.insert(
-        0,
-        NotificationModel(
-          id: DateTime.now().millisecondsSinceEpoch,
-          title: '⚡ Wallet Top-Up Successful! ₹${amount.toStringAsFixed(0)}',
-          message: '₹${amount.toStringAsFixed(0)} credited to your prepaid milk wallet via $method.',
-          notificationType: 'WALLET',
-          isRead: false,
-          createdAt: 'Just now',
-        ),
-      );
-      await reloadAllData();
-      return true;
-    } else {
-      // Rollback optimistic balance and remove temporary transaction
-      if (currentUser != null && prevBalance != null) {
-        currentUser = currentUser!.copyWith(walletBalance: prevBalance);
-        transactions.removeWhere((t) => t.id == tempTxnId);
-        notifyListeners();
+  Future<void> topUpWallet(double amount, String method, {BuildContext? context}) async {
+    try {
+      // 1. Create order on backend
+      final orderResult = await ApiService.createRazorpayOrder(amount);
+      if (orderResult['success'] != true) {
+        throw Exception(orderResult['error'] ?? 'Failed to create payment order');
       }
-      notifications.insert(
-        0,
-        NotificationModel(
-          id: DateTime.now().millisecondsSinceEpoch,
-          title: '❌ Wallet Top-Up Failed',
-          message: ApiService.lastError ?? 'Recharge failed. Please try again.',
-          notificationType: 'WALLET',
-          isRead: false,
-          createdAt: 'Just now',
-        ),
-      );
-      notifyListeners();
-      return false;
+      
+      final razorpayOrderId = orderResult['razorpay_order_id'];
+      final keyId = orderResult['key_id'] ?? '';
+      final amountPaise = orderResult['amount_paise'] ?? (amount * 100).toInt();
+      
+      // 2. Open Razorpay checkout
+      final razorpay = Razorpay();
+      
+      razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) async {
+        // 3. Verify payment on backend
+        final verifyResult = await ApiService.verifyRazorpayPayment(
+          response.orderId ?? razorpayOrderId,
+          response.paymentId ?? '',
+          response.signature ?? '',
+        );
+        
+        if (verifyResult['success'] == true) {
+          // Update local balance
+          await reloadAllData();
+        }
+        razorpay.clear();
+      });
+      
+      razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
+        debugPrint('Payment failed: ${response.message}');
+        razorpay.clear();
+      });
+      
+      razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, (ExternalWalletResponse response) {
+        debugPrint('External wallet: ${response.walletName}');
+        razorpay.clear();
+      });
+      
+      var options = {
+        'key': keyId,
+        'amount': amountPaise,
+        'order_id': razorpayOrderId,
+        'name': 'Pamba Fresh',
+        'description': 'Wallet Top-Up ₹${amount.toStringAsFixed(0)}',
+        'prefill': {
+          'contact': currentUser?.phone ?? '',
+          'email': currentUser?.email ?? '',
+        },
+        'theme': {'color': '#074B3E'},
+      };
+      
+      razorpay.open(options);
+    } catch (e) {
+      debugPrint('TopUp error: $e');
     }
   }
 

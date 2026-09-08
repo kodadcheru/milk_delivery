@@ -1,8 +1,12 @@
 import logging
 from decimal import Decimal
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -230,3 +234,82 @@ class RazorpayVerifyPaymentView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RazorpayWebhookView(APIView):
+    permission_classes = [AllowAny]  # Razorpay sends webhooks without auth
+    authentication_classes = []  # No auth needed
+
+    def post(self, request):
+        import hmac
+        import hashlib
+
+        webhook_secret = getattr(settings, 'RAZORPAY_WEBHOOK_SECRET', settings.RAZORPAY_KEY_SECRET)
+        signature = request.headers.get('X-Razorpay-Signature', '')
+        body = request.body
+
+        # Verify webhook signature
+        expected = hmac.new(
+            webhook_secret.encode('utf-8'),
+            body,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected, signature):
+            return Response({'status': 'invalid_signature'}, status=200)
+
+        payload = request.data
+        event = payload.get('event', '')
+
+        try:
+            if event == 'payment.captured':
+                payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+                order_id = payment_entity.get('order_id')
+                payment_id = payment_entity.get('id')
+
+                if order_id:
+                    from apps.payments.models import RazorpayPayment
+                    from django.db import transaction
+                    from django.db.models import F
+
+                    try:
+                        rp = RazorpayPayment.objects.get(razorpay_order_id=order_id)
+                        if rp.status != 'SUCCESS':  # Idempotent
+                            with transaction.atomic():
+                                rp.razorpay_payment_id = payment_id
+                                rp.status = 'SUCCESS'
+                                rp.save(update_fields=['razorpay_payment_id', 'status', 'updated_at'])
+
+                                # Credit wallet
+                                from django.contrib.auth import get_user_model
+                                User = get_user_model()
+                                User.objects.filter(pk=rp.user_id).update(
+                                    wallet_balance=F('wallet_balance') + rp.amount
+                                )
+
+                                # Create wallet transaction
+                                from apps.accounts.models import WalletTransaction
+                                WalletTransaction.objects.create(
+                                    user=rp.user,
+                                    transaction_type=WalletTransaction.Types.CREDIT,
+                                    amount=rp.amount,
+                                    description=f'Razorpay payment {payment_id} (webhook)',
+                                )
+                    except RazorpayPayment.DoesNotExist:
+                        pass
+
+            elif event == 'payment.failed':
+                payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+                order_id = payment_entity.get('order_id')
+                if order_id:
+                    from apps.payments.models import RazorpayPayment
+                    RazorpayPayment.objects.filter(
+                        razorpay_order_id=order_id,
+                        status='PENDING'
+                    ).update(status='FAILED')
+        except Exception:
+            pass  # Always return 200 to Razorpay
+
+        return Response({'status': 'ok'}, status=200)
+
