@@ -13,7 +13,7 @@ class CreateRazorpayOrderSerializer(serializers.Serializer):
         choices=RazorpayPayment.Purpose.choices,
         default=RazorpayPayment.Purpose.WALLET_TOPUP,
     )
-    order_id = serializers.IntegerField(required=False, allow_null=True)
+    order_id = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=50)
     notes = serializers.DictField(required=False, default=dict)
 
 

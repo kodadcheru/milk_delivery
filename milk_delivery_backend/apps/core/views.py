@@ -24,37 +24,6 @@ class HealthCheckView(APIView):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1;")
                 cursor.fetchone()
-                if connection.vendor == "postgresql":
-                    cursor.execute("""
-                        ALTER TABLE accounts_user ADD COLUMN IF NOT EXISTS gender varchar(10) DEFAULT 'Male';
-                        ALTER TABLE products_category ADD COLUMN IF NOT EXISTS subtitle varchar(150) DEFAULT '';
-                        ALTER TABLE products_category ADD COLUMN IF NOT EXISTS quality_badge_title varchar(150) DEFAULT '';
-                        ALTER TABLE products_category ADD COLUMN IF NOT EXISTS quality_specs jsonb DEFAULT '{}'::jsonb;
-                        ALTER TABLE products_category ADD COLUMN IF NOT EXISTS tracking_badges jsonb DEFAULT '[]'::jsonb;
-                        ALTER TABLE products_category ADD COLUMN IF NOT EXISTS image_url varchar(500) DEFAULT '';
-                        ALTER TABLE products_product ADD COLUMN IF NOT EXISTS subtitle varchar(150) DEFAULT '';
-                        ALTER TABLE products_product ADD COLUMN IF NOT EXISTS quality_badge_title varchar(150) DEFAULT '';
-                        ALTER TABLE products_product ADD COLUMN IF NOT EXISTS quality_specs jsonb DEFAULT '{}'::jsonb;
-                        ALTER TABLE products_product ADD COLUMN IF NOT EXISTS tracking_badges jsonb DEFAULT '[]'::jsonb;
-                        CREATE TABLE IF NOT EXISTS deliveries_deliverychatmessage (
-                            id BIGSERIAL PRIMARY KEY,
-                            channel_key VARCHAR(100) NOT NULL,
-                            task_id BIGINT REFERENCES deliveries_deliverytask(id) ON DELETE SET NULL,
-                            order_id VARCHAR(50) REFERENCES deliveries_liveorder(id) ON DELETE SET NULL,
-                            sender_role VARCHAR(20) NOT NULL DEFAULT 'DRIVER',
-                            sender_name VARCHAR(150) NOT NULL DEFAULT '',
-                            sender_phone VARCHAR(30) NOT NULL DEFAULT '',
-                            text TEXT NOT NULL,
-                            is_read BOOLEAN NOT NULL DEFAULT FALSE,
-                            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-                        );
-                        CREATE INDEX IF NOT EXISTS deliv_chat_chan_idx ON deliveries_deliverychatmessage (channel_key, created_at);
-                    """)
-            try:
-                from django.core.management import call_command
-                call_command("migrate", interactive=False)
-            except Exception as mig_err:
-                print("HealthCheck migration notice:", mig_err)
             db_latency_ms = round((time.time() - t0) * 1000, 2)
         except Exception as e:
             db_status = f"UNHEALTHY: {str(e)}"

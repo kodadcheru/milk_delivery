@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
@@ -62,7 +63,8 @@ class ApiService {
         return (body['detail'] ?? body['error'] ?? body['message'] ?? res.body).toString();
       }
       return res.body;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ApiService error: $e');
       return 'Error ${res.statusCode}: ${res.reasonPhrase}';
     }
   }
@@ -96,7 +98,8 @@ class ApiService {
       }
 
       return authToken;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ApiService error: $e');
       return null;
     }
   }
@@ -227,7 +230,8 @@ class ApiService {
         final err = jsonDecode(res.body);
         return {'success': false, 'error': err['message'] ?? err['detail'] ?? 'Invalid OTP code'};
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ApiService error: $e');
       return {'success': false, 'error': 'network_error'};
     }
   }
@@ -264,7 +268,8 @@ class ApiService {
         final err = jsonDecode(res.body);
         return {'success': false, 'error': err['detail'] ?? err['message'] ?? 'Registration failed'};
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ApiService error: $e');
       return {'success': false, 'error': 'network_error'};
     }
   }

@@ -208,8 +208,7 @@ class Command(BaseCommand):
             return days_since_start % 2 == 0  # Deliver on even days (0, 2, 4, ...)
 
         if sub.schedule_type == Subscription.Schedules.CUSTOM:
-            # Default custom schedule: Mon, Wed, Fri (0=Mon, 2=Wed, 4=Fri)
-            return target_date.weekday() in (0, 2, 4)
+            return target_date.weekday() in sub.get_custom_days()
 
         if sub.schedule_type == 'WEEKDAYS':
             return target_date.weekday() < 5  # Mon-Fri (0-4)

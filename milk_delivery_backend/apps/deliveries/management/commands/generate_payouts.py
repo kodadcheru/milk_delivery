@@ -25,8 +25,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--commission-rate",
             type=float,
-            default=10.0,
-            help="Platform commission percentage (default: 10%%).",
+            default=5.0,
+            help="Platform commission percentage (default: 5%%).",
         )
         parser.add_argument(
             "--dry-run",

@@ -208,19 +208,29 @@ class DeliveryTaskCompleteView(APIView):
                     notification_type=Notification.Types.DELIVERY,
                 )
             else:
-                # Insufficient balance — record debt and sync balance
-                User.objects.filter(pk=customer.pk).update(wallet_balance=F("wallet_balance") - total_cost)
-                customer.refresh_from_db(fields=["wallet_balance"])
-                WalletTransaction.objects.create(
-                    user=customer,
-                    transaction_type=WalletTransaction.Types.DEBIT,
-                    amount=total_cost,
-                    description=f'Delivery #{task.id} - Outstanding balance (insufficient funds)',
-                )
+                # Insufficient balance — debit what's available, record the outstanding amount
+                available = customer.wallet_balance
+                outstanding = total_cost - available
+                if available > Decimal("0.00"):
+                    User.objects.filter(pk=customer.pk).update(wallet_balance=Decimal("0.00"))
+                    customer.refresh_from_db(fields=["wallet_balance"])
+                    WalletTransaction.objects.create(
+                        user=customer,
+                        transaction_type=WalletTransaction.Types.DEBIT,
+                        amount=available,
+                        description=f'Delivery #{task.id} - Partial debit (₹{outstanding:.2f} outstanding)',
+                    )
+                else:
+                    WalletTransaction.objects.create(
+                        user=customer,
+                        transaction_type=WalletTransaction.Types.DEBIT,
+                        amount=Decimal("0.00"),
+                        description=f'Delivery #{task.id} - ₹{total_cost:.2f} outstanding (zero balance)',
+                    )
                 Notification.objects.create(
                     user=customer,
                     title='⚠️ Low Wallet Balance!',
-                    message=f'Delivery #{task.id} completed. ₹{total_cost} is outstanding. Please recharge your wallet.',
+                    message=f'Delivery #{task.id} completed. ₹{outstanding:.2f} is outstanding. Please recharge your wallet.',
                     notification_type=Notification.Types.WALLET,
                 )
 
@@ -1053,7 +1063,7 @@ class GenerateTodayTasksView(APIView):
                     skipped_count += 1
                     continue
             elif sched == Subscription.Schedules.CUSTOM:
-                if target_date.weekday() not in (0, 2, 4):
+                if target_date.weekday() not in sub.get_custom_days():
                     skipped_count += 1
                     continue
             elif sched == Subscription.Schedules.ONCE:

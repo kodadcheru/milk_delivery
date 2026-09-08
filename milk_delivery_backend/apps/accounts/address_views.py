@@ -105,7 +105,6 @@ class CustomerAddressListCreateView(generics.ListCreateAPIView):
             user.latitude = addr.latitude
             user.longitude = addr.longitude
             user.save(update_fields=["address", "latitude", "longitude"])
-            user.save(update_fields=["address", "latitude", "longitude"])
 
 
 class CustomerAddressDetailView(generics.RetrieveUpdateDestroyAPIView):

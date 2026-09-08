@@ -417,7 +417,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ElevatedButton(
             onPressed: () {
               final enteredOtp = otpController.text.trim();
-              if (enteredOtp == order.deliveryOtp || enteredOtp == '1234' || (order.deliveryOtp.isEmpty && enteredOtp.length == 4)) {
+              if (enteredOtp.isNotEmpty && enteredOtp == order.deliveryOtp) {
                 Navigator.pop(ctx);
                 widget.state.updateOrderStatus(order.id, 'DELIVERED', deliveryOtp: enteredOtp);
                 ScaffoldMessenger.of(context).showSnackBar(

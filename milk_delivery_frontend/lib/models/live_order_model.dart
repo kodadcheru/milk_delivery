@@ -75,7 +75,7 @@ class LiveOrderModel {
     this.deliveryAddress = 'Doorstep Delivery Location',
     this.deliveryLatitude = 17.4319,
     this.deliveryLongitude = 78.4073,
-    this.deliveryOtp = '4892',
+    this.deliveryOtp = '',
     this.customerName = 'Customer',
     this.customerPhone = '',
     this.driverName = 'Assigning Delivery Partner...',

@@ -116,8 +116,7 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
                 skipped_count += 1
                 continue
         elif sub.schedule_type == Subscription.Schedules.CUSTOM:
-            # Mon(0), Wed(2), Fri(4)
-            if target_date.weekday() not in (0, 2, 4):
+            if target_date.weekday() not in sub.get_custom_days():
                 skipped_count += 1
                 continue
         elif sub.schedule_type == Subscription.Schedules.ONCE:

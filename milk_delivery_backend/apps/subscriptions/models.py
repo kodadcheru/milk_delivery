@@ -22,6 +22,12 @@ class Subscription(models.Model):
     address = models.ForeignKey("accounts.CustomerAddress", on_delete=models.SET_NULL, null=True, blank=True, related_name="subscriptions")
     quantity = models.PositiveIntegerField(default=1)
     schedule_type = models.CharField(max_length=20, choices=Schedules.choices, default=Schedules.DAILY)
+    custom_days = models.CharField(
+        max_length=50,
+        default="0,2,4",
+        blank=True,
+        help_text="Comma-separated weekday numbers (0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun) for CUSTOM schedule",
+    )
     start_date = models.DateField()
     status = models.CharField(max_length=20, choices=Statuses.choices, default=Statuses.ACTIVE)
     delivery_address = models.TextField(blank=True, default="")
@@ -46,6 +52,13 @@ class Subscription(models.Model):
     @property
     def hub_code(self):
         return getattr(self.hub, 'hub_code', 'HUB-KDD-01') if self.hub else 'HUB-KDD-01'
+
+    def get_custom_days(self):
+        """Returns list of weekday integers for CUSTOM schedule."""
+        try:
+            return [int(d.strip()) for d in self.custom_days.split(',') if d.strip().isdigit()]
+        except (ValueError, AttributeError):
+            return [0, 2, 4]  # Default: Mon, Wed, Fri
 
     def __str__(self):
         return f"{self.customer.username} [{self.customer_code}] - {self.quantity}x {self.product.name} ({self.schedule_type})"

@@ -831,6 +831,7 @@ void _showEditProfileDialog(
                           hint: '+91 9876543210',
                           icon: Icons.phone_iphone_rounded,
                           keyboardType: TextInputType.phone,
+                          readOnly: true,
                           trailing: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -916,7 +917,6 @@ void _showEditProfileDialog(
                               final first = firstNameCtrl.text.trim();
                               final last = lastNameCtrl.text.trim();
                               final email = emailCtrl.text.trim();
-                              final phone = phoneCtrl.text.trim();
 
                               if (first.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -933,7 +933,6 @@ void _showEditProfileDialog(
                                 firstName: first,
                                 lastName: last,
                                 email: email,
-                                phone: phone,
                                 slotPreference: selectedSlot,
                               );
                               setSheetState(() => isSaving = false);
@@ -991,6 +990,7 @@ Widget _buildStyledInput({
   TextInputType keyboardType = TextInputType.text,
   Widget? trailing,
   ValueChanged<String>? onChanged,
+  bool readOnly = false,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1015,6 +1015,7 @@ Widget _buildStyledInput({
               child: TextField(
                 controller: controller,
                 keyboardType: keyboardType,
+                readOnly: readOnly,
                 onChanged: onChanged,
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
