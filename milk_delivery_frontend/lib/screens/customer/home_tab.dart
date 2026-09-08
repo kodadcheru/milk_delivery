@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
@@ -102,15 +101,19 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   opacity: _entryFade,
                   child: SlideTransition(
                     position: _entrySlide,
-                    child: HomeLocationBar(
-                      state: widget.state,
-                      onLocationTap: () => HomeLocationSheet.show(context, widget.state),
-                      searchController: _searchController,
-                      onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-                      onClearSearch: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
+                    child: Semantics(
+                      header: true,
+                      label: 'Delivery location header and product search',
+                      child: HomeLocationBar(
+                        state: widget.state,
+                        onLocationTap: () => HomeLocationSheet.show(context, widget.state),
+                        searchController: _searchController,
+                        onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                        onClearSearch: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -132,7 +135,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 14),
-                    child: HomeActiveSubscriptionCard(state: widget.state, sub: activeSub),
+                    child: Semantics(
+                      label: 'Active subscription: ${activeSub.productDetail?.name ?? "Daily"}',
+                      child: HomeActiveSubscriptionCard(state: widget.state, sub: activeSub),
+                    ),
                   ),
                 ),
               ],
@@ -141,8 +147,11 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 14),
-                  child: HomeCategoryShowcase(
-                    state: widget.state,
+                  child: Semantics(
+                    label: 'Product categories showcase',
+                    child: HomeCategoryShowcase(
+                      state: widget.state,
+                    ),
                   ),
                 ),
               ),
@@ -232,7 +241,11 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
             left: 16,
             right: 16,
             bottom: 16,
-            child: FloatingCartBar(state: widget.state),
+            child: Semantics(
+              label: 'Shopping Cart: ${widget.state.totalCartItemCount} items, total ₹${widget.state.totalCartPrice.toStringAsFixed(0)}',
+              button: true,
+              child: FloatingCartBar(state: widget.state),
+            ),
           ),
       ],
     );
@@ -280,17 +293,21 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.71,
+          childAspectRatio: MediaQuery.of(context).textScaler.scale(1.0) > 1.3 ? 0.55 : 0.68,
           mainAxisSpacing: 18,
           crossAxisSpacing: 14,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            return HomeProductCard(
-              state: widget.state,
-              item: productList[index],
+            final product = productList[index];
+            return Semantics(
+              label: 'Product card: ${product.name}, ₹${product.pricePerUnit.toStringAsFixed(0)}',
+              child: HomeProductCard(
+                state: widget.state,
+                item: product,
+              ),
             );
           },
           childCount: productList.length,

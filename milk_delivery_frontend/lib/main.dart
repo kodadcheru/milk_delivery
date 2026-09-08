@@ -60,10 +60,13 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   void initState() {
     super.initState();
     _appState = AppState();
-    _appState.addListener(() {
-      if (mounted) setState(() {});
-    });
     _checkExistingSession();
+  }
+
+  @override
+  void dispose() {
+    _appState.dispose();
+    super.dispose();
   }
 
   Future<void> _checkExistingSession() async {
@@ -114,34 +117,37 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
-      home: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 450),
-        switchInCurve: Curves.easeIn,
-        switchOutCurve: Curves.easeOut,
-        child: (_showSplash || _isInitializing)
-            ? PambaSplashScreen(
-                key: const ValueKey('pamba_splash_screen'),
-                onFinish: () {
-                  if (mounted) {
-                    setState(() => _showSplash = false);
-                  }
-                },
-              )
-            : (!_isLoggedIn
-                ? PhoneLoginScreen(
-                    key: const ValueKey('phone_login_screen_root'),
-                    state: _appState,
-                    onLoginSuccess: () {
-                      if (mounted) {
-                        setState(() => _isLoggedIn = true);
-                      }
-                    },
-                  )
-                : MainAppShell(
-                    key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
-                    state: _appState,
-                    onLogout: _handleLogout,
-                  )),
+      home: ListenableBuilder(
+        listenable: _appState,
+        builder: (context, child) => AnimatedSwitcher(
+          duration: const Duration(milliseconds: 450),
+          switchInCurve: Curves.easeIn,
+          switchOutCurve: Curves.easeOut,
+          child: (_showSplash || _isInitializing)
+              ? PambaSplashScreen(
+                  key: const ValueKey('pamba_splash_screen'),
+                  onFinish: () {
+                    if (mounted) {
+                      setState(() => _showSplash = false);
+                    }
+                  },
+                )
+              : (!_isLoggedIn
+                  ? PhoneLoginScreen(
+                      key: const ValueKey('phone_login_screen_root'),
+                      state: _appState,
+                      onLoginSuccess: () {
+                        if (mounted) {
+                          setState(() => _isLoggedIn = true);
+                        }
+                      },
+                    )
+                  : MainAppShell(
+                      key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
+                      state: _appState,
+                      onLogout: _handleLogout,
+                    )),
+        ),
       ),
     );
   }

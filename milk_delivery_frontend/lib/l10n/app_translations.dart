@@ -1,3 +1,6 @@
+// TODO: Most translations below are not yet wired to UI widgets.
+// Wire these using AppLocalizations.of(context) when enabling multi-language support.
+
 class AppTranslations {
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {

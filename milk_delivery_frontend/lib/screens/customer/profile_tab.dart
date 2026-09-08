@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/app_state.dart';
 import '../common/legal_terms_screen.dart';
 import 'address_book_screen.dart';
@@ -99,19 +100,34 @@ class ProfileTab extends StatelessWidget {
                           ),
                         ),
                       ),
-                      SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: Center(
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF38BDF8),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final image = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            maxWidth: 512,
+                            maxHeight: 512,
+                            imageQuality: 80,
+                          );
+                          if (image != null) {
+                            // TODO: Upload to server
+                            debugPrint('Selected image: ${image.path}');
+                          }
+                        },
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Center(
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF38BDF8),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
                             ),
-                            child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
                           ),
                         ),
                       ),

@@ -118,7 +118,7 @@ class DoorstepProofPreset {
     required this.id,
     required this.title,
     required this.description,
-    required this.imageUrl,
+    this.imageUrl = '',
     required this.icon,
   });
 }
@@ -172,28 +172,24 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
       id: 'bag_doorstep',
       title: 'Doorstep Insulated Bag',
       description: 'Chilled bag placed cleanly at door',
-      imageUrl: 'https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?w=600&q=80',
       icon: '🥛',
     ),
     DoorstepProofPreset(
       id: 'handle_drop',
       title: 'Hung on Door Handle',
       description: 'Secured on handle hook',
-      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&q=80',
       icon: '🚪',
     ),
     DoorstepProofPreset(
       id: 'cooler_box',
       title: 'Inside Cooler / Milk Box',
       description: 'Placed inside customer milk box',
-      imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=600&q=80',
       icon: '📦',
     ),
     DoorstepProofPreset(
       id: 'gate_box',
       title: 'Main Gate Drop-Point',
       description: 'Left in secure gate basket',
-      imageUrl: 'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?w=600&q=80',
       icon: '🏡',
     ),
   ];
@@ -276,15 +272,10 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
               color: Colors.black,
               child: Stack(
                 children: [
-                  // Image
-                  Positioned.fill(
-                    child: Image.network(
-                      activePreset.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: UiTone.surfaceMuted,
-                        child: const Center(child: Icon(Icons.broken_image_rounded, color: UiTone.softText)),
-                      ),
+                  // Camera Viewfinder Placeholder
+                  const Positioned.fill(
+                    child: Center(
+                      child: Icon(Icons.camera_alt, size: 64, color: Colors.grey),
                     ),
                   ),
 
