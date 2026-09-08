@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from apps.core.pagination import StandardResultsSetPagination
 from apps.accounts.models import Notification, User, WalletTransaction
+from apps.core.services.push_service import send_push_to_user
 from apps.deliveries.models import DeliveryTask, LiveOrder, LiveOrderItem, LocationHub
 from apps.deliveries.serializers import LiveOrderSerializer
 from apps.products.models import Product
@@ -461,11 +462,22 @@ class ExpressOrderListCreateView(APIView):
                         pass
 
                 try:
+                    notif_title = f"⚡ Express Order {order_id} Confirmed!"
+                    notif_msg = f"Your order with {len(parsed_items)} item(s) is scheduled for {delivery_slot}. {'Payment: Cash on Delivery (₹' + str(total_amount) + ')' if is_cod else 'Payment: Prepaid Wallet'}."
                     Notification.objects.create(
                         user=user,
-                        title=f"⚡ Express Order {order_id} Confirmed!",
-                        message=f"Your order with {len(parsed_items)} item(s) is scheduled for {delivery_slot}. {'Payment: Cash on Delivery (₹' + str(total_amount) + ')' if is_cod else 'Payment: Prepaid Wallet'}.",
+                        title=notif_title,
+                        message=notif_msg,
                         notification_type=Notification.Types.DELIVERY,
+                        target_screen="DELIVERIES",
+                        target_param=order_id,
+                    )
+                    send_push_to_user(
+                        user=user,
+                        title=notif_title,
+                        body=notif_msg,
+                        target_screen="DELIVERIES",
+                        target_param=order_id,
                     )
                 except Exception:
                     pass
@@ -503,11 +515,22 @@ class ExpressOrderListCreateView(APIView):
 
                 if hub_driver:
                     try:
+                        driver_title = '🚚 New Express Order Assigned!'
+                        driver_msg = f'Express order {order.id} has been assigned to you. Deliver to: {delivery_address[:50]}'
                         Notification.objects.create(
                             user=hub_driver,
-                            title='🚚 New Express Order Assigned!',
-                            message=f'Express order {order.id} has been assigned to you. Customer: {user.first_name} {user.last_name}. Deliver to: {delivery_address[:50]}',
+                            title=driver_title,
+                            message=driver_msg,
                             notification_type=Notification.Types.DELIVERY,
+                            target_screen="DRIVER_ROUTE",
+                            target_param=order.id,
+                        )
+                        send_push_to_user(
+                            user=hub_driver,
+                            title=driver_title,
+                            body=driver_msg,
+                            target_screen="DRIVER_ROUTE",
+                            target_param=order.id,
                         )
                     except Exception:
                         pass
@@ -632,19 +655,41 @@ class ExpressOrderDetailView(APIView):
             # Send customer real-time notification on status change
             try:
                 if new_status == LiveOrder.Statuses.PICKED_UP and order.customer:
+                    t = "📦 Order Picked Up"
+                    m = f"Your order #{order.id} has been packed and picked up at the hub."
                     Notification.objects.create(
                         user=order.customer,
-                        title="📦 Order Picked Up",
-                        message=f"Your order #{order.id} has been packed and picked up at the hub.",
+                        title=t,
+                        message=m,
                         notification_type=Notification.Types.DELIVERY,
+                        target_screen="DELIVERIES",
+                        target_param=order.id,
                     )
+                    send_push_to_user(order.customer, t, m, target_screen="DELIVERIES", target_param=order.id)
                 elif new_status == LiveOrder.Statuses.OUT_FOR_DELIVERY and order.customer:
+                    t = "🛵 Delivery Partner is On The Way!"
+                    m = f"Your delivery partner is en route to your doorstep with order #{order.id}!"
                     Notification.objects.create(
                         user=order.customer,
-                        title="🛵 Delivery Partner is On The Way!",
-                        message=f"Your delivery partner is en route to your doorstep with order #{order.id}!",
+                        title=t,
+                        message=m,
                         notification_type=Notification.Types.DELIVERY,
+                        target_screen="DELIVERIES",
+                        target_param=order.id,
                     )
+                    send_push_to_user(order.customer, t, m, target_screen="DELIVERIES", target_param=order.id)
+                elif new_status == LiveOrder.Statuses.DELIVERED and order.customer:
+                    t = "🎉 Order Delivered!"
+                    m = f"Your fresh order #{order.id} has been delivered to your doorstep. Enjoy!"
+                    Notification.objects.create(
+                        user=order.customer,
+                        title=t,
+                        message=m,
+                        notification_type=Notification.Types.DELIVERY,
+                        target_screen="DELIVERIES",
+                        target_param=order.id,
+                    )
+                    send_push_to_user(order.customer, t, m, target_screen="DELIVERIES", target_param=order.id)
             except Exception:
                 pass
 
@@ -680,12 +725,19 @@ class ExpressOrderDetailView(APIView):
                     description=f"💰 Refund for cancelled order {order.id}",
                 )
 
+                ref_t = f"💰 Order {order.id} Refunded"
+                ref_m = f"₹{refund_amount} has been refunded to your wallet for cancelled order {order.id}. New balance: ₹{customer.wallet_balance}"
                 Notification.objects.create(
                     user=customer,
-                    title=f"💰 Order {order.id} Refunded",
-                    message=f"₹{refund_amount} has been refunded to your wallet for cancelled order {order.id}. New balance: ₹{customer.wallet_balance}",
+                    title=ref_t,
+                    message=ref_m,
                     notification_type=Notification.Types.WALLET,
+                    target_screen="WALLET",
                 )
+                try:
+                    send_push_to_user(customer, ref_t, ref_m, target_screen="WALLET")
+                except Exception:
+                    pass
 
                 order.payment_status = "REFUNDED"
 

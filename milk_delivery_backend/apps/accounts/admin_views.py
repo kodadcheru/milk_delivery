@@ -394,6 +394,22 @@ class AdminBroadcastNotificationView(APIView):
         Notification.objects.bulk_create(notifs, batch_size=1000)
         created_count = len(notifs)
 
+        try:
+            from apps.core.services.push_service import send_push_broadcast
+            role_param = None
+            if target_role == "CUSTOMER":
+                role_param = "CUSTOMER"
+            elif target_role == "DRIVER":
+                role_param = "DELIVERY_PARTNER"
+            send_push_broadcast(
+                title=title,
+                body=message,
+                data={"target_screen": target_screen, "target_param": target_param},
+                role=role_param
+            )
+        except Exception:
+            pass
+
         return Response(
             {
                 "message": f"Broadcast sent successfully to {created_count} user(s).",

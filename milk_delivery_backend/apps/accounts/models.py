@@ -212,3 +212,27 @@ class SupportMessage(models.Model):
         return f"[{self.sender_type}] {self.sender_name} ({self.phone}): {self.text[:30]}"
 
 
+class DeviceToken(models.Model):
+    class Platform(models.TextChoices):
+        IOS = "IOS", "iOS"
+        ANDROID = "ANDROID", "Android"
+        WEB = "WEB", "Web"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="device_tokens")
+    token = models.CharField(max_length=512, unique=True, db_index=True)
+    platform = models.CharField(max_length=10, choices=Platform.choices, default=Platform.IOS)
+    device_name = models.CharField(max_length=150, blank=True, default="")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["user", "is_active"], name="devtok_user_active_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} ({self.platform}): {self.token[:20]}..."
+
+

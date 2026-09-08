@@ -1837,5 +1837,43 @@ class ApiService {
     }
     return false;
   }
+
+  static Future<bool> registerDeviceToken({
+    required String token,
+    String platform = 'IOS',
+    String deviceName = '',
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/accounts/devices/register/'),
+            headers: _headers,
+            body: jsonEncode({
+              'token': token,
+              'platform': platform,
+              'device_name': deviceName,
+            }),
+          ));
+      return res.statusCode == 200 || res.statusCode == 201;
+    } catch (e) {
+      lastError = e.toString();
+      return false;
+    }
+  }
+
+  static Future<bool> unregisterDeviceToken({String? token}) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/accounts/devices/unregister/'),
+            headers: _headers,
+            body: jsonEncode({
+              if (token != null && token.isNotEmpty) 'token': token,
+            }),
+          ));
+      return res.statusCode == 200 || res.statusCode == 201;
+    } catch (e) {
+      lastError = e.toString();
+      return false;
+    }
+  }
 }
 

@@ -142,14 +142,26 @@ class DeliveryChatSendView(APIView):
                         recipient_user = User.objects.filter(phone__icontains=clean_p).first()
 
                 if recipient_user:
+                    title_txt = f"💬 {sender_name} (Delivery Partner)"
                     Notification.objects.create(
                         user=recipient_user,
-                        title=f"💬 {sender_name} (Delivery Partner)",
+                        title=title_txt,
                         message=text,
                         notification_type="DELIVERY",
                         target_screen="CHAT",
                         target_param=channel_key,
                     )
+                    try:
+                        from apps.core.services.push_service import send_push_to_user
+                        send_push_to_user(
+                            user=recipient_user,
+                            title=title_txt,
+                            body=text,
+                            target_screen="CHAT",
+                            target_param=channel_key,
+                        )
+                    except Exception:
+                        pass
             elif sender_role == "CUSTOMER":
                 # Find driver user
                 if task_obj and task_obj.driver:
@@ -160,14 +172,26 @@ class DeliveryChatSendView(APIView):
                     recipient_user = order_obj.hub.manager
 
                 if recipient_user:
+                    title_txt = f"💬 {sender_name} (Customer)"
                     Notification.objects.create(
                         user=recipient_user,
-                        title=f"💬 {sender_name} (Customer)",
+                        title=title_txt,
                         message=text,
                         notification_type="DELIVERY",
                         target_screen="CHAT",
                         target_param=channel_key,
                     )
+                    try:
+                        from apps.core.services.push_service import send_push_to_user
+                        send_push_to_user(
+                            user=recipient_user,
+                            title=title_txt,
+                            body=text,
+                            target_screen="CHAT",
+                            target_param=channel_key,
+                        )
+                    except Exception:
+                        pass
         except Exception:
             pass
 

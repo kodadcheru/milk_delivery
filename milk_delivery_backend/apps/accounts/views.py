@@ -7,8 +7,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.pagination import StandardResultsSetPagination
-from apps.accounts.models import Notification, User, WalletTransaction
+from apps.accounts.models import DeviceToken, Notification, User, WalletTransaction
+from apps.core.services.push_service import send_push_to_user, send_push_broadcast
 from apps.accounts.serializers import (
+    DeviceTokenSerializer,
     NotificationSerializer,
     RegisterSerializer,
     UserSerializer,
@@ -110,7 +112,17 @@ class WalletTopUpView(APIView):
                 title="⚡ Wallet Recharged",
                 message=f"₹{amount} credited to your prepaid wallet via {desc}. New balance: ₹{user.wallet_balance}",
                 notification_type=Notification.Types.WALLET,
+                target_screen="WALLET",
             )
+            try:
+                send_push_to_user(
+                    user=user,
+                    title="⚡ Wallet Recharged",
+                    body=f"₹{amount} credited to your prepaid wallet via {desc}. New balance: ₹{user.wallet_balance}",
+                    target_screen="WALLET",
+                )
+            except Exception:
+                pass
 
             return Response(
                 {
@@ -349,4 +361,61 @@ class DriverLocationByOrderView(APIView):
             "vehicle_number": driver_vehicle,
             "last_location_updated": driver.last_location_updated.isoformat() if (driver and driver.last_location_updated) else timezone.now().isoformat(),
         })
+
+
+class DeviceRegisterView(APIView):
+    """
+    Register or refresh a device push notification token (FCM / APNs).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get("token", "").strip()
+        platform = request.data.get("platform", "IOS").upper()
+        device_name = request.data.get("device_name", "").strip()
+
+        if not token:
+            return Response(
+                {"detail": "Device token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if platform not in [DeviceToken.Platform.IOS, DeviceToken.Platform.ANDROID, DeviceToken.Platform.WEB]:
+            platform = DeviceToken.Platform.IOS
+
+        device, created = DeviceToken.objects.update_or_create(
+            token=token,
+            defaults={
+                "user": request.user,
+                "platform": platform,
+                "device_name": device_name,
+                "is_active": True,
+            }
+        )
+
+        return Response({
+            "status": "success",
+            "message": "Device token registered successfully",
+            "created": created,
+            "device": DeviceTokenSerializer(device).data
+        }, status=status.HTTP_200_OK)
+
+
+class DeviceUnregisterView(APIView):
+    """
+    Deactivate a device token upon logout.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get("token", "").strip()
+        if token:
+            updated = DeviceToken.objects.filter(token=token, user=request.user).update(is_active=False)
+        else:
+            updated = DeviceToken.objects.filter(user=request.user).update(is_active=False)
+
+        return Response({
+            "status": "success",
+            "message": f"Deactivated {updated} device token(s)."
+        }, status=status.HTTP_200_OK)
 

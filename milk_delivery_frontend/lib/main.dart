@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'config/app_config.dart';
 import 'providers/app_state.dart';
 import 'services/api_service.dart';
+import 'services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/in_app_chat_banner.dart';
 import 'screens/auth/phone_login_screen.dart';
@@ -13,7 +14,7 @@ import 'screens/shells/driver_shell.dart';
 import 'screens/shells/provider_shell.dart';
 import 'screens/shells/admin_shell.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Production Global Crash & Error Boundary
@@ -27,6 +28,12 @@ void main() {
     return true; // Prevent app crashes
   };
 
+  try {
+    await PushNotificationService.instance.initialize();
+  } catch (e) {
+    debugPrint('[PushNotificationService] Failed to initialize at startup: $e');
+  }
+
   runApp(const MilkDeliveryApp());
 }
 
@@ -38,7 +45,7 @@ class MilkDeliveryApp extends StatefulWidget {
 }
 
 class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
-  static final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> _navigatorKey = PushNotificationService.navigatorKey;
   late final AppState _appState;
   bool _isLoggedIn = false;
   bool _isInitializing = true;
@@ -63,6 +70,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     if (token != null && mounted) {
       try {
         await _appState.reloadAllData();
+        PushNotificationService.instance.registerDeviceToken(_appState);
       } catch (_) {}
       if (mounted) {
         setState(() {

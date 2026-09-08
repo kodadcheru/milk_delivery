@@ -93,8 +93,31 @@ def auto_heal_schema():
                     ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_longitude NUMERIC(15, 8);
                     ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_cod_enabled BOOLEAN DEFAULT TRUE;
                     ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_wallet_enabled BOOLEAN DEFAULT TRUE;
+                    CREATE TABLE IF NOT EXISTS accounts_devicetoken (
+                        id BIGSERIAL PRIMARY KEY,
+                        token VARCHAR(512) UNIQUE NOT NULL,
+                        platform VARCHAR(10) NOT NULL DEFAULT 'IOS',
+                        device_name VARCHAR(150) NOT NULL DEFAULT '',
+                        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                        user_id BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS devtok_user_active_idx ON accounts_devicetoken(user_id, is_active);
                 """)
             elif vendor == 'sqlite':
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS accounts_devicetoken (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        token VARCHAR(512) UNIQUE NOT NULL,
+                        platform VARCHAR(10) NOT NULL DEFAULT 'IOS',
+                        device_name VARCHAR(150) NOT NULL DEFAULT '',
+                        is_active BOOLEAN NOT NULL DEFAULT 1,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        user_id INTEGER NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE
+                    );
+                """)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS deliveries_deliveryrating (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,

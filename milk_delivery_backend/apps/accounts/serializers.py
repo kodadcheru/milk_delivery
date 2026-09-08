@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from apps.accounts.models import CustomerAddress, Notification, User, WalletTransaction
+from apps.accounts.models import CustomerAddress, DeviceToken, Notification, User, WalletTransaction
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -187,4 +187,11 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
         if obj.city:
             parts.append(f"{obj.city} - {obj.pincode}")
         return ", ".join(parts) if parts else obj.street_address
+
+
+class DeviceTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceToken
+        fields = ["id", "token", "platform", "device_name", "is_active", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 

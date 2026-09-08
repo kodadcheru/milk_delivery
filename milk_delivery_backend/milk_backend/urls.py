@@ -60,6 +60,8 @@ from apps.accounts.phone_auth_views import (
     VerifyOTPView,
 )
 from apps.accounts.views import (
+    DeviceRegisterView,
+    DeviceUnregisterView,
     DriverLocationByOrderView,
     DriverLocationUpdateView,
     NotificationListView,
@@ -172,6 +174,9 @@ urlpatterns = [
     path("api/auth/profile/", UserProfileView.as_view(), name="auth_profile"),
     path("api/driver/location/", DriverLocationUpdateView.as_view(), name="driver_location_update"),
     path("api/driver/location/<str:order_id>/", DriverLocationByOrderView.as_view(), name="driver_location_by_order"),
+    # Push Notification Device Token endpoints (FCM / APNs)
+    path("api/accounts/devices/register/", DeviceRegisterView.as_view(), name="device_register"),
+    path("api/accounts/devices/unregister/", DeviceUnregisterView.as_view(), name="device_unregister"),
     # Customer Address Book endpoints
     path("api/accounts/addresses/", CustomerAddressListCreateView.as_view(), name="address_list"),
     path("api/accounts/addresses/<int:pk>/", CustomerAddressDetailView.as_view(), name="address_detail"),

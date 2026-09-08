@@ -23,6 +23,7 @@ import '../services/hub_realtime_service.dart';
 import '../services/image_upload_service.dart';
 import '../services/location_service.dart';
 import '../services/permission_service.dart';
+import '../services/push_notification_service.dart';
 
 class AppState extends ChangeNotifier {
   UserModel? currentUser;
@@ -1260,9 +1261,12 @@ class AppState extends ChangeNotifier {
     await loadCachedAddresses(phone: user.phone);
     // Then sync with server in reloadAllData
     await reloadAllData();
+    // Register device push notification token
+    PushNotificationService.instance.registerDeviceToken(this);
   }
 
   Future<void> logout() async {
+    PushNotificationService.instance.unregisterDeviceToken();
     await ApiService.clearAuthToken();
     await _clearCachedAddresses(); // Clear local cache on logout
     try {
