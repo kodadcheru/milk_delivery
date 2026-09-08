@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -36,10 +35,8 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
   late RouteOptimizationResult _tspResult;
   late List<DeliveryTaskModel> _orderedTasks;
   StreamSubscription<Position>? _positionSubscription;
-  bool _hasInitialGpsFix = false;
   double _driverHeading = 0.0;
   List<LatLng> _realRoadPolylinePoints = [];
-  bool _isLoadingRoadGeometry = false;
   bool _locationWarning = false;
 
   // Depot location — read from driver assigned hub, fallback to tasks hub
@@ -111,7 +108,6 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
 
   Future<void> _loadRealRoadGeometry() async {
     if (!mounted) return;
-    setState(() => _isLoadingRoadGeometry = true);
 
     final tasks = _orderedTasks;
     final allCompleted = tasks.isNotEmpty && tasks.every((t) => t.isDelivered || t.status == 'DELIVERED' || t.status == 'SKIPPED');
@@ -129,23 +125,8 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
     if (mounted) {
       setState(() {
         _realRoadPolylinePoints = realPoints;
-        _isLoadingRoadGeometry = false;
       });
     }
-  }
-
-  double _calculateBearing(LatLng start, LatLng end) {
-    final lat1 = start.latitude * (pi / 180.0);
-    final lon1 = start.longitude * (pi / 180.0);
-    final lat2 = end.latitude * (pi / 180.0);
-    final lon2 = end.longitude * (pi / 180.0);
-
-    final dLon = lon2 - lon1;
-    final y = sin(dLon) * cos(lat2);
-    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
-
-    final radians = atan2(y, x);
-    return (radians * (180.0 / pi) + 360.0) % 360.0;
   }
 
   @override
@@ -174,13 +155,12 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
 
       // Initial fast fix
       final initialPos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       ).timeout(const Duration(seconds: 4), onTimeout: () => throw TimeoutException('GPS timeout'));
 
       if (mounted) {
         setState(() {
           _driverLocation = LatLng(initialPos.latitude, initialPos.longitude);
-          _hasInitialGpsFix = true;
         });
         _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 15.0));
       }
@@ -200,7 +180,6 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
           setState(() {
             _driverLocation = newLoc;
             _driverHeading = bearing;
-            _hasInitialGpsFix = true;
           });
 
           // Sync real-time location to backend fleet dispatcher

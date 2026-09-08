@@ -568,7 +568,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final tasks = widget.state.deliveries;
     final expressOrders = widget.state.liveOrders;
 
-    final activeHub = widget.state.driverAssignedHub;
     final hubName = widget.state.driverHubName;
 
     // 1. Filter deliveries by the active Morning/Evening shift first
@@ -1230,8 +1229,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final lon = group.customerLongitude;
     final totalItemsCount = group.tasks.fold<int>(0, (sum, t) => sum + (t.subscriptionDetail?.quantity ?? t.quantity));
 
-    final firstTask = group.tasks.isNotEmpty ? group.tasks.first : null;
-    final dateStr = (firstTask != null && firstTask.deliveryDate.isNotEmpty) ? firstTask.deliveryDate : 'Today';
     final slotStr = group.slotTime.isNotEmpty ? group.slotTime : '05:30 AM - 07:00 AM';
     final isEvening = slotStr.toUpperCase().contains('PM') || slotStr.toUpperCase().contains('17:') || slotStr.toUpperCase().contains('18:') || slotStr.toUpperCase().contains('19:') || slotStr.toUpperCase().contains('EVENING');
 

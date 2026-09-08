@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
-import '../../theme/ui_tokens.dart';
 import '../customer/help_support_screen.dart';
 
 enum LegalTab { privacy, terms }

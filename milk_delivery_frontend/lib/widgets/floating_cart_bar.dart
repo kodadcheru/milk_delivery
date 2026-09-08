@@ -1613,22 +1613,12 @@ class FloatingCartBar extends StatelessWidget {
                         ? null
                         : () async {
                             isProcessing.value = true;
-                            final ok = await state.topUpWallet(selectedAmt.value, 'Instant Checkout Recharge');
+                            await state.topUpWallet(selectedAmt.value, 'Instant Checkout Recharge', context: context);
                             isProcessing.value = false;
                             if (ctx.mounted) {
                               Navigator.pop(ctx);
                             }
-                            if (ok) {
-                              onRecharged();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF0D7C66),
-                                    content: Text('✅ Added ₹${selectedAmt.value.toStringAsFixed(0)} to wallet!'),
-                                  ),
-                                );
-                              }
-                            }
+                            onRecharged();
                           },
                     child: loading
                         ? const SizedBox(

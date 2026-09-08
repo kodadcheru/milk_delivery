@@ -9,12 +9,44 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ["role", "is_staff", "is_superuser"]
     fieldsets = BaseUserAdmin.fieldsets + (
         ("Milk Delivery Profile", {
-            "fields": ("role", "phone", "address", "city", "wallet_balance", "delivery_instructions", "delivery_slot_preference")
+            "fields": (
+                "role",
+                "phone",
+                "gender",
+                "address",
+                "city",
+                "wallet_balance",
+                "delivery_instructions",
+                "delivery_slot_preference",
+                "assigned_hub",
+                "monthly_salary",
+                "driver_status",
+                "vehicle_number",
+                "driving_license",
+                "latitude",
+                "longitude",
+            )
         }),
     )
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ("Milk Delivery Profile", {
-            "fields": ("role", "phone", "address", "city", "wallet_balance", "delivery_instructions", "delivery_slot_preference")
+            "fields": (
+                "role",
+                "phone",
+                "gender",
+                "address",
+                "city",
+                "wallet_balance",
+                "delivery_instructions",
+                "delivery_slot_preference",
+                "assigned_hub",
+                "monthly_salary",
+                "driver_status",
+                "vehicle_number",
+                "driving_license",
+                "latitude",
+                "longitude",
+            )
         }),
     )
 

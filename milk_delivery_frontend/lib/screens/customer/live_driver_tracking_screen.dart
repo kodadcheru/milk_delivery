@@ -113,8 +113,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       custLat = widget.state.activeAddress!.latitude;
       custLon = widget.state.activeAddress!.longitude;
     } else if (widget.state.currentUser?.latitude != null && widget.state.currentUser!.latitude != 0) {
-      custLat = widget.state.currentUser!.latitude!;
-      custLon = widget.state.currentUser!.longitude!;
+      custLat = widget.state.currentUser!.latitude;
+      custLon = widget.state.currentUser!.longitude;
     } else if (widget.state.currentLat != 0) {
       custLat = widget.state.currentLat;
       custLon = widget.state.currentLon;
@@ -887,7 +887,6 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
                       builder: (context) {
                         final isPickedUp = _liveTaskStatus == 'PICKED_UP' || _liveTaskStatus == 'ON_THE_WAY' || isDelivered;
                         final isOnTheWay = _liveTaskStatus == 'ON_THE_WAY' || (_liveTaskStatus == 'PICKED_UP' && _dropsAhead == 0) || isDelivered;
-                        final isAtDoorstep = _distanceKm <= 0.3 || isDelivered;
 
                         return Column(
                           children: [
