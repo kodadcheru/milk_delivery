@@ -86,14 +86,14 @@ def seed():
         admin.is_superuser = True
         admin.save()
 
-    # 1b. Ensure Manideep Reddy (+91 7794893990) also has full Super Admin privileges
-    owner_user = User.objects.filter(phone__endswith="7794893990").first()
-    if owner_user:
-        owner_user.role = User.Roles.ADMIN
-        owner_user.is_staff = True
-        owner_user.is_superuser = True
-        owner_user.save()
-        print("🛡️ [Owner Admin Initialized]: Manideep Reddy (+91 7794893990)")
+    # 1b. Ensure 7794893990 is configured as a standard Customer account
+    customer_user = User.objects.filter(phone__endswith="7794893990").first()
+    if customer_user:
+        customer_user.role = User.Roles.CUSTOMER
+        customer_user.is_staff = False
+        customer_user.is_superuser = False
+        customer_user.save()
+        print("👤 [Customer Role Updated]: Manideep Reddy (+91 7794893990) -> CUSTOMER")
 
     # 2. Ensure active categories exist and have rich presentation metadata
     try:
