@@ -7182,6 +7182,7 @@
 
         const res = await fetch(`${baseUrl}/storefront/config/`, {
           method: 'POST',
+          credentials: 'include',
           headers: getAdminHeaders(),
           body: JSON.stringify(payload)
         });

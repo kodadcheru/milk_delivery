@@ -1330,10 +1330,11 @@ class FloatingCartBar extends StatelessWidget {
                             onPressed: () async {
                               if (_isSubmitting) return;
 
+                              final freshConfig = await state.refreshStorefrontConfig();
                               var effectivePaymentMethod = _paymentMethod;
                               final walletBalance = state.currentUser?.walletBalance ?? 0.0;
-                              final isCodAllowed = state.storefrontConfig.isCodEnabled;
-                              final isWalletAllowed = state.storefrontConfig.isWalletEnabled;
+                              final isCodAllowed = freshConfig.isCodEnabled;
+                              final isWalletAllowed = freshConfig.isWalletEnabled;
 
                               if (!isCodAllowed && !isWalletAllowed) {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(

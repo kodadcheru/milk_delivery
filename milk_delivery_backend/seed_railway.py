@@ -199,6 +199,15 @@ def seed():
     admin.save()
     print("🛡️ [Super Admin Initialized]: admin / admin123 (Phone: +91 8919548905)")
 
+    # 1b. Ensure Manideep Reddy (+91 7794893990) also has full Super Admin privileges
+    owner_user = User.objects.filter(phone__endswith="7794893990").first()
+    if owner_user:
+        owner_user.role = User.Roles.ADMIN
+        owner_user.is_staff = True
+        owner_user.is_superuser = True
+        owner_user.save()
+        print("🛡️ [Owner Admin Initialized]: Manideep Reddy (+91 7794893990)")
+
     # 2. Ensure active categories exist and have rich presentation metadata
     try:
         from apps.products.models import Category

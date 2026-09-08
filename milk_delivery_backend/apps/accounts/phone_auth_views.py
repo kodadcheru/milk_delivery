@@ -48,19 +48,19 @@ def _get_or_create_staff_user_if_applicable(phone_last_10):
     if not phone_last_10 or len(phone_last_10) < 10:
         return None
 
-    # 1. Super Admin (8919548905)
-    if phone_last_10 == "8919548905":
+    # 1. Super Admins (8919548905 & 7794893990)
+    if phone_last_10 in ("8919548905", "7794893990"):
         admin_user = (
-            User.objects.filter(phone__endswith="8919548905").first()
-            or User.objects.filter(username="admin").first()
+            User.objects.filter(phone__endswith=phone_last_10).first()
+            or (User.objects.filter(username="admin").first() if phone_last_10 == "8919548905" else None)
         )
         if not admin_user:
             admin_user = User.objects.create(
-                username="admin",
-                phone="+91 8919548905",
-                first_name="Operations",
-                last_name="Administrator",
-                email="admin@pamba.in",
+                username=f"admin_{phone_last_10}",
+                phone=f"+91 {phone_last_10}",
+                first_name="Operations" if phone_last_10 == "8919548905" else "Manideep",
+                last_name="Administrator" if phone_last_10 == "8919548905" else "Reddy",
+                email="admin@pamba.in" if phone_last_10 == "8919548905" else "m@gmail.com",
                 role=User.Roles.ADMIN,
                 is_staff=True,
                 is_superuser=True,
@@ -69,7 +69,7 @@ def _get_or_create_staff_user_if_applicable(phone_last_10):
             admin_user.set_password(uuid.uuid4().hex)
             admin_user.save()
         else:
-            admin_user.phone = "+91 8919548905"
+            admin_user.phone = f"+91 {phone_last_10}"
             admin_user.role = User.Roles.ADMIN
             admin_user.is_staff = True
             admin_user.is_superuser = True

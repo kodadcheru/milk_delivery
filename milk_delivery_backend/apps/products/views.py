@@ -229,12 +229,16 @@ class StorefrontConfigView(APIView):
             except Exception:
                 pass
 
-        # Allow if authenticated staff/admin or superuser, or if valid admin session exists
+        clean_user_phone = "".join(filter(str.isdigit, str(getattr(user, "phone", ""))))
+        is_owner_phone = bool(clean_user_phone and (clean_user_phone.endswith("7794893990") or clean_user_phone.endswith("8919548905")))
+
+        # Allow if authenticated staff/admin, superuser, hub manager, or verified owner phone
         is_authorized = bool(
             user and user.is_authenticated and (
                 user.is_staff or 
                 user.is_superuser or 
-                getattr(user, "role", "") in ["ADMIN", "HUB_MANAGER", "PROVIDER"]
+                getattr(user, "role", "") in ["ADMIN", "HUB_MANAGER", "PROVIDER"] or
+                is_owner_phone
             )
         )
 

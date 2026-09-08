@@ -83,6 +83,7 @@ class AppState extends ChangeNotifier {
   int currentTabIndex = 0;
   String? customBannerImagePath;
   StorefrontConfigModel storefrontConfig = const StorefrontConfigModel();
+  Timer? _storefrontHeartbeatTimer;
 
   // ── Redis & Real-Time Sync State ──
   bool isRedisConnected = false;
@@ -782,6 +783,11 @@ class AppState extends ChangeNotifier {
     await loadCustomBannerImage();
     await initDevicePermissionsAndLocation();
     storefrontConfig = await ApiService.fetchStorefrontConfig();
+    
+    _storefrontHeartbeatTimer?.cancel();
+    _storefrontHeartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      refreshStorefrontConfig();
+    });
     
     if (savedToken != null) {
       await reloadAllData();
@@ -1826,12 +1832,25 @@ class AppState extends ChangeNotifier {
   Future<StorefrontConfigModel> refreshStorefrontConfig() async {
     try {
       final config = await ApiService.fetchStorefrontConfig();
-      storefrontConfig = config;
-      notifyListeners();
+      if (config.isCodEnabled != storefrontConfig.isCodEnabled ||
+          config.isWalletEnabled != storefrontConfig.isWalletEnabled ||
+          config.headline != storefrontConfig.headline ||
+          config.bannerImageUrl != storefrontConfig.bannerImageUrl ||
+          config.subtitle != storefrontConfig.subtitle ||
+          config.promoChip != storefrontConfig.promoChip) {
+        storefrontConfig = config;
+        notifyListeners();
+      }
       return config;
     } catch (_) {
       return storefrontConfig;
     }
+  }
+
+  @override
+  void dispose() {
+    _storefrontHeartbeatTimer?.cancel();
+    super.dispose();
   }
 }
 
