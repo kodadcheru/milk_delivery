@@ -283,6 +283,13 @@ class StorefrontConfigView(APIView):
             else:
                 config.is_wallet_enabled = bool(is_wallet_enabled)
 
+        is_online_payment_enabled = request.data.get("is_online_payment_enabled")
+        if is_online_payment_enabled is not None:
+            if isinstance(is_online_payment_enabled, str):
+                config.is_online_payment_enabled = is_online_payment_enabled.strip().lower() in ("true", "1", "yes", "t")
+            else:
+                config.is_online_payment_enabled = bool(is_online_payment_enabled)
+
         config.save()
         serializer = StorefrontConfigSerializer(config, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

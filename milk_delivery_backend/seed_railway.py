@@ -157,6 +157,8 @@ def auto_heal_schema():
                     cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_cod_enabled BOOLEAN DEFAULT TRUE;")
                 if 'is_wallet_enabled' not in sf_cols:
                     cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_wallet_enabled BOOLEAN DEFAULT TRUE;")
+                if 'is_online_payment_enabled' not in sf_cols:
+                    cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_online_payment_enabled BOOLEAN DEFAULT TRUE;")
             print("✅ [Railway DB Initializer] Database tables and columns verified.")
         except Exception as e:
             print("Schema auto-heal notice:", e)

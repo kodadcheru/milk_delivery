@@ -155,6 +155,7 @@ class StorefrontConfigSerializer(serializers.ModelSerializer):
             "cta_text",
             "is_cod_enabled",
             "is_wallet_enabled",
+            "is_online_payment_enabled",
             "is_active",
             "updated_at",
         ]

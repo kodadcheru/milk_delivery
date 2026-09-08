@@ -365,13 +365,15 @@ class ExpressOrderListCreateView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-        # 2. Payment Method Handling (Wallet vs COD)
+        # 2. Payment Method Handling (Wallet vs COD vs Razorpay Online)
         from apps.products.models import StorefrontConfig
         store_cfg = StorefrontConfig.get_active()
 
         raw_payment_method = str(request.data.get("payment_method", "WALLET")).upper()
         if "COD" in raw_payment_method or "CASH" in raw_payment_method:
             payment_method = "COD"
+        elif "RAZORPAY" in raw_payment_method or "ONLINE" in raw_payment_method:
+            payment_method = "RAZORPAY"
         elif "UPI" in raw_payment_method:
             payment_method = "UPI"
         else:
@@ -379,18 +381,23 @@ class ExpressOrderListCreateView(APIView):
         is_cod = (payment_method == "COD")
 
         # Admin controls enforcement
-        if is_cod and not store_cfg.is_cod_enabled:
+        if payment_method == "COD" and not store_cfg.is_cod_enabled:
             return Response(
-                {"detail": "Cash on Delivery (COD) is temporarily disabled by admin. Please pay using Pamba Wallet."},
+                {"detail": "Cash on Delivery (COD) is temporarily disabled by admin. Please pay using Pamba Wallet or Online Pay."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if not is_cod and not store_cfg.is_wallet_enabled:
+        if payment_method == "WALLET" and not store_cfg.is_wallet_enabled:
             return Response(
-                {"detail": "Pamba Wallet payment is temporarily disabled by store admin. Please choose Cash on Delivery (COD)."},
+                {"detail": "Pamba Wallet payment is temporarily disabled by store admin. Please choose Cash on Delivery (COD) or Online Pay."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if payment_method == "RAZORPAY" and not getattr(store_cfg, "is_online_payment_enabled", True):
+            return Response(
+                {"detail": "Online payment via Razorpay is temporarily disabled by store admin."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if not is_cod and user.wallet_balance < total_amount:
+        if payment_method == "WALLET" and user.wallet_balance < total_amount:
             return Response(
                 {"detail": f"Insufficient wallet balance (₹{user.wallet_balance:.2f}). Required: ₹{total_amount:.2f}. Please top up your wallet or select Cash on Delivery."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -398,6 +405,13 @@ class ExpressOrderListCreateView(APIView):
 
         try:
             with transaction.atomic():
+                if payment_method == "COD":
+                    initial_payment_status = "PENDING (Cash on Delivery)"
+                elif payment_method == "RAZORPAY":
+                    initial_payment_status = "PAID (Razorpay Online)"
+                else:
+                    initial_payment_status = "PAID (Prepaid Wallet)"
+
                 order = LiveOrder.objects.create(
                     id=order_id,
                     customer=user,
@@ -414,7 +428,7 @@ class ExpressOrderListCreateView(APIView):
                     delivery_latitude=delivery_lat,
                     delivery_longitude=delivery_lon,
                     delivery_otp=str(random.randint(1000, 9999)),
-                    payment_status="PENDING (Cash on Delivery)" if is_cod else "PAID (Prepaid Wallet)",
+                    payment_status=initial_payment_status,
                     payment_method=payment_method,
                     is_cod=is_cod,
                     cash_amount=total_amount if is_cod else Decimal("0.00"),
@@ -447,7 +461,7 @@ class ExpressOrderListCreateView(APIView):
                     except Exception:
                         pass
 
-                if not is_cod:
+                if payment_method == "WALLET":
                     try:
                         User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") - total_amount)
                         user.refresh_from_db(fields=["wallet_balance"])
@@ -460,10 +474,22 @@ class ExpressOrderListCreateView(APIView):
                         )
                     except Exception:
                         pass
+                elif payment_method == "RAZORPAY":
+                    rzp_order_id = request.data.get("razorpay_order_id")
+                    if rzp_order_id:
+                        try:
+                            from apps.payments.models import RazorpayPayment
+                            RazorpayPayment.objects.filter(
+                                razorpay_order_id=rzp_order_id,
+                                user=user,
+                            ).update(order=order)
+                        except Exception:
+                            pass
 
                 try:
                     notif_title = f"⚡ Express Order {order_id} Confirmed!"
-                    notif_msg = f"Your order with {len(parsed_items)} item(s) is scheduled for {delivery_slot}. {'Payment: Cash on Delivery (₹' + str(total_amount) + ')' if is_cod else 'Payment: Prepaid Wallet'}."
+                    pay_label = 'Payment: Cash on Delivery (₹' + str(total_amount) + ')' if is_cod else ('Payment: Razorpay Online' if payment_method == 'RAZORPAY' else 'Payment: Prepaid Wallet')
+                    notif_msg = f"Your order with {len(parsed_items)} item(s) is scheduled for {delivery_slot}. {pay_label}."
                     Notification.objects.create(
                         user=user,
                         title=notif_title,

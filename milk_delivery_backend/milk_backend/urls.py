@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.core.views import HealthCheckView
@@ -231,6 +231,8 @@ urlpatterns = [
     path("api/orders/express/<str:order_id>/", ExpressOrderDetailView.as_view(), name="express_order_detail"),
     # Image & Media Upload Service endpoint
     path("api/upload/image/", FileUploadView.as_view(), name="image_upload"),
+    # Razorpay Payment Gateway endpoints
+    path("api/payments/", include("apps.payments.urls")),
 ]
 
 # Serve media files directly in development and production with 30-day immutable Cache-Control

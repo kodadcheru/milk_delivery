@@ -150,6 +150,10 @@ class StorefrontConfig(models.Model):
         default=True,
         help_text="Allow customers to pay using prepaid Pamba Wallet",
     )
+    is_online_payment_enabled = models.BooleanField(
+        default=True,
+        help_text="Allow customers to pay online via Razorpay (UPI, Cards, NetBanking)",
+    )
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -166,6 +170,10 @@ class StorefrontConfig(models.Model):
         if not obj:
             obj = cls.objects.create()
         return obj
+
+    @classmethod
+    def get_solo(cls):
+        return cls.get_active()
 
     @property
     def effective_banner_url(self):

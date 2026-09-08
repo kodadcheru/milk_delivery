@@ -1331,6 +1331,7 @@ class FloatingCartBar extends StatelessWidget {
                               if (_isSubmitting) return;
 
                               final freshConfig = await state.refreshStorefrontConfig();
+                              if (!context.mounted) return;
                               var effectivePaymentMethod = _paymentMethod;
                               final walletBalance = state.currentUser?.walletBalance ?? 0.0;
                               final isCodAllowed = freshConfig.isCodEnabled;

@@ -1823,7 +1823,7 @@
                 Turn payment options ON or OFF for customers in the mobile app checkout. Changes sync in real-time.
               </p>
 
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
                 <!-- COD Toggle Card -->
                 <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
@@ -1860,6 +1860,26 @@
                     </label>
                   </div>
                   <div style="font-size: 11.5px; font-weight: 600;" id="sfWalletStatusText">
+                    Status: <span style="color: #10B981;">Enabled</span>
+                  </div>
+                </div>
+
+                <!-- Online Razorpay Toggle Card -->
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 22px;">💳</span>
+                      <div>
+                        <div style="font-weight: 800; font-size: 13px; color: #fff;">Online Pay (Razorpay)</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">UPI, GPay, Cards, NetBanking</div>
+                      </div>
+                    </div>
+                    <label class="switch" style="margin: 0; flex-shrink: 0;">
+                      <input type="checkbox" id="sfOnlineToggle" onchange="autoSavePaymentToggle('online', this.checked)">
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div style="font-size: 11.5px; font-weight: 600;" id="sfOnlineStatusText">
                     Status: <span style="color: #10B981;">Enabled</span>
                   </div>
                 </div>
@@ -7058,6 +7078,10 @@
             if (walletToggle) {
               walletToggle.checked = currentStorefrontConfig.is_wallet_enabled !== false;
             }
+            const onlineToggle = document.getElementById('sfOnlineToggle');
+            if (onlineToggle) {
+              onlineToggle.checked = currentStorefrontConfig.is_online_payment_enabled !== false;
+            }
             updatePaymentToggleLabels();
             updateStorefrontLivePreview();
           }
@@ -7088,20 +7112,35 @@
         }
       }
 
+      const onlineToggle = document.getElementById('sfOnlineToggle');
+      const onlineStatus = document.getElementById('sfOnlineStatusText');
+      if (onlineToggle && onlineStatus) {
+        if (onlineToggle.checked) {
+          onlineStatus.innerHTML = 'Status: <span style="color: #10B981;">Enabled (Razorpay UPI, Cards, NetBanking)</span>';
+        } else {
+          onlineStatus.innerHTML = 'Status: <span style="color: #EF4444;">Disabled (Online payment disabled in app)</span>';
+        }
+      }
+
       const overallBadge = document.getElementById('sfPaymentOverallBadge');
       if (overallBadge) {
         const isCod = codToggle ? codToggle.checked : true;
         const isWallet = walletToggle ? walletToggle.checked : true;
-        if (isCod && isWallet) {
-          overallBadge.innerText = 'All Methods Active';
-          overallBadge.style.color = '#10B981';
-          overallBadge.style.background = 'rgba(16, 185, 129, 0.2)';
-        } else if (!isCod && !isWallet) {
+        const isOnline = onlineToggle ? onlineToggle.checked : true;
+        if (!isCod && !isWallet && !isOnline) {
           overallBadge.innerText = 'Payments Suspended';
           overallBadge.style.color = '#EF4444';
           overallBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+        } else if (isCod && isWallet && isOnline) {
+          overallBadge.innerText = 'All Methods Active';
+          overallBadge.style.color = '#10B981';
+          overallBadge.style.background = 'rgba(16, 185, 129, 0.2)';
         } else {
-          overallBadge.innerText = isCod ? 'COD Only' : 'Wallet Only';
+          const activeList = [];
+          if (isWallet) activeList.push('Wallet');
+          if (isCod) activeList.push('COD');
+          if (isOnline) activeList.push('Online');
+          overallBadge.innerText = activeList.join(' + ');
           overallBadge.style.color = '#F59E0B';
           overallBadge.style.background = 'rgba(245, 158, 11, 0.2)';
         }
@@ -7158,8 +7197,10 @@
       updatePaymentToggleLabels();
       const codToggle = document.getElementById('sfCodToggle');
       const walletToggle = document.getElementById('sfWalletToggle');
+      const onlineToggle = document.getElementById('sfOnlineToggle');
       const isCod = codToggle ? codToggle.checked : true;
       const isWallet = walletToggle ? walletToggle.checked : true;
+      const isOnline = onlineToggle ? onlineToggle.checked : true;
 
       const badge = document.getElementById('sfPaymentOverallBadge');
       if (badge) {
@@ -7167,7 +7208,8 @@
         badge.style.color = '#F59E0B';
       }
 
-      showStorefrontToast(`Syncing ${method === 'cod' ? 'COD' : 'Wallet'} status to server...`, 'info');
+      const methodLabel = method === 'cod' ? 'COD' : (method === 'online' ? 'Online Pay' : 'Wallet');
+      showStorefrontToast(`Syncing ${methodLabel} status to server...`, 'info');
 
       try {
         const payload = {};
@@ -7175,9 +7217,12 @@
           payload.is_cod_enabled = isEnabled;
         } else if (method === 'wallet') {
           payload.is_wallet_enabled = isEnabled;
+        } else if (method === 'online') {
+          payload.is_online_payment_enabled = isEnabled;
         } else {
           payload.is_cod_enabled = isCod;
           payload.is_wallet_enabled = isWallet;
+          payload.is_online_payment_enabled = isOnline;
         }
 
         const res = await fetch(`${baseUrl}/storefront/config/`, {
@@ -7191,7 +7236,7 @@
           const data = await res.json();
           currentStorefrontConfig = data;
           updatePaymentToggleLabels();
-          const label = method === 'cod' ? 'Cash on Delivery (COD)' : 'Pamba Wallet';
+          const label = method === 'cod' ? 'Cash on Delivery (COD)' : (method === 'online' ? 'Online Payment (Razorpay)' : 'Pamba Wallet');
           showStorefrontToast(`✓ ${label} is now <b>${isEnabled ? 'ENABLED' : 'DISABLED'}</b> for customers!`, 'success');
         } else {
           throw new Error(`HTTP ${res.status}`);
@@ -7201,6 +7246,7 @@
         // Revert toggle UI
         if (method === 'cod' && codToggle) codToggle.checked = !isEnabled;
         if (method === 'wallet' && walletToggle) walletToggle.checked = !isEnabled;
+        if (method === 'online' && onlineToggle) onlineToggle.checked = !isEnabled;
         updatePaymentToggleLabels();
         showStorefrontToast(`❌ Failed to save setting: ${err.message}`, 'error');
         alert(`Failed to save payment toggle to server: ${err.message}`);
