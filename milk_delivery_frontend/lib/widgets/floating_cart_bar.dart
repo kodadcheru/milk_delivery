@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../providers/app_state.dart';
@@ -140,6 +141,7 @@ class FloatingCartBar extends StatelessWidget {
 
     bool _isSubmitting = false;
     bool _hasRefreshedConfig = false;
+    Timer? syncTimer;
 
     showModalBottomSheet(
       context: context,
@@ -148,6 +150,22 @@ class FloatingCartBar extends StatelessWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
+          syncTimer ??= Timer.periodic(const Duration(seconds: 3), (_) {
+            if (ctx.mounted) {
+              state.refreshStorefrontConfig().then((cfg) {
+                if (ctx.mounted) {
+                  setSheetState(() {
+                    if (_paymentMethod == 'WALLET' && !cfg.isWalletEnabled && cfg.isCodEnabled) {
+                      _paymentMethod = 'COD';
+                    } else if (_paymentMethod == 'COD' && !cfg.isCodEnabled && cfg.isWalletEnabled) {
+                      _paymentMethod = 'WALLET';
+                    }
+                  });
+                }
+              });
+            }
+          });
+
           if (!_hasRefreshedConfig) {
             _hasRefreshedConfig = true;
             state.refreshStorefrontConfig().then((cfg) {
@@ -889,7 +907,7 @@ class FloatingCartBar extends StatelessWidget {
                               final deficit = total - walletBal;
 
                               return Opacity(
-                                opacity: isWalletEnabled ? 1.0 : 0.55,
+                                opacity: isWalletEnabled ? 1.0 : 0.45,
                                 child: InkWell(
                                   onTap: isWalletEnabled
                                       ? () {
@@ -904,6 +922,7 @@ class FloatingCartBar extends StatelessWidget {
                                                   ? 'వాలెట్ చెల్లింపు ప్రస్తుతం స్టోర్ అడ్మిన్ ద్వారా నిలిపివేయబడింది.'
                                                   : 'Pamba Wallet payment is currently disabled by store admin.'),
                                               duration: const Duration(seconds: 2),
+                                              backgroundColor: const Color(0xFFDC2626),
                                             ),
                                           );
                                         },
@@ -912,10 +931,14 @@ class FloatingCartBar extends StatelessWidget {
                                     duration: const Duration(milliseconds: 200),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isWalletSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted,
+                                      color: !isWalletEnabled
+                                          ? const Color(0xFFF1F5F9)
+                                          : (isWalletSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted),
                                       borderRadius: BorderRadius.circular(UiRadius.md),
                                       border: Border.all(
-                                        color: isWalletSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+                                        color: !isWalletEnabled
+                                            ? const Color(0xFFCBD5E1)
+                                            : (isWalletSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder),
                                         width: isWalletSelected ? 2 : 1,
                                       ),
                                     ),
@@ -926,7 +949,9 @@ class FloatingCartBar extends StatelessWidget {
                                             Container(
                                               padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
-                                                color: isWalletSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300,
+                                                color: !isWalletEnabled
+                                                    ? Colors.grey.shade400
+                                                    : (isWalletSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300),
                                                 borderRadius: BorderRadius.circular(10),
                                               ),
                                               child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
@@ -943,7 +968,9 @@ class FloatingCartBar extends StatelessWidget {
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.w900,
                                                           fontSize: 13,
-                                                          color: isWalletSelected ? const Color(0xFF0D7C66) : UiTone.ink,
+                                                          color: !isWalletEnabled
+                                                              ? Colors.grey.shade500
+                                                              : (isWalletSelected ? const Color(0xFF0D7C66) : UiTone.ink),
                                                         ),
                                                       ),
                                                       const SizedBox(width: 8),
@@ -999,7 +1026,26 @@ class FloatingCartBar extends StatelessWidget {
                                                 ],
                                               ),
                                             ),
-                                            if (isWalletEnabled && !hasSufficientBal) ...[
+                                            if (!isWalletEnabled) ...[
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.shade200,
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.block_rounded, color: Colors.grey.shade500, size: 14),
+                                                    const SizedBox(width: 3),
+                                                    Text(
+                                                      state.isTelugu ? 'అందుబాటులో లేదు' : 'Unavailable',
+                                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ] else if (!hasSufficientBal) ...[
                                               InkWell(
                                                 onTap: () {
                                                   HapticFeedback.lightImpact();
@@ -1054,7 +1100,7 @@ class FloatingCartBar extends StatelessWidget {
                               final isCodSelected = _paymentMethod == 'COD' && isCodEnabled;
 
                               return Opacity(
-                                opacity: isCodEnabled ? 1.0 : 0.55,
+                                opacity: isCodEnabled ? 1.0 : 0.45,
                                 child: InkWell(
                                   onTap: isCodEnabled
                                       ? () {
@@ -1069,6 +1115,7 @@ class FloatingCartBar extends StatelessWidget {
                                                   ? 'క్యాష్ ఆన్ డెలివరీ ప్రస్తుతం స్టోర్ అడ్మిన్ ద్వారా నిలిపివేయబడింది.'
                                                   : 'Cash on Delivery is currently disabled by store admin.'),
                                               duration: const Duration(seconds: 2),
+                                              backgroundColor: const Color(0xFFDC2626),
                                             ),
                                           );
                                         },
@@ -1077,10 +1124,14 @@ class FloatingCartBar extends StatelessWidget {
                                     duration: const Duration(milliseconds: 200),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isCodSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted,
+                                      color: !isCodEnabled
+                                          ? const Color(0xFFF1F5F9)
+                                          : (isCodSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted),
                                       borderRadius: BorderRadius.circular(UiRadius.md),
                                       border: Border.all(
-                                        color: isCodSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder,
+                                        color: !isCodEnabled
+                                            ? const Color(0xFFCBD5E1)
+                                            : (isCodSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder),
                                         width: isCodSelected ? 2 : 1,
                                       ),
                                     ),
@@ -1089,7 +1140,9 @@ class FloatingCartBar extends StatelessWidget {
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: isCodSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300,
+                                            color: !isCodEnabled
+                                                ? Colors.grey.shade400
+                                                : (isCodSelected ? const Color(0xFF0D7C66) : Colors.grey.shade300),
                                             borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: const Icon(Icons.payments_rounded, color: Colors.white, size: 18),
@@ -1106,7 +1159,9 @@ class FloatingCartBar extends StatelessWidget {
                                                     style: TextStyle(
                                                       fontWeight: FontWeight.w900,
                                                       fontSize: 13,
-                                                      color: isCodSelected ? const Color(0xFF0D7C66) : UiTone.ink,
+                                                      color: !isCodEnabled
+                                                          ? Colors.grey.shade500
+                                                          : (isCodSelected ? const Color(0xFF0D7C66) : UiTone.ink),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 8),
@@ -1141,16 +1196,39 @@ class FloatingCartBar extends StatelessWidget {
                                                 !isCodEnabled
                                                     ? (state.isTelugu ? 'స్టోర్ ద్వారా నిలిపివేయబడింది' : 'Temporarily disabled by store')
                                                     : (state.isTelugu ? 'డోర్‌స్టెప్ వద్ద నగదు లేదా QR స్కాన్ ద్వారా చెల్లించండి' : 'Pay via Cash, GPay, PhonePe or Paytm QR at doorstep'),
-                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: !isCodEnabled ? Colors.grey.shade500 : const Color(0xFF64748B),
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        Icon(
-                                          isCodSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                          color: isCodSelected ? const Color(0xFF0D7C66) : Colors.grey.shade400,
-                                          size: 20,
-                                        ),
+                                        if (!isCodEnabled)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade200,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.block_rounded, color: Colors.grey.shade500, size: 14),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  state.isTelugu ? 'అందుబాటులో లేదు' : 'Unavailable',
+                                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        else
+                                          Icon(
+                                            isCodSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                            color: isCodSelected ? const Color(0xFF0D7C66) : Colors.grey.shade400,
+                                            size: 20,
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -1408,7 +1486,9 @@ class FloatingCartBar extends StatelessWidget {
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      syncTimer?.cancel();
+    });
   }
 
   void _showQuickTopUpDialog(BuildContext context, AppState state, double deficit, VoidCallback onRecharged) {
