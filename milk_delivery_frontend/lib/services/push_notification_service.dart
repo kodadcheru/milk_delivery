@@ -25,13 +25,21 @@ class PushNotificationService {
   bool _isInitialized = false;
   String? _lastToken;
 
-  /// Default fallback options so Firebase initializes safely without throwing when credentials are in setup phase
-  static const FirebaseOptions _fallbackOptions = FirebaseOptions(
-    apiKey: 'AIzaSyPlaceholderKeyForFallbackInit12345',
-    appId: '1:123456789012:ios:a1b2c3d4e5f6',
-    messagingSenderId: '123456789012',
-    projectId: 'pamba-milk-delivery',
-    storageBucket: 'pamba-milk-delivery.appspot.com',
+  /// Real project credentials for pamba-delivery
+  static const FirebaseOptions _androidOptions = FirebaseOptions(
+    apiKey: 'AIzaSyDc1A9xybmj5I0P0yesX8j4wfRsuepfzsk',
+    appId: '1:7416380046:android:ff89ece9d8598e997c67df',
+    messagingSenderId: '7416380046',
+    projectId: 'pamba-delivery',
+    storageBucket: 'pamba-delivery.firebasestorage.app',
+  );
+
+  static const FirebaseOptions _iosOptions = FirebaseOptions(
+    apiKey: 'AIzaSyDc1A9xybmj5I0P0yesX8j4wfRsuepfzsk',
+    appId: '1:7416380046:ios:ff89ece9d8598e997c67df',
+    messagingSenderId: '7416380046',
+    projectId: 'pamba-delivery',
+    storageBucket: 'pamba-delivery.firebasestorage.app',
     iosBundleId: 'com.example.milkDeliveryFrontend',
   );
 
@@ -42,10 +50,11 @@ class PushNotificationService {
       // 1. Initialize Firebase Core safely
       try {
         await Firebase.initializeApp();
-        debugPrint('[FCM] Firebase initialized with default config file');
+        debugPrint('[FCM] Firebase initialized with native configuration');
       } catch (e) {
-        debugPrint('[FCM] Initializing with fallback FirebaseOptions: $e');
-        await Firebase.initializeApp(options: _fallbackOptions);
+        debugPrint('[FCM] Initializing with platform FirebaseOptions: $e');
+        final options = Platform.isAndroid ? _androidOptions : _iosOptions;
+        await Firebase.initializeApp(options: options);
       }
 
       // 2. Set background message handler

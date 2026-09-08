@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "7416380046",
+    "project_id": "pamba-delivery",
+    "storage_bucket": "pamba-delivery.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:7416380046:android:ff89ece9d8598e997c67df",
+        "android_client_info": {
+          "package_name": "com.example.milkDeliveryFrontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc1A9xybmj5I0P0yesX8j4wfRsuepfzsk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

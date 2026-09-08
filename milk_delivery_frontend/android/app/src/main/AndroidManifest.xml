@@ -36,6 +36,14 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4" />
 
+        <!-- Firebase Cloud Messaging Defaults -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="pamba_milk_delivery" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
