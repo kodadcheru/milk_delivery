@@ -35,6 +35,14 @@ def get_firebase_app():
 
         cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
         cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+        if not cred_path:
+            try:
+                from django.conf import settings
+                candidate = os.path.join(getattr(settings, "BASE_DIR", ""), "firebase_credentials.json")
+                if os.path.exists(candidate):
+                    cred_path = candidate
+            except Exception:
+                pass
 
         if cred_json:
             try:

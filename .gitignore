@@ -3,6 +3,9 @@
 *.log
 .env
 .env.local
+firebase_credentials.json
+*firebase*.json
+*.service_account.json
 
 # Python / Django
 __pycache__/
