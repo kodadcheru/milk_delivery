@@ -24,6 +24,8 @@ class SupportSocketService {
 
   Timer? _reconnectTimer;
   String _serverUrl = '';
+  String? _lastPhone;
+  String? _lastUserName;
 
   String get _defaultServerUrl {
     // Derive WebSocket URL from the API base URL
@@ -37,6 +39,8 @@ class SupportSocketService {
   void connect({String? customUrl, String? userPhone, String? userName}) {
     if (customUrl != null) _serverUrl = customUrl;
     if (_serverUrl.isEmpty) _serverUrl = _defaultServerUrl;
+    if (userPhone != null) _lastPhone = userPhone;
+    if (userName != null) _lastUserName = userName;
 
     try {
       final uri = Uri.parse('$_serverUrl?phone=${userPhone ?? ""}&name=${userName ?? ""}');
@@ -77,7 +81,7 @@ class SupportSocketService {
     _reconnectTimer?.cancel();
     // Auto-reconnect attempts every 8 seconds
     _reconnectTimer = Timer(const Duration(seconds: 8), () {
-      connect();
+      connect(userPhone: _lastPhone, userName: _lastUserName);
     });
   }
 

@@ -113,6 +113,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
       home: AnimatedSwitcher(
         duration: const Duration(milliseconds: 450),
         switchInCurve: Curves.easeIn,

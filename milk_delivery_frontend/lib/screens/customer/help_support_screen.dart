@@ -131,7 +131,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
     });
 
     _loadHistory();
-    _historyPollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _syncIncomingMessages());
+    _historyPollTimer = Timer.periodic(const Duration(seconds: 15), (_) => _syncIncomingMessages());
 
     if (widget.initialTopic != null) {
       _sendMessage(widget.initialTopic!);
