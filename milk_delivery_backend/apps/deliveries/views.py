@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Q, Case, When, Value, IntegerField
 from django.utils import timezone
 from rest_framework import generics, permissions, status
@@ -28,16 +28,6 @@ class DeliveryTaskListView(generics.ListAPIView):
         qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("-delivery_date", "-id")
         
         if user and user.is_authenticated and getattr(user, "role", "") == "CUSTOMER":
-            today = date.today()
-            # Auto-ensure today's daily order exists if customer has active subscriptions
-            try:
-                has_active = Subscription.objects.filter(customer=user, status=Subscription.Statuses.ACTIVE).exists()
-                if has_active and not DeliveryTask.objects.filter(subscription__customer=user, delivery_date=today).exists():
-                    from apps.deliveries.task_generator import generate_daily_tasks_for_date
-                    generate_daily_tasks_for_date(target_date=today, force=True)
-            except Exception:
-                pass
-
             if req_date:
                 try:
                     from datetime import datetime as _dt
@@ -83,21 +73,6 @@ class DeliveryTaskListView(generics.ListAPIView):
         if not user.is_superuser and getattr(user, 'assigned_hub', None):
             return qs.filter(Q(hub=user.assigned_hub) | Q(subscription__hub=user.assigned_hub) | Q(hub__isnull=True))
         return qs
-
-    def list(self, request, *args, **kwargs):
-        req_date = self.request.query_params.get("date", None)
-        if req_date:
-            try:
-                from datetime import datetime as _dt, date as _d, timedelta as _td
-                f_date = _dt.strptime(req_date, '%Y-%m-%d').date()
-                if f_date in (_d.today(), _d.today() + _td(days=1)):
-                    # Self-heal: auto-generate if active subscriptions exist but 0 tasks for this date
-                    if not DeliveryTask.objects.filter(delivery_date=f_date).exists():
-                        from apps.deliveries.task_generator import generate_daily_tasks_for_date
-                        generate_daily_tasks_for_date(target_date=f_date, force=True)
-            except Exception:
-                pass
-        return super().list(request, *args, **kwargs)
 
 
 class DeliveryTaskCompleteView(APIView):
@@ -190,49 +165,51 @@ class DeliveryTaskCompleteView(APIView):
                 unit_price = Decimal("0.00")
             total_cost = unit_price * task.subscription.quantity
 
-            if customer.wallet_balance >= total_cost:
-                User.objects.filter(pk=customer.pk).update(wallet_balance=F("wallet_balance") - total_cost)
-                customer.refresh_from_db(fields=["wallet_balance"])
-
-                WalletTransaction.objects.create(
-                    user=customer,
-                    amount=total_cost,
-                    transaction_type=WalletTransaction.Types.DEBIT,
-                    description=f"Morning Delivery #{task.id} ({task.subscription.product.name})",
-                )
-
-                Notification.objects.create(
-                    user=customer,
-                    title="🥛 Morning Delivery Complete!",
-                    message=f"Your delivery #{task.id} ({task.subscription.quantity}x {task.subscription.product.name}) was dropped at doorstep. ₹{total_cost} debited from wallet.",
-                    notification_type=Notification.Types.DELIVERY,
-                )
-            else:
-                # Insufficient balance — debit what's available, record the outstanding amount
-                available = customer.wallet_balance
-                outstanding = total_cost - available
-                if available > Decimal("0.00"):
-                    User.objects.filter(pk=customer.pk).update(wallet_balance=Decimal("0.00"))
+            with transaction.atomic():
+                customer = User.objects.select_for_update().get(pk=customer.pk)
+                if customer.wallet_balance >= total_cost:
+                    User.objects.filter(pk=customer.pk).update(wallet_balance=F("wallet_balance") - total_cost)
                     customer.refresh_from_db(fields=["wallet_balance"])
+
                     WalletTransaction.objects.create(
                         user=customer,
+                        amount=total_cost,
                         transaction_type=WalletTransaction.Types.DEBIT,
-                        amount=available,
-                        description=f'Delivery #{task.id} - Partial debit (₹{outstanding:.2f} outstanding)',
+                        description=f"Morning Delivery #{task.id} ({task.subscription.product.name})",
+                    )
+
+                    Notification.objects.create(
+                        user=customer,
+                        title="🥛 Morning Delivery Complete!",
+                        message=f"Your delivery #{task.id} ({task.subscription.quantity}x {task.subscription.product.name}) was dropped at doorstep. ₹{total_cost} debited from wallet.",
+                        notification_type=Notification.Types.DELIVERY,
                     )
                 else:
-                    WalletTransaction.objects.create(
+                    # Insufficient balance — debit what's available, record the outstanding amount
+                    available = customer.wallet_balance
+                    outstanding = total_cost - available
+                    if available > Decimal("0.00"):
+                        User.objects.filter(pk=customer.pk).update(wallet_balance=Decimal("0.00"))
+                        customer.refresh_from_db(fields=["wallet_balance"])
+                        WalletTransaction.objects.create(
+                            user=customer,
+                            transaction_type=WalletTransaction.Types.DEBIT,
+                            amount=available,
+                            description=f'Delivery #{task.id} - Partial debit (₹{outstanding:.2f} outstanding)',
+                        )
+                    else:
+                        WalletTransaction.objects.create(
+                            user=customer,
+                            transaction_type=WalletTransaction.Types.DEBIT,
+                            amount=Decimal("0.00"),
+                            description=f'Delivery #{task.id} - ₹{total_cost:.2f} outstanding (zero balance)',
+                        )
+                    Notification.objects.create(
                         user=customer,
-                        transaction_type=WalletTransaction.Types.DEBIT,
-                        amount=Decimal("0.00"),
-                        description=f'Delivery #{task.id} - ₹{total_cost:.2f} outstanding (zero balance)',
+                        title='⚠️ Low Wallet Balance!',
+                        message=f'Delivery #{task.id} completed. ₹{outstanding:.2f} is outstanding. Please recharge your wallet.',
+                        notification_type=Notification.Types.WALLET,
                     )
-                Notification.objects.create(
-                    user=customer,
-                    title='⚠️ Low Wallet Balance!',
-                    message=f'Delivery #{task.id} completed. ₹{outstanding:.2f} is outstanding. Please recharge your wallet.',
-                    notification_type=Notification.Types.WALLET,
-                )
 
         try:
             from apps.core.consumers import broadcast_hub_event
