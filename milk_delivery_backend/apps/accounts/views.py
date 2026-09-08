@@ -72,6 +72,13 @@ class WalletTopUpView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        # Only admin/staff can manually top up wallets
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {"error": "Wallet top-up requires payment gateway verification. Manual top-up is admin-only."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = WalletTopUpSerializer(data=request.data)
         if serializer.is_valid():
             amount = serializer.validated_data["amount"]

@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.milk_delivery_frontend"
+    namespace = "in.pamba.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -18,7 +18,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.milkDeliveryFrontend"
+        applicationId = "in.pamba.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

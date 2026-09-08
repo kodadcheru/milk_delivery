@@ -211,6 +211,23 @@ class DeliveryTaskCompleteView(APIView):
                         notification_type=Notification.Types.WALLET,
                     )
 
+                    # Auto-pause active subscriptions if wallet depleted
+                    if customer.wallet_balance <= Decimal("0.00"):
+                        from apps.subscriptions.models import Subscription
+                        if not hasattr(Subscription, "Status"):
+                            Subscription.Status = Subscription.Statuses
+                        paused_count = Subscription.objects.filter(
+                            customer=customer,
+                            status=Subscription.Status.ACTIVE,
+                        ).update(status=Subscription.Status.PAUSED)
+                        if paused_count:
+                            Notification.objects.create(
+                                user=customer,
+                                title='⏸️ Subscriptions Paused',
+                                message=f'{paused_count} subscription(s) paused due to zero wallet balance. Recharge to resume.',
+                                notification_type=Notification.Types.WALLET,
+                            )
+
         try:
             from apps.core.consumers import broadcast_hub_event
             hub_code = getattr(task.hub, "hub_code", "HUB-KDD-01") if task.hub else "HUB-KDD-01"

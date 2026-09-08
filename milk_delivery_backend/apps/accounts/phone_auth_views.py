@@ -257,7 +257,7 @@ class RegisterMobileUserView(APIView):
             address=address,
             city=city,
             role=User.Roles.CUSTOMER,
-            wallet_balance=Decimal("500.00"),
+            wallet_balance=Decimal("50.00"),  # Welcome bonus
             delivery_instructions=instructions,
         )
         user.set_password(uuid.uuid4().hex)
@@ -282,7 +282,7 @@ class RegisterMobileUserView(APIView):
         # Initial Welcome Wallet Transaction
         WalletTransaction.objects.create(
             user=user,
-            amount=Decimal("500.00"),
+            amount=Decimal("50.00"),
             transaction_type=WalletTransaction.Types.CREDIT,
             description="🎁 Welcome Bonus & Initial Top-Up",
         )
@@ -291,7 +291,7 @@ class RegisterMobileUserView(APIView):
         Notification.objects.create(
             user=user,
             title="🥛 Welcome to Pamba Fresh!",
-            message=f"Hello {first_name}! ₹500 welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
+            message=f"Hello {first_name}! ₹50 welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
             notification_type=Notification.Types.WALLET,
         )
 
@@ -303,7 +303,7 @@ class RegisterMobileUserView(APIView):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
                 "user": UserSerializer(user).data,
-                "message": "Account created successfully with ₹500 prepaid bonus!",
+                "message": "Account created successfully with ₹50 prepaid bonus!",
             },
             status=status.HTTP_201_CREATED,
         )

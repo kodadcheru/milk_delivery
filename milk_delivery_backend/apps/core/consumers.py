@@ -11,6 +11,11 @@ class SupportChatConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
+        # Reject unauthenticated connections
+        if self.scope.get('user') is None or self.scope['user'].is_anonymous:
+            await self.close()
+            return
+
         query_string = self.scope.get("query_string", b"").decode("utf-8")
         params = dict(q.split("=") for q in query_string.split("&") if "=" in q)
         
@@ -91,6 +96,11 @@ class HubRealtimeConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
+        # Reject unauthenticated connections
+        if self.scope.get('user') is None or self.scope['user'].is_anonymous:
+            await self.close()
+            return
+
         hub_code = self.scope.get("url_route", {}).get("kwargs", {}).get("hub_code")
         if not hub_code:
             query_string = self.scope.get("query_string", b"").decode("utf-8")

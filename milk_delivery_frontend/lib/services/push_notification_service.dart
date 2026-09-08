@@ -40,7 +40,7 @@ class PushNotificationService {
     messagingSenderId: '7416380046',
     projectId: 'pamba-delivery',
     storageBucket: 'pamba-delivery.firebasestorage.app',
-    iosBundleId: 'com.example.milkDeliveryFrontend',
+    iosBundleId: 'in.pamba.app',
   );
 
   Future<void> initialize() async {
