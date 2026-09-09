@@ -99,3 +99,76 @@ class AppConfigView(APIView):
             "default_city": cfg.default_city,
             "welcome_bonus": int(cfg.welcome_bonus_amount),
         })
+
+
+def privacy_policy_view(request):
+    from django.http import HttpResponse
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Pamba Fresh</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1e293b; }
+        h1 { color: #059669; }
+        h2 { color: #0f172a; margin-top: 24px; }
+    </style>
+</head>
+<body>
+    <h1>Privacy Policy</h1>
+    <p><em>Last updated: September 2026</em></p>
+    <p>Welcome to <strong>Pamba Fresh</strong> ("we", "our", or "us"). We provide daily morning fresh milk and dairy doorstep delivery services. This Privacy Policy explains how we collect, use, and protect your information when you use our mobile application and services.</p>
+    
+    <h2>1. Information We Collect</h2>
+    <ul>
+        <li><strong>Phone Number:</strong> Used strictly for secure authentication via SMS OTP verification.</li>
+        <li><strong>Delivery Address & GPS:</strong> Used to assign your delivery to the nearest local hub and enable our delivery drivers to drop off your daily milk bottle at your doorstep.</li>
+        <li><strong>Name & Contact Information:</strong> Used to identify your household subscription and provide order updates.</li>
+    </ul>
+
+    <h2>2. How We Use Your Information</h2>
+    <p>Your information is used solely to provide doorstep delivery, process prepaid wallet debits, and deliver customer support. We do not sell, rent, or trade your personal data to any third parties for marketing purposes.</p>
+
+    <h2>3. Data Protection & Security</h2>
+    <p>All authentication tokens, wallet transactions, and customer details are transmitted securely over HTTPS using industry-standard encryption protocols.</p>
+
+    <h2>4. Account Deletion & Contact</h2>
+    <p>You may request account deletion or data removal at any time directly through the app profile or by contacting us at:</p>
+    <p><strong>Email:</strong> support@pamba.in<br><strong>Phone:</strong> +91 8919548905<br><strong>Address:</strong> Kodad, Telangana, India</p>
+</body>
+</html>"""
+    return HttpResponse(html, content_type="text/html")
+
+
+def terms_of_service_view(request):
+    from django.http import HttpResponse
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - Pamba Fresh</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1e293b; }
+        h1 { color: #059669; }
+        h2 { color: #0f172a; margin-top: 24px; }
+    </style>
+</head>
+<body>
+    <h1>Terms of Service</h1>
+    <p><em>Last updated: September 2026</em></p>
+    <p>Welcome to <strong>Pamba Fresh</strong>. By using our application, you agree to these Terms of Service.</p>
+
+    <h2>1. Subscriptions & Morning Delivery</h2>
+    <p>Daily farm-fresh milk deliveries are carried out between 5:30 AM and 7:00 AM. Any vacation pause or subscription change must be made prior to the evening cutoff time.</p>
+
+    <h2>2. Prepaid Wallet</h2>
+    <p>Deliveries are fulfilled against your prepaid wallet balance. Unused balances remain in your account and skipped deliveries are automatically refunded to your wallet.</p>
+
+    <h2>3. Contact Information</h2>
+    <p>Email: support@pamba.in | Phone: +91 8919548905</p>
+</body>
+</html>"""
+    return HttpResponse(html, content_type="text/html")
+

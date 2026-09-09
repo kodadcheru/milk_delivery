@@ -4,7 +4,12 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from apps.core.views import HealthCheckView, AppConfigView
+from apps.core.views import (
+    HealthCheckView,
+    AppConfigView,
+    privacy_policy_view,
+    terms_of_service_view,
+)
 from apps.core.upload_views import FileUploadView
 from apps.accounts.admin_views import (
     AdminBroadcastNotificationView,
@@ -127,6 +132,9 @@ urlpatterns = [
 
     # Obfuscated default Django admin path for security (MED-8)
     path("mgmt-panel/", admin.site.urls),
+    # Public Legal Pages (Google OAuth / Play Store compliance)
+    path("privacy/", privacy_policy_view, name="privacy_policy"),
+    path("terms/", terms_of_service_view, name="terms_of_service"),
     # Production Health & Diagnostics Endpoint
     path("api/health/", HealthCheckView.as_view(), name="health_check"),
     path("api/app-config/", AppConfigView.as_view(), name="app_config"),
