@@ -42,11 +42,18 @@ class Command(BaseCommand):
             default=False,
             help="Preview tasks without creating them.",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            default=False,
+            help="Force task generation ignoring time cutoffs.",
+        )
 
     def handle(self, *args, **options):
         target_date_str = options["date"]
         shift_opt = options.get("shift", "all").lower()
-        dry_run = options["dry_run"]
+        dry_run = options.get("dry_run", False)
+        force = options.get("force", False)
 
         if target_date_str:
             target_date = date.fromisoformat(target_date_str)
@@ -64,7 +71,7 @@ class Command(BaseCommand):
         resumed_count = self._auto_resume_vacations(target_date, dry_run)
 
         # Step 2: Generate tasks for active subscriptions
-        created_count, skipped_count = self._generate_tasks(target_date, dry_run, shift_filter=shift_opt)
+        created_count, skipped_count = self._generate_tasks(target_date, dry_run, shift_filter=shift_opt, force=force)
 
         self.stdout.write(f"\n{'='*60}")
         self.stdout.write(f"📊 Summary:")
@@ -106,7 +113,7 @@ class Command(BaseCommand):
 
         return resumed_count
 
-    def _generate_tasks(self, target_date, dry_run, shift_filter="all"):
+    def _generate_tasks(self, target_date, dry_run, shift_filter="all", force=False):
         """Generate DeliveryTask entries for each eligible active subscription."""
         active_subs = (
             Subscription.objects
@@ -130,19 +137,20 @@ class Command(BaseCommand):
             if shift_filter == "evening" and not is_evening:
                 continue
 
-            # Cutoff check: if generating for today, respect shift cutoffs
-            from django.utils import timezone
-            import datetime
-            now_local = timezone.localtime()
-            if target_date == now_local.date():
-                if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0)):
-                    self.stdout.write(f"  ⏭️  Skip (morning cutoff passed): Sub #{sub.id}")
-                    skipped_count += 1
-                    continue
-                if is_evening and now_local.hour >= 12:
-                    self.stdout.write(f"  ⏭️  Skip (evening cutoff passed): Sub #{sub.id}")
-                    skipped_count += 1
-                    continue
+            # Cutoff check: if generating for today, respect shift cutoffs unless force=True
+            if not force:
+                from django.utils import timezone
+                import datetime
+                now_local = timezone.localtime()
+                if target_date == now_local.date():
+                    if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(9, 0)):
+                        self.stdout.write(f"  ⏭️  Skip (morning cutoff passed): Sub #{sub.id}")
+                        skipped_count += 1
+                        continue
+                    if is_evening and now_local.hour >= 18:
+                        self.stdout.write(f"  ⏭️  Skip (evening cutoff passed): Sub #{sub.id}")
+                        skipped_count += 1
+                        continue
 
             # Check if task already exists for this date
             if DeliveryTask.objects.filter(subscription=sub, delivery_date=target_date).exists():

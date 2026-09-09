@@ -248,6 +248,16 @@ def seed():
     except Exception as e:
         print("Hub and inventory initialization notice:", e)
 
+    # 4. Auto-generate / reconcile today & tomorrow delivery tasks for all active subscriptions
+    try:
+        from apps.deliveries.task_generator import generate_daily_tasks_for_date
+        from datetime import date, timedelta
+        today_res = generate_daily_tasks_for_date(target_date=date.today(), force=True)
+        tmrw_res = generate_daily_tasks_for_date(target_date=date.today() + timedelta(days=1), force=True)
+        print(f"📦 [Railway DB Initializer] Delivery tasks active: Today ({today_res.get('created', 0)} new), Tomorrow ({tmrw_res.get('created', 0)} new).")
+    except Exception as task_err:
+        print("Delivery task initialization notice:", task_err)
+
     print("✅ [Railway DB Initializer] Ready with dynamic backend architecture.")
 
 

@@ -13,16 +13,25 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         scheduler = BlockingScheduler()
 
-        # Generate daily delivery tasks at 5:00 AM IST
+        # 1. Evening generation for tomorrow at 9:00 PM IST
         scheduler.add_job(
-            self._generate_daily_tasks,
-            trigger=CronTrigger(hour=5, minute=0, timezone='Asia/Kolkata'),
-            id='generate_daily_tasks',
-            name='Generate daily delivery tasks',
+            self._generate_tomorrow_tasks,
+            trigger=CronTrigger(hour=21, minute=0, timezone='Asia/Kolkata'),
+            id='generate_tomorrow_tasks',
+            name='Generate tomorrow delivery tasks',
             replace_existing=True,
         )
 
-        # Generate payouts at 11:00 PM IST daily
+        # 2. Morning reconciliation at 4:00 AM IST
+        scheduler.add_job(
+            self._generate_today_tasks,
+            trigger=CronTrigger(hour=4, minute=0, timezone='Asia/Kolkata'),
+            id='generate_today_tasks',
+            name='Reconcile today morning delivery tasks',
+            replace_existing=True,
+        )
+
+        # 3. Generate payouts at 11:00 PM IST daily
         scheduler.add_job(
             self._generate_payouts,
             trigger=CronTrigger(hour=23, minute=0, timezone='Asia/Kolkata'),
@@ -41,13 +50,23 @@ class Command(BaseCommand):
             scheduler.shutdown()
             self.stdout.write(self.style.SUCCESS('Scheduler stopped.'))
 
-    def _generate_daily_tasks(self):
-        logger.info('⏰ Running scheduled: generate_daily_tasks')
+    def _generate_tomorrow_tasks(self):
+        logger.info('⏰ Running scheduled: generate_tomorrow_tasks')
         try:
             call_command('generate_daily_tasks')
-            logger.info('✅ Daily tasks generated successfully')
+            logger.info('✅ Tomorrow delivery tasks generated successfully')
         except Exception as e:
-            logger.error(f'❌ Daily task generation failed: {e}')
+            logger.error(f'❌ Tomorrow delivery task generation failed: {e}')
+
+    def _generate_today_tasks(self):
+        logger.info('⏰ Running scheduled: generate_today_tasks (morning reconciliation)')
+        try:
+            from datetime import date
+            today_str = date.today().isoformat()
+            call_command('generate_daily_tasks', date=today_str, force=True)
+            logger.info('✅ Today morning delivery tasks reconciled successfully')
+        except Exception as e:
+            logger.error(f'❌ Today morning delivery task generation failed: {e}')
 
     def _generate_payouts(self):
         logger.info('⏰ Running scheduled: generate_payouts')
