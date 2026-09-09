@@ -87,6 +87,7 @@ class RazorpayCreateOrderView(APIView):
         is_sandbox = False
         amount_paise = int(Decimal(str(amount)) * 100)
 
+        error_detail = None
         try:
             rzp_order = RazorpayService.create_order(
                 amount=amount,
@@ -97,7 +98,8 @@ class RazorpayCreateOrderView(APIView):
             rzp_order_id = rzp_order["id"]
             amount_paise = rzp_order.get("amount", amount_paise)
         except Exception as e:
-            logger.warning("Razorpay live API order creation failed (%s). Generating test sandbox order.", e)
+            error_detail = str(e)
+            logger.error("Razorpay live API order creation failed (%s). Generating test sandbox order.", e, exc_info=True)
             rzp_order_id = f"order_test_{uuid.uuid4().hex[:14]}"
             rzp_order = {
                 "id": rzp_order_id,
@@ -107,6 +109,7 @@ class RazorpayCreateOrderView(APIView):
                 "status": "created",
                 "notes": notes,
                 "is_sandbox": True,
+                "error": error_detail,
             }
             is_sandbox = True
 
@@ -130,6 +133,7 @@ class RazorpayCreateOrderView(APIView):
                 "currency": rzp_order.get("currency", "INR"),
                 "key_id": RazorpayService.get_key_id(),
                 "is_sandbox": is_sandbox,
+                "error_detail": error_detail,
                 "purpose": purpose,
                 "user": {
                     "name": user_name,
