@@ -56,6 +56,8 @@ from apps.accounts.address_views import (
     CustomerAddressSetDefaultView,
 )
 from apps.accounts.phone_auth_views import (
+    FirebaseLoginView,
+    FirebaseRegisterView,
     RegisterMobileUserView,
     SendOTPView,
     VerifyOTPView,
@@ -173,7 +175,9 @@ urlpatterns = [
     path("api/service-areas/", ServiceAreaListView.as_view(), name="service_areas_list"),
     path("api/service-areas/check/", ServiceAreaCheckView.as_view(), name="service_areas_check"),
     path("api/admin/service-areas/", AdminServiceAreaManageView.as_view(), name="admin_service_areas_manage"),
-    # Phone OTP & Mobile Auth endpoints
+    # Phone OTP & Mobile Auth endpoints (Firebase + Mock Fallback)
+    path("api/auth/firebase-login/", FirebaseLoginView.as_view(), name="auth_firebase_login"),
+    path("api/auth/firebase-register/", FirebaseRegisterView.as_view(), name="auth_firebase_register"),
     path("api/auth/send-otp/", SendOTPView.as_view(), name="auth_send_otp"),
     path("api/auth/verify-otp/", VerifyOTPView.as_view(), name="auth_verify_otp"),
     path("api/auth/register-mobile/", RegisterMobileUserView.as_view(), name="auth_register_mobile"),

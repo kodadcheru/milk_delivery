@@ -313,3 +313,219 @@ class RegisterMobileUserView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class FirebaseLoginView(APIView):
+    """
+    Exchanges a client-verified Firebase Phone Auth ID token for DRF SimpleJWT tokens.
+    POST /api/auth/firebase-login/
+    Body: {"id_token": "<firebase_id_token>"}
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        id_token = request.data.get("id_token", "").strip()
+        if not id_token:
+            return Response(
+                {"error": "Firebase ID token is required.", "detail": "Missing id_token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from apps.core.services.push_service import get_firebase_app
+            import firebase_admin.auth as fb_auth
+
+            get_firebase_app()
+            decoded_token = fb_auth.verify_id_token(id_token)
+        except Exception as e:
+            return Response(
+                {"error": f"Firebase token verification failed: {str(e)}", "detail": "Invalid or expired Firebase token."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        phone = decoded_token.get("phone_number")
+        if not phone:
+            return Response(
+                {"error": "No phone number linked to this Firebase credential.", "detail": "Phone missing in token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
+        if err:
+            formatted_phone = phone
+            last_10 = phone[-10:] if len(phone) >= 10 else phone
+
+        phone_variants = [phone, formatted_phone, f"+91 {last_10}", f"+91{last_10}", last_10]
+        user = User.objects.filter(phone__in=phone_variants).first()
+
+        if user:
+            refresh = RefreshToken.for_user(user)
+            return Response(
+                {
+                    "success": True,
+                    "is_new_user": False,
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                    "user": UserSerializer(user).data,
+                    "message": "Login successful.",
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {
+                    "success": True,
+                    "is_new_user": True,
+                    "phone": formatted_phone,
+                    "firebase_uid": decoded_token.get("uid"),
+                    "message": "Phone number verified. Please complete your registration.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+
+class FirebaseRegisterView(APIView):
+    """
+    Registers a new mobile user verified via Firebase Phone Auth.
+    POST /api/auth/firebase-register/
+    Body: {"id_token": "...", "first_name": "...", "last_name": "...", "email": "...", "gender": "...", "address": "...", "city": "..."}
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        id_token = request.data.get("id_token", "").strip()
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        email = request.data.get("email", "").strip()
+        gender = request.data.get("gender", "Male").strip()
+        address = request.data.get("address", "").strip()
+        instructions = request.data.get("delivery_instructions", "Ring bell twice and leave near doorstep box").strip()
+        city = request.data.get("city", "").strip()
+
+        if not id_token:
+            return Response({"error": "Firebase ID token is required.", "detail": "Missing id_token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not first_name:
+            return Response({"error": "Full Name is required.", "detail": "Full Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(first_name) < 2:
+            return Response({"error": "Full Name must be at least 2 characters long.", "detail": "Full Name must be at least 2 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            from apps.core.services.push_service import get_firebase_app
+            import firebase_admin.auth as fb_auth
+
+            get_firebase_app()
+            decoded_token = fb_auth.verify_id_token(id_token)
+        except Exception as e:
+            return Response(
+                {"error": f"Firebase token verification failed: {str(e)}", "detail": "Invalid or expired Firebase token."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        phone = decoded_token.get("phone_number")
+        if not phone:
+            return Response({"error": "No phone number linked to this Firebase credential.", "detail": "Phone missing in token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        formatted_phone, last_10, err = _clean_and_validate_indian_phone(phone)
+        if err:
+            formatted_phone = phone
+            last_10 = phone[-10:] if len(phone) >= 10 else phone
+
+        # Email validation & duplicate check
+        if email:
+            try:
+                django_validate_email(email)
+            except ValidationError:
+                return Response({"error": "Please enter a valid email address.", "detail": "Invalid email."}, status=status.HTTP_400_BAD_REQUEST)
+
+            if User.objects.filter(email__iexact=email).exists():
+                return Response({"error": "An account with this email address already exists.", "detail": "Email in use."}, status=status.HTTP_400_BAD_REQUEST)
+
+        phone_variants = [phone, formatted_phone, f"+91 {last_10}", f"+91{last_10}", last_10]
+        existing_user = User.objects.filter(phone__in=phone_variants).first()
+        if existing_user:
+            refresh = RefreshToken.for_user(existing_user)
+            return Response({
+                "success": True,
+                "is_new_user": False,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(existing_user).data,
+                "message": "User already exists. Logged in successfully.",
+            }, status=status.HTTP_200_OK)
+
+        username = f"cust_{last_10}"
+
+        from apps.core.models import SiteConfig
+        try:
+            bonus_amount = Decimal(str(SiteConfig.get().welcome_bonus_amount))
+        except Exception:
+            bonus_amount = Decimal("0.00")
+
+        user = User.objects.create(
+            username=username,
+            phone=formatted_phone,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            gender=gender,
+            address=address,
+            city=city,
+            role=User.Roles.CUSTOMER,
+            wallet_balance=bonus_amount,
+            delivery_instructions=instructions,
+        )
+        user.set_password(uuid.uuid4().hex)
+        user.save()
+
+        if user.address:
+            from apps.accounts.models import CustomerAddress
+            CustomerAddress.objects.get_or_create(
+                customer=user,
+                is_default=True,
+                defaults={
+                    'address_type': 'HOME',
+                    'street_address': user.address,
+                    'city': user.city or 'Kodad',
+                    'pincode': getattr(user, 'pincode', '508206'),
+                    'latitude': user.latitude or 17.001734,
+                    'longitude': user.longitude or 79.9625,
+                    'delivery_instructions': '',
+                }
+            )
+
+        if bonus_amount > Decimal("0.00"):
+            WalletTransaction.objects.create(
+                user=user,
+                amount=bonus_amount,
+                transaction_type=WalletTransaction.Types.CREDIT,
+                description="🎁 Welcome Bonus & Initial Top-Up",
+            )
+            Notification.objects.create(
+                user=user,
+                title="🥛 Welcome to Pamba Fresh!",
+                message=f"Hello {first_name}! ₹{bonus_amount} welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
+                notification_type=Notification.Types.WALLET,
+            )
+        else:
+            Notification.objects.create(
+                user=user,
+                title="🥛 Welcome to Pamba Fresh!",
+                message=f"Hello {first_name}! Welcome to Pamba Fresh. Browse our farm fresh catalog to subscribe or order.",
+                notification_type=Notification.Types.SYSTEM,
+            )
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "success": True,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data,
+                "message": "Account created successfully!",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+

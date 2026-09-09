@@ -129,32 +129,33 @@ class OrbitOtpBoxesState extends State<OrbitOtpBoxes> with TickerProviderStateMi
   }
 
   void _onDigitChanged(int index, String value) {
+    final count = widget.controllers.length;
     if (value.length > 1) {
       final digits = value.replaceAll(RegExp(r'\D'), '');
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < count; i++) {
         if (i < digits.length) {
           widget.controllers[i].text = digits[i];
         } else {
           widget.controllers[i].clear();
         }
       }
-      if (digits.length >= 4) {
-        widget.focusNodes[3].unfocus();
-        widget.onCompleted?.call(digits.substring(0, 4));
+      if (digits.length >= count) {
+        widget.focusNodes[count - 1].unfocus();
+        widget.onCompleted?.call(digits.substring(0, count));
       } else if (digits.isNotEmpty) {
-        widget.focusNodes[digits.length.clamp(0, 3)].requestFocus();
+        widget.focusNodes[digits.length.clamp(0, count - 1)].requestFocus();
       }
       setState(() {});
       return;
     }
 
     if (value.isNotEmpty) {
-      if (index < 3) {
+      if (index < count - 1) {
         widget.focusNodes[index + 1].requestFocus();
       } else {
         widget.focusNodes[index].unfocus();
         final code = widget.controllers.map((c) => c.text.trim()).join();
-        if (code.length == 4) {
+        if (code.length == count) {
           widget.onCompleted?.call(code);
         }
       }
@@ -167,19 +168,20 @@ class OrbitOtpBoxesState extends State<OrbitOtpBoxes> with TickerProviderStateMi
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
-        const boxWidth = 58.0;
-        const boxHeight = 62.0;
+        final count = widget.controllers.length;
+        final boxWidth = count >= 6 ? 44.0 : 58.0;
+        final boxHeight = count >= 6 ? 54.0 : 62.0;
         const orbitRadius = 38.0;
         const orbitBoxSize = 24.0;
 
-        // Container height: 80px
+        // Container height: 84px
         const containerHeight = 84.0;
         final centerX = totalWidth / 2;
         final centerY = containerHeight / 2;
 
-        // Row positions for 4 boxes
-        final spacing = (totalWidth - (4 * boxWidth)) / 3;
-        final rowCentersX = List.generate(4, (i) {
+        // Row positions for N boxes
+        final spacing = count > 1 ? (totalWidth - (count * boxWidth)) / (count - 1) : 0.0;
+        final rowCentersX = List.generate(count, (i) {
           return (i * (boxWidth + spacing)) + (boxWidth / 2);
         });
 
@@ -235,11 +237,12 @@ class OrbitOtpBoxesState extends State<OrbitOtpBoxes> with TickerProviderStateMi
                         ),
                       ),
 
-                    // ── The 4 Boxes / Orbiting Tiles ──
+                    // ── The N Boxes / Orbiting Tiles ──
                     if (!isSuccess)
-                      for (int i = 0; i < 4; i++)
+                      for (int i = 0; i < count; i++)
                         _buildAnimatedTile(
                           index: i,
+                          count: count,
                           t: t,
                           rowCenterX: rowCentersX[i],
                           centerY: centerY,
@@ -292,6 +295,7 @@ class OrbitOtpBoxesState extends State<OrbitOtpBoxes> with TickerProviderStateMi
 
   Widget _buildAnimatedTile({
     required int index,
+    required int count,
     required double t,
     required double rowCenterX,
     required double centerY,
@@ -306,8 +310,8 @@ class OrbitOtpBoxesState extends State<OrbitOtpBoxes> with TickerProviderStateMi
     final isFilled = controller.text.isNotEmpty;
     final isFocused = focusNode.hasFocus;
 
-    // Orbit angle for index i
-    final baseAngle = (index * (math.pi / 2));
+    // Orbit angle for index i distributed evenly
+    final baseAngle = (index * (2 * math.pi / count));
     final spinAngle = _spinController.value * (2 * math.pi);
     final currentAngle = baseAngle + spinAngle;
 

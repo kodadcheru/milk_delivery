@@ -294,6 +294,67 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> firebaseLogin(String idToken) async {
+    try {
+      final res = await _executeWithRetry(() => _client.post(
+            Uri.parse('$baseUrl/auth/firebase-login/'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'id_token': idToken}),
+          ));
+
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) {
+        if (data['access'] != null) {
+          await saveAuthToken(data['access'], refresh: data['refresh']);
+        }
+        return data;
+      } else {
+        return {'success': false, 'error': data['error'] ?? data['detail'] ?? 'Firebase authentication failed'};
+      }
+    } catch (e) {
+      debugPrint('ApiService firebaseLogin error: $e');
+      return {'success': false, 'error': 'network_error'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> firebaseRegister({
+    required String idToken,
+    required String firstName,
+    String lastName = '',
+    String email = '',
+    String gender = 'Male',
+    String address = '',
+    String deliveryInstructions = '',
+  }) async {
+    try {
+      final res = await _executeWithRetry(() => _client.post(
+            Uri.parse('$baseUrl/auth/firebase-register/'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'id_token': idToken,
+              'first_name': firstName,
+              'last_name': lastName,
+              'email': email,
+              'gender': gender,
+              'address': address,
+              'delivery_instructions': deliveryInstructions,
+            }),
+          ));
+
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        if (data['access'] != null) {
+          await saveAuthToken(data['access'], refresh: data['refresh']);
+        }
+        return data;
+      } else {
+        return {'success': false, 'error': data['error'] ?? data['detail'] ?? 'Registration failed'};
+      }
+    } catch (e) {
+      debugPrint('ApiService firebaseRegister error: $e');
+      return {'success': false, 'error': 'network_error'};
+    }
+  }
 
   // ── 2. Standard Auth & Profile ──
   static Future<Map<String, dynamic>> login(String username, String password) async {
