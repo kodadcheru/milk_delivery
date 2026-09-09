@@ -99,9 +99,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       }
       if (!serviceEnabled) {
         // Fall back to profile coordinates
-        if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
-          lat = widget.state.currentUser!.latitude;
-          lng = widget.state.currentUser!.longitude;
+        if (widget.state.currentUser != null && widget.state.currentUser!.latitude != null && widget.state.currentUser!.latitude != 0.0) {
+          lat = widget.state.currentUser!.latitude!;
+          lng = widget.state.currentUser!.longitude ?? 79.9625;
         }
       } else {
         // Check permissions
@@ -124,9 +124,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           _lastGoodLng = lng;
         } else {
           // Permission denied — use profile coordinates as fallback
-          if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
-            lat = widget.state.currentUser!.latitude;
-            lng = widget.state.currentUser!.longitude;
+          if (widget.state.currentUser != null && widget.state.currentUser!.latitude != null && widget.state.currentUser!.latitude != 0.0) {
+            lat = widget.state.currentUser!.latitude!;
+            lng = widget.state.currentUser!.longitude ?? 79.9625;
           }
         }
       }
@@ -138,9 +138,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       } else if (widget.state.locationHubs.isNotEmpty) {
         lat = widget.state.locationHubs.first['latitude'] ?? 17.001734;
         lng = widget.state.locationHubs.first['longitude'] ?? 79.9625;
-      } else if (widget.state.currentUser != null && widget.state.currentUser!.latitude != 0.0) {
-        lat = widget.state.currentUser!.latitude;
-        lng = widget.state.currentUser!.longitude;
+      } else if (widget.state.currentUser != null && widget.state.currentUser!.latitude != null && widget.state.currentUser!.latitude != 0.0) {
+        lat = widget.state.currentUser!.latitude!;
+        lng = widget.state.currentUser!.longitude ?? 79.9625;
       }
     }
 

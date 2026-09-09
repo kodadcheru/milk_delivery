@@ -248,8 +248,17 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         return "0.00"
 
     def _get_batch(self, obj):
+        # N+1 FIX: Documenting N+1 issue - consider using prefetch_related in the view queryset.
+        # Meanwhile, caching the batch lookup in the serializer context to avoid iterative DB queries.
         from apps.deliveries.models import DailyMilkBatch
         if not hasattr(obj, "_cached_batch"):
+            context_cache = self.context.setdefault('batch_cache', {})
+            cache_key = (obj.delivery_date, self.get_product_name(obj))
+            
+            if cache_key in context_cache:
+                obj._cached_batch = context_cache[cache_key]
+                return obj._cached_batch
+
             prod_name = self.get_product_name(obj)
             first_word = prod_name.split()[0] if prod_name else ""
             batch = DailyMilkBatch.objects.filter(
@@ -260,6 +269,8 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
                 batch = DailyMilkBatch.objects.filter(batch_date=obj.delivery_date).first()
             if not batch:
                 batch = DailyMilkBatch.objects.first()
+            
+            context_cache[cache_key] = batch
             obj._cached_batch = batch
         return obj._cached_batch
 

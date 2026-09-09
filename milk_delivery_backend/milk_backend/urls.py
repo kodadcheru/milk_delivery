@@ -123,7 +123,8 @@ urlpatterns = [
     path("api/admin/console/", AdminConsoleHTMLView.as_view(), name="api_admin_console_nested"),
     path("", AdminConsoleHTMLView.as_view(), name="root_console"),
 
-    path("admin/", admin.site.urls),
+    # Obfuscated default Django admin path for security (MED-8)
+    path("mgmt-panel/", admin.site.urls),
     # Production Health & Diagnostics Endpoint
     path("api/health/", HealthCheckView.as_view(), name="health_check"),
     path("api/admin/customers/", AdminCustomerListView.as_view(), name="admin_customers"),

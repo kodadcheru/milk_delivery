@@ -8,6 +8,7 @@ import 'services/api_service.dart';
 import 'services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/in_app_chat_banner.dart';
+import 'services/crash_reporting_service.dart';
 import 'screens/auth/phone_login_screen.dart';
 import 'screens/splash/pamba_splash_screen.dart';
 import 'screens/shells/customer_shell.dart';
@@ -25,10 +26,14 @@ void main() async {
   // Production Global Crash & Error Boundary
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+    // Note: Firebase Crashlytics or Sentry should be integrated here for production-grade reporting
+    CrashReportingService.reportCrash(details.exception, details.stack);
     debugPrint('🚨 [Pamba FlutterError]: ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
+    // Note: Firebase Crashlytics or Sentry should be integrated here for production-grade reporting
+    CrashReportingService.reportCrash(error, stack);
     debugPrint('🚨 [Pamba UncaughtAsyncError]: $error');
     return true; // Prevent app crashes
   };

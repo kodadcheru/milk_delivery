@@ -774,12 +774,14 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
   Widget build(BuildContext context) {
     final isEditing = widget.existing != null;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       child: Column(
         children: [
           // Header
@@ -1078,6 +1080,7 @@ class _AddEditAddressModalState extends State<_AddEditAddressModal> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -12,8 +12,8 @@ class UserModel {
   final double walletBalance;
   final String deliveryInstructions;
   final String deliverySlotPreference;
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
   final int? assignedHub;
   final String? assignedHubName;
   final String? assignedHubCode;
@@ -36,8 +36,8 @@ class UserModel {
     required this.walletBalance,
     required this.deliveryInstructions,
     this.deliverySlotPreference = '05:30 AM - 07:00 AM',
-    this.latitude = 17.001734,
-    this.longitude = 79.962500,
+    this.latitude,
+    this.longitude,
     this.assignedHub,
     this.assignedHubName,
     this.assignedHubCode,
@@ -72,8 +72,8 @@ class UserModel {
       walletBalance: double.tryParse(json['wallet_balance']?.toString() ?? '0') ?? 0.0,
       deliveryInstructions: json['delivery_instructions'] ?? '',
       deliverySlotPreference: json['delivery_slot_preference'] ?? '05:30 AM - 07:00 AM',
-      latitude: double.tryParse(json['latitude']?.toString() ?? '17.001734') ?? 17.001734,
-      longitude: double.tryParse(json['longitude']?.toString() ?? '79.962500') ?? 79.962500,
+      latitude: double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: double.tryParse(json['longitude']?.toString() ?? ''),
       assignedHub: json['assigned_hub'] is int ? json['assigned_hub'] : (json['assigned_hub'] is Map ? json['assigned_hub']['id'] : null),
       assignedHubName: json['assigned_hub_name']?.toString() ?? (json['assigned_hub'] is Map ? json['assigned_hub']['name']?.toString() : null),
       assignedHubCode: json['assigned_hub_code']?.toString() ?? (json['assigned_hub'] is Map ? json['assigned_hub']['hub_code']?.toString() : null),

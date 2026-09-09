@@ -12,10 +12,14 @@ class AppConfig {
   /// In Android emulator: 10.0.2.2:8000
   /// In production cloud: https://api.milkdrop.com
   static String get apiBaseUrl {
-    return const String.fromEnvironment(
+    const url = String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'https://milk-delivery-backend-production.up.railway.app/api',
+      defaultValue: '',
     );
+    if (url.isNotEmpty) return url;
+    return kReleaseMode
+        ? 'https://milk-delivery-backend-production.up.railway.app/api'
+        : 'http://127.0.0.1:8000/api';
   }
 
   static String get baseUrl {

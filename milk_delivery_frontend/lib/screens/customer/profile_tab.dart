@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/app_state.dart';
 import '../common/legal_terms_screen.dart';
+import '../../services/image_upload_service.dart';
 import 'address_book_screen.dart';
 import 'help_support_screen.dart';
 
@@ -110,8 +111,32 @@ class ProfileTab extends StatelessWidget {
                             imageQuality: 80,
                           );
                           if (image != null) {
-                            // TODO: Upload to server
-                            debugPrint('Selected image: ${image.path}');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Uploading image...'), duration: Duration(seconds: 1)),
+                              );
+                            }
+                            final bytes = await image.readAsBytes();
+                            final url = await ImageUploadService.uploadImageBytes(
+                              bytes: bytes,
+                              filename: image.name,
+                              folder: 'profiles',
+                            );
+                            if (url != null) {
+                              // TODO: Update user profile with URL when API supports it
+                              debugPrint('Uploaded image: $url');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Profile photo upload coming soon!'), duration: Duration(seconds: 2)),
+                                );
+                              }
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Upload failed.')),
+                                );
+                              }
+                            }
                           }
                         },
                         child: SizedBox(
@@ -995,7 +1020,12 @@ void _showEditProfileDialog(
         );
       },
     ),
-  );
+  ).then((_) {
+    firstNameCtrl.dispose();
+    lastNameCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+  });
 }
 
 Widget _buildStyledInput({

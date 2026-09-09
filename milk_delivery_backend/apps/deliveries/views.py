@@ -262,9 +262,10 @@ class DeliveryTaskCompleteView(APIView):
 class DeliveryTaskSkipView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, pk):
         try:
-            task = DeliveryTask.objects.get(pk=pk)
+            task = DeliveryTask.objects.select_for_update().get(pk=pk)
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -296,30 +297,29 @@ class DeliveryTaskSkipView(APIView):
 
         # Update linked LiveOrder if express order task with wallet refund & inventory restoration
         if task.order:
-            with transaction.atomic():
-                order = LiveOrder.objects.select_for_update().get(pk=task.order.pk)
-                if order.status != LiveOrder.Statuses.CANCELLED:
-                    order.status = LiveOrder.Statuses.CANCELLED
-                    order.save(update_fields=["status"])
-                    # Restore hub product inventory
-                    if order.hub:
-                        for item in order.items.select_related("product"):
-                            from apps.products.models import HubProductInventory
-                            inv = HubProductInventory.objects.filter(hub=order.hub, product=item.product).first()
-                            if inv and inv.booked_slots >= item.quantity:
-                                inv.booked_slots -= item.quantity
-                                inv.save(update_fields=["booked_slots"])
-                    # Refund customer wallet if paid online/wallet
-                    if order.customer and order.payment_method == "WALLET" and not order.is_cod:
-                        from apps.accounts.models import WalletTransaction
-                        User.objects.filter(pk=order.customer.pk).update(wallet_balance=F("wallet_balance") + order.total_amount)
-                        order.customer.refresh_from_db(fields=["wallet_balance"])
-                        WalletTransaction.objects.create(
-                            user=order.customer,
-                            amount=order.total_amount,
-                            transaction_type=WalletTransaction.Types.CREDIT,
-                            description=f"Refund for Skipped Express Delivery #{order.id}",
-                        )
+            order = LiveOrder.objects.select_for_update().get(pk=task.order.pk)
+            if order.status != LiveOrder.Statuses.CANCELLED:
+                order.status = LiveOrder.Statuses.CANCELLED
+                order.save(update_fields=["status"])
+                # Restore hub product inventory
+                if order.hub:
+                    for item in order.items.select_related("product"):
+                        from apps.products.models import HubProductInventory
+                        inv = HubProductInventory.objects.filter(hub=order.hub, product=item.product).first()
+                        if inv and inv.booked_slots >= item.quantity:
+                            inv.booked_slots -= item.quantity
+                            inv.save(update_fields=["booked_slots"])
+                # Refund customer wallet if paid online/wallet
+                if order.customer and order.payment_method == "WALLET" and not order.is_cod:
+                    from apps.accounts.models import WalletTransaction
+                    User.objects.filter(pk=order.customer.pk).update(wallet_balance=F("wallet_balance") + order.total_amount)
+                    order.customer.refresh_from_db(fields=["wallet_balance"])
+                    WalletTransaction.objects.create(
+                        user=order.customer,
+                        amount=order.total_amount,
+                        transaction_type=WalletTransaction.Types.CREDIT,
+                        description=f"Refund for Skipped Express Delivery #{order.id}",
+                    )
 
         # Notify customer about skipped drop with exact reason
         if task.target_customer:
@@ -485,33 +485,56 @@ class DeliverySummaryView(APIView):
         completed = tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count()
         pending = tasks.filter(status=DeliveryTask.Statuses.PENDING).count()
 
-        def get_vol_multiplier(p_size):
-            p_size = (p_size or '').lower()
-            if '500' in p_size:
-                return 0.5
-            if '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
-                return 2.0
-            return 1.0
+        from django.db.models import Sum, FloatField
 
-        def get_sub_vol(sub):
-            return get_vol_multiplier(sub.pack_size) * sub.quantity
+        vol_multiplier = Case(
+            When(pack_size__icontains='500', then=Value(0.5)),
+            When(Q(pack_size__icontains='2') & (Q(pack_size__icontains='litre') | Q(pack_size__icontains='liter') | Q(pack_size__icontains='kg')), then=Value(2.0)),
+            default=Value(1.0),
+            output_field=FloatField()
+        )
 
-        def get_sub_rev(sub):
-            if sub.effective_unit_price:
-                return float(sub.effective_unit_price) * sub.quantity
-            if sub.product:
-                return float(sub.product.price_per_unit) * get_vol_multiplier(sub.pack_size) * sub.quantity
-            return 0.0
+        sub_vol_expr = vol_multiplier * F('quantity')
 
-        # Real calculation of daily milk volume
-        daily_volume_liters = sum(get_sub_vol(s) for s in active_subs)
+        sub_rev_expr = Case(
+            When(effective_unit_price__isnull=False, then=F('effective_unit_price') * F('quantity')),
+            default=F('product__price_per_unit') * vol_multiplier * F('quantity'),
+            output_field=FloatField()
+        )
+
+        subs_agg = active_subs.aggregate(
+            total_vol=Sum(sub_vol_expr, output_field=FloatField()),
+            total_rev=Sum(sub_rev_expr, output_field=FloatField())
+        )
+        
+        daily_volume_liters = subs_agg['total_vol'] or 0.0
+        gross_revenue = subs_agg['total_rev'] or 0.0
+
         if daily_volume_liters == 0 and total_deliveries > 0:
-            daily_volume_liters = sum((get_sub_vol(t.subscription) if t.subscription else 1) for t in tasks)
+            task_vol_multiplier = Case(
+                When(subscription__pack_size__icontains='500', then=Value(0.5)),
+                When(Q(subscription__pack_size__icontains='2') & (Q(subscription__pack_size__icontains='litre') | Q(subscription__pack_size__icontains='liter') | Q(subscription__pack_size__icontains='kg')), then=Value(2.0)),
+                default=Value(1.0),
+                output_field=FloatField()
+            )
+            task_vol_expr = Case(
+                When(subscription__isnull=False, then=task_vol_multiplier * F('subscription__quantity')),
+                default=Value(1.0),
+                output_field=FloatField()
+            )
+            daily_volume_liters = tasks.aggregate(total_vol=Sum(task_vol_expr, output_field=FloatField()))['total_vol'] or 0.0
 
-        # Real calculation of GMV
-        gross_revenue = sum(get_sub_rev(s) for s in active_subs)
         if gross_revenue == 0.0 and total_deliveries > 0:
-            gross_revenue = sum(get_sub_rev(t.subscription) for t in tasks if t.subscription)
+            task_rev_expr = Case(
+                When(subscription__isnull=False, then=Case(
+                    When(subscription__effective_unit_price__isnull=False, then=F('subscription__effective_unit_price') * F('subscription__quantity')),
+                    default=F('subscription__product__price_per_unit') * task_vol_multiplier * F('subscription__quantity'),
+                    output_field=FloatField()
+                )),
+                default=Value(0.0),
+                output_field=FloatField()
+            )
+            gross_revenue = tasks.aggregate(total_rev=Sum(task_rev_expr, output_field=FloatField()))['total_rev'] or 0.0
 
         # Real customer subscribers count
         subscribers_count = User.objects.filter(role=User.Roles.CUSTOMER).count()
@@ -522,10 +545,8 @@ class DeliverySummaryView(APIView):
         sla_rate = round((completed / total_deliveries * 100), 1) if total_deliveries > 0 else 100.0
 
         # Real product breakdown demand
-        product_demand = {}
-        for s in active_subs:
-            p_name = s.product.name
-            product_demand[p_name] = product_demand.get(p_name, 0) + s.quantity
+        product_demand_qs = active_subs.values('product__name').annotate(total=Sum('quantity'))
+        product_demand = {item['product__name']: item['total'] for item in product_demand_qs if item['product__name']}
 
         return Response(
             {

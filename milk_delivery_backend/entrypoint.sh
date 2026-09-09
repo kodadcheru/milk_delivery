@@ -22,7 +22,6 @@ fi
 
 echo "🌟 [4/4] Starting ASGI production server (WebSockets + HTTP) on port $APP_PORT..."
 exec gunicorn -c gunicorn.conf.py milk_backend.asgi:application \
-    -k uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:$APP_PORT \
     --workers 2 \
     --timeout 120 \

@@ -71,11 +71,13 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
 
     // 1. Initialize fallback location from current user profile or hub depot
     if (widget.state.currentUser != null &&
+        widget.state.currentUser!.latitude != null &&
         widget.state.currentUser!.latitude != 0.0 &&
+        widget.state.currentUser!.longitude != null &&
         widget.state.currentUser!.longitude != 0.0) {
       _driverLocation = LatLng(
-        widget.state.currentUser!.latitude,
-        widget.state.currentUser!.longitude,
+        widget.state.currentUser!.latitude!,
+        widget.state.currentUser!.longitude!,
       );
     } else if (widget.state.currentLat != 0.0 && widget.state.currentLon != 0.0) {
       _driverLocation = LatLng(widget.state.currentLat, widget.state.currentLon);

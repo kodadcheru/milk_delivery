@@ -188,7 +188,11 @@ else:
         "http://127.0.0.1:8080",
     ]
     # Allow all in DEBUG if not explicitly specified, but allow easy restriction
-    CORS_ALLOW_ALL_ORIGINS = DEBUG
+    if DEBUG:
+        CORS_ALLOW_ALL_ORIGINS = True
+    else:
+        CORS_ALLOW_ALL_ORIGINS = False
+        CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [

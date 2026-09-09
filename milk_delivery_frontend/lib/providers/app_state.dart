@@ -1012,8 +1012,8 @@ class AppState extends ChangeNotifier {
         if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
           currentDeliveryAddress = user.address;
         }
-        if (user.latitude != 0.0) currentLat = user.latitude;
-        if (user.longitude != 0.0) currentLon = user.longitude;
+        if (user.latitude != null && user.latitude != 0.0) currentLat = user.latitude!;
+        if (user.longitude != null && user.longitude != 0.0) currentLon = user.longitude!;
       }
     }
   }

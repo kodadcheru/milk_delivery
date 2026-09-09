@@ -113,8 +113,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
       custLat = widget.state.activeAddress!.latitude;
       custLon = widget.state.activeAddress!.longitude;
     } else if (widget.state.currentUser?.latitude != null && widget.state.currentUser!.latitude != 0) {
-      custLat = widget.state.currentUser!.latitude;
-      custLon = widget.state.currentUser!.longitude;
+      custLat = widget.state.currentUser!.latitude!;
+      custLon = widget.state.currentUser!.longitude ?? 79.9625;
     } else if (widget.state.currentLat != 0) {
       custLat = widget.state.currentLat;
       custLon = widget.state.currentLon;
