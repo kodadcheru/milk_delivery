@@ -248,13 +248,17 @@ def seed():
     except Exception as e:
         print("Hub and inventory initialization notice:", e)
 
-    # 4. Auto-generate / reconcile today & tomorrow delivery tasks for all active subscriptions
+    # 4. Auto-generate / reconcile today's delivery tasks for all active subscriptions (Same-Day only at 12:00 AM)
     try:
+        from apps.deliveries.models import DeliveryTask
         from apps.deliveries.task_generator import generate_daily_tasks_for_date
-        from datetime import date, timedelta
+        from datetime import date
+        # Purge any prematurely generated future tasks
+        purged = DeliveryTask.objects.filter(delivery_date__gt=date.today(), status=DeliveryTask.Statuses.PENDING).delete()
+        if purged[0] > 0:
+            print(f"🧹 [Railway DB Initializer] Cleaned up {purged[0]} prematurely generated future tasks.")
         today_res = generate_daily_tasks_for_date(target_date=date.today(), force=True)
-        tmrw_res = generate_daily_tasks_for_date(target_date=date.today() + timedelta(days=1), force=True)
-        print(f"📦 [Railway DB Initializer] Delivery tasks active: Today ({today_res.get('created', 0)} new), Tomorrow ({tmrw_res.get('created', 0)} new).")
+        print(f"📦 [Railway DB Initializer] Delivery tasks active: Today ({today_res.get('created', 0)} new).")
     except Exception as task_err:
         print("Delivery task initialization notice:", task_err)
 

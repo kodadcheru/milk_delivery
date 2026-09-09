@@ -56,13 +56,13 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
     Returns dict: {'created': int, 'skipped': int, 'target_date': str}
     """
     if target_date is None:
-        target_date = date.today() + timedelta(days=1)
+        target_date = date.today()
     elif isinstance(target_date, str):
         try:
             target_date = date.fromisoformat(str(target_date).split("T")[0].strip())
         except Exception as e:
-            logger.error(f"Failed to parse target_date '{target_date}', defaulting to tomorrow: {e}")
-            target_date = date.today() + timedelta(days=1)
+            logger.error(f"Failed to parse target_date '{target_date}', defaulting to today: {e}")
+            target_date = date.today()
 
     # 1. Auto-resume expired vacation pauses
     today = date.today()

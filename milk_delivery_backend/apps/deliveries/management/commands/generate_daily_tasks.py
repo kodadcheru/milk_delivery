@@ -58,7 +58,7 @@ class Command(BaseCommand):
         if target_date_str:
             target_date = date.fromisoformat(target_date_str)
         else:
-            target_date = date.today() + timedelta(days=1)
+            target_date = date.today()
 
         self.stdout.write(f"\n{'='*60}")
         self.stdout.write(f"🥛 Pamba Daily Task Generator")
