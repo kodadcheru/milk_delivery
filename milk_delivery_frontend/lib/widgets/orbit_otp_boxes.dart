@@ -387,10 +387,11 @@ class OrbitOtpBoxesState extends State<OrbitOtpBoxes> with TickerProviderStateMi
                     focusNode: focusNode,
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
-                    textInputAction: index == 3 ? TextInputAction.done : TextInputAction.next,
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                    textInputAction: index == count - 1 ? TextInputAction.done : TextInputAction.next,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
+                      LengthLimitingTextInputFormatter(count),
                     ],
                     style: const TextStyle(
                       color: UiTone.ink,
