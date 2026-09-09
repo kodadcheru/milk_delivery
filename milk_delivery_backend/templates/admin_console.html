@@ -767,11 +767,12 @@
       <button class="tab-btn" onclick="switchTab('products', this)"><i class="fa-solid fa-box-open"></i> Product Catalog</button>
       <button class="tab-btn" onclick="switchTab('hubs', this)"><i class="fa-solid fa-warehouse"></i> Location Hubs & Balancer</button>
       <button class="tab-btn" onclick="switchTab('service-areas', this)"><i class="fa-solid fa-map-location-dot"></i> Service Areas & Map</button>
-      <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-truck-ramp-box"></i> Live Deliveries & Proofs</button>
+      <button class="tab-btn" onclick="switchTab('deliveries', this)"><i class="fa-solid fa-calendar-check"></i> Daily Tasks & Proofs</button>
       <button class="tab-btn" onclick="switchTab('subscriptions', this)"><i class="fa-solid fa-repeat"></i> Subscriptions Manager</button>
       <button class="tab-btn" onclick="switchTab('fleet', this)"><i class="fa-solid fa-motorcycle"></i> Salaried Fleet Partners</button>
       <button class="tab-btn" onclick="switchTab('customers', this)"><i class="fa-solid fa-users"></i> Customers & Wallets</button>
-      <button class="tab-btn" onclick="switchTab('express-orders', this)"><i class="fa-solid fa-bolt"></i> Express Orders</button>
+      <button class="tab-btn" onclick="switchTab('express-orders', this)" style="border-left: 2px solid #F59E0B;"><i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> Express Orders <span id="sidebar-express-badge" style="background:#F59E0B; color:#0f172a; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; margin-left:4px; display:none;">0</span></button>
+      <button class="tab-btn" onclick="switchTab('reviews', this)"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> Reviews & Ratings</button>
       <button class="tab-btn" onclick="switchTab('bottle-returns', this)"><i class="fa-solid fa-wine-bottle"></i> Bottle Returns</button>
       <button class="tab-btn" onclick="switchTab('payouts', this)"><i class="fa-solid fa-money-bill-transfer"></i> Provider Payouts</button>
       <button class="tab-btn" onclick="switchTab('lab-batches', this)"><i class="fa-solid fa-flask-vial"></i> Daily Lab Batches</button>
@@ -1159,8 +1160,8 @@
       <div class="section-card">
         <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
           <div>
-            <div class="section-title"><i class="fa-solid fa-route"></i> Doorstep Deliveries & Daily Drops</div>
-            <span style="font-size: 12px; color: var(--text-muted);">Real-time dispatch status, past delivery audit, doorstep bottle returns, and skipped/paused deliveries</span>
+            <div class="section-title"><i class="fa-solid fa-calendar-check" style="color: var(--primary-accent);"></i> Daily Subscription Tasks & Doorstep Proofs</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Routine morning & evening subscription deliveries and doorstep proof audits only. Express / live orders are strictly managed in the Express Orders tab.</span>
           </div>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-secondary" onclick="exportDeliveriesCSV()"><i class="fa-solid fa-file-csv"></i> Export Run-Sheet (CSV)</button>
@@ -2069,6 +2070,11 @@
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('OUT_FOR_DELIVERY', this)">🔵 Out for Delivery</button>
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('DELIVERED', this)">🟢 Delivered</button>
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('CANCELLED', this)">🔴 Cancelled</button>
+          <span style="border-left: 1px solid var(--border-color); margin: 0 4px;"></span>
+          <button class="filter-pill" onclick="filterExpressOrdersByRating('ALL', this)">⭐ All Reviews</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByRating('RATED', this)">⭐ Rated</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByRating('5', this)">⭐⭐⭐⭐⭐ 5★</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByRating('LOW', this)">⚠️ ≤3★</button>
         </div>
       </div>
 
@@ -2082,13 +2088,85 @@
               <th>Items & Qty</th>
               <th>Total Amount</th>
               <th>Status</th>
+              <th>Customer Review</th>
               <th>Payment</th>
               <th>Order Date</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody id="expressOrdersTableBody">
-            <tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading express orders...</td></tr>
+            <tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading express orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Tab: Customer Reviews & Ratings ── -->
+    <div id="tab-reviews" style="display: none;">
+      <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> Customer Reviews & Order Ratings</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Live verified ratings, delivery partner feedback, and taste reviews linked directly to orders and drops</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="loadReviews()" style="padding: 8px 16px;">
+            <i class="fa-solid fa-rotate"></i> Refresh Reviews
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="stat-value" id="rev-avg-score" style="color: #F59E0B;">4.9 ★</div>
+          <div class="stat-label">Average Satisfaction</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="rev-total-count">0</div>
+          <div class="stat-label">Total Verified Reviews</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="rev-five-stars" style="color: var(--primary-accent);">0</div>
+          <div class="stat-label">5-Star Loved Drops</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="rev-low-ratings" style="color: #F87171;">0</div>
+          <div class="stat-label">Needs Attention (≤3★)</div>
+        </div>
+      </div>
+
+      <!-- Reviews Toolbar -->
+      <div class="table-toolbar" style="margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+        <div class="search-box" style="flex: 1; min-width: 240px;">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
+          <input type="text" id="reviewsSearchInput" placeholder="Search feedback, order ID, customer name, phone, or driver..." oninput="filterReviewsList()">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="filter-pill active" onclick="filterReviewsByStar('ALL', this)">All Reviews</button>
+          <button class="filter-pill" onclick="filterReviewsByStar('5', this)">⭐⭐⭐⭐⭐ 5 Stars</button>
+          <button class="filter-pill" onclick="filterReviewsByStar('4', this)">⭐⭐⭐⭐ 4 Stars</button>
+          <button class="filter-pill" onclick="filterReviewsByStar('LOW', this)">⚠️ 1-3 Stars</button>
+          <button class="filter-pill" onclick="filterReviewsByStar('FEEDBACK_ONLY', this)">💬 With Comments</button>
+        </div>
+      </div>
+
+      <!-- Reviews Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Order / Ref</th>
+              <th>Customer</th>
+              <th>Rating & Tags</th>
+              <th>Customer Feedback</th>
+              <th>Delivered Items</th>
+              <th>Delivery Partner</th>
+              <th>Hub</th>
+              <th>Reviewed On</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="reviewsTableBody">
+            <tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 30px;">Loading customer reviews...</td></tr>
           </tbody>
         </table>
       </div>
@@ -3998,7 +4076,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'bottle-returns', 'payouts', 'lab-batches', 'storefront', 'support', 'profile'].forEach(t => {
+      ['dashboard', 'hubs', 'hub-detail', 'service-areas', 'deliveries', 'subscriptions', 'fleet', 'products', 'customers', 'customer-detail', 'express-orders', 'reviews', 'bottle-returns', 'payouts', 'lab-batches', 'storefront', 'support', 'profile'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -4010,6 +4088,8 @@
         }, 150);
       } else if (tabName === 'support') {
         loadSupportDesk();
+      } else if (tabName === 'reviews') {
+        loadReviews();
       } else if (tabName === 'storefront') {
         loadStorefrontConfig();
       } else if (tabName === 'lab-batches') {
@@ -4029,6 +4109,7 @@
         loadProducts(),
         loadCustomers(),
         loadExpressOrders(),
+        loadReviews(),
         loadBottleReturns(),
         loadPayouts(),
         loadDailyBatches(),
@@ -5965,10 +6046,12 @@
 
     async function loadDeliveries() {
       try {
-        const res = await fetch(`${baseUrl}/deliveries/?page_size=200`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
+        const res = await fetch(`${baseUrl}/deliveries/?page_size=300&type=daily`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') } });
         if (res.ok) {
           const dData = await res.json();
-          rawDeliveries = Array.isArray(dData) ? dData : (dData.results || []);
+          const allTasks = Array.isArray(dData) ? dData : (dData.results || []);
+          // Strictly isolate daily subscription drops only; express orders never appear here
+          rawDeliveries = allTasks.filter(t => !t.order && (t.subscription || !t.order));
 
           // Keep shift filter default as ALL so morning deliveries are never hidden
           const shiftEl = document.getElementById('deliveryShiftFilter');
@@ -7832,6 +7915,7 @@
     // ── Express Orders Operations ──
     let rawExpressOrders = [];
     let expressOrderFilter = 'ALL';
+    let expressRatingFilter = 'ALL';
 
     async function loadExpressOrders() {
       try {
@@ -7849,7 +7933,22 @@
 
     function filterExpressOrdersByStatus(status, btn) {
       expressOrderFilter = status;
-      document.querySelectorAll('#tab-express-orders .filter-pill').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('#tab-express-orders .filter-pill').forEach(p => {
+        if (!p.innerText.includes('★') && !p.innerText.includes('Reviews') && !p.innerText.includes('Rated')) {
+          p.classList.remove('active');
+        }
+      });
+      if (btn) btn.classList.add('active');
+      filterExpressOrdersList();
+    }
+
+    function filterExpressOrdersByRating(ratingVal, btn) {
+      expressRatingFilter = ratingVal;
+      document.querySelectorAll('#tab-express-orders .filter-pill').forEach(p => {
+        if (p.innerText.includes('★') || p.innerText.includes('Reviews') || p.innerText.includes('Rated')) {
+          p.classList.remove('active');
+        }
+      });
       if (btn) btn.classList.add('active');
       filterExpressOrdersList();
     }
@@ -7865,19 +7964,30 @@
                             (expressOrderFilter === 'OUT_FOR_DELIVERY' && (normStatus === 'OUT_FOR_DELIVERY' || normStatus === 'DISPATCHED')) ||
                             (normStatus === expressOrderFilter);
 
+        let ratingMatch = true;
+        if (expressRatingFilter === 'RATED') {
+          ratingMatch = Boolean(o.rating);
+        } else if (expressRatingFilter === '5') {
+          ratingMatch = o.rating === 5;
+        } else if (expressRatingFilter === 'LOW') {
+          ratingMatch = Boolean(o.rating && o.rating <= 3);
+        }
+
         const itemsStr = (o.items || []).map(i => (i.product_name || '') + ' ' + (i.quantity || '')).join(' ').toLowerCase();
         const custName = (o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}` : '')).toLowerCase();
         const address = (o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || '').toLowerCase();
         const phone = (o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '');
+        const feedback = (o.feedback || '').toLowerCase();
 
         const textMatch = !q ||
           o.id.toLowerCase().includes(q) ||
           custName.includes(q) ||
           phone.includes(q) ||
           address.includes(q) ||
+          feedback.includes(q) ||
           itemsStr.includes(q);
 
-        return statusMatch && textMatch;
+        return statusMatch && ratingMatch && textMatch;
       });
 
       renderExpressOrders(filtered);
@@ -7897,7 +8007,7 @@
 
       const tbody = document.getElementById('expressOrdersTableBody');
       if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders match the selected filters.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders match the selected filters.</td></tr>';
         return;
       }
       tbody.innerHTML = orders.map(o => {
@@ -7924,6 +8034,19 @@
         const custName = o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}`.trim() : 'Customer');
         const custPhone = o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '—';
         const custAddress = o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || 'Kodad, Telangana';
+
+        // Rating Pill
+        let ratingHtml = '<span style="color:var(--text-dim); font-size:11px;">No review</span>';
+        if (o.rating) {
+          const stars = '★'.repeat(o.rating) + '☆'.repeat(5 - o.rating);
+          const starColor = o.rating >= 4 ? '#F59E0B' : (o.rating === 3 ? '#EAB308' : '#F87171');
+          ratingHtml = `
+            <div>
+              <span style="color:${starColor}; font-weight:700; font-size:12px;">${o.rating}★ ${stars}</span>
+              ${o.feedback ? `<div style="font-size:11px; color:var(--text-muted); font-style:italic; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${o.feedback}">"${o.feedback}"</div>` : ''}
+            </div>
+          `;
+        }
 
         let actionBtns = '';
         if (normStatus === 'PREPARING' || normStatus === 'PLACED') {
@@ -7962,6 +8085,7 @@
             <td style="font-size:12px;">${items || '—'}</td>
             <td><strong style="font-size:13px; color:var(--text-main);">₹${parseFloat(o.total_amount || 0).toFixed(2)}</strong></td>
             <td>${statusBadge}</td>
+            <td>${ratingHtml}</td>
             <td>${payBadge}</td>
             <td style="font-size: 11.5px; color: var(--text-muted);">${date}</td>
             <td>
@@ -7993,6 +8117,120 @@
           alert(err.detail || 'Failed to update order status.');
         }
       } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    // ── Customer Reviews & Feedback Operations ──
+    let rawReviewsList = [];
+    let reviewStarFilter = 'ALL';
+
+    async function loadReviews() {
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const res = await fetch(`${baseUrl}/deliveries/rate/?all=true`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          rawReviewsList = data.reviews || [];
+
+          // Update KPI stats
+          document.getElementById('rev-avg-score').innerText = `${data.avg_rating || 5.0} ★`;
+          document.getElementById('rev-total-count').innerText = data.total_count || rawReviewsList.length;
+          document.getElementById('rev-five-stars').innerText = data.five_stars_count || rawReviewsList.filter(r => r.rating === 5).length;
+          document.getElementById('rev-low-ratings').innerText = data.low_stars_count || rawReviewsList.filter(r => r.rating <= 3).length;
+
+          filterReviewsList();
+        }
+      } catch (e) {
+        console.error('[AdminConsole] Failed to load reviews:', e);
+      }
+    }
+
+    function filterReviewsByStar(starVal, btn) {
+      reviewStarFilter = starVal;
+      document.querySelectorAll('#tab-reviews .filter-pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      filterReviewsList();
+    }
+
+    function filterReviewsList() {
+      const q = (document.getElementById('reviewsSearchInput')?.value || '').toLowerCase().trim();
+
+      const filtered = rawReviewsList.filter(r => {
+        let starMatch = true;
+        if (reviewStarFilter === '5') starMatch = r.rating === 5;
+        else if (reviewStarFilter === '4') starMatch = r.rating === 4;
+        else if (reviewStarFilter === 'LOW') starMatch = r.rating <= 3;
+        else if (reviewStarFilter === 'FEEDBACK_ONLY') starMatch = Boolean(r.feedback && r.feedback.trim());
+
+        const custName = (r.customer_name || '').toLowerCase();
+        const custPhone = (r.customer_phone || '').toLowerCase();
+        const driver = (r.driver_name || '').toLowerCase();
+        const hub = (r.hub_name || '').toLowerCase();
+        const feedback = (r.feedback || '').toLowerCase();
+        const orderId = (r.order_id || '').toLowerCase();
+        const tags = (r.tags || []).join(' ').toLowerCase();
+
+        const textMatch = !q ||
+          custName.includes(q) ||
+          custPhone.includes(q) ||
+          driver.includes(q) ||
+          hub.includes(q) ||
+          feedback.includes(q) ||
+          orderId.includes(q) ||
+          tags.includes(q);
+
+        return starMatch && textMatch;
+      });
+
+      renderReviewsList(filtered);
+    }
+
+    function renderReviewsList(reviews) {
+      const tbody = document.getElementById('reviewsTableBody');
+      if (!reviews.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 35px;">No reviews match the selected filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = reviews.map(r => {
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const starColor = r.rating >= 4 ? '#F59E0B' : (r.rating === 3 ? '#EAB308' : '#F87171');
+
+        const tagsHtml = (r.tags || []).map(t => `<span style="background:rgba(255,255,255,0.06); padding:2px 7px; border-radius:10px; font-size:10px; margin-right:4px; color:var(--text-muted);">${t}</span>`).join('');
+        const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+        const itemsStr = (r.items_summary || []).join(', ') || 'Fresh Milk Bottle';
+
+        return `
+          <tr>
+            <td><strong style="color:var(--accent-blue);">${r.order_id}</strong></td>
+            <td>
+              <strong>${r.customer_name}</strong>
+              <div style="font-size:11px; color:var(--text-muted);">${r.customer_phone || '—'}</div>
+            </td>
+            <td>
+              <div style="color:${starColor}; font-weight:700; font-size:13px;">${r.rating}★ ${stars}</div>
+              <div style="margin-top:4px;">${tagsHtml}</div>
+            </td>
+            <td style="max-width:240px;">
+              ${r.feedback ? `<span style="color:var(--text-main); font-size:12.5px;">"${r.feedback}"</span>` : '<span style="color:var(--text-dim); font-size:11px; font-style:italic;">No written comment</span>'}
+            </td>
+            <td style="font-size:11.5px; color:var(--text-muted);">${itemsStr}</td>
+            <td>
+              <div style="font-weight:600; font-size:12px;"><i class="fa-solid fa-motorcycle" style="color:var(--accent-blue); font-size:10px; margin-right:4px;"></i>${r.driver_name}</div>
+            </td>
+            <td>
+              <span class="status-tag status-active" style="font-size:10.5px;">${r.hub_name}</span>
+            </td>
+            <td style="font-size:11px; color:var(--text-muted);">${dateStr}</td>
+            <td>
+              <button class="btn btn-secondary" onclick="openSupportWithCustomer('${r.customer_phone || ''}', '${r.customer_name}')" style="padding:4px 8px; font-size:11px;">
+                <i class="fa-solid fa-comments"></i> Chat
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     // ── Bottle Returns Operations ──

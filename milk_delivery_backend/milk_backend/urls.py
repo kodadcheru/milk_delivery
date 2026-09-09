@@ -39,6 +39,7 @@ from apps.accounts.admin_views import (
     AdminDeliveryReassignView,
     AdminSupportAgentListCreateView,
     AdminSupportAgentDetailView,
+    AdminReviewsListView,
 )
 from apps.core.chat_views import (
     SupportChatSendView,
@@ -155,7 +156,8 @@ urlpatterns = [
     # Delivery Driver <-> Customer Real-Time In-App Chat endpoints (PostgreSQL + Redis)
     path("api/deliveries/chat/send/", DeliveryChatSendView.as_view(), name="delivery_chat_send"),
     path("api/deliveries/chat/history/", DeliveryChatHistoryView.as_view(), name="delivery_chat_history"),
-    # Bottle Returns & Provider Payouts
+    # Bottle Returns & Provider Payouts & Customer Reviews
+    path("api/admin/reviews/", AdminReviewsListView.as_view(), name="admin_reviews"),
     path("api/admin/bottle-returns/", AdminBottleReturnsView.as_view(), name="admin_bottle_returns"),
     path("api/admin/payouts/", AdminPayoutsView.as_view(), name="admin_payouts"),
     # Service Area endpoints

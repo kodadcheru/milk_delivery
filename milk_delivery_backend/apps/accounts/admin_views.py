@@ -1494,13 +1494,37 @@ class AdminSubscriptionCreateView(APIView):
         if not product:
             return Response({"detail": "Product not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        from apps.deliveries.hub_resolver import find_hub_for_location
+        from apps.deliveries.hub_resolver import find_hub_for_location, _haversine_km
         from apps.deliveries.models import LocationHub
-        hub = (
-            customer.assigned_hub
-            or find_hub_for_location(latitude=customer.latitude, longitude=customer.longitude)
-            or LocationHub.objects.first()
+
+        # Strict hub resolution for admin-created subscriptions
+        hub = find_hub_for_location(
+            latitude=customer.latitude,
+            longitude=customer.longitude,
+            strict=True,
         )
+
+        # Fallback to customer's assigned_hub ONLY if within coverage radius
+        if not hub and customer.assigned_hub:
+            if customer.latitude and customer.longitude:
+                try:
+                    dist = _haversine_km(
+                        float(customer.latitude), float(customer.longitude),
+                        float(customer.assigned_hub.latitude), float(customer.assigned_hub.longitude),
+                    )
+                    if dist <= customer.assigned_hub.coverage_radius_km:
+                        hub = customer.assigned_hub
+                except (ValueError, TypeError):
+                    pass
+            else:
+                # No GPS on customer profile — use assigned_hub as-is for admin ops
+                hub = customer.assigned_hub
+
+        if not hub:
+            return Response(
+                {"detail": "Customer's delivery address is outside our serviceable area. No active hub covers this location."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         delivery_slot = request.data.get("delivery_slot") or customer.delivery_slot_preference or "05:30 AM - 07:00 AM"
 
@@ -2075,3 +2099,102 @@ class AdminSupportAgentDetailView(APIView):
         agent_name = f"{agent.first_name} {agent.last_name}".strip() or agent.username
         agent.delete()
         return Response({"message": f"Support agent '{agent_name}' deleted successfully."}, status=status.HTTP_200_OK)
+
+
+class AdminReviewsListView(APIView):
+    """
+    List and filter all customer reviews & ratings across Express orders and Delivery tasks.
+    GET /api/admin/reviews/
+    """
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        from apps.deliveries.models import DeliveryRating
+        from django.db.models import Avg, Count, Q
+
+        ratings = DeliveryRating.objects.all().select_related(
+            "user", "driver", "order", "task", "order__hub", "task__hub"
+        ).order_by("-created_at")
+
+        star = request.GET.get("star")
+        if star and star.isdigit():
+            ratings = ratings.filter(rating=int(star))
+
+        driver_id = request.GET.get("driver_id")
+        if driver_id and driver_id.isdigit():
+            ratings = ratings.filter(driver_id=int(driver_id))
+
+        hub_id = request.GET.get("hub_id")
+        if hub_id and hub_id.isdigit():
+            ratings = ratings.filter(Q(order__hub_id=int(hub_id)) | Q(task__hub_id=int(hub_id)))
+
+        search = (request.GET.get("search") or "").strip().lower()
+        if search:
+            ratings = ratings.filter(
+                Q(order__id__icontains=search)
+                | Q(feedback__icontains=search)
+                | Q(user__first_name__icontains=search)
+                | Q(user__last_name__icontains=search)
+                | Q(user__phone__icontains=search)
+                | Q(driver__first_name__icontains=search)
+                | Q(driver__last_name__icontains=search)
+            )
+
+        total_count = DeliveryRating.objects.count()
+        avg_rating_val = DeliveryRating.objects.aggregate(avg=Avg("rating"))["avg"]
+        avg_rating = round(float(avg_rating_val), 1) if avg_rating_val is not None else 5.0
+
+        five_stars = DeliveryRating.objects.filter(rating=5).count()
+        four_stars = DeliveryRating.objects.filter(rating=4).count()
+        three_and_below = DeliveryRating.objects.filter(rating__lte=3).count()
+
+        results = []
+        for r in ratings[:150]:
+            cust_name = "Customer"
+            if r.user:
+                cust_name = f"{r.user.first_name} {r.user.last_name}".strip() or r.user.username
+            driver_name = "Delivery Partner"
+            if r.driver:
+                driver_name = f"{r.driver.first_name} {r.driver.last_name}".strip() or r.driver.username
+
+            hub_name = "Kodad Central Hub"
+            if r.order and r.order.hub:
+                hub_name = r.order.hub.name
+            elif r.task and r.task.hub:
+                hub_name = r.task.hub.name
+
+            order_items_desc = ""
+            if r.order:
+                items_list = [f"{i.quantity}x {i.product_name or (i.product.name if i.product else 'Milk')}" for i in r.order.items.all()[:3]]
+                order_items_desc = ", ".join(items_list) if items_list else "Express Delivery"
+            elif r.task:
+                order_items_desc = f"{r.task.quantity or 1}x {r.task.product_name or 'Subscription Drop'}"
+
+            results.append({
+                "id": r.id,
+                "order_id": r.order.id if r.order else (f"TASK-{r.task.id}" if r.task else "—"),
+                "task_id": r.task.id if r.task else None,
+                "rating": r.rating,
+                "feedback": r.feedback or "",
+                "tags": r.tags or [],
+                "customer_name": cust_name,
+                "customer_phone": r.user.phone if r.user else "—",
+                "customer_id": r.user.id if r.user else None,
+                "driver_name": driver_name,
+                "driver_phone": r.driver.phone if r.driver else "—",
+                "driver_id": r.driver.id if r.driver else None,
+                "hub_name": hub_name,
+                "items_summary": order_items_desc,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+
+        return Response({
+            "metrics": {
+                "total_reviews": total_count,
+                "avg_rating": avg_rating,
+                "five_stars": five_stars,
+                "four_stars": four_stars,
+                "three_and_below": three_and_below,
+            },
+            "reviews": results,
+        })

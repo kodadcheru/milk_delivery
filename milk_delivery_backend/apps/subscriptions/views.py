@@ -82,8 +82,22 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
             address=deliv_addr,
             strict=True,
         )
+
+        # If strict resolution failed, try user's assigned_hub BUT only if
+        # the delivery coordinates are within that hub's coverage radius.
         if not hub:
-            hub = getattr(user, "assigned_hub", None)
+            from apps.deliveries.hub_resolver import _haversine_km
+            fallback_hub = getattr(user, "assigned_hub", None)
+            if fallback_hub and deliv_lat is not None and deliv_lon is not None:
+                try:
+                    dist = _haversine_km(
+                        float(deliv_lat), float(deliv_lon),
+                        float(fallback_hub.latitude), float(fallback_hub.longitude),
+                    )
+                    if dist <= fallback_hub.coverage_radius_km:
+                        hub = fallback_hub
+                except (ValueError, TypeError):
+                    pass
 
         # Strict Geo-Fence Validation
         if hub and deliv_lat is not None and deliv_lon is not None:
@@ -93,9 +107,7 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
                 if dist > hub.coverage_radius_km:
                     from rest_framework.exceptions import ValidationError
                     raise ValidationError(
-                        f"Delivery address is outside the operational service zone of {hub.name} "
-                        f"({dist:.1f} km away, max coverage radius is {hub.coverage_radius_km} km). "
-                        f"Please choose an address within the {hub.name} service area."
+                        "Your delivery address is outside our serviceable area. We cannot deliver to this address."
                     )
             except (ValueError, TypeError) as e:
                 logger.debug(f"Failed to calculate geo-fence distance: {e}")

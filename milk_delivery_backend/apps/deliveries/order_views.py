@@ -171,35 +171,79 @@ class ExpressOrderListCreateView(APIView):
             delivery_date = raw_delivery_date or date.today()
         delivery_slot = data.get("delivery_slot", "05:30 AM - 07:00 AM")
         delivery_address = data.get("delivery_address") or user.address or "Doorstep Delivery"
-        # Safely resolve coordinates — Kodad Depot default (17.001734, 79.9625)
-        raw_lat = data.get("delivery_latitude") or user.latitude
-        raw_lon = data.get("delivery_longitude") or user.longitude
-        try:
-            delivery_lat = float(raw_lat) if raw_lat and float(raw_lat) != 0.0 else 17.001734
-        except (ValueError, TypeError):
-            delivery_lat = 17.001734
-
-        try:
-            delivery_lon = float(raw_lon) if raw_lon and float(raw_lon) != 0.0 else 79.9625
-        except (ValueError, TypeError):
-            delivery_lon = 79.9625
+        # Safely resolve coordinates without blindly defaulting out-of-area locations
+        raw_lat = data.get("delivery_latitude") or getattr(user, "latitude", None)
+        raw_lon = data.get("delivery_longitude") or getattr(user, "longitude", None)
+        delivery_lat = None
+        delivery_lon = None
+        if raw_lat is not None and str(raw_lat).strip() not in ("", "0", "0.0"):
+            try:
+                delivery_lat = float(raw_lat)
+            except (ValueError, TypeError):
+                delivery_lat = None
+        if raw_lon is not None and str(raw_lon).strip() not in ("", "0", "0.0"):
+            try:
+                delivery_lon = float(raw_lon)
+            except (ValueError, TypeError):
+                delivery_lon = None
 
         pincode = data.get("pincode", "")
 
-        # Auto-resolve hub based on delivery location
-        from apps.deliveries.hub_resolver import find_hub_for_location
+        # Auto-resolve hub based on delivery location with strict geofencing
+        from apps.deliveries.hub_resolver import find_hub_for_location, _haversine_km
         active_hub = find_hub_for_location(
             pincode=pincode,
             latitude=delivery_lat,
             longitude=delivery_lon,
             address=delivery_address,
-            strict=False,
+            strict=True,
         )
+
+        # If strict resolution failed, try user's assigned_hub BUT only if
+        # the delivery coordinates are within that hub's coverage radius.
+        # This closes the loophole where a Jubilee Hills user with
+        # assigned_hub=Kodad could bypass geofencing.
         if not active_hub:
-            active_hub = getattr(user, "assigned_hub", None)
+            fallback_hub = getattr(user, "assigned_hub", None)
+            if fallback_hub and delivery_lat is not None and delivery_lon is not None:
+                try:
+                    dist = _haversine_km(
+                        float(delivery_lat), float(delivery_lon),
+                        float(fallback_hub.latitude), float(fallback_hub.longitude),
+                    )
+                    if dist <= fallback_hub.coverage_radius_km:
+                        active_hub = fallback_hub
+                except (ValueError, TypeError):
+                    pass
+            elif fallback_hub and delivery_lat is None and delivery_lon is None:
+                # No GPS at all – only allow if address/pincode matched via
+                # text strategies (already handled above). Do NOT silently
+                # default to assigned_hub for unknown locations.
+                pass
+
+        # Strict Geo-Fence Validation: reject if coordinates exceed hub's coverage radius
+        if active_hub and delivery_lat is not None and delivery_lon is not None:
+            try:
+                dist = _haversine_km(float(delivery_lat), float(delivery_lon), float(active_hub.latitude), float(active_hub.longitude))
+                if dist > active_hub.coverage_radius_km:
+                    return Response(
+                        {
+                            "error": "Your delivery address is outside our serviceable area. We cannot deliver to this address.",
+                            "detail": "OUT_OF_SERVICE_AREA",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except (ValueError, TypeError):
+                pass
+
         if not active_hub:
-            from apps.deliveries.models import LocationHub
-            active_hub = LocationHub.objects.filter(is_active=True).first() or LocationHub.objects.first()
+            return Response(
+                {
+                    "error": "Your delivery address is outside our serviceable range. We do not currently deliver to this area.",
+                    "detail": "OUT_OF_SERVICE_AREA",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         delivery_type = data.get('delivery_type', 'SCHEDULED')
         

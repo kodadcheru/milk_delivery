@@ -46,6 +46,9 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
     temperature_celsius = serializers.SerializerMethodField()
     hub_detail = serializers.SerializerMethodField()
     drops_ahead = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    feedback = serializers.SerializerMethodField()
+    review_tags = serializers.SerializerMethodField()
 
     class Meta:
         model = DeliveryTask
@@ -87,8 +90,29 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             "delivered_at",
             "delivered_latitude",
             "delivered_longitude",
+            "rating",
+            "feedback",
+            "review_tags",
         ]
         read_only_fields = ["id", "delivered_at"]
+
+    def get_rating(self, obj):
+        r = obj.ratings.first()
+        if not r and obj.order:
+            r = obj.order.ratings.first()
+        return r.rating if r else None
+
+    def get_feedback(self, obj):
+        r = obj.ratings.first()
+        if not r and obj.order:
+            r = obj.order.ratings.first()
+        return r.feedback if r else ""
+
+    def get_review_tags(self, obj):
+        r = obj.ratings.first()
+        if not r and obj.order:
+            r = obj.order.ratings.first()
+        return r.tags if r else []
 
     def _get_cust(self, obj):
         if obj.subscription and obj.subscription.customer:
@@ -348,6 +372,10 @@ class LiveOrderSerializer(serializers.ModelSerializer):
     batch_price_per_litre = serializers.SerializerMethodField()
     batch_code = serializers.SerializerMethodField()
     temperature_celsius = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    feedback = serializers.SerializerMethodField()
+    review_tags = serializers.SerializerMethodField()
+    review_date = serializers.SerializerMethodField()
     delivery_latitude = serializers.FloatField(required=False, allow_null=True)
     delivery_longitude = serializers.FloatField(required=False, allow_null=True)
 
@@ -395,8 +423,28 @@ class LiveOrderSerializer(serializers.ModelSerializer):
             "delivery_type",
             "eta_minutes",
             "estimated_delivery_time",
+            "rating",
+            "feedback",
+            "review_tags",
+            "review_date",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+    def get_rating(self, obj):
+        r = obj.ratings.first()
+        return r.rating if r else None
+
+    def get_feedback(self, obj):
+        r = obj.ratings.first()
+        return r.feedback if r else ""
+
+    def get_review_tags(self, obj):
+        r = obj.ratings.first()
+        return r.tags if r else []
+
+    def get_review_date(self, obj):
+        r = obj.ratings.first()
+        return r.created_at.isoformat() if r and r.created_at else None
 
     def get_customer_name(self, obj):
         if obj.customer:

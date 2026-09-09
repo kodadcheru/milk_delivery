@@ -63,6 +63,13 @@ class DeliveryTaskListView(generics.ListAPIView):
             except (ValueError, TypeError):
                 pass
 
+        # Universal type filter (daily/subscription vs express)
+        task_type = (self.request.query_params.get("type") or self.request.query_params.get("task_type") or "").lower()
+        if task_type in ("daily", "subscription"):
+            qs = qs.filter(order__isnull=True)
+        elif task_type == "express":
+            qs = qs.filter(order__isnull=False)
+
         # Scope by role
         if user.role in (User.Roles.HUB_MANAGER, "PROVIDER"):
             if getattr(user, "assigned_hub", None):
@@ -1569,7 +1576,73 @@ class DeliveryRatingSubmitView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from apps.deliveries.models import DeliveryRating
+        from apps.deliveries.models import DeliveryRating, LiveOrder, DeliveryTask
+        from django.db.models import Avg, Count
+        
+        user = request.user
+        is_admin_query = request.query_params.get('all') == 'true' or getattr(user, 'is_staff', False) or getattr(user, 'role', '') in ['ADMIN', 'SUPER_ADMIN', 'SUPERUSER']
+
+        if is_admin_query:
+            qs = DeliveryRating.objects.all().select_related('user', 'order', 'task', 'driver', 'order__hub', 'task__hub').prefetch_related('order__items').order_by('-created_at')[:200]
+            
+            # Aggregate stats
+            avg_val = DeliveryRating.objects.aggregate(avg=Avg('rating'))['avg'] or 5.0
+            total_count = DeliveryRating.objects.count()
+            five_stars = DeliveryRating.objects.filter(rating=5).count()
+            low_stars = DeliveryRating.objects.filter(rating__lte=3).count()
+
+            admin_reviews = []
+            for r in qs:
+                cust_name = "Customer"
+                cust_phone = ""
+                if r.user:
+                    cust_name = f"{r.user.first_name} {r.user.last_name}".strip() or r.user.username
+                    cust_phone = getattr(r.user, 'phone', '') or ''
+                
+                driver_name = "Assigned Driver"
+                if r.driver:
+                    driver_name = f"{r.driver.first_name} {r.driver.last_name}".strip() or r.driver.username
+                elif r.order and r.order.driver:
+                    driver_name = f"{r.order.driver.first_name} {r.order.driver.last_name}".strip() or r.order.driver.username
+                elif r.task and r.task.driver:
+                    driver_name = f"{r.task.driver.first_name} {r.task.driver.last_name}".strip() or r.task.driver.username
+
+                hub_name = "Central Depot"
+                if r.order and r.order.hub:
+                    hub_name = r.order.hub.name
+                elif r.task and r.task.hub:
+                    hub_name = r.task.hub.name
+
+                items_summary = []
+                if r.order:
+                    for itm in r.order.items.all():
+                        items_summary.append(f"{itm.quantity}x {itm.product_name}")
+                elif r.task:
+                    items_summary.append(f"{r.task.quantity}x {r.task.product_name}")
+
+                admin_reviews.append({
+                    'id': r.id,
+                    'rating': r.rating,
+                    'feedback': r.feedback or '',
+                    'tags': r.tags or [],
+                    'created_at': r.created_at.isoformat() if r.created_at else None,
+                    'order_id': r.order.id if r.order else (f"Task #{r.task.id}" if r.task else '—'),
+                    'task_id': r.task.id if r.task else None,
+                    'customer_name': cust_name,
+                    'customer_phone': cust_phone,
+                    'driver_name': driver_name,
+                    'hub_name': hub_name,
+                    'items_summary': items_summary,
+                })
+
+            return Response({
+                'avg_rating': round(float(avg_val), 1),
+                'total_count': total_count,
+                'five_stars_count': five_stars,
+                'low_stars_count': low_stars,
+                'reviews': admin_reviews,
+            })
+
         # Return all ratings by the current user
         ratings = DeliveryRating.objects.filter(user=request.user).annotate(
             order__order_id=F('order_id')
