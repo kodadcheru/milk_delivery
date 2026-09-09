@@ -21,7 +21,10 @@ from apps.core.permissions import IsAdminOrStaff, IsAdminOrHubManager
 class AdminConsoleHTMLView(View):
     """Serves the admin console SPA. Auth is handled client-side via token."""
     def get(self, request):
-        return render(request, "admin_console.html")
+        from django.conf import settings
+        return render(request, "admin_console.html", {
+            "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY,
+        })
 
 
 class AdminCustomerListView(APIView):

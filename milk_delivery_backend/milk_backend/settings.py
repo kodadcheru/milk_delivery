@@ -298,7 +298,7 @@ LOGGING = {
 }
 
 # Google Maps API Configuration
-GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4")
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 # Razorpay Payment Gateway Configuration (Test / Live)
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
