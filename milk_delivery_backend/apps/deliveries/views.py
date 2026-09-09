@@ -1583,7 +1583,7 @@ class DeliveryRatingSubmitView(APIView):
         is_admin_query = request.query_params.get('all') == 'true' or getattr(user, 'is_staff', False) or getattr(user, 'role', '') in ['ADMIN', 'SUPER_ADMIN', 'SUPERUSER']
 
         if is_admin_query:
-            qs = DeliveryRating.objects.all().select_related('user', 'order', 'task', 'driver', 'order__hub', 'task__hub').prefetch_related('order__items').order_by('-created_at')[:200]
+            qs = DeliveryRating.objects.all().select_related('user', 'order', 'task', 'driver', 'order__hub', 'task__hub').prefetch_related('order__items__product').order_by('-created_at')[:200]
             
             # Aggregate stats
             avg_val = DeliveryRating.objects.aggregate(avg=Avg('rating'))['avg'] or 5.0
@@ -1616,7 +1616,8 @@ class DeliveryRatingSubmitView(APIView):
                 items_summary = []
                 if r.order:
                     for itm in r.order.items.all():
-                        items_summary.append(f"{itm.quantity}x {itm.product_name}")
+                        p_name = itm.product.name if itm.product else 'Item'
+                        items_summary.append(f"{itm.quantity}x {p_name}")
                 elif r.task:
                     sub = getattr(r.task, 'subscription', None)
                     qty = getattr(sub, 'quantity', 1) if sub else 1

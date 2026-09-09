@@ -500,6 +500,154 @@
     .status-cancelled { background: rgba(239, 68, 68, 0.18); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
     .status-hub { background: rgba(99, 102, 241, 0.15); color: #A5B4FC; }
 
+    /* ── Next-Gen Express Orders & Reviews Custom Styling ── */
+    .pulse-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.6);
+      animation: pulseAnim 1.8s infinite;
+      margin-right: 6px;
+    }
+    @keyframes pulseAnim {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .view-toggle {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .view-toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .view-toggle-btn.active {
+      background: var(--primary-accent);
+      color: #0B1120;
+      font-weight: 700;
+    }
+
+    .express-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .eo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .eo-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+    .eo-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 12px;
+    }
+    .eo-card-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0D7C66 0%, #10B981 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .item-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-main);
+    }
+
+    .reviews-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 18px;
+      margin-top: 14px;
+    }
+    .review-card-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .review-card-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(245, 158, 11, 0.35);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .quote-box {
+      background: rgba(15, 23, 42, 0.6);
+      border-left: 3px solid #F59E0B;
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      font-style: italic;
+      color: #E2E8F0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .sentiment-bar-track {
+      background: rgba(255, 255, 255, 0.08);
+      height: 7px;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 1;
+    }
+    .sentiment-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
     /* Modals & Forms */
     .modal-overlay {
       position: fixed;
@@ -2038,47 +2186,86 @@
 
     <!-- ── Tab: Express Orders ── -->
     <div id="tab-express-orders" style="display: none;">
-      <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+      <div class="section-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
         <div>
-          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> ⚡ Express / Live Orders</h2>
-          <p style="color: var(--text-muted); font-size: 13px;">On-demand live orders placed via the mobile app with real-time dispatch management</p>
+          <h2 style="margin: 0 0 6px 0; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 8px;">
+            <span class="pulse-dot"></span>
+            <i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> ⚡ Express & On-Demand Live Dispatch
+          </h2>
+          <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Instant order dispatch cockpit, live delivery tracking, WhatsApp routing & proof of delivery</p>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); padding: 6px 12px; border-radius: 8px; font-size: 12px; color: #34D399;">
+            <span class="pulse-dot"></span>
+            <span id="eo-live-indicator">Auto-refresh (30s)</span>
+            <input type="checkbox" id="eo-autorefresh-toggle" checked onchange="toggleExpressAutoRefresh(this.checked)" style="accent-color: var(--primary-accent); cursor: pointer;" title="Toggle live auto-refresh">
+          </div>
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" id="btn-eo-view-cards" onclick="toggleExpressView('cards')"><i class="fa-solid fa-table-cells-large"></i> Cards Grid</button>
+            <button class="view-toggle-btn" id="btn-eo-view-table" onclick="toggleExpressView('table')"><i class="fa-solid fa-table-list"></i> Table</button>
+          </div>
           <button class="btn btn-secondary" onclick="loadExpressOrders()" style="padding: 8px 16px;">
             <i class="fa-solid fa-rotate"></i> Refresh Orders
           </button>
         </div>
       </div>
 
+      <!-- KPI Stats Grid -->
       <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 20px;">
-        <div class="stat-card"><div class="stat-value" id="eo-total">0</div><div class="stat-label">Total Orders</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-preparing" style="color: #F59E0B;">0</div><div class="stat-label">🟡 Preparing</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-dispatched" style="color: #0284C7;">0</div><div class="stat-label">🔵 Out for Delivery</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-delivered" style="color: var(--primary-accent);">0</div><div class="stat-label">🟢 Delivered</div></div>
-        <div class="stat-card"><div class="stat-value" id="eo-revenue" style="color: #38BDF8;">₹0</div><div class="stat-label">💰 Express GMV</div></div>
+        <div class="stat-card">
+          <div class="stat-value" id="eo-total">0</div>
+          <div class="stat-label">Total Express Orders</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid #F59E0B;">
+          <div class="stat-value" id="eo-preparing" style="color: #F59E0B;">0</div>
+          <div class="stat-label">🟡 Preparing / Unassigned</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid #0284C7;">
+          <div class="stat-value" id="eo-dispatched" style="color: #0284C7;">0</div>
+          <div class="stat-label">🔵 Out for Delivery</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid var(--primary-accent);">
+          <div class="stat-value" id="eo-delivered" style="color: var(--primary-accent);">0</div>
+          <div class="stat-label">🟢 Delivered & Complete</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid #38BDF8;">
+          <div class="stat-value" id="eo-revenue" style="color: #38BDF8;">₹0</div>
+          <div class="stat-label">💰 Express Revenue GMV</div>
+        </div>
       </div>
 
       <!-- Toolbar & Search -->
       <div class="table-toolbar" style="margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
-        <div class="search-box" style="flex: 1; min-width: 240px;">
+        <div class="search-box" style="flex: 1; min-width: 260px;">
           <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
           <input type="text" id="expressOrderSearch" placeholder="Search order ID, customer name, phone, address, or item..." oninput="filterExpressOrdersList()">
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="filter-pill active" onclick="filterExpressOrdersByStatus('ALL', this)">All</button>
+          <button class="filter-pill active" onclick="filterExpressOrdersByStatus('ALL', this)">All Orders</button>
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('PREPARING', this)">🟡 Preparing</button>
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('OUT_FOR_DELIVERY', this)">🔵 Out for Delivery</button>
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('DELIVERED', this)">🟢 Delivered</button>
           <button class="filter-pill" onclick="filterExpressOrdersByStatus('CANCELLED', this)">🔴 Cancelled</button>
           <span style="border-left: 1px solid var(--border-color); margin: 0 4px;"></span>
           <button class="filter-pill" onclick="filterExpressOrdersByRating('ALL', this)">⭐ All Reviews</button>
-          <button class="filter-pill" onclick="filterExpressOrdersByRating('RATED', this)">⭐ Rated</button>
+          <button class="filter-pill" onclick="filterExpressOrdersByRating('RATED', this)">⭐ Rated Only</button>
           <button class="filter-pill" onclick="filterExpressOrdersByRating('5', this)">⭐⭐⭐⭐⭐ 5★</button>
           <button class="filter-pill" onclick="filterExpressOrdersByRating('LOW', this)">⚠️ ≤3★</button>
         </div>
       </div>
 
-      <div class="table-container">
+      <!-- Cards Grid View -->
+      <div id="expressOrdersCardsContainer">
+        <div class="express-cards-grid" id="expressOrdersCardsGrid">
+          <div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 50px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--primary-accent); margin-bottom: 10px;"></i>
+            <div>Loading live express orders...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table View (Hidden by default, toggleable) -->
+      <div class="table-container" id="expressOrdersTableContainer" style="display: none;">
         <table>
           <thead>
             <tr>
@@ -2103,42 +2290,102 @@
 
     <!-- ── Tab: Customer Reviews & Ratings ── -->
     <div id="tab-reviews" style="display: none;">
-      <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+      <div class="section-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
         <div>
-          <h2 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> Customer Reviews & Order Ratings</h2>
-          <p style="color: var(--text-muted); font-size: 13px;">Live verified ratings, delivery partner feedback, and taste reviews linked directly to orders and drops</p>
+          <h2 style="margin: 0 0 6px 0; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-star" style="color: #F59E0B;"></i> Customer Reviews & Brand Reputation
+          </h2>
+          <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Verified milk drop ratings, driver compliments, quality satisfaction & customer feedback</p>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" id="btn-rev-view-cards" onclick="toggleReviewsView('cards')"><i class="fa-solid fa-table-cells-large"></i> Cards Grid</button>
+            <button class="view-toggle-btn" id="btn-rev-view-table" onclick="toggleReviewsView('table')"><i class="fa-solid fa-table-list"></i> Table</button>
+          </div>
           <button class="btn btn-secondary" onclick="loadReviews()" style="padding: 8px 16px;">
             <i class="fa-solid fa-rotate"></i> Refresh Reviews
           </button>
         </div>
       </div>
 
-      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
-        <div class="stat-card">
-          <div class="stat-value" id="rev-avg-score" style="color: #F59E0B;">4.9 ★</div>
-          <div class="stat-label">Average Satisfaction</div>
+      <!-- Hero Reputation Scorecard -->
+      <div style="display: grid; grid-template-columns: 320px 1fr; gap: 18px; margin-bottom: 20px;">
+        <!-- Left: Overall Rating Card -->
+        <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden;">
+          <div style="font-size: 12px; font-weight: 700; color: #F59E0B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Customer Delight Index</div>
+          <div style="font-size: 52px; font-weight: 900; color: #F59E0B; font-family: 'Outfit', sans-serif; line-height: 1;" id="rev-hero-score">4.9</div>
+          <div style="color: #F59E0B; font-size: 18px; margin: 6px 0 10px 0;">★★★★★</div>
+          <div style="font-size: 13px; color: var(--text-muted);">Based on <strong id="rev-hero-count" style="color: var(--text-main);">0</strong> verified drops</div>
+          <div style="margin-top: 14px; background: rgba(16, 185, 129, 0.15); color: #34D399; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3);">
+            <i class="fa-solid fa-shield-halved"></i> <span id="rev-satisfaction-pct">98% Satisfied</span>
+          </div>
         </div>
+
+        <!-- Right: Star Rating Breakdown Bars -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; justify-content: space-around;">
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 12px;">
+            <span style="width: 45px; font-weight: 600; color: #F59E0B;">5 ★</span>
+            <div class="sentiment-bar-track">
+              <div class="sentiment-bar-fill" id="bar-star-5" style="width: 0%; background: linear-gradient(90deg, #10B981, #059669);"></div>
+            </div>
+            <span style="width: 50px; text-align: right; color: var(--text-muted); font-size: 11.5px;" id="count-star-5">0</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 12px;">
+            <span style="width: 45px; font-weight: 600; color: #F59E0B;">4 ★</span>
+            <div class="sentiment-bar-track">
+              <div class="sentiment-bar-fill" id="bar-star-4" style="width: 0%; background: linear-gradient(90deg, #34D399, #10B981);"></div>
+            </div>
+            <span style="width: 50px; text-align: right; color: var(--text-muted); font-size: 11.5px;" id="count-star-4">0</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 12px;">
+            <span style="width: 45px; font-weight: 600; color: #EAB308;">3 ★</span>
+            <div class="sentiment-bar-track">
+              <div class="sentiment-bar-fill" id="bar-star-3" style="width: 0%; background: linear-gradient(90deg, #FBBF24, #D97706);"></div>
+            </div>
+            <span style="width: 50px; text-align: right; color: var(--text-muted); font-size: 11.5px;" id="count-star-3">0</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 12px;">
+            <span style="width: 45px; font-weight: 600; color: #F97316;">2 ★</span>
+            <div class="sentiment-bar-track">
+              <div class="sentiment-bar-fill" id="bar-star-2" style="width: 0%; background: linear-gradient(90deg, #FB923C, #EA580C);"></div>
+            </div>
+            <span style="width: 50px; text-align: right; color: var(--text-muted); font-size: 11.5px;" id="count-star-2">0</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 12px;">
+            <span style="width: 45px; font-weight: 600; color: #EF4444;">1 ★</span>
+            <div class="sentiment-bar-track">
+              <div class="sentiment-bar-fill" id="bar-star-1" style="width: 0%; background: linear-gradient(90deg, #F87171, #DC2626);"></div>
+            </div>
+            <span style="width: 50px; text-align: right; color: var(--text-muted); font-size: 11.5px;" id="count-star-1">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick KPI Stats -->
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
         <div class="stat-card">
           <div class="stat-value" id="rev-total-count">0</div>
           <div class="stat-label">Total Verified Reviews</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="border-left: 3px solid var(--primary-accent);">
           <div class="stat-value" id="rev-five-stars" style="color: var(--primary-accent);">0</div>
           <div class="stat-label">5-Star Loved Drops</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="border-left: 3px solid #F87171;">
           <div class="stat-value" id="rev-low-ratings" style="color: #F87171;">0</div>
           <div class="stat-label">Needs Attention (≤3★)</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid #38BDF8;">
+          <div class="stat-value" id="rev-comments-count" style="color: #38BDF8;">0</div>
+          <div class="stat-label">Written Feedback Comments</div>
         </div>
       </div>
 
       <!-- Reviews Toolbar -->
       <div class="table-toolbar" style="margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
-        <div class="search-box" style="flex: 1; min-width: 240px;">
+        <div class="search-box" style="flex: 1; min-width: 260px;">
           <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim);"></i>
-          <input type="text" id="reviewsSearchInput" placeholder="Search feedback, order ID, customer name, phone, or driver..." oninput="filterReviewsList()">
+          <input type="text" id="reviewsSearchInput" placeholder="Search feedback, customer, phone, driver, hub, or tag..." oninput="filterReviewsList()">
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="filter-pill active" onclick="filterReviewsByStar('ALL', this)">All Reviews</button>
@@ -2149,8 +2396,29 @@
         </div>
       </div>
 
-      <!-- Reviews Table -->
-      <div class="table-container">
+      <!-- Compliment Tags Quick Filter Bar -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;">
+        <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-tags"></i> Quality Tags:</span>
+        <button class="filter-pill active" style="font-size: 11px; padding: 3px 9px;" onclick="filterReviewsByTag('ALL', this)">All Tags</button>
+        <button class="filter-pill" style="font-size: 11px; padding: 3px 9px;" onclick="filterReviewsByTag('Punctual', this)">⏱️ Punctual Delivery</button>
+        <button class="filter-pill" style="font-size: 11px; padding: 3px 9px;" onclick="filterReviewsByTag('Fresh', this)">🥛 Fresh & Pure</button>
+        <button class="filter-pill" style="font-size: 11px; padding: 3px 9px;" onclick="filterReviewsByTag('Polite', this)">🛵 Polite Driver</button>
+        <button class="filter-pill" style="font-size: 11px; padding: 3px 9px;" onclick="filterReviewsByTag('Cold', this)">❄️ Cold & Sealed</button>
+        <button class="filter-pill" style="font-size: 11px; padding: 3px 9px;" onclick="filterReviewsByTag('Clean', this)">🪟 Clean Glass Bottle</button>
+      </div>
+
+      <!-- Cards Grid View -->
+      <div id="reviewsCardsContainer">
+        <div class="reviews-cards-grid" id="reviewsCardsGrid">
+          <div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 50px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--primary-accent); margin-bottom: 10px;"></i>
+            <div>Loading verified customer reviews...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews Table (Hidden by default, toggleable) -->
+      <div class="table-container" id="reviewsTableContainer" style="display: none;">
         <table>
           <thead>
             <tr>
@@ -2474,6 +2742,23 @@
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <!-- ── MODALS ── -->
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── Modal: Express Order Full Details & Dispatch Cockpit ── -->
+  <div class="modal-overlay" id="expressOrderDetailModal">
+    <div class="modal-card" style="max-width: 650px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+        <div class="modal-title" style="margin: 0; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-bolt" style="color: #F59E0B;"></i>
+          <span>Express Order <strong id="eom-id" style="color: var(--primary-accent);">#0</strong></span>
+        </div>
+        <button onclick="closeModal('expressOrderDetailModal')" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <div id="eom-content">
+        <!-- Injected dynamically by openExpressOrderDetail() -->
+      </div>
+    </div>
+  </div>
 
   <!-- ── Modal: Create / Add Location Hub with Google Maps Places & Pin-Drop ── -->
   <div class="modal-overlay" id="createHubModal">
@@ -7914,8 +8199,49 @@
     let rawExpressOrders = [];
     let expressOrderFilter = 'ALL';
     let expressRatingFilter = 'ALL';
+    let currentExpressView = 'cards'; // 'cards' | 'table'
+    let expressAutoRefreshTimer = null;
 
-    async function loadExpressOrders() {
+    function toggleExpressView(mode) {
+      currentExpressView = mode;
+      const btnCards = document.getElementById('btn-eo-view-cards');
+      const btnTable = document.getElementById('btn-eo-view-table');
+      const containerCards = document.getElementById('expressOrdersCardsContainer');
+      const containerTable = document.getElementById('expressOrdersTableContainer');
+
+      if (mode === 'cards') {
+        if (btnCards) btnCards.classList.add('active');
+        if (btnTable) btnTable.classList.remove('active');
+        if (containerCards) containerCards.style.display = 'block';
+        if (containerTable) containerTable.style.display = 'none';
+      } else {
+        if (btnTable) btnTable.classList.add('active');
+        if (btnCards) btnCards.classList.remove('active');
+        if (containerCards) containerCards.style.display = 'none';
+        if (containerTable) containerTable.style.display = 'block';
+      }
+    }
+
+    function toggleExpressAutoRefresh(enabled) {
+      if (expressAutoRefreshTimer) {
+        clearInterval(expressAutoRefreshTimer);
+        expressAutoRefreshTimer = null;
+      }
+      const ind = document.getElementById('eo-live-indicator');
+      if (enabled) {
+        if (ind) ind.innerText = 'Auto-refresh (30s)';
+        expressAutoRefreshTimer = setInterval(() => {
+          const tab = document.getElementById('tab-express-orders');
+          if (tab && tab.style.display !== 'none') {
+            loadExpressOrders(true);
+          }
+        }, 30000);
+      } else {
+        if (ind) ind.innerText = 'Paused';
+      }
+    }
+
+    async function loadExpressOrders(isSilent = false) {
       try {
         const token = localStorage.getItem('milkdrop_admin_token');
         const res = await fetch(`${baseUrl}/orders/express/`, {
@@ -7926,7 +8252,9 @@
           rawExpressOrders = Array.isArray(data) ? data : (data.results || []);
           filterExpressOrdersList();
         }
-      } catch (e) { console.error('[AdminConsole]', e); }
+      } catch (e) {
+        console.error('[AdminConsole] loadExpressOrders error:', e);
+      }
     }
 
     function filterExpressOrdersByStatus(status, btn) {
@@ -7978,7 +8306,7 @@
         const feedback = (o.feedback || '').toLowerCase();
 
         const textMatch = !q ||
-          o.id.toLowerCase().includes(q) ||
+          String(o.id).toLowerCase().includes(q) ||
           custName.includes(q) ||
           phone.includes(q) ||
           address.includes(q) ||
@@ -7993,7 +8321,7 @@
 
     function renderExpressOrders(orders) {
       const totalRev = rawExpressOrders
-        .filter(o => o.status === 'DELIVERED' || o.payment_status === 'PAID')
+        .filter(o => o.status === 'DELIVERED' || (o.payment_status || '').toUpperCase().includes('PAID'))
         .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
 
       document.getElementById('eo-total').innerText = rawExpressOrders.length;
@@ -8003,97 +8331,360 @@
       const elRev = document.getElementById('eo-revenue');
       if (elRev) elRev.innerText = '₹' + Math.round(totalRev).toLocaleString('en-IN');
 
-      const tbody = document.getElementById('expressOrdersTableBody');
-      if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders match the selected filters.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = orders.map(o => {
-        const items = (o.items || []).map(i => `<span style="display:inline-block; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; margin:2px 0;">${i.quantity}x ${i.product_name || 'Milk / Dairy'}</span>`).join('<br>');
-        const normStatus = (o.status === 'DISPATCHED') ? 'OUT_FOR_DELIVERY' : o.status;
-
-        let statusBadge = '';
-        if (normStatus === 'DELIVERED') {
-          statusBadge = '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> DELIVERED</span>';
-        } else if (normStatus === 'OUT_FOR_DELIVERY') {
-          statusBadge = '<span class="status-tag status-pending"><i class="fa-solid fa-motorcycle"></i> OUT FOR DELIVERY</span>';
-        } else if (normStatus === 'CANCELLED') {
-          statusBadge = '<span class="status-tag status-cancelled"><i class="fa-solid fa-ban"></i> CANCELLED</span>';
+      // ── Render Cards Grid ──
+      const cardsGrid = document.getElementById('expressOrdersCardsGrid');
+      if (cardsGrid) {
+        if (!orders.length) {
+          cardsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 50px;">No express orders match the selected filters.</div>';
         } else {
-          statusBadge = '<span class="status-tag status-paused"><i class="fa-solid fa-box-open"></i> PREPARING</span>';
-        }
+          cardsGrid.innerHTML = orders.map(o => {
+            const normStatus = (o.status === 'DISPATCHED') ? 'OUT_FOR_DELIVERY' : (o.status || 'PREPARING');
+            let statusBadge = '';
+            let borderAccent = 'rgba(255, 255, 255, 0.08)';
 
-        const isPaid = (o.payment_status || '').toUpperCase().includes('PAID');
-        const payBadge = isPaid
-          ? '<span style="color:#10B981; font-weight:700; font-size:11px;">PAID ✅</span>'
-          : '<span style="color:#F59E0B; font-weight:600; font-size:11px;">PENDING ⏳</span>';
+            if (normStatus === 'DELIVERED') {
+              statusBadge = '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> DELIVERED</span>';
+              borderAccent = 'rgba(16, 185, 129, 0.35)';
+            } else if (normStatus === 'OUT_FOR_DELIVERY') {
+              statusBadge = '<span class="status-tag status-pending"><i class="fa-solid fa-motorcycle"></i> OUT FOR DELIVERY</span>';
+              borderAccent = 'rgba(2, 132, 199, 0.4)';
+            } else if (normStatus === 'CANCELLED') {
+              statusBadge = '<span class="status-tag status-cancelled"><i class="fa-solid fa-ban"></i> CANCELLED</span>';
+              borderAccent = 'rgba(239, 68, 68, 0.3)';
+            } else {
+              statusBadge = '<span class="status-tag status-paused"><i class="fa-solid fa-box-open"></i> PREPARING</span>';
+              borderAccent = 'rgba(245, 158, 11, 0.4)';
+            }
 
-        const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-        const custName = o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}`.trim() : 'Customer');
-        const custPhone = o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '—';
-        const custAddress = o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || 'Kodad, Telangana';
+            const custName = o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}`.trim() : 'Customer');
+            const initials = custName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CU';
+            const custPhone = o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '';
+            const custAddress = o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || 'Kodad, Telangana';
+            const dateStr = o.created_at ? new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : 'Just now';
 
-        // Rating Pill
-        let ratingHtml = '<span style="color:var(--text-dim); font-size:11px;">No review</span>';
-        if (o.rating) {
-          const stars = '★'.repeat(o.rating) + '☆'.repeat(5 - o.rating);
-          const starColor = o.rating >= 4 ? '#F59E0B' : (o.rating === 3 ? '#EAB308' : '#F87171');
-          ratingHtml = `
-            <div>
-              <span style="color:${starColor}; font-weight:700; font-size:12px;">${o.rating}★ ${stars}</span>
-              ${o.feedback ? `<div style="font-size:11px; color:var(--text-muted); font-style:italic; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${o.feedback}">"${o.feedback}"</div>` : ''}
-            </div>
-          `;
-        }
+            const isPaid = (o.payment_status || '').toUpperCase().includes('PAID');
+            const payBadge = isPaid
+              ? '<span style="color:#10B981; font-weight:700; font-size:11px; background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:10px;">PAID ✅</span>'
+              : '<span style="color:#F59E0B; font-weight:700; font-size:11px; background:rgba(245,158,11,0.1); padding:2px 8px; border-radius:10px;">COD / PENDING ⏳</span>';
 
-        let actionBtns = '';
-        if (normStatus === 'PREPARING' || normStatus === 'PLACED') {
-          actionBtns = `
-            <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'OUT_FOR_DELIVERY')" style="padding:4px 8px; font-size:11px;">
-              <i class="fa-solid fa-motorcycle"></i> Dispatch
-            </button>
-            <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
-              <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-          `;
-        } else if (normStatus === 'OUT_FOR_DELIVERY') {
-          actionBtns = `
-            <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DELIVERED')" style="background:#0D7C66; border-color:#0D7C66; padding:4px 8px; font-size:11px;">
-              <i class="fa-solid fa-circle-check"></i> Deliver
-            </button>
-            <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
-              <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-          `;
-        } else if (normStatus === 'DELIVERED') {
-          actionBtns = `
-            <span style="font-size:11px; color:#10B981; font-weight:700;">Fulfilled ✅</span>
-          `;
-        } else {
-          actionBtns = `
-            <span style="font-size:11px; color:#F87171; font-weight:600;">Refunded 💳</span>
-          `;
-        }
-
-        return `
-          <tr style="${normStatus === 'CANCELLED' ? 'opacity: 0.7;' : ''}">
-            <td><strong style="color: var(--accent-blue);">#${o.id}</strong></td>
-            <td><strong>${custName}</strong></td>
-            <td>${custPhone}<br><small style="color:var(--text-muted);">${custAddress}</small></td>
-            <td style="font-size:12px;">${items || '—'}</td>
-            <td><strong style="font-size:13px; color:var(--text-main);">₹${parseFloat(o.total_amount || 0).toFixed(2)}</strong></td>
-            <td>${statusBadge}</td>
-            <td>${ratingHtml}</td>
-            <td>${payBadge}</td>
-            <td style="font-size: 11.5px; color: var(--text-muted);">${date}</td>
-            <td>
-              <div style="display:flex; align-items:center;">
-                ${actionBtns}
+            const itemsHtml = (o.items || []).map(i => `
+              <div class="item-chip">
+                <i class="fa-solid fa-bottle-water" style="color:var(--primary-accent); font-size:10px;"></i>
+                <strong>${i.quantity}x</strong> ${i.product_name || 'Pure Milk'}
               </div>
-            </td>
-          </tr>
+            `).join('');
+
+            // Clean phone for whatsapp
+            const rawDigits = custPhone.replace(/[^0-9]/g, '');
+            const waNumber = rawDigits.length === 10 ? `91${rawDigits}` : rawDigits;
+
+            // Rating section
+            let reviewSection = '';
+            if (o.rating) {
+              const stars = '★'.repeat(o.rating) + '☆'.repeat(5 - o.rating);
+              const starColor = o.rating >= 4 ? '#F59E0B' : (o.rating === 3 ? '#EAB308' : '#F87171');
+              reviewSection = `
+                <div style="background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 8px 12px; font-size: 11.5px;">
+                  <span style="color: ${starColor}; font-weight: 700;">${o.rating}★ ${stars}</span>
+                  ${o.feedback ? `<span style="color: var(--text-muted); font-style: italic; margin-left: 6px;">"${o.feedback}"</span>` : ''}
+                </div>
+              `;
+            }
+
+            // Quick actions
+            let actionBtns = '';
+            if (normStatus === 'PREPARING' || normStatus === 'PLACED') {
+              actionBtns = `
+                <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'OUT_FOR_DELIVERY')" style="padding:6px 12px; font-size:12px; flex:1; justify-content:center;">
+                  <i class="fa-solid fa-motorcycle"></i> Dispatch
+                </button>
+                <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:6px 10px; font-size:12px;" title="View Order Details">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:6px 10px; font-size:12px;" title="Cancel & Refund">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              `;
+            } else if (normStatus === 'OUT_FOR_DELIVERY') {
+              actionBtns = `
+                <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DELIVERED')" style="background:#0D7C66; border-color:#0D7C66; padding:6px 12px; font-size:12px; flex:1; justify-content:center;">
+                  <i class="fa-solid fa-circle-check"></i> Mark Delivered
+                </button>
+                <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:6px 10px; font-size:12px;" title="View Order Details">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:6px 10px; font-size:12px;" title="Cancel & Refund">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              `;
+            } else if (normStatus === 'DELIVERED') {
+              actionBtns = `
+                <div style="font-size:12px; color:#10B981; font-weight:700; display:flex; align-items:center; gap:6px; flex:1;">
+                  <i class="fa-solid fa-circle-check"></i> Delivered & Fulfilled
+                </div>
+                <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:6px 12px; font-size:12px;">
+                  <i class="fa-solid fa-eye"></i> Details
+                </button>
+              `;
+            } else {
+              actionBtns = `
+                <div style="font-size:12px; color:#F87171; font-weight:700; display:flex; align-items:center; gap:6px; flex:1;">
+                  <i class="fa-solid fa-ban"></i> Cancelled & Refunded
+                </div>
+                <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:6px 12px; font-size:12px;">
+                  <i class="fa-solid fa-eye"></i> Details
+                </button>
+              `;
+            }
+
+            return `
+              <div class="eo-card" style="border-color: ${borderAccent};">
+                <div class="eo-card-header">
+                  <div>
+                    <span style="font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--accent-blue); font-size: 14px;">#${o.id}</span>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                      <i class="fa-regular fa-clock"></i> ${dateStr}
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    ${statusBadge}
+                  </div>
+                </div>
+
+                <div class="eo-card-user">
+                  <div class="user-avatar-circle">${initials}</div>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${custName}</div>
+                    <div style="display: flex; gap: 10px; font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                      ${custPhone ? `<a href="tel:${custPhone}" style="color:var(--text-muted); text-decoration:none;"><i class="fa-solid fa-phone" style="font-size:10px; color:#38BDF8;"></i> ${custPhone}</a>` : '—'}
+                      ${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" style="color:#10B981; text-decoration:none; font-weight:600;"><i class="fa-brands fa-whatsapp"></i> Chat</a>` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="font-size: 11.5px; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                    <i class="fa-solid fa-location-dot" style="color: #F87171; margin-right: 4px;"></i>${custAddress}
+                  </div>
+                  <button onclick="copyToClipboard('${custAddress.replace(/'/g, "\\'")}', this)" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px;" title="Copy Address">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  ${itemsHtml || '<span style="font-size:12px; color:var(--text-muted);">Standard Order</span>'}
+                </div>
+
+                ${reviewSection}
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 4px;">
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Total Amount</div>
+                    <div style="font-size: 16px; font-weight: 800; color: var(--text-main);">₹${parseFloat(o.total_amount || 0).toFixed(2)}</div>
+                  </div>
+                  <div>${payBadge}</div>
+                </div>
+
+                <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+                  ${actionBtns}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // ── Render Table ──
+      const tbody = document.getElementById('expressOrdersTableBody');
+      if (tbody) {
+        if (!orders.length) {
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 30px;">No express orders match the selected filters.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = orders.map(o => {
+          const items = (o.items || []).map(i => `<span style="display:inline-block; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; margin:2px 0;">${i.quantity}x ${i.product_name || 'Milk / Dairy'}</span>`).join('<br>');
+          const normStatus = (o.status === 'DISPATCHED') ? 'OUT_FOR_DELIVERY' : o.status;
+
+          let statusBadge = '';
+          if (normStatus === 'DELIVERED') {
+            statusBadge = '<span class="status-tag status-active"><i class="fa-solid fa-circle-check"></i> DELIVERED</span>';
+          } else if (normStatus === 'OUT_FOR_DELIVERY') {
+            statusBadge = '<span class="status-tag status-pending"><i class="fa-solid fa-motorcycle"></i> OUT FOR DELIVERY</span>';
+          } else if (normStatus === 'CANCELLED') {
+            statusBadge = '<span class="status-tag status-cancelled"><i class="fa-solid fa-ban"></i> CANCELLED</span>';
+          } else {
+            statusBadge = '<span class="status-tag status-paused"><i class="fa-solid fa-box-open"></i> PREPARING</span>';
+          }
+
+          const isPaid = (o.payment_status || '').toUpperCase().includes('PAID');
+          const payBadge = isPaid
+            ? '<span style="color:#10B981; font-weight:700; font-size:11px;">PAID ✅</span>'
+            : '<span style="color:#F59E0B; font-weight:600; font-size:11px;">PENDING ⏳</span>';
+
+          const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+          const custName = o.customer_name || (o.customer_detail ? `${o.customer_detail.first_name || ''} ${o.customer_detail.last_name || ''}`.trim() : 'Customer');
+          const custPhone = o.customer_phone || (o.customer_detail ? o.customer_detail.phone : '') || '—';
+          const custAddress = o.delivery_address || (o.customer_detail ? o.customer_detail.address : '') || 'Kodad, Telangana';
+
+          let ratingHtml = '<span style="color:var(--text-dim); font-size:11px;">No review</span>';
+          if (o.rating) {
+            const stars = '★'.repeat(o.rating) + '☆'.repeat(5 - o.rating);
+            const starColor = o.rating >= 4 ? '#F59E0B' : (o.rating === 3 ? '#EAB308' : '#F87171');
+            ratingHtml = `
+              <div>
+                <span style="color:${starColor}; font-weight:700; font-size:12px;">${o.rating}★ ${stars}</span>
+                ${o.feedback ? `<div style="font-size:11px; color:var(--text-muted); font-style:italic; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${o.feedback}">"${o.feedback}"</div>` : ''}
+              </div>
+            `;
+          }
+
+          let actionBtns = '';
+          if (normStatus === 'PREPARING' || normStatus === 'PLACED') {
+            actionBtns = `
+              <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'OUT_FOR_DELIVERY')" style="padding:4px 8px; font-size:11px;">
+                <i class="fa-solid fa-motorcycle"></i> Dispatch
+              </button>
+              <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            `;
+          } else if (normStatus === 'OUT_FOR_DELIVERY') {
+            actionBtns = `
+              <button class="btn btn-primary" onclick="updateExpressOrderStatus('${o.id}', 'DELIVERED')" style="background:#0D7C66; border-color:#0D7C66; padding:4px 8px; font-size:11px;">
+                <i class="fa-solid fa-circle-check"></i> Deliver
+              </button>
+              <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button class="btn btn-danger" onclick="updateExpressOrderStatus('${o.id}', 'CANCELLED')" style="padding:4px 8px; font-size:11px; margin-left:4px;">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            `;
+          } else {
+            actionBtns = `
+              <button class="btn btn-secondary" onclick="openExpressOrderDetail('${o.id}')" style="padding:4px 8px; font-size:11px;">
+                <i class="fa-solid fa-eye"></i> View
+              </button>
+            `;
+          }
+
+          return `
+            <tr style="${normStatus === 'CANCELLED' ? 'opacity: 0.7;' : ''}">
+              <td><strong style="color: var(--accent-blue);">#${o.id}</strong></td>
+              <td><strong>${custName}</strong></td>
+              <td>${custPhone}<br><small style="color:var(--text-muted);">${custAddress}</small></td>
+              <td style="font-size:12px;">${items || '—'}</td>
+              <td><strong style="font-size:13px; color:var(--text-main);">₹${parseFloat(o.total_amount || 0).toFixed(2)}</strong></td>
+              <td>${statusBadge}</td>
+              <td>${ratingHtml}</td>
+              <td>${payBadge}</td>
+              <td style="font-size: 11.5px; color: var(--text-muted);">${date}</td>
+              <td>
+                <div style="display:flex; align-items:center;">
+                  ${actionBtns}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function openExpressOrderDetail(orderId) {
+      const order = rawExpressOrders.find(o => String(o.id) === String(orderId));
+      if (!order) return;
+
+      document.getElementById('eom-id').innerText = '#' + order.id;
+      const content = document.getElementById('eom-content');
+
+      const custName = order.customer_name || (order.customer_detail ? `${order.customer_detail.first_name || ''} ${order.customer_detail.last_name || ''}`.trim() : 'Customer');
+      const custPhone = order.customer_phone || (order.customer_detail ? order.customer_detail.phone : '') || '';
+      const custAddress = order.delivery_address || (order.customer_detail ? order.customer_detail.address : '') || 'Kodad, Telangana';
+      const createdDate = order.created_at ? new Date(order.created_at).toLocaleString('en-IN') : '—';
+      const normStatus = (order.status === 'DISPATCHED') ? 'OUT_FOR_DELIVERY' : (order.status || 'PREPARING');
+
+      const rawDigits = custPhone.replace(/[^0-9]/g, '');
+      const waNumber = rawDigits.length === 10 ? `91${rawDigits}` : rawDigits;
+
+      const itemsRows = (order.items || []).map(i => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px;">
+          <div>
+            <strong style="color: var(--text-main);">${i.product_name || 'Fresh Milk'}</strong>
+            <span style="color: var(--text-muted); margin-left: 6px;">× ${i.quantity}</span>
+          </div>
+          <div style="font-weight: 700; color: var(--text-main);">₹${parseFloat(i.price || 0) * (i.quantity || 1)}</div>
+        </div>
+      `).join('');
+
+      let ratingBox = '';
+      if (order.rating) {
+        const stars = '★'.repeat(order.rating) + '☆'.repeat(5 - order.rating);
+        ratingBox = `
+          <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 14px; margin-top: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: #F59E0B; text-transform: uppercase;">Customer Review & Rating</div>
+            <div style="font-size: 16px; color: #F59E0B; margin: 4px 0;">${order.rating}★ ${stars}</div>
+            ${order.feedback ? `<div style="font-size: 13px; color: var(--text-main); font-style: italic;">"${order.feedback}"</div>` : '<div style="font-size: 12px; color: var(--text-muted);">No written feedback provided.</div>'}
+          </div>
         `;
-      }).join('');
+      }
+
+      content.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Status Banner -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px;">
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted);">Status</div>
+              <div style="font-weight: 800; font-size: 14px; color: var(--primary-accent); margin-top: 2px;">${normStatus}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 11px; color: var(--text-muted);">Order Date</div>
+              <div style="font-size: 12px; color: var(--text-main); margin-top: 2px;">${createdDate}</div>
+            </div>
+          </div>
+
+          <!-- Customer Info Box -->
+          <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Customer Information</div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${custName}</div>
+            <div style="display: flex; gap: 12px; font-size: 12.5px; margin-bottom: 8px;">
+              ${custPhone ? `<a href="tel:${custPhone}" style="color: #38BDF8; text-decoration: none;"><i class="fa-solid fa-phone"></i> ${custPhone}</a>` : '—'}
+              ${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" style="color: #10B981; text-decoration: none; font-weight: 600;"><i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp</a>` : ''}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 8px;">
+              <span><i class="fa-solid fa-location-dot" style="color: #F87171; margin-right: 4px;"></i>${custAddress}</span>
+              <button class="btn btn-secondary" onclick="copyToClipboard('${custAddress.replace(/'/g, "\\'")}', this)" style="padding: 3px 8px; font-size: 11px;">Copy</button>
+            </div>
+          </div>
+
+          <!-- Items Ordered -->
+          <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Items Ordered</div>
+            ${itemsRows || '<div style="font-size: 12px; color: var(--text-muted);">No items specified</div>'}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); font-size: 14px;">
+              <strong>Total Amount:</strong>
+              <strong style="color: var(--primary-accent); font-size: 17px;">₹${parseFloat(order.total_amount || 0).toFixed(2)}</strong>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; text-align: right;">
+              Payment: <strong style="color: ${order.payment_status === 'PAID' ? '#10B981' : '#F59E0B'}">${order.payment_status || 'PENDING'}</strong> (${order.payment_method || 'ONLINE'})
+            </div>
+          </div>
+
+          ${ratingBox}
+
+          <!-- Action Footer -->
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;">
+            <button class="btn btn-secondary" onclick="closeModal('expressOrderDetailModal')">Close</button>
+            ${normStatus === 'PREPARING' ? `<button class="btn btn-primary" onclick="closeModal('expressOrderDetailModal'); updateExpressOrderStatus('${order.id}', 'OUT_FOR_DELIVERY');"><i class="fa-solid fa-motorcycle"></i> Dispatch Order</button>` : ''}
+            ${normStatus === 'OUT_FOR_DELIVERY' ? `<button class="btn btn-primary" style="background:#0D7C66; border-color:#0D7C66;" onclick="closeModal('expressOrderDetailModal'); updateExpressOrderStatus('${order.id}', 'DELIVERED');"><i class="fa-solid fa-circle-check"></i> Mark Delivered</button>` : ''}
+            ${normStatus !== 'CANCELLED' && normStatus !== 'DELIVERED' ? `<button class="btn btn-danger" onclick="closeModal('expressOrderDetailModal'); updateExpressOrderStatus('${order.id}', 'CANCELLED');"><i class="fa-solid fa-xmark"></i> Cancel Order</button>` : ''}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('expressOrderDetailModal').style.display = 'flex';
     }
 
     async function updateExpressOrderStatus(orderId, newStatus) {
@@ -8117,9 +8708,40 @@
       } catch (e) { console.error('[AdminConsole]', e); }
     }
 
-    // ── Customer Reviews & Feedback Operations ──
+    // ── Customer Reviews & Brand Reputation Operations ──
     let rawReviewsList = [];
     let reviewStarFilter = 'ALL';
+    let reviewTagFilter = 'ALL';
+    let currentReviewsView = 'cards'; // 'cards' | 'table'
+
+    function toggleReviewsView(mode) {
+      currentReviewsView = mode;
+      const btnCards = document.getElementById('btn-rev-view-cards');
+      const btnTable = document.getElementById('btn-rev-view-table');
+      const containerCards = document.getElementById('reviewsCardsContainer');
+      const containerTable = document.getElementById('reviewsTableContainer');
+
+      if (mode === 'cards') {
+        if (btnCards) btnCards.classList.add('active');
+        if (btnTable) btnTable.classList.remove('active');
+        if (containerCards) containerCards.style.display = 'block';
+        if (containerTable) containerTable.style.display = 'none';
+      } else {
+        if (btnTable) btnTable.classList.add('active');
+        if (btnCards) btnCards.classList.remove('active');
+        if (containerCards) containerCards.style.display = 'none';
+        if (containerTable) containerTable.style.display = 'block';
+      }
+    }
+
+    function filterReviewsByTag(tag, btn) {
+      reviewTagFilter = tag;
+      if (btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      filterReviewsList();
+    }
 
     async function loadReviews() {
       try {
@@ -8131,11 +8753,48 @@
           const data = await res.json();
           rawReviewsList = data.reviews || [];
 
-          // Update KPI stats
-          document.getElementById('rev-avg-score').innerText = `${data.avg_rating || 5.0} ★`;
-          document.getElementById('rev-total-count').innerText = data.total_count || rawReviewsList.length;
-          document.getElementById('rev-five-stars').innerText = data.five_stars_count || rawReviewsList.filter(r => r.rating === 5).length;
-          document.getElementById('rev-low-ratings').innerText = data.low_stars_count || rawReviewsList.filter(r => r.rating <= 3).length;
+          // Distribution breakdown counts
+          const totalCount = data.total_count || rawReviewsList.length || 0;
+          const starCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+          let commentsCount = 0;
+
+          rawReviewsList.forEach(r => {
+            const s = Math.round(r.rating || 5);
+            if (starCounts[s] !== undefined) starCounts[s]++;
+            if (r.feedback && r.feedback.trim()) commentsCount++;
+          });
+
+          // Update Scorecard
+          const avgScore = data.avg_rating || (totalCount > 0 ? (rawReviewsList.reduce((acc, r) => acc + (r.rating || 5), 0) / totalCount).toFixed(1) : '5.0');
+          const heroScoreEl = document.getElementById('rev-hero-score');
+          if (heroScoreEl) heroScoreEl.innerText = avgScore;
+
+          const heroCountEl = document.getElementById('rev-hero-count');
+          if (heroCountEl) heroCountEl.innerText = totalCount;
+
+          const satPct = totalCount > 0 ? Math.round(((starCounts[5] + starCounts[4]) / totalCount) * 100) : 100;
+          const satPctEl = document.getElementById('rev-satisfaction-pct');
+          if (satPctEl) satPctEl.innerText = `${satPct}% Satisfied`;
+
+          // Update distribution bars
+          for (let s = 1; s <= 5; s++) {
+            const count = starCounts[s] || 0;
+            const pct = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+            const bar = document.getElementById(`bar-star-${s}`);
+            const countLabel = document.getElementById(`count-star-${s}`);
+            if (bar) bar.style.width = `${pct}%`;
+            if (countLabel) countLabel.innerText = `${count} (${pct}%)`;
+          }
+
+          // KPI Stats
+          const elTotal = document.getElementById('rev-total-count');
+          if (elTotal) elTotal.innerText = totalCount;
+          const elFive = document.getElementById('rev-five-stars');
+          if (elFive) elFive.innerText = starCounts[5];
+          const elLow = document.getElementById('rev-low-ratings');
+          if (elLow) elLow.innerText = (starCounts[1] + starCounts[2] + starCounts[3]);
+          const elComm = document.getElementById('rev-comments-count');
+          if (elComm) elComm.innerText = commentsCount;
 
           filterReviewsList();
         }
@@ -8146,7 +8805,7 @@
 
     function filterReviewsByStar(starVal, btn) {
       reviewStarFilter = starVal;
-      document.querySelectorAll('#tab-reviews .filter-pill').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('#tab-reviews .table-toolbar .filter-pill').forEach(p => p.classList.remove('active'));
       if (btn) btn.classList.add('active');
       filterReviewsList();
     }
@@ -8161,12 +8820,17 @@
         else if (reviewStarFilter === 'LOW') starMatch = r.rating <= 3;
         else if (reviewStarFilter === 'FEEDBACK_ONLY') starMatch = Boolean(r.feedback && r.feedback.trim());
 
+        let tagMatch = true;
+        if (reviewTagFilter !== 'ALL') {
+          tagMatch = (r.tags || []).some(t => t.toLowerCase().includes(reviewTagFilter.toLowerCase()));
+        }
+
         const custName = (r.customer_name || '').toLowerCase();
         const custPhone = (r.customer_phone || '').toLowerCase();
         const driver = (r.driver_name || '').toLowerCase();
         const hub = (r.hub_name || '').toLowerCase();
         const feedback = (r.feedback || '').toLowerCase();
-        const orderId = (r.order_id || '').toLowerCase();
+        const orderId = String(r.order_id || '').toLowerCase();
         const tags = (r.tags || []).join(' ').toLowerCase();
 
         const textMatch = !q ||
@@ -8178,57 +8842,157 @@
           orderId.includes(q) ||
           tags.includes(q);
 
-        return starMatch && textMatch;
+        return starMatch && tagMatch && textMatch;
       });
 
       renderReviewsList(filtered);
     }
 
     function renderReviewsList(reviews) {
-      const tbody = document.getElementById('reviewsTableBody');
-      if (!reviews.length) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 35px;">No reviews match the selected filter.</td></tr>';
-        return;
+      // ── Render Cards Grid ──
+      const cardsGrid = document.getElementById('reviewsCardsGrid');
+      if (cardsGrid) {
+        if (!reviews.length) {
+          cardsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 50px;">No reviews match the selected filters.</div>';
+        } else {
+          cardsGrid.innerHTML = reviews.map(r => {
+            const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+            const starColor = r.rating >= 4 ? '#F59E0B' : (r.rating === 3 ? '#EAB308' : '#F87171');
+            const custName = r.customer_name || 'Verified Customer';
+            const initials = custName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CU';
+            const tagsHtml = (r.tags || []).map(t => `<span style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:#34D399; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:600; margin-right:4px;">${t}</span>`).join('');
+            const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+            const itemsStr = (r.items_summary || []).join(', ') || 'Fresh Farm Milk';
+
+            return `
+              <div class="review-card-item">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="user-avatar-circle" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); font-size: 12px;">${initials}</div>
+                    <div>
+                      <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+                        <span>${custName}</span>
+                        <i class="fa-solid fa-circle-check" style="color: var(--primary-accent); font-size: 11px;" title="Verified Delivery"></i>
+                      </div>
+                      <div style="font-size: 11px; color: var(--text-muted);">
+                        ${r.customer_phone ? r.customer_phone : 'Verified App User'} • ${dateStr}
+                      </div>
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="color: ${starColor}; font-weight: 800; font-size: 14px;">${r.rating}★ ${stars}</div>
+                  </div>
+                </div>
+
+                ${r.feedback ? `
+                  <div class="quote-box">
+                    "${r.feedback}"
+                  </div>
+                ` : `
+                  <div style="font-size: 12px; color: var(--text-dim); font-style: italic; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px;">
+                    5-Star Rating submitted without comment.
+                  </div>
+                `}
+
+                ${tagsHtml ? `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${tagsHtml}</div>` : ''}
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px;">
+                  <div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Delivery Partner</div>
+                    <div style="font-weight: 600; margin-top: 2px;"><i class="fa-solid fa-motorcycle" style="color: var(--accent-blue); font-size: 10px; margin-right: 4px;"></i>${r.driver_name || 'Salaried Partner'}</div>
+                  </div>
+                  <div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Hub Depot</div>
+                    <div style="font-weight: 600; color: var(--primary-accent); margin-top: 2px;">${r.hub_name || 'Kodad Central'}</div>
+                  </div>
+                  <div style="grid-column: 1/-1; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; margin-top: 2px;">
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Delivered Item</div>
+                    <div style="color: var(--text-main); font-size: 11.5px; margin-top: 2px;">${itemsStr}</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                  <span style="font-size: 11px; color: var(--accent-blue); font-weight: 600;">Ref #${r.order_id || 'DROP'}</span>
+                  <button class="btn btn-secondary" onclick="openSupportWithCustomer('${r.customer_phone || ''}', '${custName}')" style="padding: 4px 10px; font-size: 11px;">
+                    <i class="fa-brands fa-whatsapp" style="color: #10B981;"></i> Connect
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
       }
 
-      tbody.innerHTML = reviews.map(r => {
-        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-        const starColor = r.rating >= 4 ? '#F59E0B' : (r.rating === 3 ? '#EAB308' : '#F87171');
+      // ── Render Table ──
+      const tbody = document.getElementById('reviewsTableBody');
+      if (tbody) {
+        if (!reviews.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 35px;">No reviews match the selected filter.</td></tr>';
+          return;
+        }
 
-        const tagsHtml = (r.tags || []).map(t => `<span style="background:rgba(255,255,255,0.06); padding:2px 7px; border-radius:10px; font-size:10px; margin-right:4px; color:var(--text-muted);">${t}</span>`).join('');
-        const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-        const itemsStr = (r.items_summary || []).join(', ') || 'Fresh Milk Bottle';
+        tbody.innerHTML = reviews.map(r => {
+          const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          const starColor = r.rating >= 4 ? '#F59E0B' : (r.rating === 3 ? '#EAB308' : '#F87171');
 
-        return `
-          <tr>
-            <td><strong style="color:var(--accent-blue);">${r.order_id}</strong></td>
-            <td>
-              <strong>${r.customer_name}</strong>
-              <div style="font-size:11px; color:var(--text-muted);">${r.customer_phone || '—'}</div>
-            </td>
-            <td>
-              <div style="color:${starColor}; font-weight:700; font-size:13px;">${r.rating}★ ${stars}</div>
-              <div style="margin-top:4px;">${tagsHtml}</div>
-            </td>
-            <td style="max-width:240px;">
-              ${r.feedback ? `<span style="color:var(--text-main); font-size:12.5px;">"${r.feedback}"</span>` : '<span style="color:var(--text-dim); font-size:11px; font-style:italic;">No written comment</span>'}
-            </td>
-            <td style="font-size:11.5px; color:var(--text-muted);">${itemsStr}</td>
-            <td>
-              <div style="font-weight:600; font-size:12px;"><i class="fa-solid fa-motorcycle" style="color:var(--accent-blue); font-size:10px; margin-right:4px;"></i>${r.driver_name}</div>
-            </td>
-            <td>
-              <span class="status-tag status-active" style="font-size:10.5px;">${r.hub_name}</span>
-            </td>
-            <td style="font-size:11px; color:var(--text-muted);">${dateStr}</td>
-            <td>
-              <button class="btn btn-secondary" onclick="openSupportWithCustomer('${r.customer_phone || ''}', '${r.customer_name}')" style="padding:4px 8px; font-size:11px;">
-                <i class="fa-solid fa-comments"></i> Chat
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+          const tagsHtml = (r.tags || []).map(t => `<span style="background:rgba(255,255,255,0.06); padding:2px 7px; border-radius:10px; font-size:10px; margin-right:4px; color:var(--text-muted);">${t}</span>`).join('');
+          const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+          const itemsStr = (r.items_summary || []).join(', ') || 'Fresh Milk Bottle';
+
+          return `
+            <tr>
+              <td><strong style="color:var(--accent-blue);">${r.order_id || '—'}</strong></td>
+              <td>
+                <strong>${r.customer_name}</strong>
+                <div style="font-size:11px; color:var(--text-muted);">${r.customer_phone || '—'}</div>
+              </td>
+              <td>
+                <div style="color:${starColor}; font-weight:700; font-size:13px;">${r.rating}★ ${stars}</div>
+                <div style="margin-top:4px;">${tagsHtml}</div>
+              </td>
+              <td style="max-width:240px;">
+                ${r.feedback ? `<span style="color:var(--text-main); font-size:12.5px;">"${r.feedback}"</span>` : '<span style="color:var(--text-dim); font-size:11px; font-style:italic;">No written comment</span>'}
+              </td>
+              <td style="font-size:11.5px; color:var(--text-muted);">${itemsStr}</td>
+              <td>
+                <div style="font-weight:600; font-size:12px;"><i class="fa-solid fa-motorcycle" style="color:var(--accent-blue); font-size:10px; margin-right:4px;"></i>${r.driver_name}</div>
+              </td>
+              <td>
+                <span class="status-tag status-active" style="font-size:10.5px;">${r.hub_name}</span>
+              </td>
+              <td style="font-size:11px; color:var(--text-muted);">${dateStr}</td>
+              <td>
+                <button class="btn btn-secondary" onclick="openSupportWithCustomer('${r.customer_phone || ''}', '${r.customer_name}')" style="padding:4px 8px; font-size:11px;">
+                  <i class="fa-brands fa-whatsapp"></i> Chat
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function openSupportWithCustomer(phone, name) {
+      if (!phone) {
+        alert(`No contact phone recorded for ${name || 'customer'}.`);
+        return;
+      }
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const finalPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(`Hello ${name || 'Customer'}, greetings from MilkDrop Support regarding your recent order:`)}`;
+      window.open(url, '_blank');
+    }
+
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (btn) {
+          const orig = btn.innerHTML;
+          btn.innerHTML = '<i class="fa-solid fa-check" style="color: #10B981;"></i> Copied';
+          setTimeout(() => { btn.innerHTML = orig; }, 1800);
+        }
+      }).catch(() => {
+        alert('Copied to clipboard: ' + text);
+      });
     }
 
     // ── Bottle Returns Operations ──
