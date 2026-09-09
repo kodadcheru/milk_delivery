@@ -3807,6 +3807,7 @@
           updateProfileUI(currentUser);
           loadAllData();
         } else {
+          localStorage.removeItem('milkdrop_admin_token');
           document.getElementById('loginScreen').style.display = 'flex';
         }
       } catch (e) {
@@ -3873,7 +3874,7 @@
       successEl.style.display = 'none';
 
       if (!phoneInput) {
-        alertEl.innerText = 'Please enter your administrator mobile number.';
+        alertEl.innerText = 'Please enter a 10-digit mobile number.';
         alertEl.style.display = 'block';
         return;
       }
@@ -3886,16 +3887,17 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          successEl.innerText = `✅ Verification code sent to ${data.phone || phoneInput}! Use OTP: ${data.test_otp || '1234'}`;
+          successEl.innerText = `OTP code sent to +91 ${phoneInput}. Default OTP: 1234`;
           successEl.style.display = 'block';
-          document.getElementById('adminOtpCode').value = data.test_otp || '1234';
+          document.getElementById('adminOtpCode').value = '1234';
+          document.getElementById('adminOtpCode').focus();
         } else {
-          alertEl.innerText = data.detail || 'Failed to send OTP. Please check the number.';
+          alertEl.innerText = data.error || data.detail || 'Could not send OTP code.';
           alertEl.style.display = 'block';
         }
       } catch (err) {
-        successEl.innerText = '✅ Code dispatched (Test OTP: 1234)';
-        successEl.style.display = 'block';
+        alertEl.innerText = 'Failed to connect to authentication server.';
+        alertEl.style.display = 'block';
       }
     }
 
@@ -4033,7 +4035,6 @@
 
     async function handleUpdateProfile(e) {
       e.preventDefault();
-      const token = localStorage.getItem('milkdrop_admin_token');
       const btn = document.getElementById('saveProfBtn');
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
@@ -4051,10 +4052,7 @@
       try {
         const res = await fetch(`${baseUrl}/auth/me/`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
+          headers: getAdminHeaders(),
           body: JSON.stringify(updates)
         });
 
@@ -4098,7 +4096,7 @@
     }
 
     async function loadAllData() {
-      await Promise.all([
+      await Promise.allSettled([
         loadDashboard(),
         loadHubs(),
         loadServiceAreas(),

@@ -1618,7 +1618,10 @@ class DeliveryRatingSubmitView(APIView):
                     for itm in r.order.items.all():
                         items_summary.append(f"{itm.quantity}x {itm.product_name}")
                 elif r.task:
-                    items_summary.append(f"{r.task.quantity}x {r.task.product_name}")
+                    sub = getattr(r.task, 'subscription', None)
+                    qty = getattr(sub, 'quantity', 1) if sub else 1
+                    prod_name = getattr(getattr(sub, 'product', None), 'name', None) or 'Farm Fresh Milk'
+                    items_summary.append(f"{qty}x {prod_name}")
 
                 admin_reviews.append({
                     'id': r.id,
@@ -1644,10 +1647,8 @@ class DeliveryRatingSubmitView(APIView):
             })
 
         # Return all ratings by the current user
-        ratings = DeliveryRating.objects.filter(user=request.user).annotate(
-            order__order_id=F('order_id')
-        ).values(
-            'order__order_id', 'order_id', 'task_id', 'rating', 'feedback', 'tags', 'created_at'
+        ratings = DeliveryRating.objects.filter(user=request.user).values(
+            'order_id', 'task_id', 'rating', 'feedback', 'tags', 'created_at'
         ).order_by('-created_at')[:50]
 
         # Build rated orders/tasks maps
