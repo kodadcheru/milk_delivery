@@ -589,9 +589,9 @@ class _DriverProfileTabState extends State<DriverProfileTab> {
 
     double lat = 17.001734;
     double lng = 79.9625;
-    if (driverUser != null && driverUser.latitude != 0.0) {
-      lat = driverUser.latitude;
-      lng = driverUser.longitude;
+    if (driverUser != null && driverUser.latitude != null && driverUser.latitude != 0.0) {
+      lat = driverUser.latitude!;
+      lng = driverUser.longitude ?? 79.9625;
     }
 
     await ApiService.updateDriverLocation(

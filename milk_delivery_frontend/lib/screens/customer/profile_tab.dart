@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../providers/app_state.dart';
 import '../common/legal_terms_screen.dart';
 import '../../services/image_upload_service.dart';
+import '../../config/app_config.dart';
 import 'address_book_screen.dart';
 import 'help_support_screen.dart';
 

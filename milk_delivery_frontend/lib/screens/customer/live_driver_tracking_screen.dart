@@ -159,8 +159,8 @@ class _LiveDriverTrackingScreenState extends State<LiveDriverTrackingScreen> wit
     if (widget.subscriptionTask?.driverDetail?.latitude != null &&
         widget.subscriptionTask!.driverDetail!.latitude != 0.0) {
       _driverLocation = LatLng(
-        widget.subscriptionTask!.driverDetail!.latitude,
-        widget.subscriptionTask!.driverDetail!.longitude,
+        widget.subscriptionTask!.driverDetail!.latitude!,
+        widget.subscriptionTask!.driverDetail!.longitude ?? 0.0,
       );
     } else {
       // If driver hasn't sent GPS, route starts at the assigned hub depot!
