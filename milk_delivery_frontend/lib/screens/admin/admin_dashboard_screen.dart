@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/app_config.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 
@@ -121,9 +123,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 3),
-                      Text(
-                        '${ApiService.baseUrl.replaceAll('/api', '')}/admin-console/',
-                        style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.w700),
+                      GestureDetector(
+                        onTap: () async {
+                          final consoleUrl = '${AppConfig.baseUrl}/admin-console/';
+                          await Clipboard.setData(ClipboardData(text: consoleUrl));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('📋 Copied: $consoleUrl')),
+                            );
+                          }
+                        },
+                        child: Text(
+                          '${AppConfig.baseUrl}/admin-console/',
+                          style: const TextStyle(
+                            color: Color(0xFF38BDF8),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Color(0xFF38BDF8),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -131,17 +150,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    // Build console URL from API base (strip /api suffix)
-                    final apiBase = ApiService.baseUrl;
-                    final baseHost = apiBase.endsWith('/api') ? apiBase.substring(0, apiBase.length - 4) : apiBase;
-                    final consoleUrl = '$baseHost/admin-console/';
+                    final consoleUrl = '${AppConfig.baseUrl}/admin-console/';
                     final uri = Uri.parse(consoleUrl);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('🌐 Open $consoleUrl in your browser')),
-                      );
+                    try {
+                      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      if (!launched) {
+                        await launchUrl(uri);
+                      }
+                    } catch (_) {
+                      await Clipboard.setData(ClipboardData(text: consoleUrl));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('📋 Console URL copied: $consoleUrl')),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.open_in_browser_rounded, size: 16),
