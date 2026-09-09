@@ -150,21 +150,27 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
 
         if hub:
             from apps.products.models import HubProductInventory
-            inv, _ = HubProductInventory.objects.get_or_create(
-                hub=hub,
-                product=prod_obj,
-                defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
-            )
+            from django.db import transaction
+            from django.db.models import F
             import math
+
             slots_to_book = max(1, int(math.ceil(req_qty * volume_multiplier)))
-            if not inv.is_available or inv.available_slots < slots_to_book:
-                from rest_framework.exceptions import ValidationError
-                raise ValidationError(
-                    f"Hub daily capacity limit reached for {prod_obj.name}. "
-                    f"Only {inv.available_slots} slot(s) available at {hub.name}."
+
+            with transaction.atomic():
+                inv, _ = HubProductInventory.objects.get_or_create(
+                    hub=hub,
+                    product=prod_obj,
+                    defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
                 )
-            inv.booked_slots += slots_to_book
-            inv.save(update_fields=["booked_slots"])
+                inv = HubProductInventory.objects.select_for_update().get(pk=inv.pk)
+
+                if not inv.is_available or inv.available_slots < slots_to_book:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError(
+                        f"Hub daily capacity limit reached for {prod_obj.name}. "
+                        f"Only {inv.available_slots} slot(s) available at {hub.name}."
+                    )
+                HubProductInventory.objects.filter(pk=inv.pk).update(booked_slots=F('booked_slots') + slots_to_book)
 
         # Determine effective start date based on shift cutoff
         from django.utils import timezone
@@ -294,6 +300,8 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
                 )
             if instance.hub and instance.product:
                 from apps.products.models import HubProductInventory
+                from django.db import transaction
+                from django.db.models import F
                 req_qty = instance.quantity or 1
                 pack_size_val = instance.pack_size or '1 Litre'
                 if '500' in pack_size_val.lower():
@@ -303,13 +311,22 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
                 else:
                     vol_mult = 1.0
                 slots_to_book = max(1, int(math.ceil(req_qty * vol_mult)))
-                inv, _ = HubProductInventory.objects.get_or_create(
-                    hub=instance.hub,
-                    product=instance.product,
-                    defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
-                )
-                from django.db.models import F
-                HubProductInventory.objects.filter(pk=inv.pk).update(booked_slots=F('booked_slots') + slots_to_book)
+                
+                with transaction.atomic():
+                    inv, _ = HubProductInventory.objects.get_or_create(
+                        hub=instance.hub,
+                        product=instance.product,
+                        defaults={"daily_capacity_slots": 100, "booked_slots": 0, "is_available": True},
+                    )
+                    inv = HubProductInventory.objects.select_for_update().get(pk=inv.pk)
+                    
+                    if not inv.is_available or inv.available_slots < slots_to_book:
+                        from rest_framework.exceptions import ValidationError
+                        raise ValidationError(
+                            f"Hub daily capacity limit reached for {instance.product.name}. "
+                            f"Only {inv.available_slots} slot(s) available at {instance.hub.name}."
+                        )
+                    HubProductInventory.objects.filter(pk=inv.pk).update(booked_slots=F('booked_slots') + slots_to_book)
 
     def perform_destroy(self, instance):
         from apps.deliveries.models import DeliveryTask

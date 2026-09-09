@@ -1331,6 +1331,16 @@ class FloatingCartBar extends StatelessWidget {
                             onPressed: () async {
                               if (_isSubmitting) return;
 
+                              if (state.activeAddress == null && (state.currentDeliveryAddress == 'Select Delivery Location' || state.currentDeliveryAddress.isEmpty)) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text(state.isTelugu
+                                      ? 'దయచేసి మీ ఆర్డర్‌ను ఇచ్చే ముందు డెలివరీ చిరునామాను ఎంచుకోండి'
+                                      : 'Please select a delivery address before placing your order'),
+                                  backgroundColor: const Color(0xFFDC2626),
+                                ));
+                                return;
+                              }
+
                               final freshConfig = await state.refreshStorefrontConfig();
                               if (!context.mounted) return;
                               var effectivePaymentMethod = _paymentMethod;

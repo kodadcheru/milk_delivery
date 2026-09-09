@@ -158,55 +158,55 @@ class RazorpayVerifyPaymentView(APIView):
         rzp_payment_id = serializer.validated_data["razorpay_payment_id"]
         rzp_signature = serializer.validated_data["razorpay_signature"]
 
-        payment = RazorpayPayment.objects.filter(
-            razorpay_order_id=rzp_order_id,
-            user=request.user,
-        ).first()
-
-        if not payment:
-            return Response(
-                {"detail": "Payment order record not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if payment.status == RazorpayPayment.Status.SUCCESS:
-            user = request.user
-            user.refresh_from_db()
-            return Response(
-                {
-                    "success": True,
-                    "message": "Payment already verified.",
-                    "new_wallet_balance": str(user.wallet_balance),
-                    "payment": RazorpayPaymentSerializer(payment).data,
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        is_sandbox_order = (
-            rzp_order_id.startswith("order_test_")
-            or (payment.metadata and payment.metadata.get("is_sandbox"))
-        )
-
-        is_valid = is_sandbox_order or RazorpayService.verify_payment_signature(
-            razorpay_order_id=rzp_order_id,
-            razorpay_payment_id=rzp_payment_id,
-            razorpay_signature=rzp_signature,
-        )
-
-        if not is_valid:
-            payment.status = RazorpayPayment.Status.FAILED
-            payment.razorpay_payment_id = rzp_payment_id
-            payment.razorpay_signature = rzp_signature
-            payment.error_description = "Cryptographic signature verification failed"
-            payment.save(update_fields=["status", "razorpay_payment_id", "razorpay_signature", "error_description", "updated_at"])
-            return Response(
-                {"detail": "Payment signature verification failed. Untrusted payment."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        user = request.user
-
         with transaction.atomic():
+            payment = RazorpayPayment.objects.select_for_update().filter(
+                razorpay_order_id=rzp_order_id,
+                user=request.user,
+            ).first()
+
+            if not payment:
+                return Response(
+                    {"detail": "Payment order record not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if payment.status == RazorpayPayment.Status.SUCCESS:
+                user = request.user
+                user.refresh_from_db()
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Payment already verified.",
+                        "new_wallet_balance": str(user.wallet_balance),
+                        "payment": RazorpayPaymentSerializer(payment).data,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            is_sandbox_order = (
+                rzp_order_id.startswith("order_test_")
+                or (payment.metadata and payment.metadata.get("is_sandbox"))
+            )
+
+            is_valid = is_sandbox_order or RazorpayService.verify_payment_signature(
+                razorpay_order_id=rzp_order_id,
+                razorpay_payment_id=rzp_payment_id,
+                razorpay_signature=rzp_signature,
+            )
+
+            if not is_valid:
+                payment.status = RazorpayPayment.Status.FAILED
+                payment.razorpay_payment_id = rzp_payment_id
+                payment.razorpay_signature = rzp_signature
+                payment.error_description = "Cryptographic signature verification failed"
+                payment.save(update_fields=["status", "razorpay_payment_id", "razorpay_signature", "error_description", "updated_at"])
+                return Response(
+                    {"detail": "Payment signature verification failed. Untrusted payment."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user = request.user
+
             payment.status = RazorpayPayment.Status.SUCCESS
             payment.razorpay_payment_id = rzp_payment_id
             payment.razorpay_signature = rzp_signature
@@ -295,9 +295,9 @@ class RazorpayWebhookView(APIView):
                     from django.db.models import F
 
                     try:
-                        rp = RazorpayPayment.objects.get(razorpay_order_id=order_id)
-                        if rp.status != 'SUCCESS':  # Idempotent
-                            with transaction.atomic():
+                        with transaction.atomic():
+                            rp = RazorpayPayment.objects.select_for_update().get(razorpay_order_id=order_id)
+                            if rp.status != 'SUCCESS':  # Idempotent
                                 rp.razorpay_payment_id = payment_id
                                 rp.status = 'SUCCESS'
                                 rp.save(update_fields=['razorpay_payment_id', 'status', 'updated_at'])

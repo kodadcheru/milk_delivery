@@ -93,9 +93,17 @@ def seed():
         },
     )
     if created:
-        admin.set_password("admin123")
+        admin_password = os.environ.get("ADMIN_PASSWORD")
+        if not admin_password:
+            from django.conf import settings
+            if not settings.DEBUG:
+                raise ValueError("ADMIN_PASSWORD environment variable is required in production")
+            import secrets
+            admin_password = secrets.token_urlsafe(12)
+        
+        admin.set_password(admin_password)
         admin.save()
-        print("🛡️ [Super Admin Initialized]: admin / admin123 (Phone: +91 8919548905)")
+        print(f"🛡️ [Super Admin Initialized]: admin / {admin_password} (Phone: +91 8919548905)")
     else:
         admin.role = User.Roles.ADMIN
         admin.is_staff = True

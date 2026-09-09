@@ -63,7 +63,9 @@ class AppState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('app_language', langCode);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in setLanguage: $e');
+    }
   }
 
   Future<void> toggleLanguage() async {
@@ -78,7 +80,9 @@ class AppState extends ChangeNotifier {
         _currentLanguage = saved;
         notifyListeners();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in loadSavedLanguage: $e');
+    }
   }
 
   bool isVacationMode = false;
@@ -200,7 +204,9 @@ class AppState extends ChangeNotifier {
       await prefs.setString(_kCachedDeliveryAddr, currentDeliveryAddress);
       await prefs.setDouble(_kCachedLat, currentLat);
       await prefs.setDouble(_kCachedLon, currentLon);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in _cacheAddressesLocally: $e');
+    }
   }
 
   /// Load cached addresses from SharedPreferences (instant, no network)
@@ -222,7 +228,9 @@ class AppState extends ChangeNotifier {
           try {
             final map = jsonDecode(jsonStr) as Map<String, dynamic>;
             restored.add(CustomerAddressModel.fromJson(map));
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Error in loadCachedAddresses parsing: $e');
+          }
         }
         if (restored.isNotEmpty) {
           savedAddresses = restored;
@@ -238,7 +246,9 @@ class AppState extends ChangeNotifier {
           currentLon = prefs.getDouble(_kCachedLon) ?? activeAddress!.longitude;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in loadCachedAddresses: $e');
+    }
   }
 
   /// Clear cached addresses on logout
@@ -250,7 +260,9 @@ class AppState extends ChangeNotifier {
       await prefs.remove(_kCachedDeliveryAddr);
       await prefs.remove(_kCachedLat);
       await prefs.remove(_kCachedLon);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in _clearCachedAddresses: $e');
+    }
   }
 
   /// Load cached products & categories from local storage for 0ms instant display
@@ -273,7 +285,9 @@ class AppState extends ChangeNotifier {
           categories = restored;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in loadCachedCatalog: $e');
+    }
   }
 
   /// Save live products & categories locally for offline/instant boot loading
@@ -288,7 +302,9 @@ class AppState extends ChangeNotifier {
         final catsJson = jsonEncode(categories.map((c) => c.toJson()).toList());
         await prefs.setString('pamba_cached_categories', catsJson);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in _cacheCatalogLocally: $e');
+    }
   }
 
   List<ServiceAreaModel> serviceAreas = [];
@@ -418,7 +434,9 @@ class AppState extends ChangeNotifier {
         final decoded = jsonDecode(taskJson) as Map<String, dynamic>;
         decoded.forEach((k, v) => _ratedTasks[int.tryParse(k) ?? 0] = int.tryParse(v.toString()) ?? 5);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in loadSavedRatings: $e');
+    }
   }
 
   Future<void> submitDeliveryRating({
@@ -442,7 +460,11 @@ class AppState extends ChangeNotifier {
       final taskMap = <String, int>{};
       _ratedTasks.forEach((k, v) => taskMap[k.toString()] = v);
       await prefs.setString('pamba_rated_tasks', jsonEncode(taskMap));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in submitDeliveryRating: $e');
+      lastError = 'Failed during submitDeliveryRating. Please try again.';
+      notifyListeners();
+    }
 
     await ApiService.submitDeliveryRating(
       orderId: orderId,
@@ -510,7 +532,11 @@ class AppState extends ChangeNotifier {
           notifyListeners();
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in updateHubProductCapacity: $e');
+      lastError = 'Failed during updateHubProductCapacity. Please try again.';
+      notifyListeners();
+    }
   }
 
   // In-memory Shopping Cart State
@@ -588,7 +614,12 @@ class AppState extends ChangeNotifier {
     String paymentMethod = 'WALLET',
   }) async {
     HapticFeedback.mediumImpact();
-    final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
+    
+    final resolvedAddress = deliveryAddress ?? (activeAddress?.summaryAddress ?? currentDeliveryAddress);
+    if (resolvedAddress == 'Select Delivery Location' || resolvedAddress.trim().isEmpty) {
+      throw Exception('Please select a delivery address before placing your order.');
+    }
+    final addr = resolvedAddress;
     final dateStr = deliveryDate ?? 'Tomorrow';
     final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
 
@@ -746,7 +777,11 @@ class AppState extends ChangeNotifier {
             toRemove.add(pending);
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error in syncOfflineDeliveries: $e');
+        lastError = 'Failed during syncOfflineDeliveries. Please try again.';
+        notifyListeners();
+      }
     }
     
     if (toRemove.isNotEmpty) {
@@ -779,7 +814,9 @@ class AppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       customBannerImagePath = prefs.getString('custom_home_banner_path');
       notifyListeners();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in loadCustomBannerImage: $e');
+    }
   }
 
   Future<void> setCustomBannerImage(String? path) async {
@@ -792,7 +829,9 @@ class AppState extends ChangeNotifier {
       } else {
         await prefs.remove('custom_home_banner_path');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in setCustomBannerImage: $e');
+    }
   }
 
   AppState() {
@@ -865,7 +904,8 @@ class AppState extends ChangeNotifier {
           currentDeliveryAddress = loc['short_address'];
         }
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error in detectLocation: $e');
       hasLocationPermission = false;
     }
 
@@ -965,7 +1005,9 @@ class AppState extends ChangeNotifier {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('pamba_cached_user_role', user.role);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error in _loadUserProfile: $e');
+      }
       if (!hasLocationPermission && !isSessionLocationSelected) {
         if (user.address.isNotEmpty && (currentDeliveryAddress.isEmpty || currentDeliveryAddress == 'Select Delivery Location')) {
           currentDeliveryAddress = user.address;
@@ -1247,7 +1289,11 @@ class AppState extends ChangeNotifier {
         }
         _cacheAddressesLocally(); // Persist to local storage
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in fetchSavedAddresses: $e');
+      lastError = 'Failed during fetchSavedAddresses. Please try again.';
+      notifyListeners();
+    }
     notifyListeners();
   }
 
@@ -1369,7 +1415,9 @@ class AppState extends ChangeNotifier {
         currentRole = savedRole;
         notifyListeners();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in loadCachedUserRole: $e');
+    }
   }
 
   Future<void> onUserAuthenticated(UserModel user) async {
@@ -1378,7 +1426,9 @@ class AppState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('pamba_cached_user_role', user.role);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in onUserAuthenticated: $e');
+    }
     subscriptions = [];
     deliveries = [];
     transactions = [];
@@ -1398,7 +1448,9 @@ class AppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('pamba_cached_user_role');
       await prefs.remove('milkdrop_cached_user_role');
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error in logout: $e');
+    }
     currentUser = null;
     currentRole = 'CUSTOMER';
     savedAddresses = [];
@@ -1967,7 +2019,8 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
       return config;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error in _fetchStorefrontConfig: $e');
       return storefrontConfig;
     }
   }

@@ -34,7 +34,9 @@ def get_firebase_app():
             return _firebase_app
 
         cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+        cred_base64 = os.getenv("FIREBASE_CREDENTIALS")
         cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+        
         if not cred_path:
             try:
                 from django.conf import settings
@@ -44,7 +46,20 @@ def get_firebase_app():
             except Exception:
                 pass
 
-        if cred_json:
+        if cred_base64:
+            import base64
+            try:
+                decoded_json = base64.b64decode(cred_base64).decode("utf-8")
+                cred_dict = json.loads(decoded_json)
+                cred = credentials.Certificate(cred_dict)
+                _firebase_app = firebase_admin.initialize_app(cred)
+                _firebase_initialized = True
+                logger.info("FCM: Initialized Firebase via FIREBASE_CREDENTIALS (base64)")
+                return _firebase_app
+            except Exception as e:
+                logger.error(f"FCM: Failed to parse FIREBASE_CREDENTIALS base64: {e}")
+
+        elif cred_json:
             try:
                 cred_dict = json.loads(cred_json)
                 cred = credentials.Certificate(cred_dict)

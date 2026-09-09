@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
 import '../models/user_model.dart';
 import '../models/customer_address_model.dart';
@@ -77,6 +79,8 @@ class ApiService {
   static const String _legacyPrefRefreshTokenKey = 'milkdrop_refresh_token';
   static const String _legacyPrefUserKey = 'milkdrop_user_data';
 
+  static const _secureStorage = FlutterSecureStorage();
+
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (authToken != null) 'Authorization': 'Bearer $authToken',
@@ -86,16 +90,31 @@ class ApiService {
   static Future<String?> initAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      authToken = prefs.getString(_prefTokenKey) ?? prefs.getString(_legacyPrefTokenKey);
-      refreshToken = prefs.getString(_prefRefreshTokenKey) ?? prefs.getString(_legacyPrefRefreshTokenKey);
+      
+      // Read from secure storage
+      authToken = await _secureStorage.read(key: _prefTokenKey);
+      refreshToken = await _secureStorage.read(key: _prefRefreshTokenKey);
 
-      // Seamless migration to new pamba keys
-      if (authToken != null && !prefs.containsKey(_prefTokenKey)) {
-        await prefs.setString(_prefTokenKey, authToken!);
+      // Migrate if not found in secure storage
+      if (authToken == null) {
+        authToken = prefs.getString(_prefTokenKey) ?? prefs.getString(_legacyPrefTokenKey);
+        if (authToken != null) {
+          await _secureStorage.write(key: _prefTokenKey, value: authToken!);
+        }
       }
-      if (refreshToken != null && !prefs.containsKey(_prefRefreshTokenKey)) {
-        await prefs.setString(_prefRefreshTokenKey, refreshToken!);
+      
+      if (refreshToken == null) {
+        refreshToken = prefs.getString(_prefRefreshTokenKey) ?? prefs.getString(_legacyPrefRefreshTokenKey);
+        if (refreshToken != null) {
+          await _secureStorage.write(key: _prefRefreshTokenKey, value: refreshToken!);
+        }
       }
+
+      // Cleanup plaintext tokens
+      if (prefs.containsKey(_prefTokenKey)) await prefs.remove(_prefTokenKey);
+      if (prefs.containsKey(_legacyPrefTokenKey)) await prefs.remove(_legacyPrefTokenKey);
+      if (prefs.containsKey(_prefRefreshTokenKey)) await prefs.remove(_prefRefreshTokenKey);
+      if (prefs.containsKey(_legacyPrefRefreshTokenKey)) await prefs.remove(_legacyPrefRefreshTokenKey);
 
       return authToken;
     } catch (e) {
@@ -108,11 +127,10 @@ class ApiService {
   static Future<void> saveAuthToken(String token, {String? refresh}) async {
     authToken = token;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefTokenKey, token);
+      await _secureStorage.write(key: _prefTokenKey, value: token);
       if (refresh != null) {
         refreshToken = refresh;
-        await prefs.setString(_prefRefreshTokenKey, refresh);
+        await _secureStorage.write(key: _prefRefreshTokenKey, value: refresh);
       }
     } catch (e) { lastError = e.toString(); }
   }
@@ -131,11 +149,10 @@ class ApiService {
         final data = jsonDecode(res.body);
         if (data['access'] != null) {
           authToken = data['access'];
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_prefTokenKey, authToken!);
+          await _secureStorage.write(key: _prefTokenKey, value: authToken!);
           if (data['refresh'] != null) {
             refreshToken = data['refresh'];
-            await prefs.setString(_prefRefreshTokenKey, refreshToken!);
+            await _secureStorage.write(key: _prefRefreshTokenKey, value: refreshToken!);
           }
           return true;
         }
@@ -151,13 +168,16 @@ class ApiService {
     authToken = null;
     refreshToken = null;
     try {
+      await _secureStorage.delete(key: _prefTokenKey);
+      await _secureStorage.delete(key: _prefRefreshTokenKey);
+      
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_prefTokenKey);
-      await prefs.remove(_prefRefreshTokenKey);
       await prefs.remove(_prefUserKey);
       await prefs.remove(_legacyPrefTokenKey);
       await prefs.remove(_legacyPrefRefreshTokenKey);
       await prefs.remove(_legacyPrefUserKey);
+      await prefs.remove(_prefTokenKey);
+      await prefs.remove(_prefRefreshTokenKey);
     } catch (e) { lastError = e.toString(); }
   }
 

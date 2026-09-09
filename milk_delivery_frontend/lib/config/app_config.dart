@@ -27,7 +27,7 @@ class AppConfig {
   static String get googleMapsApiKey {
     return const String.fromEnvironment(
       'GOOGLE_MAPS_API_KEY',
-      defaultValue: 'AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4',
+      defaultValue: '', // Must be provided via --dart-define
     );
   }
 

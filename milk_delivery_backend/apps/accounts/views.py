@@ -101,6 +101,12 @@ class WalletTopUpView(APIView):
                 return Response({"detail": "This payment reference has already been processed."}, status=status.HTTP_400_BAD_REQUEST)
 
             user = request.user
+            target_user_id = serializer.validated_data.get("user_id")
+            if target_user_id:
+                try:
+                    user = User.objects.get(id=target_user_id)
+                except User.DoesNotExist:
+                    return Response({"detail": "Target user not found."}, status=status.HTTP_404_NOT_FOUND)
 
             with transaction.atomic():
                 User.objects.filter(pk=user.pk).update(wallet_balance=F("wallet_balance") + amount)
@@ -215,6 +221,12 @@ class RobustTokenObtainPairView(APIView):
             return Response(
                 {"detail": "Invalid credentials. Please verify your username and password."},
                 status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.is_active:
+            return Response(
+                {"detail": "Your account has been deactivated."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         refresh = RefreshToken.for_user(user)

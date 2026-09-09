@@ -297,7 +297,11 @@ LOGGING = {
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4")
 
 # Razorpay Payment Gateway Configuration (Test / Live)
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_TZqYcaKAOxoDP7")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "UdM9T5Gult0PelMlY7WuSgfp")
-RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', os.environ.get('RAZORPAY_KEY_SECRET', 'UdM9T5Gult0PelMlY7WuSgfp'))
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', RAZORPAY_KEY_SECRET)
+
+if not DEBUG and (not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("Razorpay keys must be set in production")
 

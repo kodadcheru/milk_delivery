@@ -91,6 +91,7 @@ class WalletTransactionSerializer(serializers.ModelSerializer):
 
 
 class WalletTopUpSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(required=False, allow_null=True)
     amount = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("1.00"), max_value=Decimal("50000.00"))
     description = serializers.CharField(max_length=255, default="Wallet Top-Up (UPI/Card)")
     payment_method = serializers.ChoiceField(

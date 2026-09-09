@@ -15,8 +15,10 @@ python manage.py collectstatic --noinput --clear || true
 mkdir -p "${MEDIA_ROOT:-/app/media}/proofs" || true
 
 APP_PORT="${PORT:-8000}"
-echo "⏰ Starting background APScheduler worker (Task generation & Payouts)..."
-python manage.py run_scheduler &
+if [ "${RUN_SCHEDULER}" = "true" ]; then
+    echo "⏰ Starting background APScheduler worker (Task generation & Payouts)..."
+    python manage.py run_scheduler &
+fi
 
 echo "🌟 [4/4] Starting ASGI production server (WebSockets + HTTP) on port $APP_PORT..."
 exec gunicorn -c gunicorn.conf.py milk_backend.asgi:application \

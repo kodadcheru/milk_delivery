@@ -89,9 +89,10 @@ class DeliveryTaskListView(generics.ListAPIView):
 class DeliveryTaskCompleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, pk):
         try:
-            task = DeliveryTask.objects.get(pk=pk)
+            task = DeliveryTask.objects.select_for_update().get(pk=pk)
         except DeliveryTask.DoesNotExist:
             return Response({"detail": "Delivery task not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -295,29 +296,30 @@ class DeliveryTaskSkipView(APIView):
 
         # Update linked LiveOrder if express order task with wallet refund & inventory restoration
         if task.order:
-            order = task.order
-            if order.status != LiveOrder.Statuses.CANCELLED:
-                order.status = LiveOrder.Statuses.CANCELLED
-                order.save(update_fields=["status"])
-                # Restore hub product inventory
-                if order.hub:
-                    for item in order.items.select_related("product"):
-                        from apps.products.models import HubProductInventory
-                        inv = HubProductInventory.objects.filter(hub=order.hub, product=item.product).first()
-                        if inv and inv.booked_slots >= item.quantity:
-                            inv.booked_slots -= item.quantity
-                            inv.save(update_fields=["booked_slots"])
-                # Refund customer wallet if paid online/wallet
-                if order.customer and order.payment_method == "WALLET" and not order.is_cod:
-                    from apps.accounts.models import WalletTransaction
-                    User.objects.filter(pk=order.customer.pk).update(wallet_balance=F("wallet_balance") + order.total_amount)
-                    order.customer.refresh_from_db(fields=["wallet_balance"])
-                    WalletTransaction.objects.create(
-                        user=order.customer,
-                        amount=order.total_amount,
-                        transaction_type=WalletTransaction.Types.CREDIT,
-                        description=f"Refund for Skipped Express Delivery #{order.id}",
-                    )
+            with transaction.atomic():
+                order = LiveOrder.objects.select_for_update().get(pk=task.order.pk)
+                if order.status != LiveOrder.Statuses.CANCELLED:
+                    order.status = LiveOrder.Statuses.CANCELLED
+                    order.save(update_fields=["status"])
+                    # Restore hub product inventory
+                    if order.hub:
+                        for item in order.items.select_related("product"):
+                            from apps.products.models import HubProductInventory
+                            inv = HubProductInventory.objects.filter(hub=order.hub, product=item.product).first()
+                            if inv and inv.booked_slots >= item.quantity:
+                                inv.booked_slots -= item.quantity
+                                inv.save(update_fields=["booked_slots"])
+                    # Refund customer wallet if paid online/wallet
+                    if order.customer and order.payment_method == "WALLET" and not order.is_cod:
+                        from apps.accounts.models import WalletTransaction
+                        User.objects.filter(pk=order.customer.pk).update(wallet_balance=F("wallet_balance") + order.total_amount)
+                        order.customer.refresh_from_db(fields=["wallet_balance"])
+                        WalletTransaction.objects.create(
+                            user=order.customer,
+                            amount=order.total_amount,
+                            transaction_type=WalletTransaction.Types.CREDIT,
+                            description=f"Refund for Skipped Express Delivery #{order.id}",
+                        )
 
         # Notify customer about skipped drop with exact reason
         if task.target_customer:
