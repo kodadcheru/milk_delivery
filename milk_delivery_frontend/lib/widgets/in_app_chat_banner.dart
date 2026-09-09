@@ -5,8 +5,7 @@ import '../models/notification_model.dart';
 import '../providers/app_state.dart';
 import '../theme/ui_tokens.dart';
 import '../theme/ui_text.dart';
-import 'delivery_chat_sheet.dart';
-import 'driver_delivery_chat_sheet.dart';
+import '../services/notification_router.dart';
 
 class InAppChatBanner {
   static OverlayEntry? _currentEntry;
@@ -88,31 +87,36 @@ class _InAppChatBannerWidgetState extends State<_InAppChatBannerWidget> with Sin
     super.dispose();
   }
 
-  void _handleOpenChat() {
+  void _handleTap() {
     widget.onDismiss();
-    final userRole = (widget.state.currentUser?.role ?? 'CUSTOMER').toUpperCase();
-    final notif = widget.notification;
-
-    if (userRole == 'DRIVER' || userRole == 'DELIVERY_PARTNER') {
-      DriverDeliveryChatSheet.show(
-        context,
-        customerName: notif.title.replaceAll('💬', '').replaceAll('(Customer)', '').trim(),
-        driverName: widget.state.currentUser?.name ?? 'Delivery Partner',
-        orderSummary: 'Active Milk Delivery',
-      );
-    } else {
-      DeliveryChatSheet.show(
-        context,
-        driverName: notif.title.replaceAll('💬', '').replaceAll('(Delivery Partner)', '').trim(),
-        customerName: widget.state.currentUser?.name ?? 'Customer',
-        orderTitle: 'Live Milk Delivery',
-      );
-    }
+    NotificationRouter.navigate(context, widget.notification, widget.state);
   }
 
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final notif = widget.notification;
+    final isChat = notif.targetScreen.toUpperCase() == 'CHAT' || notif.notificationType.toUpperCase() == 'CHAT' || notif.title.contains('💬');
+    final isDelivery = notif.notificationType.toUpperCase() == 'DELIVERY' || notif.targetScreen.toUpperCase().contains('DELIVER') || notif.targetScreen.toUpperCase().contains('ORDER');
+    final isWallet = notif.notificationType.toUpperCase() == 'WALLET' || notif.targetScreen.toUpperCase() == 'WALLET';
+
+    final IconData icon = isChat
+        ? Icons.chat_bubble_outline_rounded
+        : (isDelivery
+            ? Icons.local_shipping_rounded
+            : (isWallet ? Icons.account_balance_wallet_rounded : Icons.notifications_active_rounded));
+
+    final List<Color> gradientColors = isChat
+        ? const [Color(0xFF0D7C66), Color(0xFF10A37F)]
+        : (isDelivery
+            ? const [Color(0xFF0284C7), Color(0xFF0EA5E9)]
+            : (isWallet
+                ? const [Color(0xFFD97706), Color(0xFFF59E0B)]
+                : const [Color(0xFF0D7C66), Color(0xFF10A37F)]));
+
+    final String actionText = isChat
+        ? 'Reply'
+        : (isDelivery ? 'Track' : 'View');
 
     return Positioned(
       top: topPadding + 6,
@@ -126,7 +130,7 @@ class _InAppChatBannerWidgetState extends State<_InAppChatBannerWidget> with Sin
               widget.onDismiss();
             }
           },
-          onTap: _handleOpenChat,
+          onTap: _handleTap,
           child: Material(
             color: Colors.transparent,
             child: Container(
@@ -155,15 +159,15 @@ class _InAppChatBannerWidgetState extends State<_InAppChatBannerWidget> with Sin
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0D7C66), Color(0xFF10A37F)],
+                      gradient: LinearGradient(
+                        colors: gradientColors,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(UiRadius.md),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 20),
+                    child: Center(
+                      child: Icon(icon, color: Colors.white, size: 20),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -220,11 +224,11 @@ class _InAppChatBannerWidgetState extends State<_InAppChatBannerWidget> with Sin
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D7C66),
+                      color: gradientColors.first,
                       borderRadius: BorderRadius.circular(UiRadius.pill),
                     ),
                     child: Text(
-                      'Reply',
+                      actionText,
                       style: UiText.caption.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,

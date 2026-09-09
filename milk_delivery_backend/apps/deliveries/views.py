@@ -5,6 +5,7 @@ from django.db import models, transaction
 from django.db.models import F, Q, Case, When, Value, IntegerField
 from django.utils import timezone
 from rest_framework import generics, permissions, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -1561,10 +1562,36 @@ class QualityHistoryView(APIView):
 
 class DeliveryRatingSubmitView(APIView):
     """
-    Submit customer delivery rating and feedback. Persists to DeliveryRating table.
+    Submit and retrieve customer delivery rating and feedback. Persists to DeliveryRating table.
+    GET /api/deliveries/rate/
     POST /api/deliveries/rate/
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.deliveries.models import DeliveryRating
+        # Return all ratings by the current user
+        ratings = DeliveryRating.objects.filter(user=request.user).annotate(
+            order__order_id=F('order_id')
+        ).values(
+            'order__order_id', 'order_id', 'task_id', 'rating', 'feedback', 'tags', 'created_at'
+        ).order_by('-created_at')[:50]
+
+        # Build rated orders/tasks maps
+        rated_orders = {}
+        rated_tasks = {}
+        for r in ratings:
+            order_ref = r.get('order__order_id') or r.get('order_id')
+            if order_ref:
+                rated_orders[str(order_ref)] = r['rating']
+            if r.get('task_id'):
+                rated_tasks[str(r['task_id'])] = r['rating']
+
+        return Response({
+            'rated_orders': rated_orders,
+            'rated_tasks': rated_tasks,
+            'ratings': list(ratings),
+        })
 
     def post(self, request):
         from apps.deliveries.models import DeliveryRating, LiveOrder, DeliveryTask
@@ -1577,7 +1604,7 @@ class DeliveryRatingSubmitView(APIView):
         if not isinstance(tags, list):
             tags = []
 
-        user = request.user if request.user.is_authenticated else None
+        user = request.user
         order = LiveOrder.objects.filter(id=order_id).first() if order_id else None
         task = DeliveryTask.objects.filter(id=task_id).first() if task_id else None
 

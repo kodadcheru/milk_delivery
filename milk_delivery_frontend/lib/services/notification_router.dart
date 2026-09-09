@@ -8,6 +8,7 @@ import '../screens/driver/morning_batch_screen.dart';
 import '../screens/driver/driver_route_map_screen.dart';
 import '../widgets/delivery_chat_sheet.dart';
 import '../widgets/driver_delivery_chat_sheet.dart';
+import '../widgets/booking_detail_sheet.dart';
 
 class NotificationRouter {
   static void navigate(BuildContext context, NotificationModel item, AppState state) {
@@ -23,7 +24,7 @@ class NotificationRouter {
     final param = item.targetParam.trim();
 
     // Direct Chat Routing (for both Driver and Customer)
-    if (targetScreen == 'CHAT' || title.contains('💬') || title.contains('chat') || type == 'CHAT') {
+    if (targetScreen == 'CHAT' || title.contains('💬') || (type == 'CHAT' && !title.contains('order'))) {
       final userRole = (state.currentUser?.role ?? 'CUSTOMER').toUpperCase();
       if (userRole == 'DRIVER' || userRole == 'DELIVERY_PARTNER') {
         DriverDeliveryChatSheet.show(
@@ -121,7 +122,9 @@ class NotificationRouter {
         targetScreen == 'DELIVERY' ||
         targetScreen == 'TRACKER' ||
         targetScreen == 'ORDERS' ||
+        targetScreen == 'ORDER' ||
         type == 'DELIVERY' ||
+        param.toUpperCase().startsWith('MD-') ||
         title.contains('delivered') ||
         title.contains('dispatched') ||
         title.contains('arriving') ||
@@ -133,6 +136,52 @@ class NotificationRouter {
         message.contains('delivered')) {
       state.setTab(3); // Switch to Orders / DeliveryTrackerTab
       Navigator.popUntil(context, (route) => route.isFirst);
+
+      // Extract target order or task ID
+      String targetId = param;
+      if (targetId.isEmpty) {
+        final regExp = RegExp(r'MD-[A-Za-z0-9]+');
+        final match = regExp.firstMatch(item.title) ?? regExp.firstMatch(item.message);
+        if (match != null) {
+          targetId = match.group(0)!;
+        }
+      }
+
+      if (targetId.isNotEmpty) {
+        final cleanId = targetId.trim().toUpperCase();
+
+        // 1. Try finding in live orders
+        final matchingOrder = state.liveOrders.where((o) => o.id.toUpperCase() == cleanId).firstOrNull;
+        if (matchingOrder != null) {
+          BookingDetailSheet.showForExpressOrder(context, state, matchingOrder);
+          return;
+        }
+
+        // 2. Try finding in daily delivery tasks
+        final matchingTask = state.deliveries.where((t) =>
+            t.id.toString() == cleanId ||
+            (t.orderId != null && t.orderId!.toString().toUpperCase() == cleanId)).firstOrNull;
+        if (matchingTask != null) {
+          BookingDetailSheet.showForSubscription(context, state, matchingTask);
+          return;
+        }
+
+        // 3. If not in memory yet, refresh orders in background and open
+        state.reloadAllData(silent: true).then((_) {
+          if (!context.mounted) return;
+          final refreshedOrder = state.liveOrders.where((o) => o.id.toUpperCase() == cleanId).firstOrNull;
+          if (refreshedOrder != null) {
+            BookingDetailSheet.showForExpressOrder(context, state, refreshedOrder);
+            return;
+          }
+          final refreshedTask = state.deliveries.where((t) =>
+              t.id.toString() == cleanId ||
+              (t.orderId != null && t.orderId!.toString().toUpperCase() == cleanId)).firstOrNull;
+          if (refreshedTask != null) {
+            BookingDetailSheet.showForSubscription(context, state, refreshedTask);
+          }
+        });
+      }
       return;
     }
 

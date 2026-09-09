@@ -379,7 +379,6 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                         sub: displayedSubs[index],
                         isTelugu: isTelugu,
                         onDeleteRequested: _confirmDeleteSubscription,
-                        onTogglePauseRequested: _confirmTogglePauseSubscription,
                       );
                     },
                   ),

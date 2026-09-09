@@ -7,6 +7,7 @@ import '../services/pack_pricing.dart';
 import '../theme/ui_format.dart';
 import '../theme/ui_text.dart';
 import '../theme/ui_tokens.dart';
+import 'floating_cart_bar.dart';
 import 'product_detail_sheet.dart';
 
 /// Lightweight "buy it once" bottom sheet: pick a pack size + quantity and add
@@ -56,18 +57,9 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
     final variant = _variant;
     final existing = widget.state.cartQtyOf(variant);
     widget.state.updateCartQty(variant, existing + _qty);
+    final navContext = Navigator.of(context).context;
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 1),
-        backgroundColor: UiTone.ink,
-        content: Text(
-          widget.state.isTelugu
-              ? '🛒 కార్ట్‌కి ${_qty}x ${widget.product.localizedName("te")} ($_packSize) జోడించబడింది'
-              : '🛒 Added ${_qty}x ${widget.product.name} ($_packSize) to cart',
-        ),
-      ),
-    );
+    FloatingCartBar.showCheckoutSheet(navContext, widget.state);
   }
 
   void _openSubscription() {

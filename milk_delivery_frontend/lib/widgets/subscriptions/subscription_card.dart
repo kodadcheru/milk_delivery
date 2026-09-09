@@ -5,7 +5,7 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 
-class SubscriptionCard extends StatelessWidget {
+class SubscriptionCard extends StatefulWidget {
   final AppState state;
   final SubscriptionModel sub;
   final bool isTelugu;
@@ -22,24 +22,183 @@ class SubscriptionCard extends StatelessWidget {
   });
 
   @override
+  State<SubscriptionCard> createState() => _SubscriptionCardState();
+}
+
+class _SubscriptionCardState extends State<SubscriptionCard> {
+  bool _isToggling = false;
+
+  Future<void> _handlePauseResumeClick(BuildContext context) async {
+    if (widget.onTogglePauseRequested != null) {
+      await widget.onTogglePauseRequested!(context, widget.sub, widget.isTelugu);
+      return;
+    }
+
+    final isPaused = widget.sub.status == 'PAUSED';
+    final isTelugu = widget.isTelugu;
+
+    final titleText = isTelugu
+        ? (isPaused ? 'సభ్యత్వాన్ని పునఃప్రారంభించాలా?' : 'సభ్యత్వాన్ని పాజ్ చేయాలా?')
+        : (isPaused ? 'Resume Subscription?' : 'Pause Subscription?');
+
+    final contentText = isTelugu
+        ? (isPaused
+            ? 'రేపటి నుండి ఉదయం 06:00 AM గంటలకు మీ రోజువారీ డెలివరీలు మళ్లీ ప్రారంభమవుతాయి.'
+            : 'రేపటి నుండి మీ రోజువారీ డెలివరీలు ఆగిపోతాయి. మీరు ఎప్పుడైనా ఒక్క ట్యాప్‌తో పునఃప్రారంభించవచ్చు.')
+        : (isPaused
+            ? 'Your daily morning milk deliveries will resume starting tomorrow at 06:00 AM.'
+            : 'Your daily morning deliveries will be paused starting tomorrow. You can resume anytime with one tap.');
+
+    final confirmBtnText = isTelugu
+        ? (isPaused ? 'డెలివరీలు పునఃప్రారంభించు' : 'డెలివరీ పాజ్ చేయండి')
+        : (isPaused ? 'Resume Deliveries' : 'Pause Delivery');
+
+    final cancelBtnText = isTelugu
+        ? (isPaused ? 'పాజ్ అలాగే ఉంచండి' : 'యాక్టివ్‌గా ఉంచండి')
+        : (isPaused ? 'Keep Paused' : 'Keep Active');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isPaused
+                    ? const Color(0xFF0D7C66).withValues(alpha: 0.12)
+                    : Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                color: isPaused ? const Color(0xFF0D7C66) : const Color(0xFFD97706),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                titleText,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          contentText,
+          style: const TextStyle(
+            fontSize: 13.5,
+            color: Color(0xFF475569),
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF64748B),
+              textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+            child: Text(cancelBtnText),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isPaused ? const Color(0xFF0D7C66) : const Color(0xFFD97706),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              confirmBtnText,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isToggling = true);
+    HapticFeedback.mediumImpact();
+
+    try {
+      final success = await widget.state.toggleSubscriptionStatus(widget.sub.id);
+      if (context.mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: isPaused ? const Color(0xFF0D7C66) : const Color(0xFFD97706),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                Icon(
+                  isPaused ? Icons.check_circle_rounded : Icons.pause_circle_filled_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    isPaused
+                        ? (isTelugu ? '🎉 సభ్యత్వం పునఃప్రారంభించబడింది! రేపు ఉదయం డెలివరీ అవుతుంది.' : '🎉 Subscription resumed! Deliveries restart tomorrow 06:00 AM.')
+                        : (isTelugu ? '⏸️ సభ్యత్వం పాజ్ చేయబడింది. ఎప్పుడైనా పునఃప్రారంభించవచ్చు.' : '⏸️ Subscription paused starting tomorrow.'),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isToggling = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final sub = widget.sub;
+    final state = widget.state;
+    final isTelugu = widget.isTelugu;
     final prod = sub.productDetail;
     final pName = prod?.name ?? 'Farm Fresh Milk';
     final isPaused = sub.status == 'PAUSED';
     final isCancelled = sub.status == 'CANCELLED';
-
     final streakDays = sub.streakDays;
 
-    final cardContent = Container(
+    return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: isPaused
+              ? const Color(0xFFFCD34D)
+              : (isCancelled ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0)),
+          width: isPaused ? 1.5 : 1.0,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: isPaused
+                ? Colors.amber.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -48,13 +207,16 @@ class SubscriptionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── 1. Top Header Row: Icon, Title, Status Badge ──
           Row(
             children: [
               Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: UiTone.primary.withValues(alpha: 0.08),
+                  color: isPaused
+                      ? Colors.amber.withValues(alpha: 0.12)
+                      : (isCancelled ? Colors.red.withValues(alpha: 0.08) : UiTone.primary.withValues(alpha: 0.08)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
@@ -104,30 +266,45 @@ class SubscriptionCard extends StatelessWidget {
                   color: isCancelled
                       ? Colors.red.withValues(alpha: 0.1)
                       : isPaused
-                          ? Colors.orange.withValues(alpha: 0.1)
+                          ? Colors.amber.withValues(alpha: 0.15)
                           : const Color(0xFF0D7C66).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: isPaused ? Border.all(color: const Color(0xFFF59E0B), width: 1.0) : null,
                 ),
-                child: Text(
-                  isCancelled
-                      ? (isTelugu ? 'రద్దు చేయబడింది' : 'CANCELLED')
-                      : isPaused
-                          ? (isTelugu ? 'విరామం' : 'PAUSED')
-                          : (isTelugu ? 'యాక్టివ్' : 'ACTIVE'),
-                  style: TextStyle(
-                    color: isCancelled
-                        ? Colors.red
-                        : isPaused
-                            ? Colors.orange
-                            : const Color(0xFF0D7C66),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 10,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isPaused) ...[
+                      const Icon(Icons.pause_circle_filled_rounded, size: 12, color: Color(0xFFD97706)),
+                      const SizedBox(width: 4),
+                    ] else if (!isCancelled) ...[
+                      const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF0D7C66)),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(
+                      isCancelled
+                          ? (isTelugu ? 'రద్దు చేయబడింది' : 'CANCELLED')
+                          : isPaused
+                              ? (isTelugu ? 'విరామం' : 'PAUSED')
+                              : (isTelugu ? 'యాక్టివ్' : 'ACTIVE'),
+                      style: TextStyle(
+                        color: isCancelled
+                            ? Colors.red
+                            : isPaused
+                                ? const Color(0xFFB45309)
+                                : const Color(0xFF0D7C66),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const Divider(height: 24),
+          const Divider(height: 22),
+
+          // ── 2. Delivery Slot & Daily Price ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -145,10 +322,17 @@ class SubscriptionCard extends StatelessWidget {
                 isTelugu
                     ? '${sub.quantity} × ${sub.packSize} • ${UiFormat.price(sub.displayPrice * sub.quantity)} / రోజు'
                     : '${sub.quantity} × ${sub.packSize} • ${UiFormat.price(sub.displayPrice * sub.quantity)} / day',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                  color: isPaused ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
+                  decoration: isPaused ? TextDecoration.lineThrough : null,
+                ),
               ),
             ],
           ),
+
+          // ── 3. Tomorrow's Quantity Stepper (Active Only) ──
           if (!isCancelled && !isPaused) ...[
             const SizedBox(height: 12),
             Container(
@@ -234,8 +418,10 @@ class SubscriptionCard extends StatelessWidget {
               ),
             ),
           ],
+
+          // ── 4. Primary Interactive Pause / Resume Action Bar ──
+          const SizedBox(height: 14),
           if (isCancelled) ...[
-            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -256,100 +442,86 @@ class SubscriptionCard extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: UiTone.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
+          ] else ...[
+            Row(
+              children: [
+                // Pause or Resume Button
+                Expanded(
+                  child: _isToggling
+                      ? Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2.2, color: Color(0xFF0D7C66)),
+                          ),
+                        )
+                      : (isPaused
+                          // ── RESUME BUTTON (When Paused) ──
+                          ? ElevatedButton.icon(
+                            onPressed: () => _handlePauseResumeClick(context),
+                            icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                            label: Text(
+                              isTelugu ? 'డెలివరీ పునఃప్రారంభించండి' : 'Resume Delivery',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0D7C66),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          )
+                          // ── PAUSE BUTTON (When Active) ──
+                          : OutlinedButton.icon(
+                              onPressed: () => _handlePauseResumeClick(context),
+                              icon: const Icon(Icons.pause_rounded, size: 16),
+                              label: Text(
+                                isTelugu ? 'డెలివరీ పాజ్ చేయండి' : 'Pause Delivery',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFD97706),
+                                backgroundColor: const Color(0xFFFFFBEB),
+                                side: const BorderSide(color: Color(0xFFFCD34D), width: 1.2),
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            )),
+                ),
+                const SizedBox(width: 8),
+
+                // Delete / Cancel Option Icon Button
+                if (widget.onDeleteRequested != null) ...[
+                  IconButton(
+                    onPressed: () => widget.onDeleteRequested!(context, sub, isTelugu),
+                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFF94A3B8), size: 20),
+                    tooltip: isTelugu ? 'రద్దు చేయండి' : 'Cancel Plan',
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFFF8FAFC),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         ],
       ),
-    );
-
-    if (isCancelled) return cardContent;
-
-    return Dismissible(
-      key: ValueKey(sub.id),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.endToStart) {
-          if (onDeleteRequested != null) {
-            await onDeleteRequested!(context, sub, isTelugu);
-          }
-          return false;
-        } else {
-          if (onTogglePauseRequested != null) {
-            await onTogglePauseRequested!(context, sub, isTelugu);
-          } else {
-            final isPaused = sub.status == 'PAUSED';
-            final titleText = isTelugu
-                ? (isPaused ? 'సభ్యత్వాన్ని పునఃప్రారంభించాలా?' : 'సభ్యత్వాన్ని పాజ్ చేయాలా?')
-                : (isPaused ? 'Resume Subscription?' : 'Pause Subscription?');
-            final contentText = isTelugu
-                ? (isPaused
-                    ? 'రేపటి నుండి మీ రోజువారీ డెలివరీలు పునఃప్రారంభించబడతాయి.'
-                    : 'మీరు పునఃప్రారంభించే వరకు మీ రోజువారీ డెలివరీలు ఆగిపోతాయి.')
-                : (isPaused
-                    ? 'Your daily deliveries will resume tomorrow.'
-                    : 'Your daily deliveries will stop until you resume.');
-            final confirmBtnText = isTelugu
-                ? (isPaused ? 'పునఃప్రారంభించు' : 'పాజ్')
-                : (isPaused ? 'Resume' : 'Pause');
-            final cancelBtnText = isTelugu ? 'రద్దు' : 'Cancel';
-
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(titleText),
-                content: Text(contentText),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(cancelBtnText)),
-                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(confirmBtnText)),
-                ],
-              ),
-            );
-            if (confirmed != true) return false;
-
-            HapticFeedback.mediumImpact();
-            await state.toggleSubscriptionStatus(sub.id);
-          }
-          return false;
-        }
-      },
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: Colors.orange,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, color: Colors.white, size: 28),
-            const SizedBox(height: 4),
-            Text(isPaused ? 'Resume' : 'Pause', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-          ],
-        ),
-      ),
-      secondaryBackground: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
-            SizedBox(height: 4),
-            Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-          ],
-        ),
-      ),
-      child: cardContent,
     );
   }
 }

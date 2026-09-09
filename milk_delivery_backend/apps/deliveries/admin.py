@@ -74,3 +74,16 @@ class ProviderPayoutAdmin(admin.ModelAdmin):
     list_filter = ["status", "period_end"]
     search_fields = ["hub__name", "hub__hub_code", "manager__username"]
 
+
+from .models import DeliveryRating
+
+
+@admin.register(DeliveryRating)
+class DeliveryRatingAdmin(admin.ModelAdmin):
+    list_display = ('user', 'driver', 'rating', 'feedback', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('user__phone', 'driver__phone', 'feedback')
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
+
+

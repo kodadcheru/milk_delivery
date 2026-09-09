@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 import '../buy_once_sheet.dart';
+import '../floating_cart_bar.dart';
 import '../product_detail_sheet.dart';
 import 'home_location_sheet.dart';
 
@@ -332,7 +334,11 @@ class HomeProductCard extends StatelessWidget {
           const SizedBox(width: 4),
           // ADD button for 1-time order
           GestureDetector(
-            onTap: () => state.addToCart(item),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              state.addToCart(item);
+              FloatingCartBar.showCheckoutSheet(context, state);
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(

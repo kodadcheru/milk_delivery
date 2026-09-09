@@ -518,13 +518,6 @@ class BookingDetailSheet extends StatelessWidget {
                           driverPhone.isNotEmpty ? driverPhone : 'Live Chat Active',
                           style: UiText.caption.copyWith(color: const Color(0xFF0F172A), fontSize: 11.5, fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
-                        const SizedBox(width: 3),
-                        Text(
-                          '4.9 ★',
-                          style: UiText.caption.copyWith(color: UiTone.softText, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 2),

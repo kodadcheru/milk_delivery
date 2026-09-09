@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../providers/app_state.dart';
 import 'home/home_location_sheet.dart';
+import 'booking_detail_sheet.dart';
 import '../theme/ui_tokens.dart';
 
 
@@ -24,7 +25,7 @@ class FloatingCartBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(UiRadius.lg),
       shadowColor: UiTone.primary.withValues(alpha: 0.4),
       child: InkWell(
-        onTap: () => _showCheckoutSheet(context),
+        onTap: () => showCheckoutSheet(context, state),
         borderRadius: BorderRadius.circular(UiRadius.lg),
         child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -120,7 +121,7 @@ class FloatingCartBar extends StatelessWidget {
       );
   }
 
-  void _showCheckoutSheet(BuildContext context) {
+  static void showCheckoutSheet(BuildContext context, AppState state) {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1)); // Locked to Tomorrow for Express Schedule
     String slot = '06:00 AM - 08:00 AM';
     final slotController = TextEditingController(text: slot);
@@ -1413,6 +1414,7 @@ class FloatingCartBar extends StatelessWidget {
                                     ),
                                   );
                                   state.setTab(3); // Orders / Bookings Tab
+                                  BookingDetailSheet.showForExpressOrder(context, state, order);
                                 }
                               } catch (e) {
                                 if (ctx.mounted) {
@@ -1493,7 +1495,7 @@ class FloatingCartBar extends StatelessWidget {
     });
   }
 
-  void _showQuickTopUpDialog(BuildContext context, AppState state, double deficit, VoidCallback onRecharged) {
+  static void _showQuickTopUpDialog(BuildContext context, AppState state, double deficit, VoidCallback onRecharged) {
     final amounts = [deficit < 100 ? 100.0 : deficit, 200.0, 500.0, 1000.0];
     final selectedAmt = ValueNotifier<double>(amounts.first);
     final isProcessing = ValueNotifier<bool>(false);
@@ -1640,7 +1642,7 @@ class FloatingCartBar extends StatelessWidget {
     );
   }
 
-  Widget _buildBillRow(
+  static Widget _buildBillRow(
     String label,
     String value, {
     bool isHighlight = false,

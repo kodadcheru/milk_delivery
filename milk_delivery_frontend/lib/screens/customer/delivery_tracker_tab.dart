@@ -1458,30 +1458,45 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                           ),
                         ],
                       ] else ...[
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => DeliveryRatingDialog(
+                        if (widget.state.isTaskRated(task.id))
+                          Expanded(
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Rated ${widget.state.getTaskRating(task.id)}★ ✓',
+                                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                          )
+                        else
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                DeliveryRatingDialog.show(
+                                  context,
                                   state: widget.state,
                                   productName: pName,
                                   driverName: task.driverDetail?.fullName ?? 'Delivery Hero',
                                   deliveryDate: task.deliveryDate,
                                   taskId: task.id,
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.star_outline_rounded, size: 16),
-                            label: Text(isTelugu ? 'రేటింగ్ ఇవ్వండి' : 'Rate Delivery ⭐'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: UiTone.primary,
-                              side: BorderSide(color: UiTone.primary),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                                  onRated: (_) => setState(() {}),
+                                );
+                              },
+                              icon: const Icon(Icons.star_outline_rounded, size: 16),
+                              label: Text(isTelugu ? 'రేటింగ్ ఇవ్వండి' : 'Rate Delivery ⭐'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: UiTone.primary,
+                                side: BorderSide(color: UiTone.primary),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                              ),
                             ),
                           ),
-                        ),
                         if (task.proofImageUrl.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           GestureDetector(

@@ -1560,10 +1560,9 @@ class AppState extends ChangeNotifier {
         razorpay.clear();
       });
       
-      var options = {
-        'key': keyId,
+      final options = <String, dynamic>{
+        'key': keyId.isNotEmpty ? keyId : 'rzp_test_TZqYcaKAOxoDP7',
         'amount': amountPaise,
-        'order_id': razorpayOrderId,
         'name': 'Pamba Fresh',
         'description': 'Wallet Top-Up ₹${amount.toStringAsFixed(0)}',
         'prefill': {
@@ -1572,6 +1571,11 @@ class AppState extends ChangeNotifier {
         },
         'theme': {'color': '#074B3E'},
       };
+      
+      // Only attach order_id if it is an authentic Razorpay-generated order ID
+      if (razorpayOrderId.isNotEmpty && !razorpayOrderId.startsWith('order_test_')) {
+        options['order_id'] = razorpayOrderId;
+      }
       
       razorpay.open(options);
     } catch (e) {

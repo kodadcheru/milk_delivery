@@ -1201,7 +1201,8 @@ class AdminFleetListView(APIView):
 
     def get(self, request):
         from apps.accounts.models import User
-        from apps.deliveries.models import DeliveryTask
+        from apps.deliveries.models import DeliveryTask, DeliveryRating
+        from django.db.models import Avg
 
         hub_id = request.query_params.get("hub_id")
         drivers = User.objects.filter(role=User.Roles.DELIVERY_PARTNER).select_related("assigned_hub")
@@ -1220,6 +1221,9 @@ class AdminFleetListView(APIView):
 
             hub_name = d.assigned_hub.name if d.assigned_hub else "Unassigned"
             hub_code = d.assigned_hub.hub_code if d.assigned_hub else "—"
+
+            avg_rating = DeliveryRating.objects.filter(driver=d).aggregate(avg=Avg('rating'))['avg']
+            rating = round(avg_rating, 1) if avg_rating else None
 
             fleet_data.append({
                 "id": d.id,
@@ -1241,6 +1245,7 @@ class AdminFleetListView(APIView):
                 "salary": f"₹{int(d.monthly_salary):,} / month",
                 "bottles_collected": assigned_tasks.filter(status=DeliveryTask.Statuses.DELIVERED).count(),
                 "last_location_updated": d.last_location_updated.isoformat() if d.last_location_updated else None,
+                "rating": rating,
             })
 
         return Response(fleet_data)

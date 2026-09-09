@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:milk_delivery_frontend/models/notification_model.dart';
+import 'package:milk_delivery_frontend/models/live_order_model.dart';
 import 'package:milk_delivery_frontend/models/user_model.dart';
 import 'package:milk_delivery_frontend/providers/app_state.dart';
 import 'package:milk_delivery_frontend/services/notification_router.dart';
@@ -148,8 +149,54 @@ void main() {
       await tester.tap(find.byType(ElevatedButton));
       await tester.pumpAndSettle();
 
-      // Screen pushed on top of navigator
       expect(find.text('Farm Fresh Paneer'), findsWidgets);
+    });
+
+    testWidgets('Order notification deep-links to specific order and shows details', (tester) async {
+      final testOrder = LiveOrderModel(
+        id: 'MD-8899',
+        items: [],
+        totalAmount: 180.0,
+        status: 'PREPARING',
+        deliveryDate: '2026-09-10',
+        deliverySlot: '06:00 AM - 08:00 AM',
+        deliveryAddress: 'Flat 401, Kodad',
+        customerName: 'Test User',
+        customerPhone: '+919876543210',
+        createdAt: 'Today',
+      );
+      state.liveOrders = [testOrder];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  final notif = NotificationModel(
+                    id: 105,
+                    title: '⚡ Express Order MD-8899 Confirmed!',
+                    message: 'Your order is scheduled for tomorrow 06:00 AM',
+                    notificationType: 'DELIVERY',
+                    targetScreen: 'DELIVERIES',
+                    targetParam: 'MD-8899',
+                    isRead: false,
+                    createdAt: 'Today',
+                  );
+                  NotificationRouter.navigate(context, notif, state);
+                },
+                child: const Text('Test Order Notif'),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+
+      expect(state.currentTabIndex, 3);
+      expect(find.textContaining('MD-8899'), findsWidgets);
     });
   });
 }
