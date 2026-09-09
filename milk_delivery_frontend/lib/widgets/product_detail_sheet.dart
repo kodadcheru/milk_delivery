@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
 import '../screens/customer/subscription_address_selection_screen.dart';
@@ -46,7 +47,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   String _schedule = 'DAILY'; // DAILY, ALTERNATE, CUSTOM
   final Set<int> _customDays = {1, 2, 3, 4, 5, 6, 7}; // 1=Mon, 7=Sun
   int _selectedShift = 0; // 0: Morning, 1: Evening
-  String _selectedSlot = '05:30 AM - 07:00 AM';
+  String _selectedSlot = AppConfig.defaultMorningSlot;
 
   // ── Step 3: Duration, Start Date, Address & Drop Note ──
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));

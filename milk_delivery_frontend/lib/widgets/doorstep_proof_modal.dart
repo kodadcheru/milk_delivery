@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import '../config/app_config.dart';
 import '../theme/ui_tokens.dart';
 
 class DoorstepProofModal extends StatelessWidget {
@@ -14,7 +16,7 @@ class DoorstepProofModal extends StatelessWidget {
     required this.imageUrl,
     this.orderId = '#MD-4821',
     this.deliveryDate = 'Today',
-    this.slotTime = '05:30 AM - 07:00 AM',
+    this.slotTime = AppConfig.defaultMorningSlot,
     this.address = 'Doorstep Delivery Location',
     this.driverName = 'Assigned Partner',
   });
@@ -24,7 +26,7 @@ class DoorstepProofModal extends StatelessWidget {
     required String imageUrl,
     String orderId = '#MD-4821',
     String deliveryDate = 'Today',
-    String slotTime = '05:30 AM - 07:00 AM',
+    String slotTime = AppConfig.defaultMorningSlot,
     String address = 'Doorstep Delivery Location',
     String driverName = 'Assigned Partner',
   }) {

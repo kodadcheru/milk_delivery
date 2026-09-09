@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
@@ -40,7 +42,7 @@ class DriverDeliveryChatSheet extends StatefulWidget {
     this.driverPhone = '',
     this.deliveryAddress = 'Doorstep Delivery Location',
     this.orderSummary = 'Morning Milk Delivery',
-    this.slotTime = '05:30 AM - 07:00 AM',
+    this.slotTime = AppConfig.defaultMorningSlot,
   });
 
   static void show(
@@ -53,7 +55,7 @@ class DriverDeliveryChatSheet extends StatefulWidget {
     String driverPhone = '',
     String deliveryAddress = 'Doorstep Delivery Location',
     String orderSummary = 'Morning Milk Delivery',
-    String slotTime = '05:30 AM - 07:00 AM',
+    String slotTime = AppConfig.defaultMorningSlot,
   }) {
     showModalBottomSheet(
       context: context,

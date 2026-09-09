@@ -7,7 +7,10 @@ Resolution strategy (in order of priority):
 3. Fall back to first available hub
 """
 import math
+import os
 from apps.deliveries.models import LocationHub, ServiceArea
+
+MAX_HUB_DISTANCE_KM = float(os.environ.get("MAX_HUB_DISTANCE_KM", "10.0"))
 
 
 def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, address=None, strict=True):
@@ -48,7 +51,7 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
             best_distance = float("inf")
             for hub in hubs:
                 dist = _haversine_km(lat, lon, hub.latitude, hub.longitude)
-                if dist < best_distance and dist <= 10.0:
+                if dist < best_distance and dist <= MAX_HUB_DISTANCE_KM:
                     best_distance = dist
                     best_hub = hub
             if best_hub:
@@ -85,6 +88,7 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
         for h in LocationHub.objects.all():
             h_name = (h.name or "").lower()
             h_addr = (h.address or "").lower()
+            # TODO: Move these locale tokens to a database table (e.g., ServiceArea.search_keywords) for dynamic management
             key_tokens = ["mella chervu", "mellachervu", "mellacheruvu", "kodad", "suryapet"]
             for token in key_tokens:
                 if token in clean_address and (token in h_name or token in h_addr):

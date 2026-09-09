@@ -1279,13 +1279,11 @@ class FloatingCartBar extends StatelessWidget {
                                           : 'Delivery Partner Fee (${_deliveryMode == "INSTANT" ? "Instant" : "Scheduled"})',
                                       state.isTelugu ? 'ఉచితం' : 'FREE',
                                       isHighlight: true,
-                                      strikethrough: '₹25',
                                     ),
                                     _buildBillRow(
                                       state.isTelugu ? 'ప్యాకేజింగ్ & నాణ్యతా రుసుము' : 'Packaging & Handling Fee',
                                       state.isTelugu ? 'రద్దు చేయబడింది' : 'Waived',
                                       isHighlight: true,
-                                      strikethrough: '₹10',
                                     ),
                                     if (_paymentMethod == 'WALLET' && walletDeduction > 0) ...[
                                       _buildBillRow(

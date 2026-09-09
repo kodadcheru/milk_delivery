@@ -1,9 +1,15 @@
 import logging
+import os
 from datetime import date, timedelta
 from django.db.models import Q
 from apps.accounts.models import User, Notification
 from apps.subscriptions.models import Subscription, VacationPause
 from apps.deliveries.models import DeliveryTask, LocationHub, DailyMilkBatch
+
+MORNING_CUTOFF_HOUR = int(os.environ.get("MORNING_CUTOFF_HOUR", "5"))
+MORNING_CUTOFF_MINUTE = int(os.environ.get("MORNING_CUTOFF_MINUTE", "0"))
+AFTERNOON_CUTOFF_HOUR = int(os.environ.get("AFTERNOON_CUTOFF_HOUR", "12"))
+DEFAULT_DELIVERY_SLOT = os.environ.get("DEFAULT_DELIVERY_SLOT", "05:30 AM - 07:00 AM")
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +144,7 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
             sub.save(update_fields=["hub"])
 
         driver = _get_next_driver(hub, hub_drivers, hub_driver_indices)
-        slot = sub.delivery_slot or getattr(sub.customer, "delivery_slot_preference", None) or "05:30 AM - 07:00 AM"
+        slot = sub.delivery_slot or getattr(sub.customer, "delivery_slot_preference", None) or DEFAULT_DELIVERY_SLOT
 
         # Shift filtering if specified
         is_evening = any(x in slot.upper() for x in ["PM", "17:", "18:", "19:", "EVENING"])
@@ -153,10 +159,10 @@ def generate_daily_tasks_for_date(target_date=None, target_hub=None, shift="all"
             import datetime
             now_local = timezone.localtime()
             if target_date == now_local.date():
-                if not is_evening and (now_local.hour >= 12 or now_local.time() >= datetime.time(5, 0)):
+                if not is_evening and (now_local.hour >= AFTERNOON_CUTOFF_HOUR or now_local.time() >= datetime.time(MORNING_CUTOFF_HOUR, MORNING_CUTOFF_MINUTE)):
                     skipped_count += 1
                     continue
-                if is_evening and now_local.hour >= 12:
+                if is_evening and now_local.hour >= AFTERNOON_CUTOFF_HOUR:
                     skipped_count += 1
                     continue
 

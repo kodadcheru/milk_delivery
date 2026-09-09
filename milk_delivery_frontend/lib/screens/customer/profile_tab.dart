@@ -231,7 +231,7 @@ class ProfileTab extends StatelessWidget {
                     onTap: () {
                       final slot = user?.deliverySlotPreference.isNotEmpty == true
                           ? user!.deliverySlotPreference
-                          : '05:30 AM - 07:00 AM';
+                          : AppConfig.defaultMorningSlot;
                       _showSlotPreferenceDialog(context, state, slot);
                     },
                   ),
@@ -719,7 +719,7 @@ void _showEditProfileDialog(
   final phoneCtrl = TextEditingController(text: currentPhone);
   String selectedSlot = user?.deliverySlotPreference.isNotEmpty == true
       ? user!.deliverySlotPreference
-      : '05:30 AM - 07:00 AM';
+      : AppConfig.defaultMorningSlot;
   bool isSaving = false;
 
   showModalBottomSheet(
@@ -910,8 +910,8 @@ void _showEditProfileDialog(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            '05:30 AM - 07:00 AM',
-                            '07:00 AM - 08:30 AM',
+                            AppConfig.defaultMorningSlot,
+                            AppConfig.defaultEveningSlot,
                             '05:00 PM - 07:00 PM',
                           ].map((slot) {
                             final isSel = selectedSlot == slot;
@@ -1084,7 +1084,7 @@ Widget _buildStyledInput({
 }
 
 void _showSlotPreferenceDialog(BuildContext context, AppState state, String currentSlot) {
-  String selected = currentSlot.isNotEmpty ? currentSlot : '05:30 AM - 07:00 AM';
+  String selected = currentSlot.isNotEmpty ? currentSlot : AppConfig.defaultMorningSlot;
   final customCtrl = TextEditingController(text: selected);
 
   showModalBottomSheet(
@@ -1149,8 +1149,8 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            '05:30 AM - 07:00 AM',
-                            '07:00 AM - 08:30 AM',
+                            AppConfig.defaultMorningSlot,
+                            AppConfig.defaultEveningSlot,
                             '05:00 PM - 07:00 PM',
                             '06:30 PM - 08:30 PM',
                           ].map((s) {
@@ -1191,7 +1191,7 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
                           icon: Icons.edit_calendar_rounded,
                           onChanged: (val) {
                             setDialogState(() {
-                              selected = val.trim().isNotEmpty ? val.trim() : '05:30 AM - 07:00 AM';
+                              selected = val.trim().isNotEmpty ? val.trim() : AppConfig.defaultMorningSlot;
                             });
                           },
                         ),

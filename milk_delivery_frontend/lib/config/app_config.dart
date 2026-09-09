@@ -71,6 +71,12 @@ class AppConfig {
   }
 
   static const Duration requestTimeout = Duration(seconds: 12);
+
+  // Delivery Slot Constants — should eventually be fetched from backend DeliverySlot model
+  static const String defaultMorningSlot = '05:30 AM - 07:00 AM';
+  static const String defaultEveningSlot = '07:00 AM - 08:30 AM';
+  static const String defaultCutoffDisplay = '06:00 AM';
+
   static const int maxRetryAttempts = 3;
   static const Duration retryDelay = Duration(milliseconds: 600);
 

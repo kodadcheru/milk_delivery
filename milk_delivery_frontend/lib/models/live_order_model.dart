@@ -1,4 +1,5 @@
 import 'product_model.dart';
+import '../config/app_config.dart';
 
 class OrderItemModel {
   final ProductModel product;
@@ -71,7 +72,7 @@ class LiveOrderModel {
     required this.totalAmount,
     required this.status,
     this.deliveryDate = 'Tomorrow',
-    this.deliverySlot = '05:30 AM - 07:00 AM',
+    this.deliverySlot = AppConfig.defaultMorningSlot,
     this.deliveryAddress = 'Doorstep Delivery Location',
     this.deliveryLatitude = 17.4319,
     this.deliveryLongitude = 78.4073,
@@ -170,7 +171,7 @@ class LiveOrderModel {
       totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0.0,
       status: json['status'] ?? 'PLACED',
       deliveryDate: json['delivery_date']?.toString() ?? DateTime.now().toIso8601String().split('T')[0],
-      deliverySlot: json['delivery_slot'] ?? '05:30 AM - 07:00 AM',
+      deliverySlot: json['delivery_slot'] ?? AppConfig.defaultMorningSlot,
       deliveryAddress: json['delivery_address'] ?? '',
       deliveryLatitude: double.tryParse(json['delivery_latitude']?.toString() ?? '0') ?? 0.0,
       deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '0') ?? 0.0,

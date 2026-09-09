@@ -11,6 +11,7 @@ from decimal import Decimal
 from datetime import date, datetime, timedelta
 import random
 import logging
+import os
 from django.db import transaction
 from django.utils import timezone
 from apps.deliveries.models import DeliveryTask, LocationHub, ProviderPayout, LiveOrder
@@ -18,7 +19,7 @@ from apps.accounts.models import User, Notification
 
 logger = logging.getLogger(__name__)
 
-PLATFORM_COMMISSION_RATE = Decimal("0.05")  # 5% platform fee
+PLATFORM_COMMISSION_RATE = Decimal(os.environ.get("PLATFORM_COMMISSION_RATE", "0.05"))  # 5% platform fee
 
 
 def resolve_period_dates(period: str, start_date_str=None, end_date_str=None):
@@ -108,7 +109,8 @@ def calculate_hub_earnings(hub: LocationHub, start_date: date = None, end_date: 
             sub = task.subscription
             prod = sub.product
             p_name = prod.name if prod else "Fresh Milk"
-            price = sub.effective_unit_price or (prod.price_per_unit if prod else Decimal("68.00"))
+            DEFAULT_MILK_PRICE_PER_LITRE = Decimal(os.environ.get("DEFAULT_MILK_PRICE", "68.00"))
+            price = sub.effective_unit_price or (prod.price_per_unit if prod else DEFAULT_MILK_PRICE_PER_LITRE)
             item_qty = float(sub.quantity)
             pack_size_str = sub.pack_size or (prod.unit_quantity if prod else "1 Litre")
             task_rev = Decimal(str(price)) * Decimal(str(item_qty))
@@ -130,6 +132,7 @@ def calculate_hub_earnings(hub: LocationHub, start_date: date = None, end_date: 
         elif task.cash_amount > Decimal("0.00"):
             task_rev = task.cash_amount
 
+        # TODO: Add volume_in_litres field to Product model to replace this fragile string parsing
         # Calculate volume in Litres for liquid dairy / water
         litres = 0.0
         ps_lower = pack_size_str.lower()

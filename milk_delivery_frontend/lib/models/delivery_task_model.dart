@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import '../config/app_config.dart';
 import 'subscription_model.dart';
 import 'user_model.dart';
 
@@ -151,7 +153,7 @@ class DeliveryTaskModel {
           : (subDetail != null && subDetail.deliveryAddress.trim().isNotEmpty ? subDetail.deliveryAddress.trim() : 'Doorstep Delivery Location'),
       deliveryInstructions: json['delivery_instructions'] ?? (subDetail?.deliveryInstructions ?? 'Leave near doorstep box'),
       deliveryDate: json['delivery_date'] ?? '',
-      slotTime: json['slot_time'] ?? (subDetail?.deliverySlot ?? '05:30 AM - 07:00 AM'),
+      slotTime: json['slot_time'] ?? (subDetail?.deliverySlot ?? AppConfig.defaultMorningSlot),
       status: json['status'] ?? 'PENDING',
       proofImageUrl: json['proof_image_url'] ?? '',
       deliveredAt: json['delivered_at'],

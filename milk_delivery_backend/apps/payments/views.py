@@ -1,4 +1,5 @@
 import logging
+import os
 from decimal import Decimal
 from django.conf import settings
 from django.db import transaction
@@ -24,6 +25,8 @@ from .serializers import (
 from .services.razorpay_service import RazorpayService
 
 logger = logging.getLogger(__name__)
+
+MAX_TOPUP_AMOUNT = Decimal(os.environ.get("MAX_WALLET_TOPUP", "10000.00"))
 
 
 class RazorpayConfigView(APIView):
@@ -61,7 +64,7 @@ class RazorpayCreateOrderView(APIView):
 
         target_order = None
         if purpose == RazorpayPayment.Purpose.WALLET_TOPUP:
-            if amount > Decimal("10000.00"):
+            if amount > MAX_TOPUP_AMOUNT:
                 return Response(
                     {"detail": "Maximum single top-up limit is ₹10,000.00."},
                     status=status.HTTP_400_BAD_REQUEST,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1229,7 +1230,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final lon = group.customerLongitude;
     final totalItemsCount = group.tasks.fold<int>(0, (sum, t) => sum + (t.subscriptionDetail?.quantity ?? t.quantity));
 
-    final slotStr = group.slotTime.isNotEmpty ? group.slotTime : '05:30 AM - 07:00 AM';
+    final slotStr = group.slotTime.isNotEmpty ? group.slotTime : AppConfig.defaultMorningSlot;
     final isEvening = slotStr.toUpperCase().contains('PM') || slotStr.toUpperCase().contains('17:') || slotStr.toUpperCase().contains('18:') || slotStr.toUpperCase().contains('19:') || slotStr.toUpperCase().contains('EVENING');
 
     return Container(

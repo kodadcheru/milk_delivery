@@ -1,4 +1,5 @@
 import 'product_model.dart';
+import '../config/app_config.dart';
 
 class SubscriptionModel {
   final int id;
@@ -27,7 +28,7 @@ class SubscriptionModel {
     required this.startDate,
     required this.status,
     this.deliveryAddress = 'Doorstep Drop',
-    this.deliverySlot = '05:30 AM - 07:00 AM',
+    this.deliverySlot = AppConfig.defaultMorningSlot,
     this.deliveryLatitude = 17.4319,
     this.deliveryLongitude = 78.4073,
     this.deliveryInstructions = '',
@@ -62,7 +63,7 @@ class SubscriptionModel {
       startDate: json['start_date']?.toString() ?? '',
       status: json['status']?.toString() ?? 'ACTIVE',
       deliveryAddress: json['delivery_address']?.toString() ?? 'Doorstep Drop',
-      deliverySlot: json['delivery_slot']?.toString() ?? '05:30 AM - 07:00 AM',
+      deliverySlot: json['delivery_slot']?.toString() ?? AppConfig.defaultMorningSlot,
       deliveryLatitude: double.tryParse(json['delivery_latitude']?.toString() ?? '17.4319') ?? 17.4319,
       deliveryLongitude: double.tryParse(json['delivery_longitude']?.toString() ?? '78.4073') ?? 78.4073,
       deliveryInstructions: json['delivery_instructions']?.toString() ?? '',

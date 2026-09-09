@@ -621,7 +621,7 @@ class AppState extends ChangeNotifier {
     }
     final addr = resolvedAddress;
     final dateStr = deliveryDate ?? 'Tomorrow';
-    final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
+    final slotStr = deliverySlot ?? AppConfig.defaultMorningSlot;
 
     // 1. Send to Backend API
     final itemsPayload = cartProductsList.map((e) => {
@@ -795,7 +795,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> checkoutCart({
     String schedule = 'DAILY',
-    String slot = '05:30 AM - 07:00 AM',
+    String slot = AppConfig.defaultMorningSlot,
     String? deliveryAddress,
   }) async {
     final addr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : null));
@@ -1654,7 +1654,7 @@ class AppState extends ChangeNotifier {
       throw Exception('Please log in to subscribe. Your session may have expired.');
     }
     
-    final slotStr = deliverySlot ?? '05:30 AM - 07:00 AM';
+    final slotStr = deliverySlot ?? AppConfig.defaultMorningSlot;
     final targetAddr = deliveryAddress ?? (activeAddress?.summaryAddress ?? (currentDeliveryAddress != 'Select Delivery Location' ? currentDeliveryAddress : 'Doorstep Drop'));
     final targetLat = deliveryLatitude ?? (activeAddress?.latitude ?? currentLat);
     final targetLon = deliveryLongitude ?? (activeAddress?.longitude ?? currentLon);

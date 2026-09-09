@@ -1,3 +1,5 @@
+import '../config/app_config.dart';
+
 class UserModel {
   final int id;
   final String username;
@@ -35,7 +37,7 @@ class UserModel {
     required this.city,
     required this.walletBalance,
     required this.deliveryInstructions,
-    this.deliverySlotPreference = '05:30 AM - 07:00 AM',
+    this.deliverySlotPreference = AppConfig.defaultMorningSlot,
     this.latitude,
     this.longitude,
     this.assignedHub,
@@ -71,7 +73,7 @@ class UserModel {
       city: json['city'] ?? 'Kodad',
       walletBalance: double.tryParse(json['wallet_balance']?.toString() ?? '0') ?? 0.0,
       deliveryInstructions: json['delivery_instructions'] ?? '',
-      deliverySlotPreference: json['delivery_slot_preference'] ?? '05:30 AM - 07:00 AM',
+      deliverySlotPreference: json['delivery_slot_preference'] ?? AppConfig.defaultMorningSlot,
       latitude: double.tryParse(json['latitude']?.toString() ?? ''),
       longitude: double.tryParse(json['longitude']?.toString() ?? ''),
       assignedHub: json['assigned_hub'] is int ? json['assigned_hub'] : (json['assigned_hub'] is Map ? json['assigned_hub']['id'] : null),

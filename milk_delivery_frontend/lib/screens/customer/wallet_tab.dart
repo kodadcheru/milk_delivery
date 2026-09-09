@@ -66,6 +66,7 @@ class _WalletTabState extends State<WalletTab> {
               const SizedBox(height: 16),
 
               // Preset Quick Chips with Cashback
+              // TODO: Fetch recharge tiers and bonus amounts from /api/app-config/ or a dedicated endpoint
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(

@@ -35,6 +35,7 @@ class User(AbstractUser):
 
     # Hub Affiliation & Salaried Employment Fields
     assigned_hub = models.ForeignKey("deliveries.LocationHub", on_delete=models.SET_NULL, null=True, blank=True, related_name="delivery_partners")
+    # Default driver salary. Override via admin panel per-driver.
     monthly_salary = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("15000.00"))
     driver_status = models.CharField(max_length=20, default="ACTIVE")
     last_location_updated = models.DateTimeField(null=True, blank=True)

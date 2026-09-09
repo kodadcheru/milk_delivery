@@ -14,6 +14,7 @@ class LocationHub(models.Model):
     longitude = models.FloatField(default=79.962500)
     manager_name = models.CharField(max_length=100)
     manager_phone = models.CharField(max_length=20)
+    # FSSAI regulatory license number. Override per-hub in admin panel.
     fssai_license = models.CharField(max_length=50, default="13621014000342")
     coverage_radius_km = models.FloatField(default=8.5)
     bank_name = models.CharField(max_length=150, blank=True, default="")
@@ -72,6 +73,8 @@ class CoverageExpansionRequest(models.Model):
 
 
 class DeliverySlot(models.Model):
+    # This model is the single source of truth for delivery slot time strings.
+    # Do not hardcode strings like "05:30 AM - 07:00 AM" or "07:00 AM - 08:30 AM" elsewhere.
     hub = models.ForeignKey('LocationHub', on_delete=models.CASCADE, related_name='delivery_slots')
     name = models.CharField(max_length=50)  # '05:30 AM - 07:00 AM'
     label = models.CharField(max_length=50, default='Morning')  # 'Peak Morning'
@@ -356,6 +359,7 @@ class DailyMilkBatch(models.Model):
     batch_code = models.CharField(max_length=50, unique=True)
     product_name = models.CharField(max_length=150, default="Pure Buffalo Milk")
     batch_date = models.DateField(default=date.today)
+    # Sensible defaults for buffalo milk quality metrics. Override per-batch entry.
     fat_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=6.80)
     snf_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=9.00)
     water_percentage = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
