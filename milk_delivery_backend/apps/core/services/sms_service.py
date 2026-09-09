@@ -4,6 +4,8 @@ import urllib.request
 import urllib.error
 from apps.core.models import SiteConfig
 
+import os
+
 logger = logging.getLogger("pamba.sms")
 
 NINZASMS_ENDPOINT = "https://ninzasms.in.net/auth/send_sms.php"
@@ -14,14 +16,28 @@ def send_otp_sms(phone_10_digits: str, otp_code: str) -> dict:
     Sends a 6-digit OTP SMS to an Indian mobile number via NinzaSMS API.
     Returns: {"success": bool, "message": str, "balance": float or None}
     """
-    cfg = SiteConfig.get()
+    try:
+        cfg = SiteConfig.get()
+        enabled = getattr(cfg, "ninzasms_enabled", True)
+        api_key = (
+            getattr(cfg, "ninzasms_api_key", "")
+            or os.environ.get("NINZASMS_API_KEY")
+            or "NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6"
+        )
+        sender_id = (
+            getattr(cfg, "ninzasms_sender_id", "")
+            or os.environ.get("NINZASMS_SENDER_ID")
+            or "15809"
+        )
+    except Exception as e:
+        logger.warning(f"SiteConfig access error ({e}), falling back to environment variables.")
+        enabled = os.environ.get("NINZASMS_ENABLED", "True").lower() in ("1", "true", "yes")
+        api_key = os.environ.get("NINZASMS_API_KEY", "NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6")
+        sender_id = os.environ.get("NINZASMS_SENDER_ID", "15809")
 
-    if not cfg.ninzasms_enabled:
-        logger.info(f"SMS Gateway disabled in SiteConfig. OTP for {phone_10_digits}: {otp_code}")
+    if not enabled:
+        logger.info(f"SMS Gateway disabled. OTP for {phone_10_digits}: {otp_code}")
         return {"success": True, "message": "SMS gateway disabled (mock mode)", "mock": True}
-
-    api_key = cfg.ninzasms_api_key or "NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6"
-    sender_id = cfg.ninzasms_sender_id or "15809"
 
     payload = {
         "sender_id": sender_id,
