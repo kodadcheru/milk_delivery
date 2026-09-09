@@ -1122,6 +1122,7 @@ class AppState extends ChangeNotifier {
       } else if (role == 'DRIVER' || role == 'DELIVERY_PARTNER') {
         commonFutures.addAll([
           _loadDeliveries(isStaffOrDriver: true, date: todayStr),
+          _loadLiveOrders(),
           _loadDailyMilkBatches(),
           _loadHubs(),
         ]);

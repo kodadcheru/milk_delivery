@@ -590,7 +590,16 @@ class ExpressOrderDetailView(APIView):
         except LiveOrder.DoesNotExist:
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if order.customer != request.user and not request.user.is_staff:
+        is_staff = request.user.is_staff or getattr(request.user, 'role', '') in ('ADMIN', 'HUB_MANAGER', 'PROVIDER')
+        is_assigned_driver = (order.driver == request.user) or \
+            DeliveryTask.objects.filter(order=order, driver=request.user).exists()
+        is_hub_driver = (
+            getattr(request.user, 'role', '') in ('DRIVER', 'DELIVERY_PARTNER')
+            and getattr(request.user, 'assigned_hub', None) is not None
+            and order.hub == request.user.assigned_hub
+        )
+
+        if order.customer != request.user and not (is_staff or is_assigned_driver or is_hub_driver):
             return Response({"detail": "You can only view your own orders."}, status=status.HTTP_403_FORBIDDEN)
 
         if not order.driver:
@@ -605,7 +614,7 @@ class ExpressOrderDetailView(APIView):
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
 
         is_customer = order.customer == request.user
-        is_staff = request.user.is_staff or getattr(request.user, 'role', '') in ('ADMIN', 'HUB_MANAGER')
+        is_staff = request.user.is_staff or getattr(request.user, 'role', '') in ('ADMIN', 'HUB_MANAGER', 'PROVIDER')
         is_assigned_driver = (order.driver == request.user) or \
             DeliveryTask.objects.filter(order=order, driver=request.user).exists()
         is_hub_driver = (

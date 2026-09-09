@@ -1737,9 +1737,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         if (norm == 'PLACED' || norm == 'PREPARING' || norm == 'PENDING') {
                           return ElevatedButton.icon(
                             onPressed: () async {
-                              await ApiService.updateLiveOrderStatus(order.id, 'PICKED_UP');
-                              await widget.state.reloadAllData();
-                              if (context.mounted) {
+                              final ok = await widget.state.updateOrderStatus(order.id, 'PICKED_UP');
+                              if (context.mounted && ok) {
+                                setState(() {});
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     backgroundColor: Color(0xFF0D7C66),
@@ -1761,9 +1761,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         } else if (norm == 'PICKED_UP') {
                           return ElevatedButton.icon(
                             onPressed: () async {
-                              await ApiService.updateLiveOrderStatus(order.id, 'OUT_FOR_DELIVERY');
-                              await widget.state.reloadAllData();
-                              if (context.mounted) {
+                              final ok = await widget.state.updateOrderStatus(order.id, 'OUT_FOR_DELIVERY');
+                              if (context.mounted && ok) {
+                                setState(() {});
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     backgroundColor: Color(0xFF7C3AED),
