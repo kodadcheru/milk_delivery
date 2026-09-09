@@ -9,8 +9,14 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Google Maps API key — set via GOOGLE_MAPS_API_KEY env or override in Info.plist
-    GMSServices.provideAPIKey(ProcessInfo.processInfo.environment["GOOGLE_MAPS_API_KEY"] ?? "")
+    // Google Maps API key — environment variable, Info.plist, or fallback
+    let mapsKey = ProcessInfo.processInfo.environment["GOOGLE_MAPS_API_KEY"]
+      ?? (Bundle.main.object(forInfoDictionaryKey: "GoogleMapsApiKey") as? String)
+      ?? "AIzaSyDVeEaBczFbeYifq5tlJSBX-hQm48A9fo4"
+
+    if !mapsKey.isEmpty {
+      GMSServices.provideAPIKey(mapsKey)
+    }
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
     }
