@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/app_state.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
@@ -33,11 +32,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   bool _isOtpError = false;
   String _phoneNumber = '';
   String _selectedGender = 'Male';
-
-  // Firebase Auth session
-  String? _verificationId;
-  int? _resendToken;
-  String? _firebaseIdToken;
 
   // Timer for OTP resend
   Timer? _resendTimer;
@@ -126,76 +120,34 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     setState(() => _isLoading = true);
     _phoneNumber = '+91$clean10';
 
-    try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: _phoneNumber,
-        timeout: const Duration(seconds: 60),
-        forceResendingToken: _resendToken,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Instant auto-retrieval / verification on Android
-          if (credential.smsCode != null && credential.smsCode!.isNotEmpty) {
-            for (int i = 0; i < credential.smsCode!.length && i < _otpControllers.length; i++) {
-              _otpControllers[i].text = credential.smsCode![i];
-            }
-          }
-          try {
-            final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-            final idToken = await userCredential.user?.getIdToken();
-            if (idToken != null) {
-              _firebaseIdToken = idToken;
-              await _loginWithFirebaseIdToken(idToken);
-            }
-          } catch (e) {
-            debugPrint('Auto-verification error: $e');
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          if (mounted) {
-            setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.red.shade700,
-                content: Text(e.message ?? 'Verification failed (${e.code})'),
-              ),
-            );
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          if (mounted) {
-            _verificationId = verificationId;
-            _resendToken = resendToken;
-            for (final c in _otpControllers) {
-              c.clear();
-            }
-            setState(() {
-              _isLoading = false;
-              _step = 2; // Move to OTP verification
-            });
-            _startResendTimer();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_otpFocusNodes[0].canRequestFocus) {
-                _otpFocusNodes[0].requestFocus();
-              }
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                backgroundColor: UiTone.primary,
-                content: Text('⚡ 6-digit OTP sent to your phone!'),
-              ),
-            );
-          }
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
-        },
-      );
-    } catch (e) {
+    final res = await ApiService.sendOTP(_phoneNumber);
+    setState(() => _isLoading = false);
+
+    if (res['success'] == true) {
+      for (final c in _otpControllers) {
+        c.clear();
+      }
+      setState(() => _step = 2); // Move to OTP verification
+      _startResendTimer();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_otpFocusNodes[0].canRequestFocus) {
+          _otpFocusNodes[0].requestFocus();
+        }
+      });
       if (mounted) {
-        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: UiTone.primary,
+            content: Text('⚡ 6-digit OTP sent via SMS to your phone!'),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red.shade700,
-            content: Text('Failed to initiate phone verification: $e'),
+            content: Text(res['error'] ?? 'Failed to send OTP. Please try again.'),
           ),
         );
       }
@@ -212,13 +164,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       return;
     }
 
-    if (_verificationId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verification session expired. Please resend OTP.')),
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _isOtpVerifying = true;
@@ -227,60 +172,11 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     });
 
     final startTime = DateTime.now();
+    final res = await ApiService.verifyOTP(_phoneNumber, otpText);
 
-    try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: otpText,
-      );
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      final idToken = await userCredential.user?.getIdToken();
-
-      if (idToken == null) {
-        throw Exception('Failed to obtain Firebase security token.');
-      }
-      _firebaseIdToken = idToken;
-
-      await _loginWithFirebaseIdToken(idToken, startTime: startTime);
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isOtpVerifying = false;
-          _isOtpError = true;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red.shade700,
-            content: Text(e.message ?? 'Invalid OTP code entered'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isOtpVerifying = false;
-          _isOtpError = true;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red.shade700,
-            content: Text('Verification error: $e'),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _loginWithFirebaseIdToken(String idToken, {DateTime? startTime}) async {
-    final res = await ApiService.firebaseLogin(idToken);
-
-    if (startTime != null) {
-      final elapsed = DateTime.now().difference(startTime).inMilliseconds;
-      if (elapsed < 650) {
-        await Future.delayed(Duration(milliseconds: 650 - elapsed));
-      }
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    if (elapsed < 650) {
+      await Future.delayed(Duration(milliseconds: 650 - elapsed));
     }
 
     if (res['success'] == true) {
@@ -322,7 +218,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red.shade700,
-            content: Text(res['error'] ?? 'Authentication failed'),
+            content: Text(res['error'] ?? 'Invalid OTP code'),
           ),
         );
       }
@@ -367,30 +263,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
     setState(() => _isLoading = true);
 
-    String? token = _firebaseIdToken;
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        token = await currentUser.getIdToken();
-      }
-    } catch (_) {}
-
-    Map<String, dynamic> res;
-    if (token != null && token.isNotEmpty) {
-      res = await ApiService.firebaseRegister(
-        idToken: token,
-        firstName: name,
-        email: email,
-        gender: _selectedGender,
-      );
-    } else {
-      res = await ApiService.registerMobileUser(
-        phone: _phoneNumber,
-        firstName: name,
-        email: email,
-        gender: _selectedGender,
-      );
-    }
+    final res = await ApiService.registerMobileUser(
+      phone: _phoneNumber,
+      firstName: name,
+      email: email,
+      gender: _selectedGender,
+    );
 
     setState(() => _isLoading = false);
 
@@ -422,6 +300,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

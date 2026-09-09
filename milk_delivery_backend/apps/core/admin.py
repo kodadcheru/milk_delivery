@@ -19,8 +19,11 @@ class SiteConfigAdmin(admin.ModelAdmin):
             'fields': ('support_phone', 'support_whatsapp', 'support_email',
                        'default_city'),
         }),
-        ('API Keys', {
+        ('API Keys & Integrations', {
             'fields': ('google_maps_api_key',),
+        }),
+        ('SMS Gateway (NinzaSMS)', {
+            'fields': ('ninzasms_enabled', 'ninzasms_api_key', 'ninzasms_sender_id'),
         }),
     )
     

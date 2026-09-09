@@ -47,6 +47,22 @@ class SiteConfig(models.Model):
     # Google Maps
     google_maps_api_key = models.CharField(max_length=100, blank=True, default="",
         help_text="Google Maps API key")
+
+    # SMS Gateway (NinzaSMS)
+    ninzasms_enabled = models.BooleanField(
+        default=True,
+        help_text="Enable real SMS OTP delivery via NinzaSMS"
+    )
+    ninzasms_api_key = models.CharField(
+        max_length=150,
+        default="NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6",
+        help_text="NinzaSMS Authorization Key"
+    )
+    ninzasms_sender_id = models.CharField(
+        max_length=50,
+        default="15809",
+        help_text="NinzaSMS Approved Sender ID"
+    )
     
     def save(self, *args, **kwargs):
         """Ensure singleton — always use pk=1."""
