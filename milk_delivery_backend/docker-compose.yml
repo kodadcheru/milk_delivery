@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: milk_delivery_prod
       POSTGRES_USER: milk_admin
-      POSTGRES_PASSWORD: milk_secure_password_2026
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -35,7 +35,7 @@ services:
       DB_ENGINE: django.db.backends.postgresql
       DB_NAME: milk_delivery_prod
       DB_USER: milk_admin
-      DB_PASSWORD: milk_secure_password_2026
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_HOST: postgres
       DB_PORT: 5432
     ports:

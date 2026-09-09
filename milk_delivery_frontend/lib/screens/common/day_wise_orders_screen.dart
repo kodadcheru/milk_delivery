@@ -612,7 +612,7 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
 
   Widget _buildDeliveryTaskCard(DeliveryTaskModel task) {
     final product = task.subscriptionDetail?.productDetail;
-    final phone = task.customerPhone.isNotEmpty ? task.customerPhone : '+91 9876543210';
+    final phone = task.customerPhone;
     final isDelivered = task.status == 'DELIVERED';
     final isSkipped = task.status == 'SKIPPED';
     final driverDisplay = task.driverDetail?.fullName ?? '';
@@ -753,14 +753,30 @@ class _DayWiseOrdersScreenState extends State<DayWiseOrdersScreen> {
                   padding: const EdgeInsets.only(right: 12),
                 ),
                 IconButton(
-                  onPressed: () => _callPhone(phone),
+                  onPressed: () {
+                    if (phone.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Customer phone number is not available')),
+                      );
+                      return;
+                    }
+                    _callPhone(phone);
+                  },
                   icon: const Icon(Icons.phone_rounded, color: UiTone.primary, size: 20),
                   tooltip: 'Call Customer',
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.only(right: 12),
                 ),
                 IconButton(
-                  onPressed: () => _sendWhatsApp(task.customerName, phone, 'Hello ${task.customerName}, your milk delivery is scheduled for today!'),
+                  onPressed: () {
+                    if (phone.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Customer phone number is not available')),
+                      );
+                      return;
+                    }
+                    _sendWhatsApp(task.customerName, phone, 'Hello ${task.customerName}, your milk delivery is scheduled for today!');
+                  },
                   icon: const Icon(Icons.chat_bubble_outline_rounded, color: UiTone.success, size: 19),
                   tooltip: 'WhatsApp Customer',
                   constraints: const BoxConstraints(),

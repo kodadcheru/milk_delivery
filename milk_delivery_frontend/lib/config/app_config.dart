@@ -42,10 +42,27 @@ class AppConfig {
   static Future<void> loadRemoteConfig() async {
     try {
       final config = await ApiService.fetchAppConfig();
-      if (config != null && config['google_maps_api_key'] != null) {
-        final String key = config['google_maps_api_key'];
-        if (key.isNotEmpty) {
-          _googleMapsApiKey = key;
+      if (config != null) {
+        if (config['google_maps_api_key'] != null) {
+          final String key = config['google_maps_api_key'];
+          if (key.isNotEmpty) {
+            _googleMapsApiKey = key;
+          }
+        }
+        
+        final res = config;
+        if (res['support_phone'] != null && (res['support_phone'] as String).isNotEmpty) {
+          _supportPhone = res['support_phone'];
+          _adminPhone = res['support_phone'];
+        }
+        if (res['support_whatsapp'] != null && (res['support_whatsapp'] as String).isNotEmpty) {
+          _adminWhatsApp = res['support_whatsapp'];
+        }
+        if (res['support_email'] != null && (res['support_email'] as String).isNotEmpty) {
+          _supportEmail = res['support_email'];
+        }
+        if (res['default_city'] != null && (res['default_city'] as String).isNotEmpty) {
+          _defaultCity = res['default_city'];
         }
       }
     } catch (e) {
@@ -59,15 +76,21 @@ class AppConfig {
 
   static const String appName = 'Pamba';
   static const String appVersion = '1.0.0+1';
-  static const String supportPhone = '+91 8919548905';
-  static const String adminPhone = '+91 8919548905';
-  static const String adminWhatsApp = '918919548905';
-  static const String supportEmail = 'support@pamba.in';
+  static String _supportPhone = '+91 8919548905';
+  static String _adminPhone = '+91 8919548905';
+  static String _adminWhatsApp = '918919548905';
+  static String _supportEmail = 'support@pamba.in';
+
+  static String get supportPhone => _supportPhone;
+  static String get adminPhone => _adminPhone;
+  static String get adminWhatsApp => _adminWhatsApp;
+  static String get supportEmail => _supportEmail;
 
   // Geographic & Hub Fallbacks
   static const double defaultLatitude = 17.001734;
   static const double defaultLongitude = 79.962500;
-  static const String defaultCity = 'Kodad';
+  static String _defaultCity = 'Kodad';
+  static String get defaultCity => _defaultCity;
   static const String defaultHubName = 'Central Operational Hub';
   static const String defaultHubAddress = 'Kodad, Telangana 508206, India';
   static const String defaultFssai = '13621014000342';

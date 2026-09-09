@@ -89,7 +89,12 @@ class AppConfigView(APIView):
 
     def get(self, request):
         import os
+        from django.conf import settings
         return Response({
-            "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", "")
+            "google_maps_api_key": getattr(settings, "GOOGLE_MAPS_API_KEY", "") or os.environ.get("GOOGLE_MAPS_API_KEY", ""),
+            "support_phone": os.environ.get("SUPPORT_PHONE", "+91 8919548905"),
+            "support_whatsapp": os.environ.get("SUPPORT_WHATSAPP", "918919548905"),
+            "support_email": os.environ.get("SUPPORT_EMAIL", "support@pamba.in"),
+            "default_city": os.environ.get("DEFAULT_CITY", "Kodad"),
+            "welcome_bonus": int(os.environ.get("WELCOME_BONUS_AMOUNT", "50")),
         })
-

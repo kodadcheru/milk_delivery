@@ -110,14 +110,16 @@ def seed():
         admin.is_superuser = True
         admin.save()
 
-    # 1b. Ensure 7794893990 is configured as a standard Customer account
-    customer_user = User.objects.filter(phone__endswith="7794893990").first()
-    if customer_user:
-        customer_user.role = User.Roles.CUSTOMER
-        customer_user.is_staff = False
-        customer_user.is_superuser = False
-        customer_user.save()
-        print("👤 [Customer Role Updated]: Manideep Reddy (+91 7794893990) -> CUSTOMER")
+    # 1b. Optional: Reset specific phone number to standard Customer account if provided via env
+    reset_phone = os.environ.get("RESET_CUSTOMER_PHONE")
+    if reset_phone:
+        customer_user = User.objects.filter(phone__endswith=reset_phone).first()
+        if customer_user:
+            customer_user.role = User.Roles.CUSTOMER
+            customer_user.is_staff = False
+            customer_user.is_superuser = False
+            customer_user.save()
+            print(f"👤 [Customer Role Updated]: ({reset_phone}) -> CUSTOMER")
 
     # 2. Ensure active categories exist and have rich presentation metadata
     try:
