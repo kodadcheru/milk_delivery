@@ -88,13 +88,14 @@ class AppConfigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        from .models import SiteConfig
+        cfg = SiteConfig.get()
         import os
-        from django.conf import settings
         return Response({
-            "google_maps_api_key": getattr(settings, "GOOGLE_MAPS_API_KEY", "") or os.environ.get("GOOGLE_MAPS_API_KEY", ""),
-            "support_phone": os.environ.get("SUPPORT_PHONE", "+91 8919548905"),
-            "support_whatsapp": os.environ.get("SUPPORT_WHATSAPP", "918919548905"),
-            "support_email": os.environ.get("SUPPORT_EMAIL", "support@pamba.in"),
-            "default_city": os.environ.get("DEFAULT_CITY", "Kodad"),
-            "welcome_bonus": int(os.environ.get("WELCOME_BONUS_AMOUNT", "50")),
+            "google_maps_api_key": cfg.google_maps_api_key or os.environ.get("GOOGLE_MAPS_API_KEY", ""),
+            "support_phone": cfg.support_phone,
+            "support_whatsapp": cfg.support_whatsapp,
+            "support_email": cfg.support_email,
+            "default_city": cfg.default_city,
+            "welcome_bonus": int(cfg.welcome_bonus_amount),
         })

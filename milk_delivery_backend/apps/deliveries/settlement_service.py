@@ -11,15 +11,13 @@ from decimal import Decimal
 from datetime import date, datetime, timedelta
 import random
 import logging
-import os
 from django.db import transaction
 from django.utils import timezone
 from apps.deliveries.models import DeliveryTask, LocationHub, ProviderPayout, LiveOrder
 from apps.accounts.models import User, Notification
+from apps.core.models import SiteConfig
 
 logger = logging.getLogger(__name__)
-
-PLATFORM_COMMISSION_RATE = Decimal(os.environ.get("PLATFORM_COMMISSION_RATE", "0.05"))  # 5% platform fee
 
 
 def resolve_period_dates(period: str, start_date_str=None, end_date_str=None):
@@ -109,8 +107,7 @@ def calculate_hub_earnings(hub: LocationHub, start_date: date = None, end_date: 
             sub = task.subscription
             prod = sub.product
             p_name = prod.name if prod else "Fresh Milk"
-            DEFAULT_MILK_PRICE_PER_LITRE = Decimal(os.environ.get("DEFAULT_MILK_PRICE", "68.00"))
-            price = sub.effective_unit_price or (prod.price_per_unit if prod else DEFAULT_MILK_PRICE_PER_LITRE)
+            price = sub.effective_unit_price or (prod.price_per_unit if prod else SiteConfig.get().default_milk_price_per_litre)
             item_qty = float(sub.quantity)
             pack_size_str = sub.pack_size or (prod.unit_quantity if prod else "1 Litre")
             task_rev = Decimal(str(price)) * Decimal(str(item_qty))
@@ -167,7 +164,7 @@ def calculate_hub_earnings(hub: LocationHub, start_date: date = None, end_date: 
         gross_revenue += task_rev
 
     # Platform commission on gross revenue
-    platform_commission = (gross_revenue * PLATFORM_COMMISSION_RATE).quantize(Decimal("0.01"))
+    platform_commission = (gross_revenue * SiteConfig.get().platform_commission_rate).quantize(Decimal("0.01"))
 
     # Net withdrawable online amount (Prepaid revenue minus platform commission)
     net_withdrawable = max(Decimal("0.00"), prepaid_revenue - platform_commission)
@@ -298,7 +295,7 @@ def execute_hub_payout_settlement(hub: LocationHub, manager_user: User, amount: 
                     t_rev = Decimal(str(pr)) * t.subscription.quantity
                 elif t.order:
                     t_rev = t.order.total_amount
-                t_net = t_rev * (Decimal("1.00") - PLATFORM_COMMISSION_RATE)
+                t_net = t_rev * (Decimal("1.00") - SiteConfig.get().platform_commission_rate)
                 running_total += t_net
                 if running_total >= payout_amount:
                     break

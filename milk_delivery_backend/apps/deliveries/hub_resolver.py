@@ -7,10 +7,8 @@ Resolution strategy (in order of priority):
 3. Fall back to first available hub
 """
 import math
-import os
 from apps.deliveries.models import LocationHub, ServiceArea
-
-MAX_HUB_DISTANCE_KM = float(os.environ.get("MAX_HUB_DISTANCE_KM", "10.0"))
+from apps.core.models import SiteConfig
 
 
 def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, address=None, strict=True):
@@ -51,7 +49,7 @@ def find_hub_for_location(*, pincode=None, latitude=None, longitude=None, addres
             best_distance = float("inf")
             for hub in hubs:
                 dist = _haversine_km(lat, lon, hub.latitude, hub.longitude)
-                if dist < best_distance and dist <= MAX_HUB_DISTANCE_KM:
+                if dist < best_distance and dist <= SiteConfig.get().max_hub_distance_km:
                     best_distance = dist
                     best_hub = hub
             if best_hub:
