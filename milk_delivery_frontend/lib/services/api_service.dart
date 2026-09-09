@@ -754,6 +754,19 @@ class ApiService {
     return [];
   }
 
+  // ── 6.5. App Config ──
+  static Future<Map<String, dynamic>?> fetchAppConfig() async {
+    try {
+      final res = await _executeWithRetry(() => http.get(Uri.parse('$baseUrl/app-config/'), headers: _headers));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return jsonDecode(res.body);
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) { lastError = e.toString(); }
+    return null;
+  }
+
   // ── 7. Delivery Tasks ──
   static Future<List<DeliveryTaskModel>> fetchDeliveries({int? page, int? pageSize, String? date, String? hubCode}) async {
     try {

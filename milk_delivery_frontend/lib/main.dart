@@ -82,6 +82,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     final token = await ApiService.initAuthToken();
     if (token != null && mounted) {
       try {
+        await AppConfig.loadRemoteConfig();
         await _appState.reloadAllData();
         PushNotificationService.instance.registerDeviceToken(_appState);
       } catch (_) {}

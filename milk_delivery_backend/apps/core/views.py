@@ -3,7 +3,7 @@ from django.db import connection
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 
 START_TIME = time.time()
@@ -78,3 +78,18 @@ class HealthCheckView(APIView):
             payload,
             status=status.HTTP_200_OK if is_healthy else status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+
+class AppConfigView(APIView):
+    """
+    Returns app configuration including the dynamic Google Maps API key.
+    Requires authentication.
+    GET /api/app-config/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        import os
+        return Response({
+            "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", "")
+        })
+

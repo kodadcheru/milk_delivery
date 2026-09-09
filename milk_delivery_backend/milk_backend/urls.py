@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from apps.core.views import HealthCheckView
+from apps.core.views import HealthCheckView, AppConfigView
 from apps.core.upload_views import FileUploadView
 from apps.accounts.admin_views import (
     AdminBroadcastNotificationView,
@@ -127,6 +127,7 @@ urlpatterns = [
     path("mgmt-panel/", admin.site.urls),
     # Production Health & Diagnostics Endpoint
     path("api/health/", HealthCheckView.as_view(), name="health_check"),
+    path("api/app-config/", AppConfigView.as_view(), name="app_config"),
     path("api/admin/customers/", AdminCustomerListView.as_view(), name="admin_customers"),
     path("api/admin/customers/<int:pk>/", AdminCustomerDetailView.as_view(), name="admin_customer_detail"),
     path("api/admin/customers/<int:user_id>/transactions/", AdminCustomerTransactionsView.as_view(), name="admin_customer_txs"),

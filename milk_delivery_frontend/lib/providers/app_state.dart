@@ -937,6 +937,7 @@ class AppState extends ChangeNotifier {
 
     final authRes = await ApiService.login(username, password);
     if (authRes['success'] == true) {
+      await AppConfig.loadRemoteConfig();
       await reloadAllData();
     } else {
       _errorMessage = authRes['error'] ?? 'Connection error';

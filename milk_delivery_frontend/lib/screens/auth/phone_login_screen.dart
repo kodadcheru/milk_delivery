@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../providers/app_state.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
+import '../../config/app_config.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/orbit_otp_boxes.dart';
@@ -197,10 +198,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         if (res['user'] != null) {
           final user = UserModel.fromJson(res['user']);
           try {
+            await AppConfig.loadRemoteConfig();
             await widget.state.onUserAuthenticated(user);
           } catch (_) {}
         } else {
           try {
+            await AppConfig.loadRemoteConfig();
             await widget.state.reloadAllData();
           } catch (_) {}
         }

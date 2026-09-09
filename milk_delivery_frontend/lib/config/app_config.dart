@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../services/api_service.dart';
 
 enum AppEnvironment { development, staging, production }
 
@@ -27,12 +28,29 @@ class AppConfig {
     return base.endsWith('/api') ? base.substring(0, base.length - 4) : base;
   }
 
-  /// Google Maps API Key — override via --dart-define=GOOGLE_MAPS_API_KEY=...
+  /// Google Maps API Key — dynamically fetched or fallback to --dart-define
+  static String _googleMapsApiKey = '';
+
   static String get googleMapsApiKey {
+    if (_googleMapsApiKey.isNotEmpty) return _googleMapsApiKey;
     return const String.fromEnvironment(
       'GOOGLE_MAPS_API_KEY',
       defaultValue: '', // Must be provided via --dart-define
     );
+  }
+
+  static Future<void> loadRemoteConfig() async {
+    try {
+      final config = await ApiService.fetchAppConfig();
+      if (config != null && config['google_maps_api_key'] != null) {
+        final String key = config['google_maps_api_key'];
+        if (key.isNotEmpty) {
+          _googleMapsApiKey = key;
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load remote config: $e');
+    }
   }
 
   static const Duration requestTimeout = Duration(seconds: 12);
