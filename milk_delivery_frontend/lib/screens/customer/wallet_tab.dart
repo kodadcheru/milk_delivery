@@ -112,15 +112,6 @@ class _WalletTabState extends State<WalletTab> {
                     final amt = double.tryParse(ctrl.text.trim()) ?? 500.0;
                     Navigator.pop(ctx);
                     await widget.state.topUpWallet(amt, 'Razorpay');
-                    if (context.mounted) {
-                      AppTheme.hapticSuccess();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('✅ ₹${amt.toStringAsFixed(0)} credited to your Pamba wallet!'),
-                          backgroundColor: AppTheme.primaryMint,
-                        ),
-                      );
-                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryMint,
