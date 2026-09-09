@@ -45,7 +45,7 @@ class _ServiceAreaSheetState extends State<ServiceAreaSheet> {
     } else if (match != null && match.status == 'EXPANDING') {
       setState(() {
         _isServiceable = false;
-        _checkResult = '🚀 ${match.name} is launching next week! Join the priority waitlist for ₹500 welcome credits.';
+        _checkResult = '🚀 ${match.name} is launching soon! Join the priority waitlist to get notified first.';
       });
     } else {
       setState(() {

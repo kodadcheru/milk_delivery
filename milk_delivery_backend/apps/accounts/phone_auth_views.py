@@ -238,6 +238,13 @@ class RegisterMobileUserView(APIView):
 
         username = f"cust_{last_10}"
 
+        import os
+        bonus_val = os.environ.get("WELCOME_BONUS_AMOUNT", "0.00")
+        try:
+            bonus_amount = Decimal(str(bonus_val))
+        except Exception:
+            bonus_amount = Decimal("0.00")
+
         user = User.objects.create(
             username=username,
             phone=formatted_phone,
@@ -248,7 +255,7 @@ class RegisterMobileUserView(APIView):
             address=address,
             city=city,
             role=User.Roles.CUSTOMER,
-            wallet_balance=Decimal("50.00"),  # Welcome bonus
+            wallet_balance=bonus_amount,
             delivery_instructions=instructions,
         )
         user.set_password(uuid.uuid4().hex)
@@ -270,21 +277,29 @@ class RegisterMobileUserView(APIView):
                 }
             )
 
-        # Initial Welcome Wallet Transaction
-        WalletTransaction.objects.create(
-            user=user,
-            amount=Decimal("50.00"),
-            transaction_type=WalletTransaction.Types.CREDIT,
-            description="🎁 Welcome Bonus & Initial Top-Up",
-        )
-
-        # Welcome Notification
-        Notification.objects.create(
-            user=user,
-            title="🥛 Welcome to Pamba Fresh!",
-            message=f"Hello {first_name}! ₹50 welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
-            notification_type=Notification.Types.WALLET,
-        )
+        if bonus_amount > Decimal("0.00"):
+            # Initial Welcome Wallet Transaction
+            WalletTransaction.objects.create(
+                user=user,
+                amount=bonus_amount,
+                transaction_type=WalletTransaction.Types.CREDIT,
+                description="🎁 Welcome Bonus & Initial Top-Up",
+            )
+            # Welcome Notification with bonus
+            Notification.objects.create(
+                user=user,
+                title="🥛 Welcome to Pamba Fresh!",
+                message=f"Hello {first_name}! ₹{bonus_amount} welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
+                notification_type=Notification.Types.WALLET,
+            )
+        else:
+            # Standard Welcome Notification without bonus
+            Notification.objects.create(
+                user=user,
+                title="🥛 Welcome to Pamba Fresh!",
+                message=f"Hello {first_name}! Welcome to Pamba Fresh. Browse our farm fresh catalog to subscribe or order.",
+                notification_type=Notification.Types.SYSTEM,
+            )
 
         refresh = RefreshToken.for_user(user)
 

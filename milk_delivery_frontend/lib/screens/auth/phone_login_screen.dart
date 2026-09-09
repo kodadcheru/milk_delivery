@@ -287,7 +287,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: UiTone.primary,
-            content: Text('🎉 Registration Complete! ₹500 welcome bonus credited to your wallet.'),
+            content: Text('🎉 Registration Complete! Welcome to Pamba Fresh.'),
           ),
         );
       }
@@ -652,7 +652,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          widget.state.isTelugu ? 'పూర్తి చేసి ₹500 స్వాగత వాలెట్ క్రెడిట్ పొందండి' : 'Complete profile to claim ₹500 welcome milk credit',
+          widget.state.isTelugu ? 'ప్రొఫైల్ వివరాలు పూర్తి చేయండి' : 'Complete your profile to get started',
           style: const TextStyle(color: UiTone.primary, fontSize: 12, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 18),
@@ -683,7 +683,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             children: [
               const Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
               const SizedBox(width: 8),
-              Text(widget.state.isTelugu ? 'నమోదు పూర్తి చేయండి 🥛' : 'Complete & Claim ₹500 🥛', style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
+              Text(widget.state.isTelugu ? 'నమోదు పూర్తి చేయండి 🥛' : 'Complete Registration 🥛', style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white)),
             ],
           ),
         ),
