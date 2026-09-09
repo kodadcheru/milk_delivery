@@ -114,11 +114,18 @@ from apps.subscriptions.views import (
 )
 
 urlpatterns = [
+    # Dedicated Admin Web Console (registered before admin/ so admin/console/ is not intercepted by admin.site.urls)
+    path("admin/console", AdminConsoleHTMLView.as_view(), name="admin_console_nested_noslash"),
+    path("admin/console/", AdminConsoleHTMLView.as_view(), name="admin_console_nested"),
+    path("admin-console/", AdminConsoleHTMLView.as_view(), name="admin_console"),
+    path("console/", AdminConsoleHTMLView.as_view(), name="console"),
+    path("api/admin-console/", AdminConsoleHTMLView.as_view(), name="api_admin_console"),
+    path("api/admin/console/", AdminConsoleHTMLView.as_view(), name="api_admin_console_nested"),
+    path("", AdminConsoleHTMLView.as_view(), name="root_console"),
+
     path("admin/", admin.site.urls),
     # Production Health & Diagnostics Endpoint
     path("api/health/", HealthCheckView.as_view(), name="health_check"),
-    # Dedicated Admin Web Console
-    path("admin-console/", AdminConsoleHTMLView.as_view(), name="admin_console"),
     path("api/admin/customers/", AdminCustomerListView.as_view(), name="admin_customers"),
     path("api/admin/customers/<int:pk>/", AdminCustomerDetailView.as_view(), name="admin_customer_detail"),
     path("api/admin/customers/<int:user_id>/transactions/", AdminCustomerTransactionsView.as_view(), name="admin_customer_txs"),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../driver/morning_batch_screen.dart';
@@ -213,7 +214,17 @@ class AdminProfileTab extends StatelessWidget {
                     iconFg: const Color(0xFF4F46E5),
                     label: 'Operations Web Console',
                     subtitle: 'Real-time order dispatch, wallet credits & broadcasts',
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Console: ${ApiService.baseUrl.replaceAll('/api', '')}/admin-console/'))),
+                    onTap: () async {
+                      final apiBase = ApiService.baseUrl;
+                      final baseHost = apiBase.endsWith('/api') ? apiBase.substring(0, apiBase.length - 4) : apiBase;
+                      final consoleUrl = '$baseHost/admin-console/';
+                      final uri = Uri.parse(consoleUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } else if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Console: $consoleUrl')));
+                      }
+                    },
                   ),
                   _buildDivider(),
                   _buildMenuTile(
@@ -222,7 +233,17 @@ class AdminProfileTab extends StatelessWidget {
                     iconFg: const Color(0xFF0D7C66),
                     label: 'Django Master Admin Portal',
                     subtitle: 'Database tables, user roles & server audit logs',
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Master Admin: ${ApiService.baseUrl.replaceAll('/api', '')}/admin/'))),
+                    onTap: () async {
+                      final apiBase = ApiService.baseUrl;
+                      final baseHost = apiBase.endsWith('/api') ? apiBase.substring(0, apiBase.length - 4) : apiBase;
+                      final adminUrl = '$baseHost/admin/';
+                      final uri = Uri.parse(adminUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } else if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Master Admin: $adminUrl')));
+                      }
+                    },
                   ),
                   _buildDivider(),
                   _buildMenuTile(
