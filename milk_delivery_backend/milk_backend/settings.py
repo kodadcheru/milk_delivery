@@ -192,7 +192,6 @@ else:
         CORS_ALLOW_ALL_ORIGINS = True
     else:
         CORS_ALLOW_ALL_ORIGINS = False
-        CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
