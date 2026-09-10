@@ -3760,15 +3760,10 @@
   <div class="modal-overlay" id="addCategoryModal">
     <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-tags" style="color: var(--primary-accent);"></i> Create New Product Category</div>
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-        <div class="form-group">
-          <label>Category Icon / Emoji</label>
-          <input type="text" id="catIcon" class="form-control" placeholder="🥛, 🥩, 🥚, 💧, 🥬" value="🥛" style="font-size: 20px; text-align: center;">
-        </div>
-        <div class="form-group">
-          <label>Category Name</label>
-          <input type="text" id="catName" class="form-control" placeholder="e.g. Milk & Dairy, Organic Eggs">
-        </div>
+      <input type="hidden" id="catIcon" value="">
+      <div class="form-group">
+        <label>Category Name</label>
+        <input type="text" id="catName" class="form-control" placeholder="e.g. Milk & Dairy, Organic Eggs">
       </div>
       
       <!-- Category Image Upload & Live Preview -->
@@ -3786,15 +3781,15 @@
         </div>
         <!-- Quick Presets -->
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Quick Presets:</span>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥛 Milk</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥣 Curd</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🧈 Ghee</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🧀 Paneer</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥚 Eggs</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">💧 Water</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🍞 Bread</button>
-          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">🥩 Meat</button>
+          <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Presets:</span>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Milk</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Curd</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1589927986076-2d50a22301c2?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Ghee</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Paneer</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Eggs</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Water</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Bread</button>
+          <button type="button" class="btn btn-secondary" style="padding: 2px 8px; font-size: 10.5px;" onclick="setImagePreset('https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80', 'catImage', 'addCatImagePreview')">Meat</button>
         </div>
       </div>
 
@@ -3818,15 +3813,10 @@
     <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-pen-to-square" style="color: #38BDF8;"></i> Edit Product Category</div>
       <input type="hidden" id="editCatId">
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-        <div class="form-group">
-          <label>Category Icon / Emoji</label>
-          <input type="text" id="editCatIcon" class="form-control" style="font-size: 20px; text-align: center;">
-        </div>
-        <div class="form-group">
-          <label>Category Name</label>
-          <input type="text" id="editCatName" class="form-control">
-        </div>
+      <input type="hidden" id="editCatIcon" value="">
+      <div class="form-group">
+        <label>Category Name</label>
+        <input type="text" id="editCatName" class="form-control">
       </div>
 
       <!-- Category Image Upload & Live Preview -->
@@ -7300,16 +7290,13 @@
 
       categories.forEach(c => {
         const coverImgHtml = c.image_url 
-          ? `<div style="position: relative; height: 85px; border-radius: 10px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border-color);">
+          ? `<div style="position: relative; height: 95px; border-radius: 10px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border-color);">
                <img src="${c.image_url}" alt="${c.name}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80'">
-               <div style="position: absolute; top: 6px; left: 6px; width: 34px; height: 34px; border-radius: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                 ${c.icon || '🥛'}
-               </div>
                <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}" style="position: absolute; top: 6px; right: 6px;">${c.is_active ? 'Active (ON)' : 'Hidden (OFF)'}</span>
              </div>`
           : `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-               <div style="font-size: 28px; background: rgba(255,255,255,0.06); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                 ${c.icon || '🥛'}
+               <div style="background: rgba(16,185,129,0.1); color: var(--primary-accent); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                 <i class="fa-solid fa-layer-group" style="font-size: 18px;"></i>
                </div>
                <span class="status-tag ${c.is_active ? 'status-active' : 'status-paused'}">${c.is_active ? 'Active (ON)' : 'Hidden (OFF)'}</span>
              </div>`;
@@ -7368,7 +7355,7 @@
       const isAllActive = selectedCategoryFilter === 'ALL';
       pillsContainer.innerHTML += `
         <button class="tab-btn ${isAllActive ? 'active' : ''}" style="padding: 6px 14px; font-size: 12px; border-radius: 20px;" onclick="filterProductsByCategory('ALL')">
-          🌐 All Items (${rawProducts.length})
+          All Items (${rawProducts.length})
         </button>
       `;
 
@@ -7377,7 +7364,7 @@
         const matchingCount = rawProducts.filter(p => (p.category && (p.category.toLowerCase() === c.name.toLowerCase() || p.category.toLowerCase() === c.slug.toLowerCase())) || (p.category_ref && p.category_ref.id === c.id)).length;
         pillsContainer.innerHTML += `
           <button class="tab-btn ${isActive ? 'active' : ''}" style="padding: 6px 14px; font-size: 12px; border-radius: 20px;" onclick="filterProductsByCategory('${c.name.replace("'", "\\'")}')">
-            ${c.icon || '📦'} ${c.name} (${matchingCount})
+            ${c.name} (${matchingCount})
           </button>
         `;
       });
@@ -7410,7 +7397,7 @@
           const curVal = sel.value;
           sel.innerHTML = '';
           rawCategories.forEach(c => {
-            sel.innerHTML += `<option value="${c.id}" data-name="${c.name}">${c.icon || '🥛'} ${c.name}</option>`;
+            sel.innerHTML += `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`;
           });
           if (curVal) sel.value = curVal;
         }
@@ -7426,7 +7413,7 @@
     function openAddCategoryModal() {
       document.getElementById('catName').value = '';
       document.getElementById('catDesc').value = '';
-      document.getElementById('catIcon').value = '🥛';
+      document.getElementById('catIcon').value = '';
       document.getElementById('catImage').value = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80';
       updateImagePreview('catImage', 'addCatImagePreview');
       document.getElementById('catOrder').value = (rawCategories.length + 1);
@@ -7435,7 +7422,7 @@
 
     async function submitAddCategory() {
       const name = document.getElementById('catName').value.trim();
-      const icon = document.getElementById('catIcon').value.trim() || '🥛';
+      const icon = document.getElementById('catIcon').value.trim();
       const image_url = document.getElementById('catImage').value.trim();
       const desc = document.getElementById('catDesc').value.trim();
       const order = document.getElementById('catOrder').value.trim() || 1;
@@ -7470,7 +7457,7 @@
 
       document.getElementById('editCatId').value = cat.id;
       document.getElementById('editCatName').value = cat.name;
-      document.getElementById('editCatIcon').value = cat.icon || '🥛';
+      document.getElementById('editCatIcon').value = '';
       document.getElementById('editCatImage').value = cat.image_url || '';
       updateImagePreview('editCatImage', 'editCatImagePreview');
       document.getElementById('editCatDesc').value = cat.description || '';
@@ -8408,10 +8395,9 @@
       prods.forEach(p => {
         const isLinked = !!(p.category_detail || p.category_id);
         const catName = (p.category_detail && p.category_detail.name) || p.category || 'Unassigned';
-        const catIcon = (p.category_detail && p.category_detail.icon) || (isLinked ? '📦' : '⚠️');
         const imgHtml = p.image_url 
           ? `<img src="${p.image_url}" alt="${p.name}" style="width:48px; height:48px; border-radius:10px; object-fit:cover; border:1px solid var(--border-color); margin-right:12px;" onerror="this.src='https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80'">` 
-          : `<div style="width:48px; height:48px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:22px; margin-right:12px;">${catIcon}</div>`;
+          : `<div style="width:48px; height:48px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; color:var(--text-muted); margin-right:12px;"><i class="fa-solid fa-box" style="font-size:18px;"></i></div>`;
 
         tbody.innerHTML += `
           <tr>
@@ -8427,7 +8413,7 @@
             </td>
             <td>
               <span class="status-tag ${isLinked ? 'status-pending' : 'status-paused'}" style="${!isLinked ? 'background: rgba(245,158,11,0.15); color: #F59E0B; border: 1px solid rgba(245,158,11,0.3);' : ''}">
-                ${catIcon} ${catName}
+                ${catName}
               </span>
             </td>
             <td>

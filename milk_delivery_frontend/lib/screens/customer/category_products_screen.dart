@@ -195,7 +195,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     }).toList();
 
     final categoryName = widget.state.translateCategory(cat.name);
-    final categoryIcon = cat.icon.isNotEmpty ? cat.icon : '🥛';
     final bannerHeadline = cat.description.isNotEmpty ? cat.description : cat.name;
     final bannerSubtitle = cat.subtitle.isNotEmpty
         ? cat.subtitle
@@ -216,15 +215,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(categoryIcon, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 8),
-                Text(
-                  categoryName,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
-                ),
-              ],
+            Text(
+              categoryName,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
             ),
             Text(
               widget.state.isTelugu
@@ -272,11 +265,35 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                        child: Text(categoryIcon, style: const TextStyle(fontSize: 32)),
-                      ),
+                      if (cat.imageUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(UiRadius.md),
+                          child: Image.network(
+                            cat.imageUrl,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(UiRadius.md),
+                              ),
+                              child: const Icon(Icons.category_rounded, color: Colors.white, size: 28),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(UiRadius.md),
+                          ),
+                          child: const Icon(Icons.category_rounded, color: Colors.white, size: 28),
+                        ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(

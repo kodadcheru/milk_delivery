@@ -95,24 +95,19 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: (backendCategories.isNotEmpty ? backendCategories.length : kHomeCategoryKeys.length) + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final isSelected = index == _selectedCategoryIndex;
               String label;
-              String emoji;
               
               if (index == 0) {
                 label = 'All';
-                emoji = '🏠';
               } else {
                 if (backendCategories.isNotEmpty) {
                   label = backendCategories[index - 1].name;
-                  final meta = categoryMetaFor(backendCategories[index - 1].slug);
-                  emoji = backendCategories[index - 1].icon.isNotEmpty ? backendCategories[index - 1].icon : meta.icon;
                 } else {
                   final meta = categoryMetaFor(kHomeCategoryKeys[index - 1]);
                   label = meta.shortTitle;
-                  emoji = meta.icon;
                 }
               }
               
@@ -121,7 +116,7 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected ? UiTone.primary : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(UiRadius.pill),
@@ -133,20 +128,16 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
                         ? [BoxShadow(color: UiTone.primary.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 2))]
                         : null,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(emoji, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 4),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : const Color(0xFF64748B),
-                        ),
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        letterSpacing: 0.2,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               );
@@ -239,9 +230,10 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: bgColor,
                           alignment: Alignment.center,
-                          child: Text(
-                            icon,
-                            style: const TextStyle(fontSize: 34),
+                          child: Icon(
+                            Icons.category_rounded,
+                            size: 32,
+                            color: UiTone.primary.withValues(alpha: 0.4),
                           ),
                         ),
                       )
@@ -249,9 +241,10 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
                       Container(
                         color: bgColor,
                         alignment: Alignment.center,
-                        child: Text(
-                          icon,
-                          style: const TextStyle(fontSize: 34),
+                        child: Icon(
+                          Icons.category_rounded,
+                          size: 32,
+                          color: UiTone.primary.withValues(alpha: 0.4),
                         ),
                       ),
 
