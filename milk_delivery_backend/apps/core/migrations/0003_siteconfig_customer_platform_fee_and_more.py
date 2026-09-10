@@ -11,54 +11,34 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.SeparateDatabaseAndState(
-            state_operations=[
-                migrations.AddField(
-                    model_name='siteconfig',
-                    name='customer_platform_fee',
-                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Customer platform fee in Rupees per order (0.00 for none/free)', max_digits=6),
-                ),
-                migrations.AddField(
-                    model_name='siteconfig',
-                    name='delivery_fee',
-                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Standard delivery partner fee in Rupees (0.00 for free delivery)', max_digits=6),
-                ),
-                migrations.AddField(
-                    model_name='siteconfig',
-                    name='free_delivery_threshold',
-                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Minimum order subtotal for free delivery', max_digits=8),
-                ),
-                migrations.AddField(
-                    model_name='siteconfig',
-                    name='tax_percentage',
-                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Tax / GST percentage applied to checkout orders', max_digits=5),
-                ),
-                migrations.AlterField(
-                    model_name='siteconfig',
-                    name='ninzasms_api_key',
-                    field=models.CharField(default='', help_text='NinzaSMS Authorization Key', max_length=150),
-                ),
-                migrations.AlterField(
-                    model_name='siteconfig',
-                    name='ninzasms_sender_id',
-                    field=models.CharField(default='', help_text='NinzaSMS Approved Sender ID', max_length=50),
-                ),
-            ],
-            database_operations=[
-                migrations.RunSQL(
-                    sql="""
-                    ALTER TABLE core_siteconfig ADD COLUMN IF NOT EXISTS customer_platform_fee numeric(6,2) DEFAULT 0.00;
-                    ALTER TABLE core_siteconfig ADD COLUMN IF NOT EXISTS delivery_fee numeric(6,2) DEFAULT 0.00;
-                    ALTER TABLE core_siteconfig ADD COLUMN IF NOT EXISTS free_delivery_threshold numeric(8,2) DEFAULT 0.00;
-                    ALTER TABLE core_siteconfig ADD COLUMN IF NOT EXISTS tax_percentage numeric(5,2) DEFAULT 0.00;
-                    """,
-                    reverse_sql="""
-                    ALTER TABLE core_siteconfig DROP COLUMN IF EXISTS tax_percentage;
-                    ALTER TABLE core_siteconfig DROP COLUMN IF EXISTS free_delivery_threshold;
-                    ALTER TABLE core_siteconfig DROP COLUMN IF EXISTS delivery_fee;
-                    ALTER TABLE core_siteconfig DROP COLUMN IF EXISTS customer_platform_fee;
-                    """
-                )
-            ]
-        )
+        migrations.AddField(
+            model_name='siteconfig',
+            name='customer_platform_fee',
+            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Customer platform fee in Rupees per order (0.00 for none/free)', max_digits=6),
+        ),
+        migrations.AddField(
+            model_name='siteconfig',
+            name='delivery_fee',
+            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Standard delivery partner fee in Rupees (0.00 for free delivery)', max_digits=6),
+        ),
+        migrations.AddField(
+            model_name='siteconfig',
+            name='free_delivery_threshold',
+            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Minimum order subtotal for free delivery', max_digits=8),
+        ),
+        migrations.AddField(
+            model_name='siteconfig',
+            name='tax_percentage',
+            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Tax / GST percentage applied to checkout orders', max_digits=5),
+        ),
+        migrations.AlterField(
+            model_name='siteconfig',
+            name='ninzasms_api_key',
+            field=models.CharField(default='', help_text='NinzaSMS Authorization Key', max_length=150),
+        ),
+        migrations.AlterField(
+            model_name='siteconfig',
+            name='ninzasms_sender_id',
+            field=models.CharField(default='', help_text='NinzaSMS Approved Sender ID', max_length=50),
+        ),
     ]
