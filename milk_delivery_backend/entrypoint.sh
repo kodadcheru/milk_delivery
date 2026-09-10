@@ -6,7 +6,7 @@ python manage.py migrate token_blacklist --noinput || true
 python manage.py migrate --noinput || echo "⚠️ Warning: Database migrations completed with warnings."
 
 echo "🌱 [2/4] Seeding default superusers and hub catalogs..."
-python seed_railway.py || true
+python manage.py shell -c "from apps.core.models import SiteConfig; exit(0 if SiteConfig.objects.exists() else 1)" 2>/dev/null && echo '✅ Seed data already exists, skipping.' || (python seed_railway.py || true)
 
 echo "📦 [3/4] Collecting static assets..."
 python manage.py collectstatic --noinput --clear || true

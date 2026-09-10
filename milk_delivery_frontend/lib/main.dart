@@ -1,3 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -23,16 +26,23 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {
+    // Already initialized or will be initialized by push notification service
+  }
+
   // Production Global Crash & Error Boundary
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    // Note: Firebase Crashlytics or Sentry should be integrated here for production-grade reporting
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
     CrashReportingService.reportCrash(details.exception, details.stack);
     debugPrint('🚨 [Pamba FlutterError]: ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    // Note: Firebase Crashlytics or Sentry should be integrated here for production-grade reporting
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     CrashReportingService.reportCrash(error, stack);
     debugPrint('🚨 [Pamba UncaughtAsyncError]: $error');
     return true; // Prevent app crashes
@@ -119,6 +129,9 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      navigatorObservers: [
+        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+      ],
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

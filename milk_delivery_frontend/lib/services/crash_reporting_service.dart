@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class CrashReportingService {
   static const String _crashLogKey = 'pamba_crash_logs';
@@ -16,6 +17,10 @@ class CrashReportingService {
       }
       return;
     }
+
+    try {
+      FirebaseCrashlytics.instance.recordError(error, stackTrace);
+    } catch (_) {}
 
     // In release mode, log locally to SharedPreferences for now.
     try {

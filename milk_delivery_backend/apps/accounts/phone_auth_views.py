@@ -141,10 +141,7 @@ class SendOTPView(APIView):
         from django.core.cache import cache
         from apps.core.services.sms_service import send_otp_sms
 
-        if last_10 == "9999999999":
-            otp = "123456"
-        else:
-            otp = f"{random.randint(100000, 999999)}"
+        otp = f"{random.randint(100000, 999999)}"
 
         # Store in cache for 5 minutes (300s)
         cache.set(f"otp_{last_10}", otp, timeout=300)
@@ -187,8 +184,6 @@ class VerifyOTPView(APIView):
         if cached_otp and str(otp).strip() == str(cached_otp).strip():
             is_valid = True
             cache.delete(f"otp_{last_10}")
-        elif last_10 == "9999999999" and str(otp).strip() in ["123456", "1234"]:
-            is_valid = True
 
         if not is_valid:
             return Response(

@@ -22,18 +22,18 @@ def send_otp_sms(phone_10_digits: str, otp_code: str) -> dict:
         api_key = (
             getattr(cfg, "ninzasms_api_key", "")
             or os.environ.get("NINZASMS_API_KEY")
-            or "NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6"
+            or ""
         )
         sender_id = (
             getattr(cfg, "ninzasms_sender_id", "")
             or os.environ.get("NINZASMS_SENDER_ID")
-            or "15809"
+            or ""
         )
     except Exception as e:
         logger.warning(f"SiteConfig access error ({e}), falling back to environment variables.")
         enabled = os.environ.get("NINZASMS_ENABLED", "True").lower() in ("1", "true", "yes")
-        api_key = os.environ.get("NINZASMS_API_KEY", "NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6")
-        sender_id = os.environ.get("NINZASMS_SENDER_ID", "15809")
+        api_key = os.environ.get("NINZASMS_API_KEY", "")
+        sender_id = os.environ.get("NINZASMS_SENDER_ID", "")
 
     if not enabled:
         logger.info(f"SMS Gateway disabled. OTP for {phone_10_digits}: {otp_code}")

@@ -55,12 +55,12 @@ class SiteConfig(models.Model):
     )
     ninzasms_api_key = models.CharField(
         max_length=150,
-        default="NINZASMS06324354f5fed8b13a50be5fc7d20d3ef480963ea78c5b6cf0b6",
+        default="",
         help_text="NinzaSMS Authorization Key"
     )
     ninzasms_sender_id = models.CharField(
         max_length=50,
-        default="15809",
+        default="",
         help_text="NinzaSMS Approved Sender ID"
     )
     
