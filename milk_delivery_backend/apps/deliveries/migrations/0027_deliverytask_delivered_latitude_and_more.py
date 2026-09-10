@@ -3,6 +3,31 @@
 from django.db import migrations, models
 
 
+def add_delivered_lat_lng(apps, schema_editor):
+    vendor = schema_editor.connection.vendor
+    with schema_editor.connection.cursor() as cursor:
+        if vendor == 'postgresql':
+            cursor.execute("""
+                ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS delivered_latitude numeric(15,8);
+                ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS delivered_longitude numeric(15,8);
+                ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_latitude numeric(15,8);
+                ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivered_longitude numeric(15,8);
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(deliveries_deliverytask)")
+            cols = {row[1] for row in cursor.fetchall()}
+            if "delivered_latitude" not in cols:
+                cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN delivered_latitude decimal")
+            if "delivered_longitude" not in cols:
+                cursor.execute("ALTER TABLE deliveries_deliverytask ADD COLUMN delivered_longitude decimal")
+            cursor.execute("PRAGMA table_info(deliveries_liveorder)")
+            order_cols = {row[1] for row in cursor.fetchall()}
+            if "delivered_latitude" not in order_cols:
+                cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN delivered_latitude decimal")
+            if "delivered_longitude" not in order_cols:
+                cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN delivered_longitude decimal")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,24 +35,31 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='deliverytask',
-            name='delivered_latitude',
-            field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
-        ),
-        migrations.AddField(
-            model_name='deliverytask',
-            name='delivered_longitude',
-            field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='delivered_latitude',
-            field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='delivered_longitude',
-            field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='deliverytask',
+                    name='delivered_latitude',
+                    field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
+                ),
+                migrations.AddField(
+                    model_name='deliverytask',
+                    name='delivered_longitude',
+                    field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='delivered_latitude',
+                    field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='delivered_longitude',
+                    field=models.DecimalField(blank=True, decimal_places=8, max_digits=15, null=True),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(add_delivered_lat_lng, reverse_code=migrations.RunPython.noop)
+            ]
+        )
     ]

@@ -36,6 +36,7 @@ class _CartPageState extends State<CartPage> {
   void initState() {
     super.initState();
     _loadCrossSell();
+    widget.state.refreshStorefrontConfig();
   }
 
   @override

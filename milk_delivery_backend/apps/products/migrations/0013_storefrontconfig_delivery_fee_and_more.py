@@ -4,6 +4,29 @@ from decimal import Decimal
 from django.db import migrations, models
 
 
+def add_storefront_fees(apps, schema_editor):
+    vendor = schema_editor.connection.vendor
+    with schema_editor.connection.cursor() as cursor:
+        if vendor == 'postgresql':
+            cursor.execute("""
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS delivery_fee numeric(6,2) DEFAULT 0.00;
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS free_delivery_threshold numeric(8,2) DEFAULT 0.00;
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS platform_fee numeric(6,2) DEFAULT 0.00;
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS tax_percentage numeric(5,2) DEFAULT 0.00;
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(products_storefrontconfig)")
+            cols = {row[1] for row in cursor.fetchall()}
+            if "delivery_fee" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN delivery_fee decimal DEFAULT 0.00")
+            if "free_delivery_threshold" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN free_delivery_threshold decimal DEFAULT 0.00")
+            if "platform_fee" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN platform_fee decimal DEFAULT 0.00")
+            if "tax_percentage" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN tax_percentage decimal DEFAULT 0.00")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,24 +34,31 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='delivery_fee',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Standard delivery partner fee in Rupees (0.00 for free delivery)', max_digits=6),
-        ),
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='free_delivery_threshold',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Minimum order subtotal in Rupees for free delivery (0.00 to disable)', max_digits=8),
-        ),
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='platform_fee',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Customer platform fee in Rupees per order (0.00 for none/free)', max_digits=6),
-        ),
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='tax_percentage',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Tax / GST percentage applied to items (e.g. 5.00 for 5%)', max_digits=5),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='delivery_fee',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Standard delivery partner fee in Rupees (0.00 for free delivery)', max_digits=6),
+                ),
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='free_delivery_threshold',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Minimum order subtotal in Rupees for free delivery (0.00 to disable)', max_digits=8),
+                ),
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='platform_fee',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Customer platform fee in Rupees per order (0.00 for none/free)', max_digits=6),
+                ),
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='tax_percentage',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Tax / GST percentage applied to items (e.g. 5.00 for 5%)', max_digits=5),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(add_storefront_fees, reverse_code=migrations.RunPython.noop)
+            ]
+        )
     ]

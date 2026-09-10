@@ -2049,15 +2049,8 @@ class AppState extends ChangeNotifier {
   Future<StorefrontConfigModel> refreshStorefrontConfig() async {
     try {
       final config = await ApiService.fetchStorefrontConfig();
-      if (config.isCodEnabled != storefrontConfig.isCodEnabled ||
-          config.isWalletEnabled != storefrontConfig.isWalletEnabled ||
-          config.headline != storefrontConfig.headline ||
-          config.bannerImageUrl != storefrontConfig.bannerImageUrl ||
-          config.subtitle != storefrontConfig.subtitle ||
-          config.promoChip != storefrontConfig.promoChip) {
-        storefrontConfig = config;
-        notifyListeners();
-      }
+      storefrontConfig = config;
+      notifyListeners();
       return config;
     } catch (e) {
       debugPrint('Error in _fetchStorefrontConfig: $e');

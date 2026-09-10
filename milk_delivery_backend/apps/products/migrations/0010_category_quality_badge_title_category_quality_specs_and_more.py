@@ -3,6 +3,45 @@
 from django.db import migrations, models
 
 
+def add_category_and_product_fields(apps, schema_editor):
+    vendor = schema_editor.connection.vendor
+    with schema_editor.connection.cursor() as cursor:
+        if vendor == 'postgresql':
+            cursor.execute("""
+                ALTER TABLE products_category ADD COLUMN IF NOT EXISTS quality_badge_title varchar(150) DEFAULT '';
+                ALTER TABLE products_category ADD COLUMN IF NOT EXISTS quality_specs jsonb DEFAULT '{}';
+                ALTER TABLE products_category ADD COLUMN IF NOT EXISTS subtitle varchar(150) DEFAULT '';
+                ALTER TABLE products_category ADD COLUMN IF NOT EXISTS tracking_badges jsonb DEFAULT '[]';
+
+                ALTER TABLE products_product ADD COLUMN IF NOT EXISTS quality_badge_title varchar(150) DEFAULT '';
+                ALTER TABLE products_product ADD COLUMN IF NOT EXISTS quality_specs jsonb DEFAULT '{}';
+                ALTER TABLE products_product ADD COLUMN IF NOT EXISTS subtitle varchar(150) DEFAULT '';
+                ALTER TABLE products_product ADD COLUMN IF NOT EXISTS tracking_badges jsonb DEFAULT '[]';
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(products_category)")
+            cat_cols = {row[1] for row in cursor.fetchall()}
+            if "quality_badge_title" not in cat_cols:
+                cursor.execute("ALTER TABLE products_category ADD COLUMN quality_badge_title varchar(150) DEFAULT ''")
+            if "quality_specs" not in cat_cols:
+                cursor.execute("ALTER TABLE products_category ADD COLUMN quality_specs text DEFAULT '{}'")
+            if "subtitle" not in cat_cols:
+                cursor.execute("ALTER TABLE products_category ADD COLUMN subtitle varchar(150) DEFAULT ''")
+            if "tracking_badges" not in cat_cols:
+                cursor.execute("ALTER TABLE products_category ADD COLUMN tracking_badges text DEFAULT '[]'")
+
+            cursor.execute("PRAGMA table_info(products_product)")
+            prod_cols = {row[1] for row in cursor.fetchall()}
+            if "quality_badge_title" not in prod_cols:
+                cursor.execute("ALTER TABLE products_product ADD COLUMN quality_badge_title varchar(150) DEFAULT ''")
+            if "quality_specs" not in prod_cols:
+                cursor.execute("ALTER TABLE products_product ADD COLUMN quality_specs text DEFAULT '{}'")
+            if "subtitle" not in prod_cols:
+                cursor.execute("ALTER TABLE products_product ADD COLUMN subtitle varchar(150) DEFAULT ''")
+            if "tracking_badges" not in prod_cols:
+                cursor.execute("ALTER TABLE products_product ADD COLUMN tracking_badges text DEFAULT '[]'")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,44 +49,51 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='category',
-            name='quality_badge_title',
-            field=models.CharField(blank=True, default='', help_text='Purity badge header (e.g. FSSAI Certified • 100% Antibiotic-Free)', max_length=150),
-        ),
-        migrations.AddField(
-            model_name='category',
-            name='quality_specs',
-            field=models.JSONField(blank=True, default=dict, help_text='Quality specifications key-values shown in expandable card'),
-        ),
-        migrations.AddField(
-            model_name='category',
-            name='subtitle',
-            field=models.CharField(blank=True, default='', help_text='Subtitle displayed in mobile app (e.g. Fresh & Tender • 100% Antibiotic-Free)', max_length=150),
-        ),
-        migrations.AddField(
-            model_name='category',
-            name='tracking_badges',
-            field=models.JSONField(blank=True, default=list, help_text='Tracking status badges shown on live driver tracking screen'),
-        ),
-        migrations.AddField(
-            model_name='product',
-            name='quality_badge_title',
-            field=models.CharField(blank=True, default='', help_text='Product-specific badge title override (falls back to category badge if blank)', max_length=150),
-        ),
-        migrations.AddField(
-            model_name='product',
-            name='quality_specs',
-            field=models.JSONField(blank=True, default=dict, help_text='Product-specific quality specs override (dict, falls back to category if empty)'),
-        ),
-        migrations.AddField(
-            model_name='product',
-            name='subtitle',
-            field=models.CharField(blank=True, default='', help_text='Product-specific subtitle override (falls back to category subtitle if blank)', max_length=150),
-        ),
-        migrations.AddField(
-            model_name='product',
-            name='tracking_badges',
-            field=models.JSONField(blank=True, default=list, help_text='Product-specific tracking badges override (list of dicts, falls back to category if empty)'),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='category',
+                    name='quality_badge_title',
+                    field=models.CharField(blank=True, default='', help_text='Purity badge header (e.g. FSSAI Certified • 100% Antibiotic-Free)', max_length=150),
+                ),
+                migrations.AddField(
+                    model_name='category',
+                    name='quality_specs',
+                    field=models.JSONField(blank=True, default=dict, help_text='Quality specifications key-values shown in expandable card'),
+                ),
+                migrations.AddField(
+                    model_name='category',
+                    name='subtitle',
+                    field=models.CharField(blank=True, default='', help_text='Subtitle displayed in mobile app (e.g. Fresh & Tender • 100% Antibiotic-Free)', max_length=150),
+                ),
+                migrations.AddField(
+                    model_name='category',
+                    name='tracking_badges',
+                    field=models.JSONField(blank=True, default=list, help_text='Tracking status badges shown on live driver tracking screen'),
+                ),
+                migrations.AddField(
+                    model_name='product',
+                    name='quality_badge_title',
+                    field=models.CharField(blank=True, default='', help_text='Product-specific badge title override (falls back to category badge if blank)', max_length=150),
+                ),
+                migrations.AddField(
+                    model_name='product',
+                    name='quality_specs',
+                    field=models.JSONField(blank=True, default=dict, help_text='Product-specific quality specs override (dict, falls back to category if empty)'),
+                ),
+                migrations.AddField(
+                    model_name='product',
+                    name='subtitle',
+                    field=models.CharField(blank=True, default='', help_text='Product-specific subtitle override (falls back to category subtitle if blank)', max_length=150),
+                ),
+                migrations.AddField(
+                    model_name='product',
+                    name='tracking_badges',
+                    field=models.JSONField(blank=True, default=list, help_text='Product-specific tracking badges override (list of dicts, falls back to category if empty)'),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(add_category_and_product_fields, reverse_code=migrations.RunPython.noop)
+            ]
+        )
     ]

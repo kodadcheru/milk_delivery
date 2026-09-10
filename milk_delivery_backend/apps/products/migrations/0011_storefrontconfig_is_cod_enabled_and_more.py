@@ -3,6 +3,23 @@
 from django.db import migrations, models
 
 
+def add_storefront_toggles(apps, schema_editor):
+    vendor = schema_editor.connection.vendor
+    with schema_editor.connection.cursor() as cursor:
+        if vendor == 'postgresql':
+            cursor.execute("""
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_cod_enabled boolean DEFAULT true;
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_wallet_enabled boolean DEFAULT true;
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(products_storefrontconfig)")
+            cols = {row[1] for row in cursor.fetchall()}
+            if "is_cod_enabled" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_cod_enabled bool DEFAULT 1")
+            if "is_wallet_enabled" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_wallet_enabled bool DEFAULT 1")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,14 +27,21 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='is_cod_enabled',
-            field=models.BooleanField(default=True, help_text='Allow customers to select Cash on Delivery (COD) / Doorstep UPI'),
-        ),
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='is_wallet_enabled',
-            field=models.BooleanField(default=True, help_text='Allow customers to pay using prepaid Pamba Wallet'),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='is_cod_enabled',
+                    field=models.BooleanField(default=True, help_text='Allow customers to select Cash on Delivery (COD) / Doorstep UPI'),
+                ),
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='is_wallet_enabled',
+                    field=models.BooleanField(default=True, help_text='Allow customers to pay using prepaid Pamba Wallet'),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(add_storefront_toggles, reverse_code=migrations.RunPython.noop)
+            ]
+        )
     ]

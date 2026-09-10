@@ -4,6 +4,29 @@ from decimal import Decimal
 from django.db import migrations, models
 
 
+def add_liveorder_fees(apps, schema_editor):
+    vendor = schema_editor.connection.vendor
+    with schema_editor.connection.cursor() as cursor:
+        if vendor == 'postgresql':
+            cursor.execute("""
+                ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivery_fee numeric(6,2) DEFAULT 0.00;
+                ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS platform_fee numeric(6,2) DEFAULT 0.00;
+                ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS subtotal numeric(10,2) DEFAULT 0.00;
+                ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS tax_amount numeric(8,2) DEFAULT 0.00;
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(deliveries_liveorder)")
+            cols = {row[1] for row in cursor.fetchall()}
+            if "delivery_fee" not in cols:
+                cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN delivery_fee decimal DEFAULT 0.00")
+            if "platform_fee" not in cols:
+                cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN platform_fee decimal DEFAULT 0.00")
+            if "subtotal" not in cols:
+                cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN subtotal decimal DEFAULT 0.00")
+            if "tax_amount" not in cols:
+                cursor.execute("ALTER TABLE deliveries_liveorder ADD COLUMN tax_amount decimal DEFAULT 0.00")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,24 +34,31 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='liveorder',
-            name='delivery_fee',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='platform_fee',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='subtotal',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='tax_amount',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=8),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='delivery_fee',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='platform_fee',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='subtotal',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='tax_amount',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=8),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(add_liveorder_fees, reverse_code=migrations.RunPython.noop)
+            ]
+        )
     ]

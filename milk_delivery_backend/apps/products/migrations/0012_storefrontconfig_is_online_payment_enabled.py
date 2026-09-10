@@ -3,6 +3,20 @@
 from django.db import migrations, models
 
 
+def add_storefront_online_payment(apps, schema_editor):
+    vendor = schema_editor.connection.vendor
+    with schema_editor.connection.cursor() as cursor:
+        if vendor == 'postgresql':
+            cursor.execute("""
+                ALTER TABLE products_storefrontconfig ADD COLUMN IF NOT EXISTS is_online_payment_enabled boolean DEFAULT true;
+            """)
+        else:
+            cursor.execute("PRAGMA table_info(products_storefrontconfig)")
+            cols = {row[1] for row in cursor.fetchall()}
+            if "is_online_payment_enabled" not in cols:
+                cursor.execute("ALTER TABLE products_storefrontconfig ADD COLUMN is_online_payment_enabled bool DEFAULT 1")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,9 +24,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='storefrontconfig',
-            name='is_online_payment_enabled',
-            field=models.BooleanField(default=True, help_text='Allow customers to pay online via Razorpay (UPI, Cards, NetBanking)'),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='storefrontconfig',
+                    name='is_online_payment_enabled',
+                    field=models.BooleanField(default=True, help_text='Allow customers to pay online via Razorpay (UPI, Cards, NetBanking)'),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(add_storefront_online_payment, reverse_code=migrations.RunPython.noop)
+            ]
+        )
     ]
