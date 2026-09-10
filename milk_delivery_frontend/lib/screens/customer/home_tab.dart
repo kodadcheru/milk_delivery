@@ -14,7 +14,9 @@ import '../../widgets/home/home_product_card.dart';
 import '../../widgets/home/home_trust_assurance_strip.dart';
 import '../../widgets/home/home_serving_soon_view.dart';
 import '../../widgets/home/home_location_sheet.dart';
+import '../../widgets/home/home_tomorrow_preview_card.dart';
 import '../../widgets/ui_kit/pamba_refresh_indicator.dart';
+import '../../widgets/home/home_marquee_strip.dart';
 
 class CustomerHomeTab extends StatefulWidget {
   final AppState state;
@@ -119,6 +121,11 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                 ),
               ),
 
+              // ── Scrolling Marquee Strip ──
+              const SliverToBoxAdapter(
+                child: HomeMarqueeStrip(),
+              ),
+
               // ── Out-of-Coverage Notification Banner ──
               if (!widget.state.isLocationCovered) ...[
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -142,6 +149,15 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
                   ),
                 ),
               ],
+
+              // ── Tomorrow's Delivery Preview (Glassmorphic) ──
+              if (widget.state.subscriptions.any((s) => s.status == 'ACTIVE'))
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: HomeTomorrowPreviewCard(state: widget.state),
+                  ),
+                ),
 
               // ── Category Grid (Desaturated when out of coverage) ──
               SliverToBoxAdapter(

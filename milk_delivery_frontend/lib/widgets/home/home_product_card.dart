@@ -29,9 +29,12 @@ class HomeProductCard extends StatefulWidget {
   State<HomeProductCard> createState() => _HomeProductCardState();
 }
 
-class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProviderStateMixin {
+class _HomeProductCardState extends State<HomeProductCard> with TickerProviderStateMixin {
   late AnimationController _addBounceController;
   late Animation<double> _addBounceAnimation;
+
+  late AnimationController _morphController;
+  late Animation<double> _morphWidth;
 
   @override
   void initState() {
@@ -43,11 +46,20 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
     _addBounceAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
       CurvedAnimation(parent: _addBounceController, curve: Curves.easeInOut),
     );
+
+    _morphController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _morphWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _morphController, curve: Curves.easeOutCubic),
+    );
   }
 
   @override
   void dispose() {
     _addBounceController.dispose();
+    _morphController.dispose();
     super.dispose();
   }
 
@@ -334,99 +346,114 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
       );
     }
 
-    if (inCartQty == 0) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Clear direct Subscribe button
-          GestureDetector(
-            onTap: () => ProductDetailSheet.show(context, item, state),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0E784D),
-                borderRadius: BorderRadius.circular(UiRadius.pill),
-                border: Border.all(color: const Color(0xFF34D399), width: 1),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.repeat_rounded, size: 11, color: Color(0xFF34D399)),
-                  SizedBox(width: 2),
-                  Text(
-                    'SUB',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          // ADD button for 1-time order
-          ScaleTransition(
-            scale: _addBounceAnimation,
-            child: GestureDetector(
-              onTap: () async {
-                HapticFeedback.selectionClick();
-                _addBounceController.forward().then((_) => _addBounceController.reverse());
-                state.addToCart(item);
-                FloatingCartBar.showCheckoutSheet(context, state);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(UiRadius.pill),
-                ),
-                child: const Text(
-                  'ADD +',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: UiTone.primary,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: UiTone.primary,
-        borderRadius: BorderRadius.circular(UiRadius.pill),
-        boxShadow: UiShadow.glowPrimary,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _stepButton(Icons.remove_rounded, () => state.decreaseCartQty(item)),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (inCartQty == 0)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-              child: Text(
-                '$inCartQty',
-                key: ValueKey<int>(inCartQty),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+            padding: const EdgeInsets.only(right: 4),
+            child: GestureDetector(
+              onTap: () => ProductDetailSheet.show(context, item, state),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0E784D),
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                  border: Border.all(color: const Color(0xFF34D399), width: 1),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.repeat_rounded, size: 11, color: Color(0xFF34D399)),
+                    SizedBox(width: 2),
+                    Text(
+                      'SUB',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          _stepButton(Icons.add_rounded, () => state.addToCart(item)),
-        ],
-      ),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: inCartQty == 0 ? Colors.white : UiTone.primary,
+            borderRadius: BorderRadius.circular(UiRadius.pill),
+            boxShadow: inCartQty > 0 ? UiShadow.glowPrimary : null,
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SizeTransition(
+                  sizeFactor: animation,
+                  axis: Axis.horizontal,
+                  child: child,
+                ),
+              );
+            },
+            child: inCartQty == 0
+                ? ScaleTransition(
+                    key: const ValueKey('add'),
+                    scale: _addBounceAnimation,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        HapticFeedback.selectionClick();
+                        _addBounceController.forward().then((_) => _addBounceController.reverse());
+                        state.addToCart(item);
+                        FloatingCartBar.showCheckoutSheet(context, state);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        child: const Text(
+                          'ADD +',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: UiTone.primary,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : Row(
+                    key: ValueKey('stepper_$inCartQty'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _stepButton(Icons.remove_rounded, () => state.decreaseCartQty(item)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                          child: Text(
+                            '$inCartQty',
+                            key: ValueKey<int>(inCartQty),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      _stepButton(Icons.add_rounded, () => state.addToCart(item)),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
