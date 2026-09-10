@@ -1,18 +1,19 @@
 from rest_framework import generics, permissions, status
-from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.authentication import BasicAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 from apps.core.pagination import StandardResultsSetPagination
 from apps.core.permissions import IsAdminOrStaff, IsAdminOrReadOnly
+from apps.core.authentication import CsrfExemptSessionAuthentication
 from apps.products.models import Category, Product
 from apps.products.serializers import CategorySerializer, ProductSerializer
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
     serializer_class = CategorySerializer
-    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
@@ -25,13 +26,13 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
 
 class ProductListView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
-    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = StandardResultsSetPagination
 
@@ -77,7 +78,7 @@ class ProductListView(generics.ListCreateAPIView):
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def perform_update(self, serializer):
@@ -108,7 +109,7 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class HubInventoryListUpdateView(APIView):
-    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def get(self, request):
@@ -196,7 +197,7 @@ class HubInventoryListUpdateView(APIView):
 
 
 class StorefrontConfigView(APIView):
-    authentication_classes = [JWTAuthentication, SessionAuthentication, BasicAuthentication]
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -266,14 +267,28 @@ class StorefrontConfigView(APIView):
             config.banner_image = banner_file
             
         from decimal import Decimal
+        from apps.core.models import SiteConfig
+        site_cfg = SiteConfig.get()
+        has_site_cfg_changes = False
+
         if "platform_fee" in request.data:
             config.platform_fee = Decimal(str(request.data.get("platform_fee", 0)))
+            site_cfg.customer_platform_fee = config.platform_fee
+            has_site_cfg_changes = True
         if "tax_percentage" in request.data:
             config.tax_percentage = Decimal(str(request.data.get("tax_percentage", 0)))
+            site_cfg.tax_percentage = config.tax_percentage
+            has_site_cfg_changes = True
         if "delivery_fee" in request.data:
             config.delivery_fee = Decimal(str(request.data.get("delivery_fee", 0)))
+            site_cfg.delivery_fee = config.delivery_fee
+            has_site_cfg_changes = True
         if "free_delivery_threshold" in request.data:
             config.free_delivery_threshold = Decimal(str(request.data.get("free_delivery_threshold", 0)))
+            site_cfg.free_delivery_threshold = config.free_delivery_threshold
+            has_site_cfg_changes = True
+        if has_site_cfg_changes:
+            site_cfg.save()
 
         is_cod_enabled = request.data.get("is_cod_enabled")
         if is_cod_enabled is not None:

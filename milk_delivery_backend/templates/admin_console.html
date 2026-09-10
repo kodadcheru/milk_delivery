@@ -1974,7 +1974,7 @@
 
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
                 <!-- COD Toggle Card -->
-                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                <div onclick="triggerPaymentCardToggle('cod', event)" style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color 0.2s, background 0.2s;" onmouseenter="this.style.borderColor='#10B981'" onmouseleave="this.style.borderColor='var(--border-color)'">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                       <span style="font-size: 22px;">💵</span>
@@ -1983,7 +1983,7 @@
                         <div style="font-size: 11px; color: var(--text-muted);">Doorstep cash & UPI QR scan</div>
                       </div>
                     </div>
-                    <label class="switch" style="margin: 0; flex-shrink: 0;">
+                    <label class="switch" style="margin: 0; flex-shrink: 0;" onclick="event.stopPropagation()">
                       <input type="checkbox" id="sfCodToggle" onchange="autoSavePaymentToggle('cod', this.checked)">
                       <span class="slider"></span>
                     </label>
@@ -1994,7 +1994,7 @@
                 </div>
 
                 <!-- Wallet Toggle Card -->
-                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                <div onclick="triggerPaymentCardToggle('wallet', event)" style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color 0.2s, background 0.2s;" onmouseenter="this.style.borderColor='#10B981'" onmouseleave="this.style.borderColor='var(--border-color)'">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                       <span style="font-size: 22px;">👛</span>
@@ -2003,7 +2003,7 @@
                         <div style="font-size: 11px; color: var(--text-muted);">Prepaid instant auto-debit</div>
                       </div>
                     </div>
-                    <label class="switch" style="margin: 0; flex-shrink: 0;">
+                    <label class="switch" style="margin: 0; flex-shrink: 0;" onclick="event.stopPropagation()">
                       <input type="checkbox" id="sfWalletToggle" onchange="autoSavePaymentToggle('wallet', this.checked)">
                       <span class="slider"></span>
                     </label>
@@ -2014,7 +2014,7 @@
                 </div>
 
                 <!-- Online Razorpay Toggle Card -->
-                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;">
+                <div onclick="triggerPaymentCardToggle('online', event)" style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color 0.2s, background 0.2s;" onmouseenter="this.style.borderColor='#10B981'" onmouseleave="this.style.borderColor='var(--border-color)'">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                       <span style="font-size: 22px;">💳</span>
@@ -2023,7 +2023,7 @@
                         <div style="font-size: 11px; color: var(--text-muted);">UPI, GPay, Cards, NetBanking</div>
                       </div>
                     </div>
-                    <label class="switch" style="margin: 0; flex-shrink: 0;">
+                    <label class="switch" style="margin: 0; flex-shrink: 0;" onclick="event.stopPropagation()">
                       <input type="checkbox" id="sfOnlineToggle" onchange="autoSavePaymentToggle('online', this.checked)">
                       <span class="slider"></span>
                     </label>
@@ -7471,11 +7471,16 @@
           const bannerUrlInput = document.getElementById('sfBannerUrl');
           if (bannerUrlInput) {
             bannerUrlInput.value = currentStorefrontConfig.raw_banner_image_url || currentStorefrontConfig.banner_image_url || '';
-            document.getElementById('sfHeadline').value = currentStorefrontConfig.headline !== null && currentStorefrontConfig.headline !== undefined ? currentStorefrontConfig.headline : '';
-            document.getElementById('sfSubtitle').value = currentStorefrontConfig.subtitle !== null && currentStorefrontConfig.subtitle !== undefined ? currentStorefrontConfig.subtitle : '';
-            document.getElementById('sfDispatchTag').value = currentStorefrontConfig.dispatch_tag !== null && currentStorefrontConfig.dispatch_tag !== undefined ? currentStorefrontConfig.dispatch_tag : '';
-            document.getElementById('sfPromoChip').value = currentStorefrontConfig.promo_chip !== null && currentStorefrontConfig.promo_chip !== undefined ? currentStorefrontConfig.promo_chip : '';
-            document.getElementById('sfCtaText').value = currentStorefrontConfig.cta_text !== null && currentStorefrontConfig.cta_text !== undefined ? currentStorefrontConfig.cta_text : '';
+            const headlineEl = document.getElementById('sfHeadline');
+            if (headlineEl) headlineEl.value = currentStorefrontConfig.headline !== null && currentStorefrontConfig.headline !== undefined ? currentStorefrontConfig.headline : '';
+            const subtitleEl = document.getElementById('sfSubtitle');
+            if (subtitleEl) subtitleEl.value = currentStorefrontConfig.subtitle !== null && currentStorefrontConfig.subtitle !== undefined ? currentStorefrontConfig.subtitle : '';
+            const dispatchTagEl = document.getElementById('sfDispatchTag');
+            if (dispatchTagEl) dispatchTagEl.value = currentStorefrontConfig.dispatch_tag !== null && currentStorefrontConfig.dispatch_tag !== undefined ? currentStorefrontConfig.dispatch_tag : '';
+            const promoChipEl = document.getElementById('sfPromoChip');
+            if (promoChipEl) promoChipEl.value = currentStorefrontConfig.promo_chip !== null && currentStorefrontConfig.promo_chip !== undefined ? currentStorefrontConfig.promo_chip : '';
+            const ctaTextEl = document.getElementById('sfCtaText');
+            if (ctaTextEl) ctaTextEl.value = currentStorefrontConfig.cta_text !== null && currentStorefrontConfig.cta_text !== undefined ? currentStorefrontConfig.cta_text : '';
             
             const sfPlatformFeeEl = document.getElementById('sfPlatformFee');
             if (sfPlatformFeeEl) sfPlatformFeeEl.value = parseFloat(currentStorefrontConfig.platform_fee || 0).toFixed(2);
@@ -7486,25 +7491,35 @@
             const sfThresholdEl = document.getElementById('sfFreeDeliveryThreshold');
             if (sfThresholdEl) sfThresholdEl.value = parseFloat(currentStorefrontConfig.free_delivery_threshold || 0).toFixed(2);
             if (typeof updateStorefrontFeePreview === 'function') updateStorefrontFeePreview();
-
-            const codToggle = document.getElementById('sfCodToggle');
-            if (codToggle) {
-              codToggle.checked = currentStorefrontConfig.is_cod_enabled !== false;
-            }
-            const walletToggle = document.getElementById('sfWalletToggle');
-            if (walletToggle) {
-              walletToggle.checked = currentStorefrontConfig.is_wallet_enabled !== false;
-            }
-            const onlineToggle = document.getElementById('sfOnlineToggle');
-            if (onlineToggle) {
-              onlineToggle.checked = currentStorefrontConfig.is_online_payment_enabled !== false;
-            }
-            updatePaymentToggleLabels();
-            updateStorefrontLivePreview();
           }
+
+          // Payment methods toggle population
+          const codToggle = document.getElementById('sfCodToggle');
+          if (codToggle) {
+            codToggle.checked = currentStorefrontConfig.is_cod_enabled !== false;
+          }
+          const walletToggle = document.getElementById('sfWalletToggle');
+          if (walletToggle) {
+            walletToggle.checked = currentStorefrontConfig.is_wallet_enabled !== false;
+          }
+          const onlineToggle = document.getElementById('sfOnlineToggle');
+          if (onlineToggle) {
+            onlineToggle.checked = currentStorefrontConfig.is_online_payment_enabled !== false;
+          }
+          updatePaymentToggleLabels();
+          updateStorefrontLivePreview();
         }
       } catch (err) {
         console.error('Error loading storefront config:', err);
+      }
+    }
+
+    function triggerPaymentCardToggle(method, event) {
+      if (event && event.target && (event.target.tagName === 'INPUT' || event.target.classList.contains('slider'))) return;
+      const toggle = document.getElementById(method === 'cod' ? 'sfCodToggle' : (method === 'wallet' ? 'sfWalletToggle' : 'sfOnlineToggle'));
+      if (toggle) {
+        toggle.checked = !toggle.checked;
+        autoSavePaymentToggle(method, toggle.checked);
       }
     }
 
@@ -7629,18 +7644,11 @@
       showStorefrontToast(`Syncing ${methodLabel} status to server...`, 'info');
 
       try {
-        const payload = {};
-        if (method === 'cod') {
-          payload.is_cod_enabled = isEnabled;
-        } else if (method === 'wallet') {
-          payload.is_wallet_enabled = isEnabled;
-        } else if (method === 'online') {
-          payload.is_online_payment_enabled = isEnabled;
-        } else {
-          payload.is_cod_enabled = isCod;
-          payload.is_wallet_enabled = isWallet;
-          payload.is_online_payment_enabled = isOnline;
-        }
+        const payload = {
+          is_cod_enabled: method === 'cod' ? Boolean(isEnabled) : isCod,
+          is_wallet_enabled: method === 'wallet' ? Boolean(isEnabled) : isWallet,
+          is_online_payment_enabled: method === 'online' ? Boolean(isEnabled) : isOnline
+        };
 
         const res = await fetch(`${baseUrl}/storefront/config/`, {
           method: 'POST',
@@ -7652,11 +7660,15 @@
         if (res.ok) {
           const data = await res.json();
           currentStorefrontConfig = data;
+          if (codToggle && data.is_cod_enabled !== undefined) codToggle.checked = Boolean(data.is_cod_enabled);
+          if (walletToggle && data.is_wallet_enabled !== undefined) walletToggle.checked = Boolean(data.is_wallet_enabled);
+          if (onlineToggle && data.is_online_payment_enabled !== undefined) onlineToggle.checked = Boolean(data.is_online_payment_enabled);
           updatePaymentToggleLabels();
           const label = method === 'cod' ? 'Cash on Delivery (COD)' : (method === 'online' ? 'Online Payment (Razorpay)' : 'Pamba Wallet');
           showStorefrontToast(`✓ ${label} is now <b>${isEnabled ? 'ENABLED' : 'DISABLED'}</b> for customers!`, 'success');
         } else {
-          throw new Error(`HTTP ${res.status}`);
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
         }
       } catch (err) {
         console.error('Failed to auto-save payment toggle:', err);
@@ -7801,8 +7813,10 @@
 
       const isCod = document.getElementById('sfCodToggle') ? document.getElementById('sfCodToggle').checked : true;
       const isWallet = document.getElementById('sfWalletToggle') ? document.getElementById('sfWalletToggle').checked : true;
+      const isOnline = document.getElementById('sfOnlineToggle') ? document.getElementById('sfOnlineToggle').checked : true;
       formData.append('is_cod_enabled', isCod);
       formData.append('is_wallet_enabled', isWallet);
+      formData.append('is_online_payment_enabled', isOnline);
 
       const headers = {};
       if (token && token !== 'null' && token !== 'undefined') {
