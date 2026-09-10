@@ -25,6 +25,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = (project.findProperty("GOOGLE_MAPS_API_KEY") as? String)
             ?: System.getenv("GOOGLE_MAPS_API_KEY")
             ?: ""

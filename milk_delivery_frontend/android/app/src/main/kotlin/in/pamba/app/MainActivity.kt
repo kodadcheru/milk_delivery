@@ -1,4 +1,4 @@
-package com.example.milk_delivery_frontend
+package `in`.pamba.app
 
 import io.flutter.embedding.android.FlutterActivity
 

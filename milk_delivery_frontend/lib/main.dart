@@ -39,23 +39,33 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize Firebase
+  // Initialize Firebase safely
   try {
     await Firebase.initializeApp();
-  } catch (_) {
-    // Already initialized or will be initialized by push notification service
+  } catch (e) {
+    try {
+      await PushNotificationService.instance.initialize();
+    } catch (_) {}
   }
 
   // Production Global Crash & Error Boundary
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      }
+    } catch (_) {}
     CrashReportingService.reportCrash(details.exception, details.stack);
     debugPrint('🚨 [Pamba FlutterError]: ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      }
+    } catch (_) {}
     CrashReportingService.reportCrash(error, stack);
     debugPrint('🚨 [Pamba UncaughtAsyncError]: $error');
     return true; // Prevent app crashes
@@ -191,7 +201,8 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
     return MaterialApp(
       navigatorKey: _navigatorKey,
       navigatorObservers: [
-        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+        if (Firebase.apps.isNotEmpty)
+          FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
       ],
       title: '${AppConfig.appName} 🥛',
       debugShowCheckedModeBanner: false,
