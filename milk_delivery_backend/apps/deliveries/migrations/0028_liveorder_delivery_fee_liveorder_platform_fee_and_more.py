@@ -11,24 +11,44 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='liveorder',
-            name='delivery_fee',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='platform_fee',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='subtotal',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='tax_amount',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=8),
-        ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='delivery_fee',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='platform_fee',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=6),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='subtotal',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='tax_amount',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=8),
+                ),
+            ],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS delivery_fee numeric(6,2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS platform_fee numeric(6,2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS subtotal numeric(10,2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS tax_amount numeric(8,2) DEFAULT 0.00;
+                    """,
+                    reverse_sql="""
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS tax_amount;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS subtotal;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS platform_fee;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS delivery_fee;
+                    """
+                )
+            ]
+        )
     ]
