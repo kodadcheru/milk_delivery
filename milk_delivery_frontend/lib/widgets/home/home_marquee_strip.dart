@@ -15,12 +15,12 @@ class _HomeMarqueeStripState extends State<HomeMarqueeStrip>
   late final ScrollController _scrollController;
 
   static const _items = [
-    '🥛 Farm-Fresh Milk',
-    '⏰ Delivered by 6 AM',
-    '🌿 100% Natural',
-    '💰 Subscribe & Save',
-    '🚚 Free Daily Delivery',
-    '📅 Pause Anytime',
+    'Farm-Fresh Milk',
+    'Delivered by 6 AM',
+    '100% Pure & Natural',
+    'Subscribe & Save',
+    'Free Daily Delivery',
+    'Pause Anytime',
   ];
 
   @override

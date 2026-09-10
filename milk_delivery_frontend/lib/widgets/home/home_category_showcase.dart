@@ -39,7 +39,6 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
         final bCat = entry.value;
         final catalogMeta = categoryMetaFor(bCat.slug);
         final effectiveImageUrl = bCat.imageUrl.isNotEmpty ? bCat.imageUrl : catalogMeta.image;
-        final effectiveIcon = bCat.icon.isNotEmpty ? bCat.icon : catalogMeta.icon;
         final isHighlighted = _selectedCategoryIndex == 0 || _selectedCategoryIndex == idx + 1;
 
         return SizedBox(
@@ -52,7 +51,6 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
               category: bCat,
               categoryKey: bCat.slug,
               title: bCat.name,
-              icon: effectiveIcon,
               imageUrl: effectiveImageUrl,
               bgColor: catalogMeta.tileBg,
             ),
@@ -76,7 +74,6 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
               context: context,
               categoryKey: meta.key,
               title: meta.shortTitle,
-              icon: meta.icon,
               imageUrl: meta.image,
               bgColor: meta.tileBg,
             ),
@@ -179,7 +176,6 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
     CategoryModel? category,
     required String categoryKey,
     required String title,
-    required String icon,
     required String? imageUrl,
     required Color bgColor,
   }) {
@@ -257,33 +253,9 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.black.withValues(alpha: 0.05),
-                              Colors.black.withValues(alpha: 0.45),
+                              Colors.black.withValues(alpha: 0.35),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
-
-                    // Bottom-Right mini icon badge
-                    Positioned(
-                      bottom: 6,
-                      right: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.94),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          icon,
-                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                     ),

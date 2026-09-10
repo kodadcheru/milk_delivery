@@ -43,9 +43,10 @@ class FreeDeliveryBar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Text(
-                    isFree ? '🎉' : '🚚',
-                    style: const TextStyle(fontSize: 14),
+                  child: Icon(
+                    isFree ? Icons.check_circle_rounded : Icons.local_shipping_rounded,
+                    size: 16,
+                    color: isFree ? const Color(0xFF16A34A) : const Color(0xFFD97706),
                   ),
                 ),
               ),
