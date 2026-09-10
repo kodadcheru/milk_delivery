@@ -19,61 +19,82 @@ class FreeDeliveryBar extends StatelessWidget {
     final progress = (cartTotal / threshold).clamp(0.0, 1.0);
     final deficit = threshold - cartTotal;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isFree ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(UiRadius.md),
+        border: Border.all(
+          color: isFree ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+          width: 1,
+        ),
       ),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Text(
-                  isFree ? '✓ 🎉' : '🚚',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: isFree ? UiTone.success : Colors.amber.shade700,
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isFree ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
+                child: Center(
                   child: Text(
-                    isFree 
-                        ? 'Yay! FREE Delivery unlocked!' 
-                        : 'Add ₹${deficit.toStringAsFixed(0)} more for FREE Delivery',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: isFree ? UiTone.success : UiTone.ink,
-                    ),
+                    isFree ? '🎉' : '🚚',
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Container(
-                height: 6,
-                width: double.infinity,
-                color: Colors.grey.shade200,
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeOut,
-                    color: isFree ? UiTone.success : Colors.amber.shade500,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  isFree
+                      ? 'FREE Delivery unlocked on this order!'
+                      : 'Add ₹${deficit.toStringAsFixed(0)} more for FREE Delivery',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: isFree ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                  ),
+                ),
+              ),
+              if (!isFree)
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Container(
+              height: 6,
+              width: double.infinity,
+              color: isFree ? const Color(0xFFDCFCE7) : const Color(0xFFFDE68A).withValues(alpha: 0.6),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progress,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    color: isFree ? const Color(0xFF16A34A) : const Color(0xFFF59E0B),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

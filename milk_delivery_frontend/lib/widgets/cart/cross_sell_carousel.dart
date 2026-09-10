@@ -22,76 +22,121 @@ class CrossSellCarousel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '✨ Frequently Bought Together',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: UiTone.ink),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text(
+                '✨ Frequently Added Together',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: UiTone.ink,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
         SizedBox(
-          height: 130,
+          height: 154,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: products.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final product = products[index];
+              final inCartQty = state.cartQtyOf(product);
+
               return Container(
-                width: 110,
-                padding: const EdgeInsets.all(8),
+                width: 120,
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(UiRadius.md),
+                  border: Border.all(color: UiTone.surfaceBorder, width: 0.8),
+                  boxShadow: UiShadow.card,
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: product.imageUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: product.imageUrl,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Text(product.icon, style: const TextStyle(fontSize: 24)),
-                            )
-                          : Text(product.icon, style: const TextStyle(fontSize: 24)),
+                    // Product image
+                    Center(
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: product.imageUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: product.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => Center(
+                                    child: Text(product.icon, style: const TextStyle(fontSize: 24)),
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(product.icon, style: const TextStyle(fontSize: 24)),
+                                ),
+                        ),
+                      ),
                     ),
+                    const Spacer(),
                     Text(
                       product.name,
-                      style: const TextStyle(fontSize: 12, color: UiTone.ink),
-                      maxLines: 2,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: UiTone.ink,
+                      ),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
                     ),
+                    Text(
+                      product.unitQuantity,
+                      style: const TextStyle(fontSize: 10, color: UiTone.softText),
+                    ),
+                    const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           '₹${product.pricePerUnit.toStringAsFixed(0)}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: UiTone.ink),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: UiTone.ink,
+                          ),
                         ),
                         InkWell(
                           onTap: () {
-                            HapticFeedback.lightImpact();
+                            HapticFeedback.selectionClick();
                             state.addToCart(product);
                           },
+                          borderRadius: BorderRadius.circular(UiRadius.pill),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              border: Border.all(color: UiTone.primary),
-                              borderRadius: BorderRadius.circular(16),
+                              color: inCartQty > 0 ? UiTone.primary : Colors.white,
+                              borderRadius: BorderRadius.circular(UiRadius.pill),
+                              border: Border.all(
+                                color: UiTone.primary,
+                                width: 1,
+                              ),
                             ),
-                            child: const Text(
-                              '+ ADD',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: UiTone.primary),
+                            child: Text(
+                              inCartQty > 0 ? '$inCartQty IN' : '+ ADD',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: inCartQty > 0 ? Colors.white : UiTone.primary,
+                              ),
                             ),
                           ),
                         ),
