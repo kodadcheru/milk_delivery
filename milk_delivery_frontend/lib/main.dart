@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'config/app_config.dart';
 import 'providers/app_state.dart';
 import 'services/api_service.dart';
@@ -21,6 +22,12 @@ import 'screens/shells/admin_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Suppress debug logs in release mode
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -52,6 +59,37 @@ void main() async {
     await PushNotificationService.instance.initialize();
   } catch (e) {
     debugPrint('[PushNotificationService] Failed to initialize at startup: $e');
+  }
+
+  // Show friendly error widget instead of grey screen in release mode
+  if (kReleaseMode) {
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        color: Colors.white,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.refresh_rounded, size: 48, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Something went wrong',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800]),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please try again or restart the app.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    };
   }
 
   runApp(const MilkDeliveryApp());

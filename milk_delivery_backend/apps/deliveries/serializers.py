@@ -252,6 +252,10 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
         # Meanwhile, caching the batch lookup in the serializer context to avoid iterative DB queries.
         from apps.deliveries.models import DailyMilkBatch
         if not hasattr(obj, "_cached_batch"):
+            if getattr(obj, "batch", None):
+                obj._cached_batch = obj.batch
+                return obj._cached_batch
+
             context_cache = self.context.setdefault('batch_cache', {})
             cache_key = (obj.delivery_date, self.get_product_name(obj))
             

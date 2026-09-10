@@ -96,7 +96,7 @@ class ExpressOrderListCreateView(APIView):
 
     def get(self, request):
         user = request.user
-        orders = LiveOrder.objects.all().prefetch_related("items__product__category_ref").select_related("customer", "hub", "driver").order_by("-created_at")
+        orders = LiveOrder.objects.all().prefetch_related("items__product__category_ref").select_related("customer", "hub", "driver", "batch").order_by("-created_at")
 
         if user and user.is_authenticated and user.role == User.Roles.CUSTOMER:
             customer_orders = orders.filter(customer=user)
@@ -630,7 +630,7 @@ class ExpressOrderDetailView(APIView):
 
     def get(self, request, order_id):
         try:
-            order = LiveOrder.objects.prefetch_related("items__product").select_related("customer", "hub", "driver").get(id=order_id)
+            order = LiveOrder.objects.prefetch_related("items__product").select_related("customer", "hub", "driver", "batch").get(id=order_id)
         except LiveOrder.DoesNotExist:
             return Response({"detail": "Express order not found"}, status=status.HTTP_404_NOT_FOUND)
 

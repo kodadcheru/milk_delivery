@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import 'api_service.dart';
 
@@ -52,9 +53,13 @@ class ImageUploadService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['url'] as String?;
+      } else {
+        throw Exception('Upload failed with status ${response.statusCode}');
       }
-    } catch (_) {}
-    return null;
+    } catch (e) {
+      debugPrint('[ImageUploadService] uploadImageBytes failed: $e');
+      rethrow;
+    }
   }
 
   /// Upload base64 encoded image string as JSON payload
@@ -80,8 +85,12 @@ class ImageUploadService {
       if (res.statusCode == 201 || res.statusCode == 200) {
         final data = jsonDecode(res.body);
         return data['url'] as String?;
+      } else {
+        throw Exception('Upload failed with status ${res.statusCode}');
       }
-    } catch (_) {}
-    return null;
+    } catch (e) {
+      debugPrint('[ImageUploadService] uploadImageBase64 failed: $e');
+      rethrow;
+    }
   }
 }

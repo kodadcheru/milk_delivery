@@ -29,7 +29,7 @@ class DeliveryTaskListView(generics.ListAPIView):
         user = self.request.user
         req_date = self.request.query_params.get("date", None)
 
-        qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "driver", "hub", "order__customer").order_by("-delivery_date", "-id")
+        qs = DeliveryTask.objects.all().select_related("subscription__customer", "subscription__product", "subscription__product__category_ref", "subscription__hub", "driver", "hub", "order__customer", "order__hub", "batch", "order").prefetch_related("order__items", "order__items__product").order_by("-delivery_date", "-id")
         
         if user and user.is_authenticated and getattr(user, "role", "") == "CUSTOMER":
             if req_date:

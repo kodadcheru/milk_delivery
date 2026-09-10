@@ -87,38 +87,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         onRefresh: () async {
           await widget.state.reloadAllData(silent: true);
         },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 42),
-          children: [
-            _buildInfoBanner(),
-            const SizedBox(height: 16),
-            _buildTogglePill(allNotifs.length, unreadCount),
-            const SizedBox(height: 16),
-            _buildCategoryChips(),
-            const SizedBox(height: 16),
-            if (filteredNotifs.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: _buildEmptyState(),
-              )
-            else ...[
-              if (groups['Today']!.isNotEmpty) ...[
-                _buildSectionHeader('Today'),
-                ...groups['Today']!.map((n) => _buildNotificationTile(n)),
-                const SizedBox(height: 8),
-              ],
-              if (groups['Yesterday']!.isNotEmpty) ...[
-                _buildSectionHeader('Yesterday'),
-                ...groups['Yesterday']!.map((n) => _buildNotificationTile(n)),
-                const SizedBox(height: 8),
-              ],
-              if (groups['Earlier']!.isNotEmpty) ...[
-                _buildSectionHeader('Earlier'),
-                ...groups['Earlier']!.map((n) => _buildNotificationTile(n)),
-                const SizedBox(height: 8),
-              ],
-            ],
-          ],
+        child: Builder(
+          builder: (context) {
+            final items = <dynamic>[
+              'info_banner',
+              'spacer_16',
+              'toggle_pill',
+              'spacer_16',
+              'category_chips',
+              'spacer_16',
+            ];
+            
+            if (filteredNotifs.isEmpty) {
+              items.add('empty_state');
+            } else {
+              if (groups['Today']!.isNotEmpty) {
+                items.add({'header': 'Today'});
+                items.addAll(groups['Today']!);
+                items.add('spacer_8');
+              }
+              if (groups['Yesterday']!.isNotEmpty) {
+                items.add({'header': 'Yesterday'});
+                items.addAll(groups['Yesterday']!);
+                items.add('spacer_8');
+              }
+              if (groups['Earlier']!.isNotEmpty) {
+                items.add({'header': 'Earlier'});
+                items.addAll(groups['Earlier']!);
+                items.add('spacer_8');
+              }
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 42),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                if (item == 'info_banner') return _buildInfoBanner();
+                if (item == 'spacer_16') return const SizedBox(height: 16);
+                if (item == 'spacer_8') return const SizedBox(height: 8);
+                if (item == 'toggle_pill') return _buildTogglePill(allNotifs.length, unreadCount);
+                if (item == 'category_chips') return _buildCategoryChips();
+                if (item == 'empty_state') {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: _buildEmptyState(),
+                  );
+                }
+                if (item is Map && item.containsKey('header')) {
+                  return _buildSectionHeader(item['header']!);
+                }
+                if (item is NotificationModel) {
+                  return _buildNotificationTile(item);
+                }
+                return const SizedBox.shrink();
+              },
+            );
+          },
         ),
       ),
     );
