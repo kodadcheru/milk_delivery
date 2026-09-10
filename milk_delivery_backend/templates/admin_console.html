@@ -1891,7 +1891,10 @@
           <h2 style="font-size: 20px; font-weight: 800; color: #fff;">Storefront & Mobile App Banner Management</h2>
           <p style="color: var(--text-muted); font-size: 13px;">Configure the live top hero banner image, promotional tags, and headlines displayed to all customers across mobile apps.</p>
         </div>
-        <button class="btn btn-secondary" onclick="loadStorefrontConfig()" style="padding: 8px 16px; font-size: 13px;"><i class="fa-solid fa-sync"></i> Refresh Settings</button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <a href="#rzpPaymentsSection" class="btn btn-secondary" style="padding: 8px 14px; font-size: 13px; text-decoration: none; color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4);"><i class="fa-solid fa-receipt"></i> View Payments Ledger</a>
+          <button class="btn btn-secondary" onclick="loadStorefrontConfig(); loadRazorpayPayments();" style="padding: 8px 16px; font-size: 13px;"><i class="fa-solid fa-sync"></i> Refresh Settings</button>
+        </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 24px;">
@@ -2158,6 +2161,99 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── Section: Online Payments & Razorpay Transaction Ledger ── -->
+      <div class="section-card" id="rzpPaymentsSection" style="margin-top: 24px; padding: 24px; border: 1px solid rgba(16, 185, 129, 0.25); background: #0B1120;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div class="section-title" style="margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-receipt" style="color: #10B981;"></i> Razorpay & Online Payments History
+              <span id="rzpLiveBadge" style="font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 12px;">Live Sync</span>
+            </div>
+            <div style="font-size: 13px; color: #94A3B8;">
+              Live ledger of all digital transactions across prepaid wallet top-ups and direct order checkouts.
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="btn btn-secondary" onclick="loadRazorpayPayments()" style="padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-arrows-rotate" id="rzpRefreshIcon"></i> Refresh Payments
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="exportRazorpayPaymentsCsv()" style="padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-file-csv" style="color: #10B981;"></i> Export CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Total Online Collections</div>
+            <div id="rzpMetricTotal" style="font-size: 22px; font-weight: 800; color: #10B981; margin-top: 4px;">₹0.00</div>
+            <div id="rzpMetricSubtext" style="font-size: 11px; color: #64748B; margin-top: 4px;">Successfully collected</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Successful Transactions</div>
+            <div id="rzpMetricSuccess" style="font-size: 22px; font-weight: 800; color: #3B82F6; margin-top: 4px;">0</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 4px;">Captured by Razorpay</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Pending Payments</div>
+            <div id="rzpMetricPending" style="font-size: 22px; font-weight: 800; color: #F59E0B; margin-top: 4px;">0</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 4px;">Awaiting verification</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Failed / Cancelled</div>
+            <div id="rzpMetricFailed" style="font-size: 22px; font-weight: 800; color: #EF4444; margin-top: 4px;">0</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 4px;">Dropped / signature errors</div>
+          </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+          <div style="flex: 1; min-width: 260px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 12px; color: #64748B; font-size: 13px;"></i>
+            <input type="text" id="rzpSearchInput" class="form-control" placeholder="Search Payment ID (pay_...), Order ID, Phone or Customer..." oninput="debounceRzpSearch()" style="padding-left: 36px; height: 38px; font-size: 13px;">
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Status:</span>
+            <button type="button" class="filter-pill active rzp-status-pill" onclick="filterRzpByStatus('ALL', this)">All</button>
+            <button type="button" class="filter-pill rzp-status-pill" onclick="filterRzpByStatus('SUCCESS', this)"><span style="color:#10B981;">●</span> Success</button>
+            <button type="button" class="filter-pill rzp-status-pill" onclick="filterRzpByStatus('PENDING', this)"><span style="color:#F59E0B;">●</span> Pending</button>
+            <button type="button" class="filter-pill rzp-status-pill" onclick="filterRzpByStatus('FAILED', this)"><span style="color:#EF4444;">●</span> Failed</button>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Purpose:</span>
+            <button type="button" class="filter-pill active rzp-purpose-pill" onclick="filterRzpByPurpose('ALL', this)">All</button>
+            <button type="button" class="filter-pill rzp-purpose-pill" onclick="filterRzpByPurpose('WALLET_TOPUP', this)">Wallet Top-Up</button>
+            <button type="button" class="filter-pill rzp-purpose-pill" onclick="filterRzpByPurpose('ORDER_PAYMENT', this)">Order Checkout</button>
+          </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div style="overflow-x: auto; border: 1px solid #1E293B; border-radius: 10px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid #334155; color: #94A3B8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                <th style="padding: 12px 16px;">Date & Time</th>
+                <th style="padding: 12px 16px;">Payment ID / Order ID</th>
+                <th style="padding: 12px 16px;">Customer</th>
+                <th style="padding: 12px 16px;">Purpose</th>
+                <th style="padding: 12px 16px;">Amount</th>
+                <th style="padding: 12px 16px;">Status</th>
+                <th style="padding: 12px 16px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="rzpPaymentsTableBody">
+              <tr>
+                <td colspan="7" style="padding: 32px; text-align: center; color: #64748B;">
+                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #10B981; margin-bottom: 8px;"></i>
+                  <div>Loading Razorpay payment history...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2788,6 +2884,23 @@
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
   <!-- ── MODALS ── -->
   <!-- ═════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── Modal: Razorpay Payment Full Details ── -->
+  <div class="modal-overlay" id="rzpPaymentDetailModal">
+    <div class="modal-card" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+        <div class="modal-title" style="margin: 0; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-receipt" style="color: #10B981;"></i>
+          <span>Payment Details <strong id="rzpModalPayId" style="color: #10B981; font-family: monospace;">—</strong></span>
+        </div>
+        <button onclick="closeModal('rzpPaymentDetailModal')" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <div id="rzpModalContent">
+        <!-- Injected dynamically by viewRzpPaymentDetails() -->
+      </div>
+    </div>
+  </div>
 
   <!-- ── Modal: Express Order Full Details & Dispatch Cockpit ── -->
   <div class="modal-overlay" id="expressOrderDetailModal">
@@ -4421,6 +4534,7 @@
         loadReviews();
       } else if (tabName === 'storefront') {
         loadStorefrontConfig();
+        loadRazorpayPayments();
       } else if (tabName === 'lab-batches') {
         loadDailyBatches();
       }
@@ -4443,6 +4557,7 @@
         loadPayouts(),
         loadDailyBatches(),
         loadStorefrontConfig(),
+        loadRazorpayPayments(),
         loadSupportDesk(),
         loadVacationPauses()
       ]);
@@ -7914,6 +8029,330 @@
       } catch (err) {
         alert('Network error publishing storefront config.');
       }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // ── Razorpay Online Payments History & Transactions Ledger ─────────────
+    // ═════════════════════════════════════════════════════════════════════════
+
+    let rawRazorpayPayments = [];
+    let rzpPaymentsFilter = { status: 'ALL', purpose: 'ALL', q: '' };
+    let rzpSearchDebounceTimer = null;
+
+    async function loadRazorpayPayments(isSilent = false) {
+      const refreshIcon = document.getElementById('rzpRefreshIcon');
+      if (refreshIcon && !isSilent) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const token = localStorage.getItem('milkdrop_admin_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${baseUrl}/payments/admin/history/`, {
+          credentials: 'include',
+          headers: headers
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          rawRazorpayPayments = data.results || [];
+
+          // Update KPI stats
+          const stats = data.stats || {};
+          const totalCol = parseFloat(stats.total_collected || 0);
+          const elTotal = document.getElementById('rzpMetricTotal');
+          if (elTotal) elTotal.innerText = '₹' + totalCol.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+          const elSuccess = document.getElementById('rzpMetricSuccess');
+          if (elSuccess) elSuccess.innerText = stats.success_count || 0;
+
+          const elPending = document.getElementById('rzpMetricPending');
+          if (elPending) elPending.innerText = stats.pending_count || 0;
+
+          const elFailed = document.getElementById('rzpMetricFailed');
+          if (elFailed) elFailed.innerText = stats.failed_count || 0;
+
+          const elSubtext = document.getElementById('rzpMetricSubtext');
+          if (elSubtext) {
+            const wTot = parseFloat(stats.wallet_topup_total || 0).toFixed(0);
+            const oTot = parseFloat(stats.order_payment_total || 0).toFixed(0);
+            elSubtext.innerText = `₹${wTot} Wallet • ₹${oTot} Orders`;
+          }
+
+          renderRazorpayPaymentsTable();
+        } else {
+          const tbody = document.getElementById('rzpPaymentsTableBody');
+          if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="padding: 28px; text-align: center; color: #EF4444;"><i class="fa-solid fa-circle-exclamation"></i> Failed to load payments (Authorization required)</td></tr>`;
+          }
+        }
+      } catch (err) {
+        console.error('[AdminConsole] loadRazorpayPayments error:', err);
+        const tbody = document.getElementById('rzpPaymentsTableBody');
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="7" style="padding: 28px; text-align: center; color: #EF4444;"><i class="fa-solid fa-triangle-exclamation"></i> Network error connecting to payments service.</td></tr>`;
+        }
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function filterRzpByStatus(statusVal, btn) {
+      rzpPaymentsFilter.status = statusVal;
+      document.querySelectorAll('.rzp-status-pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderRazorpayPaymentsTable();
+    }
+
+    function filterRzpByPurpose(purposeVal, btn) {
+      rzpPaymentsFilter.purpose = purposeVal;
+      document.querySelectorAll('.rzp-purpose-pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderRazorpayPaymentsTable();
+    }
+
+    function debounceRzpSearch() {
+      clearTimeout(rzpSearchDebounceTimer);
+      rzpSearchDebounceTimer = setTimeout(() => {
+        const input = document.getElementById('rzpSearchInput');
+        rzpPaymentsFilter.q = (input ? input.value : '').trim().toLowerCase();
+        renderRazorpayPaymentsTable();
+      }, 250);
+    }
+
+    function renderRazorpayPaymentsTable() {
+      const tbody = document.getElementById('rzpPaymentsTableBody');
+      if (!tbody) return;
+
+      const q = rzpPaymentsFilter.q;
+      const statusF = rzpPaymentsFilter.status;
+      const purposeF = rzpPaymentsFilter.purpose;
+
+      const filtered = rawRazorpayPayments.filter(p => {
+        // Status filter
+        if (statusF !== 'ALL' && p.status !== statusF) return false;
+
+        // Purpose filter
+        if (purposeF !== 'ALL' && p.purpose !== purposeF) return false;
+
+        // Search query
+        if (q) {
+          const pid = (p.razorpay_payment_id || '').toLowerCase();
+          const oid = (p.razorpay_order_id || '').toLowerCase();
+          const uname = (p.user ? (p.user.name || '') : '').toLowerCase();
+          const uphone = (p.user ? (p.user.phone || '') : '').toLowerCase();
+          const ucode = (p.user ? (p.user.customer_code || '') : '').toLowerCase();
+          const ordId = (p.order ? (p.order.id || '') : '').toLowerCase();
+          if (!pid.includes(q) && !oid.includes(q) && !uname.includes(q) && !uphone.includes(q) && !ucode.includes(q) && !ordId.includes(q)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="padding: 36px; text-align: center; color: #64748B;">
+              <i class="fa-solid fa-receipt" style="font-size: 28px; color: #334155; margin-bottom: 10px; display: block;"></i>
+              <div style="font-weight: 600; font-size: 14px; color: #94A3B8;">No Razorpay transactions found</div>
+              <div style="font-size: 12px; margin-top: 4px;">Transactions will automatically appear here as customers recharge wallets or pay online.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(p => {
+        // Date formatting
+        let dateStr = '—';
+        if (p.created_at) {
+          const d = new Date(p.created_at);
+          dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + '<br><span style="font-size: 11px; color: #64748B;">' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + '</span>';
+        }
+
+        // Status Badge
+        let statusBadge = '';
+        if (p.status === 'SUCCESS') {
+          statusBadge = '<span style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">● SUCCESS</span>';
+        } else if (p.status === 'PENDING') {
+          statusBadge = '<span style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">● PENDING</span>';
+        } else if (p.status === 'FAILED') {
+          statusBadge = '<span style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">● FAILED</span>';
+        } else {
+          statusBadge = `<span style="background: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.35); font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px;">${p.status}</span>`;
+        }
+
+        // Purpose Badge
+        let purposeBadge = '';
+        if (p.purpose === 'WALLET_TOPUP') {
+          purposeBadge = '<span style="background: rgba(59, 130, 246, 0.12); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.25); font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px;"><i class="fa-solid fa-wallet"></i> Wallet Recharge</span>';
+        } else if (p.purpose === 'ORDER_PAYMENT') {
+          const ord = p.order ? ` #${p.order.id}` : '';
+          purposeBadge = `<span style="background: rgba(168, 85, 247, 0.12); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.25); font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px;"><i class="fa-solid fa-bag-shopping"></i> Order${ord}</span>`;
+        } else {
+          purposeBadge = `<span style="font-size: 11px; color: #94A3B8;">${p.purpose_display || p.purpose}</span>`;
+        }
+
+        // Customer details
+        let custHtml = '<span style="color: #64748B;">—</span>';
+        if (p.user) {
+          custHtml = `
+            <div style="font-weight: 700; color: #F1F5F9;">${escapeHtml(p.user.name || 'Customer')}</div>
+            <div style="font-size: 11px; color: #94A3B8;"><i class="fa-solid fa-phone" style="font-size: 9px;"></i> ${escapeHtml(p.user.phone || '—')}</div>
+          `;
+        }
+
+        // Payment ID & Order ID
+        const payId = p.razorpay_payment_id ? `<code style="background: rgba(15,23,42,0.6); padding: 2px 6px; border-radius: 4px; color: #34D399; font-weight: 700; font-size: 12px;">${escapeHtml(p.razorpay_payment_id)}</code>` : '<span style="color: #64748B; font-style: italic; font-size: 11px;">(Not captured yet)</span>';
+        const ordId = p.razorpay_order_id ? `<div style="font-size: 10.5px; color: #64748B; font-family: monospace; margin-top: 3px;">Order: ${escapeHtml(p.razorpay_order_id)}</div>` : '';
+
+        // Amount
+        const amtStr = '₹' + parseFloat(p.amount || 0).toFixed(2);
+
+        html += `
+          <tr style="border-bottom: 1px solid #1E293B; transition: background 0.15s;" onmouseover="this.style.background='rgba(30, 41, 59, 0.4)'" onmouseout="this.style.background='transparent'">
+            <td style="padding: 12px 16px; white-space: nowrap;">${dateStr}</td>
+            <td style="padding: 12px 16px;">
+              <div>${payId}</div>
+              ${ordId}
+            </td>
+            <td style="padding: 12px 16px;">${custHtml}</td>
+            <td style="padding: 12px 16px;">${purposeBadge}</td>
+            <td style="padding: 12px 16px; font-weight: 800; font-size: 14px; color: #F8FAFC;">${amtStr}</td>
+            <td style="padding: 12px 16px;">${statusBadge}</td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <button class="btn btn-secondary" onclick="viewRzpPaymentDetails(${p.id})" style="padding: 4px 10px; font-size: 11px; border-radius: 6px;">
+                <i class="fa-solid fa-circle-info" style="color: #10B981;"></i> Details
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function viewRzpPaymentDetails(paymentId) {
+      const p = rawRazorpayPayments.find(x => x.id === paymentId);
+      if (!p) return;
+
+      const modalIdEl = document.getElementById('rzpModalPayId');
+      if (modalIdEl) modalIdEl.innerText = p.razorpay_payment_id || p.razorpay_order_id || `#${p.id}`;
+
+      const contentEl = document.getElementById('rzpModalContent');
+      if (!contentEl) return;
+
+      const dateStr = p.created_at ? new Date(p.created_at).toLocaleString('en-IN') : '—';
+      const custName = p.user ? `${p.user.name} (${p.user.customer_code || 'ID: ' + p.user.id})` : '—';
+      const custPhone = p.user ? p.user.phone : '—';
+      const custEmail = p.user ? (p.user.email || '—') : '—';
+
+      let statusColor = '#10B981';
+      if (p.status === 'PENDING') statusColor = '#F59E0B';
+      if (p.status === 'FAILED') statusColor = '#EF4444';
+
+      let errorBlock = '';
+      if (p.error_description) {
+        errorBlock = `
+          <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px 14px; margin-top: 14px; color: #FCA5A5; font-size: 12px;">
+            <strong><i class="fa-solid fa-triangle-exclamation"></i> Failure Description:</strong><br>
+            ${escapeHtml(p.error_description)}
+          </div>
+        `;
+      }
+
+      let orderBlock = '';
+      if (p.order) {
+        orderBlock = `
+          <div style="margin-top: 12px; padding: 10px; background: rgba(15, 23, 42, 0.7); border-radius: 8px; border: 1px solid #1E293B;">
+            <div style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase;">Associated Live Order</div>
+            <div style="font-weight: 700; color: #F8FAFC; margin-top: 2px;">Order ID: #${escapeHtml(p.order.id)}</div>
+            <div style="font-size: 12px; color: #64748B;">Order Amount: ₹${escapeHtml(p.order.total_amount)} • Status: ${escapeHtml(p.order.status)}</div>
+          </div>
+        `;
+      }
+
+      const metaFormatted = JSON.stringify(p.metadata || {}, null, 2);
+
+      contentEl.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12.5px;">
+          <div>
+            <div style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Payment Amount</div>
+            <div style="font-size: 20px; font-weight: 900; color: #10B981;">₹${parseFloat(p.amount || 0).toFixed(2)}</div>
+          </div>
+          <div>
+            <div style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Gateway Status</div>
+            <div style="font-weight: 800; color: ${statusColor}; font-size: 14px; margin-top: 2px;">${p.status}</div>
+          </div>
+          <div>
+            <div style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Razorpay Payment ID</div>
+            <div style="font-family: monospace; color: #34D399; font-weight: 700;">${escapeHtml(p.razorpay_payment_id || 'Not captured')}</div>
+          </div>
+          <div>
+            <div style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Razorpay Order ID</div>
+            <div style="font-family: monospace; color: #94A3B8;">${escapeHtml(p.razorpay_order_id || '—')}</div>
+          </div>
+          <div>
+            <div style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Customer</div>
+            <div style="font-weight: 700; color: #F1F5F9;">${escapeHtml(custName)}</div>
+            <div style="color: #94A3B8; font-size: 11px;">Phone: ${escapeHtml(custPhone)}</div>
+            <div style="color: #64748B; font-size: 11px;">Email: ${escapeHtml(custEmail)}</div>
+          </div>
+          <div>
+            <div style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Purpose & Method</div>
+            <div style="font-weight: 700; color: #F1F5F9;">${escapeHtml(p.purpose_display || p.purpose)}</div>
+            <div style="color: #94A3B8; font-size: 11px;">Method: ${escapeHtml(p.payment_method || 'Online')}</div>
+            <div style="color: #64748B; font-size: 11px;">Created: ${dateStr}</div>
+          </div>
+        </div>
+
+        ${orderBlock}
+        ${errorBlock}
+
+        <div style="margin-top: 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">Gateway Raw Metadata</div>
+          <pre style="background: #020617; border: 1px solid #1E293B; border-radius: 8px; padding: 10px; font-size: 11px; color: #94A3B8; max-height: 180px; overflow-y: auto; font-family: monospace;">${escapeHtml(metaFormatted)}</pre>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 18px; gap: 10px;">
+          <button class="btn btn-secondary" onclick="closeModal('rzpPaymentDetailModal')">Close</button>
+        </div>
+      `;
+
+      document.getElementById('rzpPaymentDetailModal').style.display = 'flex';
+    }
+
+    function exportRazorpayPaymentsCsv() {
+      if (!rawRazorpayPayments || rawRazorpayPayments.length === 0) {
+        alert('No payment records to export.');
+        return;
+      }
+
+      const headers = ['ID', 'Date', 'Payment ID', 'Razorpay Order ID', 'Customer Name', 'Customer Phone', 'Purpose', 'Amount (INR)', 'Status', 'Payment Method', 'Error'];
+      const rows = rawRazorpayPayments.map(p => [
+        p.id,
+        p.created_at || '',
+        p.razorpay_payment_id || '',
+        p.razorpay_order_id || '',
+        p.user ? `"${(p.user.name || '').replace(/"/g, '""')}"` : '',
+        p.user ? p.user.phone : '',
+        p.purpose || '',
+        p.amount || '0.00',
+        p.status || '',
+        p.payment_method || '',
+        p.error_description ? `"${p.error_description.replace(/"/g, '""')}"` : ''
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `razorpay_payments_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     async function loadProducts() {

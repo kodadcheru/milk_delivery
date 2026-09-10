@@ -2,8 +2,9 @@ import logging
 from decimal import Decimal
 from django.conf import settings
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q, Sum
 from django.utils.decorators import method_decorator
+from apps.core.permissions import IsAdminOrStaff
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
 from rest_framework.permissions import AllowAny
@@ -319,4 +320,102 @@ class RazorpayWebhookView(APIView):
             # Always return 200 to Razorpay to acknowledge webhook receipt
 
         return Response({'status': 'ok'}, status=200)
+
+
+class AdminRazorpayPaymentsListView(APIView):
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        qs = RazorpayPayment.objects.select_related("user", "order").all()
+
+        # Status filter
+        status_filter = request.query_params.get("status", "").strip().upper()
+        if status_filter and status_filter != "ALL":
+            qs = qs.filter(status=status_filter)
+
+        # Purpose filter
+        purpose_filter = request.query_params.get("purpose", "").strip().upper()
+        if purpose_filter and purpose_filter != "ALL":
+            qs = qs.filter(purpose=purpose_filter)
+
+        # Search query
+        q = request.query_params.get("q", "").strip()
+        if q:
+            qs = qs.filter(
+                Q(razorpay_payment_id__icontains=q)
+                | Q(razorpay_order_id__icontains=q)
+                | Q(user__username__icontains=q)
+                | Q(user__phone__icontains=q)
+                | Q(user__first_name__icontains=q)
+                | Q(user__last_name__icontains=q)
+                | Q(order__id__icontains=q)
+            )
+
+        # Global aggregate stats
+        all_payments = RazorpayPayment.objects.all()
+        success_qs = all_payments.filter(status=RazorpayPayment.Status.SUCCESS)
+        total_collected = success_qs.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        success_count = success_qs.count()
+        pending_count = all_payments.filter(status=RazorpayPayment.Status.PENDING).count()
+        failed_count = all_payments.filter(status=RazorpayPayment.Status.FAILED).count()
+        wallet_topup_total = success_qs.filter(purpose=RazorpayPayment.Purpose.WALLET_TOPUP).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        order_payment_total = success_qs.filter(purpose=RazorpayPayment.Purpose.ORDER_PAYMENT).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        # Latest 300 transactions
+        payments = qs.order_by("-created_at")[:300]
+
+        results = []
+        for p in payments:
+            user_data = None
+            if p.user:
+                user_data = {
+                    "id": p.user.id,
+                    "name": p.user.get_full_name() or p.user.username or "Customer",
+                    "phone": str(p.user.phone or ""),
+                    "email": p.user.email or "",
+                    "customer_code": getattr(p.user, "customer_code", f"CUST-{p.user.id}"),
+                }
+
+            order_info = None
+            if p.order:
+                order_info = {
+                    "id": p.order.id,
+                    "total_amount": str(p.order.total_amount),
+                    "status": p.order.status,
+                }
+
+            meta = p.metadata or {}
+            method = meta.get("method") or meta.get("payment_method")
+            if not method and isinstance(meta.get("notes"), dict):
+                method = meta["notes"].get("method")
+
+            results.append({
+                "id": p.id,
+                "razorpay_order_id": p.razorpay_order_id,
+                "razorpay_payment_id": p.razorpay_payment_id or "",
+                "amount": str(p.amount),
+                "currency": p.currency,
+                "status": p.status,
+                "purpose": p.purpose,
+                "purpose_display": p.get_purpose_display(),
+                "payment_method": (method or "Online").upper(),
+                "user": user_data,
+                "order": order_info,
+                "error_description": p.error_description or "",
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "metadata": meta,
+            })
+
+        return Response({
+            "stats": {
+                "total_collected": str(total_collected),
+                "success_count": success_count,
+                "pending_count": pending_count,
+                "failed_count": failed_count,
+                "wallet_topup_total": str(wallet_topup_total),
+                "order_payment_total": str(order_payment_total),
+            },
+            "count": len(results),
+            "results": results,
+        })
 

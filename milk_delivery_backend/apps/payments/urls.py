@@ -4,6 +4,7 @@ from .views import (
     RazorpayCreateOrderView,
     RazorpayVerifyPaymentView,
     RazorpayWebhookView,
+    AdminRazorpayPaymentsListView,
 )
 
 app_name = "payments"
@@ -13,5 +14,6 @@ urlpatterns = [
     path("razorpay/create-order/", RazorpayCreateOrderView.as_view(), name="razorpay_create_order"),
     path("razorpay/verify/", RazorpayVerifyPaymentView.as_view(), name="razorpay_verify"),
     path("razorpay/webhook/", RazorpayWebhookView.as_view(), name="razorpay_webhook"),
+    path("admin/history/", AdminRazorpayPaymentsListView.as_view(), name="admin_razorpay_history"),
 ]
 
