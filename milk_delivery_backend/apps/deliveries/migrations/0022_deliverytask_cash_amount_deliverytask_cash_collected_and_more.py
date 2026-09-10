@@ -14,57 +14,97 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='deliverytask',
-            name='cash_amount',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
-        ),
-        migrations.AddField(
-            model_name='deliverytask',
-            name='cash_collected',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='deliverytask',
-            name='is_cod',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='cash_amount',
-            field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='cash_collected',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='is_cod',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='liveorder',
-            name='payment_method',
-            field=models.CharField(choices=[('WALLET', 'Wallet Auto-Debit'), ('UPI', 'Instant UPI / Pay'), ('COD', 'Cash on Delivery')], default='WALLET', max_length=20),
-        ),
-        migrations.CreateModel(
-            name='DeliveryRating',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rating', models.PositiveSmallIntegerField(default=5)),
-                ('feedback', models.TextField(blank=True, default='')),
-                ('tags', models.JSONField(blank=True, default=list)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('driver', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='driver_ratings', to=settings.AUTH_USER_MODEL)),
-                ('order', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ratings', to='deliveries.liveorder')),
-                ('task', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ratings', to='deliveries.deliverytask')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='delivery_ratings', to=settings.AUTH_USER_MODEL)),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddField(
+                    model_name='deliverytask',
+                    name='cash_amount',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
+                ),
+                migrations.AddField(
+                    model_name='deliverytask',
+                    name='cash_collected',
+                    field=models.BooleanField(default=False),
+                ),
+                migrations.AddField(
+                    model_name='deliverytask',
+                    name='is_cod',
+                    field=models.BooleanField(default=False),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='cash_amount',
+                    field=models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='cash_collected',
+                    field=models.BooleanField(default=False),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='is_cod',
+                    field=models.BooleanField(default=False),
+                ),
+                migrations.AddField(
+                    model_name='liveorder',
+                    name='payment_method',
+                    field=models.CharField(choices=[('WALLET', 'Wallet Auto-Debit'), ('UPI', 'Instant UPI / Pay'), ('COD', 'Cash on Delivery')], default='WALLET', max_length=20),
+                ),
+                migrations.CreateModel(
+                    name='DeliveryRating',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('rating', models.PositiveSmallIntegerField(default=5)),
+                        ('feedback', models.TextField(blank=True, default='')),
+                        ('tags', models.JSONField(blank=True, default=list)),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('driver', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='driver_ratings', to=settings.AUTH_USER_MODEL)),
+                        ('order', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ratings', to='deliveries.liveorder')),
+                        ('task', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ratings', to='deliveries.deliverytask')),
+                        ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='delivery_ratings', to=settings.AUTH_USER_MODEL)),
+                    ],
+                    options={
+                        'ordering': ['-created_at'],
+                        'indexes': [models.Index(fields=['driver', '-created_at'], name='deliv_rate_driver_idx'), models.Index(fields=['order', '-created_at'], name='deliv_rate_order_idx')],
+                    },
+                ),
             ],
-            options={
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['driver', '-created_at'], name='deliv_rate_driver_idx'), models.Index(fields=['order', '-created_at'], name='deliv_rate_order_idx')],
-            },
-        ),
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_amount numeric(10,2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS cash_collected boolean DEFAULT false;
+                    ALTER TABLE deliveries_deliverytask ADD COLUMN IF NOT EXISTS is_cod boolean DEFAULT false;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_amount numeric(10,2) DEFAULT 0.00;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS cash_collected boolean DEFAULT false;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS is_cod boolean DEFAULT false;
+                    ALTER TABLE deliveries_liveorder ADD COLUMN IF NOT EXISTS payment_method varchar(20) DEFAULT 'WALLET';
+                    CREATE TABLE IF NOT EXISTS deliveries_deliveryrating (
+                        id bigserial PRIMARY KEY,
+                        rating smallint NOT NULL DEFAULT 5,
+                        feedback text NOT NULL DEFAULT '',
+                        tags jsonb NOT NULL DEFAULT '[]'::jsonb,
+                        created_at timestamptz NOT NULL DEFAULT NOW(),
+                        driver_id bigint REFERENCES accounts_user(id) ON DELETE SET NULL,
+                        order_id bigint REFERENCES deliveries_liveorder(id) ON DELETE SET NULL,
+                        task_id bigint REFERENCES deliveries_deliverytask(id) ON DELETE SET NULL,
+                        user_id bigint REFERENCES accounts_user(id) ON DELETE SET NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS deliv_rate_driver_idx ON deliveries_deliveryrating (driver_id, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS deliv_rate_order_idx ON deliveries_deliveryrating (order_id, created_at DESC);
+                    """,
+                    reverse_sql="""
+                    DROP TABLE IF EXISTS deliveries_deliveryrating CASCADE;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS payment_method;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS is_cod;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS cash_collected;
+                    ALTER TABLE deliveries_liveorder DROP COLUMN IF EXISTS cash_amount;
+                    ALTER TABLE deliveries_deliverytask DROP COLUMN IF EXISTS is_cod;
+                    ALTER TABLE deliveries_deliverytask DROP COLUMN IF EXISTS cash_collected;
+                    ALTER TABLE deliveries_deliverytask DROP COLUMN IF EXISTS cash_amount;
+                    """
+                )
+            ]
+        )
     ]
