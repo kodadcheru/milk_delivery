@@ -6,12 +6,14 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
+import '../../widgets/ui_kit/pamba_refresh_indicator.dart';
 import '../../widgets/subscriptions/interactive_week_scrubber.dart';
 import '../../widgets/subscriptions/subscription_card.dart';
 import '../../widgets/delivery_calendar_view.dart';
 import '../../widgets/bookings/active_booking_live_map_card.dart';
 import '../../models/delivery_task_model.dart';
 import '../../services/api_service.dart';
+import '../../widgets/ui_kit/ui_empty_state.dart';
 
 class SubscriptionsTab extends StatefulWidget {
   final AppState state;
@@ -63,8 +65,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
-        body: RefreshIndicator(
-          color: UiTone.primary,
+        body: PambaRefreshIndicator(
           onRefresh: () => widget.state.reloadAllData(),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -315,56 +316,24 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
               if (displayedSubs.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: UiTone.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(Icons.local_florist, size: 64, color: UiTone.primary.withValues(alpha: 0.2)),
-                              const Text('🥛', style: TextStyle(fontSize: 48)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          isTelugu ? 'మీ మొదటి సభ్యత్వాన్ని ప్రారంభించండి' : 'Start your first subscription',
-                          style: UiText.h2.copyWith(fontSize: 20, color: UiTone.ink),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isTelugu
-                              ? 'ప్రతిరోజూ ఉదయం తాజా పాలు మీ గుమ్మానికి పంపిణీ చేయబడతాయి'
-                              : 'Fresh milk delivered to your doorstep every morning',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                        ),
-                        const SizedBox(height: 32),
-                        ElevatedButton.icon(
-                          onPressed: () => widget.state.setTab(0),
-                          icon: const Icon(Icons.storefront_rounded, size: 20),
-                          label: Text(
-                            isTelugu ? 'ఉత్పత్తులను బ్రౌజ్ చేయండి' : 'Browse Products',
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: UiTone.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
-                          ),
-                        ),
-                      ],
+                  child: UiEmptyState(
+                    emoji: '🥛',
+                    title: 'No Active Subscriptions',
+                    message: 'Subscribe to fresh milk or groceries and never miss your morning delivery.',
+                    action: ElevatedButton.icon(
+                      onPressed: () => widget.state.setTab(0),
+                      icon: const Icon(Icons.storefront_rounded, size: 20),
+                      label: Text(
+                        isTelugu ? 'ఉత్పత్తులను బ్రౌజ్ చేయండి' : 'Browse Products',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: UiTone.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 )

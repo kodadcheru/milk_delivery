@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../providers/app_state.dart';
 import '../../models/notification_model.dart';
 import '../../services/notification_router.dart';
+import '../../widgets/ui_kit/ui_empty_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final AppState state;
@@ -444,39 +445,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F5F0),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.notifications_none_rounded, size: 28, color: Color(0xFF0D7C66)),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No notifications here',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'deliveries and wallet alerts will appear here',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF475569),
-            ),
-          ),
-        ],
-      ),
+    return const UiEmptyState(
+      emoji: '🔔',
+      title: 'All Caught Up!',
+      message: 'No new notifications. We\'ll keep you posted on deliveries and offers.',
     );
   }
 

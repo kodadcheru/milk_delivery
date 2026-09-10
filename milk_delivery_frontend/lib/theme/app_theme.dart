@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'ui_tokens.dart';
 
 /// Next-Gen Design Tokens, Color Palette, and Styling Utilities for Pamba
@@ -124,6 +125,10 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      textTheme: GoogleFonts.dmSansTextTheme(
+        ThemeData.light().textTheme,
+      ),
+      fontFamily: GoogleFonts.dmSans().fontFamily,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryTeal,
         primary: primaryTeal,
@@ -159,6 +164,10 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      textTheme: GoogleFonts.dmSansTextTheme(
+        ThemeData.dark().textTheme,
+      ),
+      fontFamily: GoogleFonts.dmSans().fontFamily,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryTeal,
         brightness: Brightness.dark,

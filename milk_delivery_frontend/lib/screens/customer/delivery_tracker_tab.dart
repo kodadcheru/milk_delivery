@@ -13,7 +13,9 @@ import '../../widgets/order_invoice_sheet.dart';
 import '../../widgets/booking_detail_sheet.dart';
 import '../../widgets/order_status_tracker.dart';
 import '../../widgets/bookings/active_booking_live_map_card.dart';
+import '../../widgets/ui_kit/ui_empty_state.dart';
 import 'live_driver_tracking_screen.dart';
+import '../../widgets/ui_kit/pamba_refresh_indicator.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
   final AppState state;
@@ -553,8 +555,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
       return true;
     }).toList();
 
-    return RefreshIndicator(
-      color: UiTone.primary,
+    return PambaRefreshIndicator(
       onRefresh: () => widget.state.reloadAllData(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -563,53 +564,19 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (orders.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(32),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFF0FDF4), Color(0xFFECFDF5)]),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFD1FAE5)),
-                ),
-                child: Column(
-                  children: [
-                    const Text('⚡', style: TextStyle(fontSize: 48)),
-                    const SizedBox(height: 12),
-                    Text(
-                      isTelugu ? 'తక్షణ ఆర్డర్లు ఏవీ లేవు' : 'No Express Orders Found',
-                      style: UiText.h2.copyWith(fontSize: 16, color: UiTone.ink),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isTelugu
-                          ? 'తాజా పాలు, పెరుగు, పన్నీర్ మరియు వాటర్ క్యాన్‌లను తక్షణమే ఆర్డర్ చేయండి.'
-                          : 'Order fresh milk, curd, paneer, and pure water cans with instant dispatch.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildFeatureChip('🌅 06:00 AM'),
-                        const SizedBox(width: 8),
-                        _buildFeatureChip('🚛 Daily'),
-                        const SizedBox(width: 8),
-                        _buildFeatureChip('🧪 Lab Tested'),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    ElevatedButton.icon(
-                      onPressed: () => widget.state.setTab(0),
-                      icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                      label: Text(isTelugu ? 'ఉత్పత్తులను బ్రౌజ్ చేయండి' : 'Browse Fresh Products'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ],
+              UiEmptyState(
+                emoji: '📦',
+                title: 'No Deliveries Yet',
+                message: 'Your daily milk & grocery deliveries will appear here once you subscribe.',
+                action: ElevatedButton.icon(
+                  onPressed: () => widget.state.setTab(0),
+                  icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                  label: Text(isTelugu ? 'ఉత్పత్తులను బ్రౌజ్ చేయండి' : 'Browse Fresh Products'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UiTone.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               )
             else
@@ -1057,8 +1024,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
 
     final hasActiveSubs = widget.state.subscriptions.any((s) => s.status == 'ACTIVE');
 
-    return RefreshIndicator(
-      color: UiTone.primary,
+    return PambaRefreshIndicator(
       onRefresh: () => widget.state.reloadAllData(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -1066,67 +1032,24 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Empty state when both subscriptions and daily runs are empty
             if (tasks.isEmpty && !hasActiveSubs)
-              Container(
-                padding: const EdgeInsets.all(32),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFF0FDF4), Color(0xFFECFDF5)]),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFD1FAE5)),
-                ),
-                child: Column(
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.8, end: 1.0),
-                      duration: const Duration(milliseconds: 600),
-                      curve: Curves.elasticOut,
-                      builder: (context, value, child) => Transform.scale(
-                        scale: value,
-                        child: const Text('🥛', style: TextStyle(fontSize: 48)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      isTelugu ? 'డైలీ ఆర్డర్లు ఏవీ లేవు' : 'No Daily Orders Found',
-                      style: UiText.h2.copyWith(fontSize: 16, color: UiTone.ink),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isTelugu
-                          ? 'తాజా పాలు ప్రతిరోజూ ఉదయం 06:00 గంటలకు మీ ఇంటి వద్ద పొందడానికి సబ్‌స్క్రయిబ్ చేసుకోండి.'
-                          : 'Subscribe to farm fresh milk & dairy for guaranteed 06:00 AM morning doorstep delivery.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildFeatureChip('🌅 06:00 AM'),
-                        const SizedBox(width: 8),
-                        _buildFeatureChip('🚛 Daily'),
-                        const SizedBox(width: 8),
-                        _buildFeatureChip('🧪 Lab Tested'),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        widget.state.setTab(0);
-                      },
-                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
-                      label: Text(isTelugu ? 'సబ్‌స్క్రిప్షన్‌ను ప్రారంభించండి' : 'Start a Subscription'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UiTone.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
-                    ),
-                  ],
+              UiEmptyState(
+                emoji: '📦',
+                title: 'No Deliveries Yet',
+                message: 'Your daily milk & grocery deliveries will appear here once you subscribe.',
+                action: ElevatedButton.icon(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.state.setTab(0);
+                  },
+                  icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
+                  label: Text(isTelugu ? 'సబ్‌స్క్రిప్షన్‌ను ప్రారంభించండి' : 'Start a Subscription'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: UiTone.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
                 ),
               )
             else if (tasks.isEmpty && hasActiveSubs)

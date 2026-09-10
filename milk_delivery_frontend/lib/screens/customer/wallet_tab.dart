@@ -3,6 +3,8 @@ import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/scratch_card_modal.dart';
+import '../../widgets/ui_kit/ui_empty_state.dart';
+import '../../widgets/ui_kit/pamba_refresh_indicator.dart';
 
 class WalletTab extends StatefulWidget {
   final AppState state;
@@ -200,8 +202,7 @@ class _WalletTabState extends State<WalletTab> {
     }).toList();
 
     return SafeArea(
-      child: RefreshIndicator(
-        color: AppTheme.primaryTeal,
+      child: PambaRefreshIndicator(
         onRefresh: () => widget.state.reloadAllData(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -315,34 +316,19 @@ class _WalletTabState extends State<WalletTab> {
             const SizedBox(height: 12),
 
             if (filteredTxs.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: UiTone.surface,
-                  borderRadius: BorderRadius.circular(UiRadius.lg),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Column(
-                  children: [
-                    const Text('🧾', style: TextStyle(fontSize: 36)),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'No transactions yet',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textMuted),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => _showRechargeModal(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryMint,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                        elevation: 0,
-                      ),
-                      child: const Text('Top Up Now', style: TextStyle(fontWeight: FontWeight.w800)),
-                    ),
-                  ],
+              UiEmptyState(
+                emoji: '💰',
+                title: 'No Transactions Yet',
+                message: 'Add money to your Pamba Wallet and your transaction history will show here.',
+                action: ElevatedButton(
+                  onPressed: () => _showRechargeModal(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryMint,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Top Up Now', style: TextStyle(fontWeight: FontWeight.w800)),
                 ),
               )
             else

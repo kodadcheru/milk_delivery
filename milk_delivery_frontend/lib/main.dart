@@ -14,6 +14,7 @@ import 'theme/app_theme.dart';
 import 'widgets/in_app_chat_banner.dart';
 import 'services/crash_reporting_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/phone_login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/splash/pamba_splash_screen.dart';
@@ -29,6 +30,9 @@ void main() async {
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
+
+  // Pre-cache fonts for offline use
+  GoogleFonts.config.allowRuntimeFetching = true;
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

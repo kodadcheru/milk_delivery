@@ -14,6 +14,7 @@ import '../../widgets/home/home_product_card.dart';
 import '../../widgets/home/home_trust_assurance_strip.dart';
 import '../../widgets/home/home_serving_soon_view.dart';
 import '../../widgets/home/home_location_sheet.dart';
+import '../../widgets/ui_kit/pamba_refresh_indicator.dart';
 
 class CustomerHomeTab extends StatefulWidget {
   final AppState state;
@@ -85,8 +86,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
 
     return Stack(
       children: [
-        RefreshIndicator(
-          color: UiTone.primary,
+        PambaRefreshIndicator(
           onRefresh: () async {
             await widget.state.reloadAllData();
           },
