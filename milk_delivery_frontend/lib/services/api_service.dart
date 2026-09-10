@@ -1775,6 +1775,10 @@ class ApiService {
     String? ctaText,
     bool? isCodEnabled,
     bool? isWalletEnabled,
+    double? platformFee,
+    double? taxPercentage,
+    double? deliveryFee,
+    double? freeDeliveryThreshold,
   }) async {
     try {
       final payload = <String, dynamic>{};
@@ -1786,6 +1790,10 @@ class ApiService {
       if (ctaText != null) payload['cta_text'] = ctaText;
       if (isCodEnabled != null) payload['is_cod_enabled'] = isCodEnabled;
       if (isWalletEnabled != null) payload['is_wallet_enabled'] = isWalletEnabled;
+      if (platformFee != null) payload['platform_fee'] = platformFee;
+      if (taxPercentage != null) payload['tax_percentage'] = taxPercentage;
+      if (deliveryFee != null) payload['delivery_fee'] = deliveryFee;
+      if (freeDeliveryThreshold != null) payload['free_delivery_threshold'] = freeDeliveryThreshold;
 
       final res = await _executeWithRetry(() => http.post(
             Uri.parse('$baseUrl/storefront/config/'),

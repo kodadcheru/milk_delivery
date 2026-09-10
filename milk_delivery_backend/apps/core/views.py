@@ -91,6 +91,8 @@ class AppConfigView(APIView):
         from .models import SiteConfig
         cfg = SiteConfig.get()
         import os
+        from apps.products.models import StorefrontConfig
+        store_cfg = StorefrontConfig.get_active()
         return Response({
             "google_maps_api_key": cfg.google_maps_api_key or os.environ.get("GOOGLE_MAPS_API_KEY", ""),
             "support_phone": cfg.support_phone,
@@ -98,6 +100,10 @@ class AppConfigView(APIView):
             "support_email": cfg.support_email,
             "default_city": cfg.default_city,
             "welcome_bonus": int(cfg.welcome_bonus_amount),
+            "platform_fee": getattr(store_cfg, "platform_fee", 0),
+            "tax_percentage": getattr(store_cfg, "tax_percentage", 0),
+            "delivery_fee": getattr(store_cfg, "delivery_fee", 0),
+            "free_delivery_threshold": getattr(store_cfg, "free_delivery_threshold", 0),
         })
 
 

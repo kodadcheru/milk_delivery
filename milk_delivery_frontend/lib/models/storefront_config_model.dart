@@ -10,6 +10,10 @@ class StorefrontConfigModel {
   final bool isCodEnabled;
   final bool isWalletEnabled;
   final bool isActive;
+  final double platformFee;
+  final double taxPercentage;
+  final double deliveryFee;
+  final double freeDeliveryThreshold;
 
   const StorefrontConfigModel({
     this.id = 1,
@@ -23,6 +27,10 @@ class StorefrontConfigModel {
     this.isCodEnabled = true,
     this.isWalletEnabled = true,
     this.isActive = true,
+    this.platformFee = 0.0,
+    this.taxPercentage = 0.0,
+    this.deliveryFee = 0.0,
+    this.freeDeliveryThreshold = 0.0,
   });
 
   factory StorefrontConfigModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +48,10 @@ class StorefrontConfigModel {
       isCodEnabled: json['is_cod_enabled'] as bool? ?? true,
       isWalletEnabled: json['is_wallet_enabled'] as bool? ?? true,
       isActive: json['is_active'] as bool? ?? true,
+      platformFee: (json['platform_fee'] as num?)?.toDouble() ?? 0.0,
+      taxPercentage: (json['tax_percentage'] as num?)?.toDouble() ?? 0.0,
+      deliveryFee: (json['delivery_fee'] as num?)?.toDouble() ?? 0.0,
+      freeDeliveryThreshold: (json['free_delivery_threshold'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -55,6 +67,10 @@ class StorefrontConfigModel {
     'is_cod_enabled': isCodEnabled,
     'is_wallet_enabled': isWalletEnabled,
     'is_active': isActive,
+    'platform_fee': platformFee,
+    'tax_percentage': taxPercentage,
+    'delivery_fee': deliveryFee,
+    'free_delivery_threshold': freeDeliveryThreshold,
   };
 
   StorefrontConfigModel copyWith({
@@ -69,6 +85,10 @@ class StorefrontConfigModel {
     bool? isCodEnabled,
     bool? isWalletEnabled,
     bool? isActive,
+    double? platformFee,
+    double? taxPercentage,
+    double? deliveryFee,
+    double? freeDeliveryThreshold,
   }) {
     return StorefrontConfigModel(
       id: id ?? this.id,
@@ -82,6 +102,10 @@ class StorefrontConfigModel {
       isCodEnabled: isCodEnabled ?? this.isCodEnabled,
       isWalletEnabled: isWalletEnabled ?? this.isWalletEnabled,
       isActive: isActive ?? this.isActive,
+      platformFee: platformFee ?? this.platformFee,
+      taxPercentage: taxPercentage ?? this.taxPercentage,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      freeDeliveryThreshold: freeDeliveryThreshold ?? this.freeDeliveryThreshold,
     );
   }
 }

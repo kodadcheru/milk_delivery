@@ -155,6 +155,22 @@ class StorefrontConfig(models.Model):
         help_text="Allow customers to pay online via Razorpay (UPI, Cards, NetBanking)",
     )
     is_active = models.BooleanField(default=True)
+    platform_fee = models.DecimalField(
+        max_digits=6, decimal_places=2, default=Decimal("0.00"),
+        help_text="Customer platform fee in Rupees per order (0.00 for none/free)"
+    )
+    tax_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("0.00"),
+        help_text="Tax / GST percentage applied to items (e.g. 5.00 for 5%)"
+    )
+    delivery_fee = models.DecimalField(
+        max_digits=6, decimal_places=2, default=Decimal("0.00"),
+        help_text="Standard delivery partner fee in Rupees (0.00 for free delivery)"
+    )
+    free_delivery_threshold = models.DecimalField(
+        max_digits=8, decimal_places=2, default=Decimal("0.00"),
+        help_text="Minimum order subtotal in Rupees for free delivery (0.00 to disable)"
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -186,7 +186,13 @@ class FloatingCartBar extends StatelessWidget {
             });
           }
           final items = state.cartProductsList;
-          final total = state.totalCartPrice;
+          final subtotal = state.totalCartPrice;
+          final platformFee = state.storefrontConfig.platformFee;
+          final taxPct = state.storefrontConfig.taxPercentage;
+          final taxAmount = (subtotal * (taxPct / 100.0));
+          final isFreeDelivery = state.storefrontConfig.freeDeliveryThreshold > 0 && subtotal >= state.storefrontConfig.freeDeliveryThreshold;
+          final deliveryFee = isFreeDelivery ? 0.0 : state.storefrontConfig.deliveryFee;
+          final total = subtotal + platformFee + taxAmount + deliveryFee;
 
           return SizedBox(
             height: MediaQuery.of(ctx).size.height * 0.85,
@@ -1271,17 +1277,27 @@ class FloatingCartBar extends StatelessWidget {
                                     const SizedBox(height: 12),
                                     _buildBillRow(
                                       state.isTelugu ? 'వస్తువుల మొత్తం (MRP)' : 'Item Subtotal (MRP)',
-                                      '₹${total.toStringAsFixed(0)}',
+                                      '₹${subtotal.toStringAsFixed(0)}',
                                     ),
                                     _buildBillRow(
                                       state.isTelugu
                                           ? 'డెలివరీ భాగస్వామి రుసుము (${_deliveryMode == "INSTANT" ? "తక్షణ" : "షెడ్యూల్"})'
-                                          : 'Delivery Partner Fee (${_deliveryMode == "INSTANT" ? "Instant" : "Scheduled"})',
-                                      state.isTelugu ? 'ఉచితం' : 'FREE',
-                                      isHighlight: true,
+                                          : 'Delivery Partner Fee',
+                                      deliveryFee > 0 ? '₹${deliveryFee.toStringAsFixed(0)}' : (state.isTelugu ? 'ఉచితం' : 'FREE'),
+                                      isHighlight: deliveryFee == 0,
                                     ),
                                     _buildBillRow(
-                                      state.isTelugu ? 'ప్యాకేజింగ్ & నాణ్యతా రుసుము' : 'Packaging & Handling Fee',
+                                      state.isTelugu ? 'ప్లాట్‌ఫారమ్ రుసుము' : 'Platform Fee',
+                                      platformFee > 0 ? '₹${platformFee.toStringAsFixed(0)}' : (state.isTelugu ? 'ఉచితం' : 'FREE'),
+                                      isHighlight: platformFee == 0,
+                                    ),
+                                    if (taxAmount > 0 || taxPct > 0)
+                                      _buildBillRow(
+                                        state.isTelugu ? 'పన్నులు & ఛార్జీలు (${taxPct.toStringAsFixed(1)}% GST)' : 'Taxes & Charges (${taxPct.toStringAsFixed(1)}% GST)',
+                                        '₹${taxAmount.toStringAsFixed(1)}',
+                                      ),
+                                    _buildBillRow(
+                                      state.isTelugu ? 'ప్యాకేజింగ్ & నాణ్యతా రుసుము' : 'Packaging & Handling',
                                       state.isTelugu ? 'రద్దు చేయబడింది' : 'Waived',
                                       isHighlight: true,
                                     ),

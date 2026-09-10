@@ -22,6 +22,22 @@ class SiteConfig(models.Model):
     welcome_bonus_amount = models.DecimalField(
         max_digits=8, decimal_places=2, default=Decimal("0.00"),
         help_text="Welcome bonus credited to new user wallets (0 = disabled)")
+    customer_platform_fee = models.DecimalField(
+        max_digits=6, decimal_places=2, default=Decimal("0.00"),
+        help_text="Customer platform fee in Rupees per order (0.00 for none/free)"
+    )
+    tax_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("0.00"),
+        help_text="Tax / GST percentage applied to checkout orders"
+    )
+    delivery_fee = models.DecimalField(
+        max_digits=6, decimal_places=2, default=Decimal("0.00"),
+        help_text="Standard delivery partner fee in Rupees (0.00 for free delivery)"
+    )
+    free_delivery_threshold = models.DecimalField(
+        max_digits=8, decimal_places=2, default=Decimal("0.00"),
+        help_text="Minimum order subtotal for free delivery"
+    )
     
     # Delivery Timing
     morning_cutoff_hour = models.IntegerField(default=5,

@@ -264,6 +264,16 @@ class StorefrontConfigView(APIView):
             config.cta_text = cta_text.strip()
         if banner_file:
             config.banner_image = banner_file
+            
+        from decimal import Decimal
+        if "platform_fee" in request.data:
+            config.platform_fee = Decimal(str(request.data.get("platform_fee", 0)))
+        if "tax_percentage" in request.data:
+            config.tax_percentage = Decimal(str(request.data.get("tax_percentage", 0)))
+        if "delivery_fee" in request.data:
+            config.delivery_fee = Decimal(str(request.data.get("delivery_fee", 0)))
+        if "free_delivery_threshold" in request.data:
+            config.free_delivery_threshold = Decimal(str(request.data.get("free_delivery_threshold", 0)))
 
         is_cod_enabled = request.data.get("is_cod_enabled")
         if is_cod_enabled is not None:

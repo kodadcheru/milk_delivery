@@ -6,7 +6,9 @@ class SiteConfigAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Financial Settings', {
             'fields': ('platform_commission_rate', 'default_milk_price_per_litre',
-                       'max_wallet_topup', 'welcome_bonus_amount'),
+                       'max_wallet_topup', 'welcome_bonus_amount',
+                       'customer_platform_fee', 'tax_percentage', 
+                       'delivery_fee', 'free_delivery_threshold'),
         }),
         ('Delivery Timing', {
             'fields': ('morning_cutoff_hour', 'morning_cutoff_minute',

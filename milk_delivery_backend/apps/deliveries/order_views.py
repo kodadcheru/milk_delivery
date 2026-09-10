@@ -405,6 +405,19 @@ class ExpressOrderListCreateView(APIView):
         from apps.products.models import StorefrontConfig
         store_cfg = StorefrontConfig.get_active()
 
+        subtotal = sum(Decimal(str(item["unit_price"])) * Decimal(str(item["quantity"])) for item in parsed_items)
+        platform_fee = getattr(store_cfg, "platform_fee", Decimal("0.00")) or Decimal("0.00")
+        tax_pct = getattr(store_cfg, "tax_percentage", Decimal("0.00")) or Decimal("0.00")
+        tax_amount = ((subtotal * tax_pct) / Decimal("100.00")).quantize(Decimal("0.01"))
+        
+        free_thresh = getattr(store_cfg, "free_delivery_threshold", Decimal("0.00")) or Decimal("0.00")
+        if free_thresh > Decimal("0.00") and subtotal >= free_thresh:
+            delivery_fee = Decimal("0.00")
+        else:
+            delivery_fee = getattr(store_cfg, "delivery_fee", Decimal("0.00")) or Decimal("0.00")
+            
+        total_amount = subtotal + platform_fee + tax_amount + delivery_fee
+
         raw_payment_method = str(request.data.get("payment_method", "WALLET")).upper()
         if "COD" in raw_payment_method or "CASH" in raw_payment_method:
             payment_method = "COD"
@@ -457,6 +470,10 @@ class ExpressOrderListCreateView(APIView):
                     delivery_type=delivery_type,
                     eta_minutes=eta_minutes,
                     estimated_delivery_time=estimated_delivery_time,
+                    subtotal=subtotal,
+                    platform_fee=platform_fee,
+                    tax_amount=tax_amount,
+                    delivery_fee=delivery_fee,
                     total_amount=total_amount,
                     delivery_date=delivery_date,
                     delivery_slot=delivery_slot,
