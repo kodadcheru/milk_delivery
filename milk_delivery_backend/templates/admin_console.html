@@ -8035,6 +8035,16 @@
     // ── Razorpay Online Payments History & Transactions Ledger ─────────────
     // ═════════════════════════════════════════════════════════════════════════
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     let rawRazorpayPayments = [];
     let rzpPaymentsFilter = { status: 'ALL', purpose: 'ALL', q: '' };
     let rzpSearchDebounceTimer = null;
