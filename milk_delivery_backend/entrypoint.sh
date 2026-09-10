@@ -3,6 +3,21 @@ set -e
 
 echo "🚀 [1/4] Running database migrations..."
 python manage.py migrate token_blacklist --noinput || true
+
+# If deliveries legacy columns already exist in Postgres, fake-apply up to 0027 so 0028 applies cleanly
+python manage.py shell -c "
+from django.db import connection
+try:
+    with connection.cursor() as cursor:
+        cursor.execute(\"SELECT 1 FROM information_schema.columns WHERE table_name='deliveries_deliverytask' AND column_name='payout_id'\")
+        if cursor.fetchone():
+            from django.core.management import call_command
+            call_command('migrate', 'deliveries', '0027', fake=True)
+            print('✅ Automatically fake-applied deliveries up to 0027 because legacy schema already exists.')
+except Exception as e:
+    print('Notice during legacy schema check:', e)
+" 2>/dev/null || true
+
 python manage.py migrate --noinput
 
 echo "🌱 [2/4] Seeding default superusers and hub catalogs..."
