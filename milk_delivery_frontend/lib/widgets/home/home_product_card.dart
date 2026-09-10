@@ -15,7 +15,7 @@ import '../ui_kit/ui_kit.dart';
 /// Tap the body to open the lightweight [BuyOnceSheet] (pick a pack size); the
 /// trailing control adds the base pack straight to the cart and then becomes an
 /// inline −/N/+ stepper so a second delivery never requires opening a sheet.
-class HomeProductCard extends StatelessWidget {
+class HomeProductCard extends StatefulWidget {
   final AppState state;
   final ProductModel item;
 
@@ -26,7 +26,35 @@ class HomeProductCard extends StatelessWidget {
   });
 
   @override
+  State<HomeProductCard> createState() => _HomeProductCardState();
+}
+
+class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProviderStateMixin {
+  late AnimationController _addBounceController;
+  late Animation<double> _addBounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _addBounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _addBounceAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(parent: _addBounceController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _addBounceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
+    final item = widget.item;
     final isCovered = state.isLocationCovered;
     final inCartQty = state.cartQtyOf(item);
 
@@ -274,6 +302,8 @@ class HomeProductCard extends StatelessWidget {
   }
 
   Widget _buildCartControl(BuildContext context, int inCartQty) {
+    final state = widget.state;
+    final item = widget.item;
     if (!state.isLocationCovered) {
       return GestureDetector(
         onTap: () => _showOutOfZoneSheet(context),
@@ -337,25 +367,29 @@ class HomeProductCard extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           // ADD button for 1-time order
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              state.addToCart(item);
-              FloatingCartBar.showCheckoutSheet(context, state);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(UiRadius.pill),
-              ),
-              child: const Text(
-                'ADD +',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: UiTone.primary,
-                  letterSpacing: 0.3,
+          ScaleTransition(
+            scale: _addBounceAnimation,
+            child: GestureDetector(
+              onTap: () async {
+                HapticFeedback.selectionClick();
+                _addBounceController.forward().then((_) => _addBounceController.reverse());
+                state.addToCart(item);
+                FloatingCartBar.showCheckoutSheet(context, state);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(UiRadius.pill),
+                ),
+                child: const Text(
+                  'ADD +',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: UiTone.primary,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ),
             ),
@@ -376,12 +410,17 @@ class HomeProductCard extends StatelessWidget {
           _stepButton(Icons.remove_rounded, () => state.decreaseCartQty(item)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              '$inCartQty',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+              child: Text(
+                '$inCartQty',
+                key: ValueKey<int>(inCartQty),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -402,6 +441,7 @@ class HomeProductCard extends StatelessWidget {
   }
 
   Widget _buildEmojiFallback() {
+    final item = widget.item;
     // Category-based pastel background
     Color bgStart;
     Color bgEnd;
@@ -445,6 +485,8 @@ class HomeProductCard extends StatelessWidget {
   }
 
   void _showOutOfZoneSheet(BuildContext context) {
+    final state = widget.state;
+    final item = widget.item;
     final hubName = state.primaryHub['name'] ?? 'Kodad Hub';
     final radius = state.primaryHub['coverage_radius_km'] ?? '8.5';
     showModalBottomSheet(

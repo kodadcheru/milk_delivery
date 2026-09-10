@@ -164,6 +164,28 @@ class _WalletTabState extends State<WalletTab> {
     );
   }
 
+  Widget _quickRechargeChip(String label, double amount) {
+    return GestureDetector(
+      onTap: () => _showRechargeModal(context, defaultAmount: amount),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryMint.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(UiRadius.pill),
+          border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.primaryMint,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bal = widget.state.currentUser?.walletBalance ?? 0.0;
@@ -187,183 +209,81 @@ class _WalletTabState extends State<WalletTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── 💳 Holographic Platinum Milk Card ──
+            // ── 💳 Premium Balance Card ──
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: AppTheme.holographicCardGradient,
-                borderRadius: BorderRadius.circular(UiRadius.xl),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.2),
+                gradient: AppTheme.emeraldGradient,
+                borderRadius: BorderRadius.circular(UiRadius.lg),
                 boxShadow: UiShadow.elevated,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  const Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentAmber.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(UiRadius.xs),
-                              border: Border.all(color: AppTheme.accentAmber),
-                            ),
-                            child: const Row(
-                              children: [
-                                Text('⭐', style: TextStyle(fontSize: 10)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Platinum Farm Club',
-                                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          AppTheme.hapticLight();
-                          showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            builder: (ctx) => Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: const BoxDecoration(
-                                color: AppTheme.darkSlate,
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(UiRadius.xl)),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.security_rounded, color: AppTheme.primaryMint, size: 48),
-                                  const SizedBox(height: 16),
-                                  const Text(
-                                    'Auto-Debit Secure',
-                                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    'Your wallet balance is automatically debited only after each successful doorstep delivery. You are never charged in advance.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: UiTone.softText, fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppTheme.primaryMint,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                                      ),
-                                      child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryMint.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(UiRadius.sm),
-                            border: Border.all(color: AppTheme.primaryMint),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.bolt_rounded, color: AppTheme.primaryMint, size: 12),
-                              SizedBox(width: 2),
-                              Text(
-                                'Auto-Debit 🟢',
-                                style: TextStyle(color: AppTheme.primaryMint, fontSize: 9.5, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      Icon(Icons.account_balance_wallet_rounded, color: Colors.white70, size: 20),
+                      SizedBox(width: 8),
+                      Text('Pamba Wallet', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    widget.state.isTelugu
-                        ? 'అందుబాటులో ఉన్న ప్రీపెయిడ్ బ్యాలెన్స్'
-                        : 'AVAILABLE PREPAID MILK BALANCE',
-                    style: const TextStyle(color: UiTone.softText, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '₹${bal.toStringAsFixed(2)}',
+                  const SizedBox(height: 12),
+                  // Animated balance counter
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: bal),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Text(
+                        '₹${value.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
+                          color: Colors.white,
+                          letterSpacing: -1,
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(UiRadius.sm),
-                        ),
-                        child: Text(
-                          estDays > 0 ? '🗓️ ~$estDays Days Milk Covered' : '⚠️ Top Up Needed',
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _showRechargeModal(context),
-                          icon: const Icon(Icons.add_rounded, size: 18),
-                          label: const Text('Add Money / Top Up', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryMint,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            elevation: 0,
-                          ),
-                        ),
+                  const SizedBox(height: 16),
+                  // Add Money button
+                  GestureDetector(
+                    onTap: () => _showRechargeModal(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(UiRadius.pill),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                       ),
-                      const SizedBox(width: 10),
-                      IconButton.filled(
-                        onPressed: () {
-                          AppTheme.hapticLight();
-                          ScratchCardRewardModal.show(context, widget.state, 500);
-                        },
-                        icon: const Text('🎁', style: TextStyle(fontSize: 18)),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.15),
-                          padding: const EdgeInsets.all(12),
-                        ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                          SizedBox(width: 4),
+                          Text('Add Money', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 18),
-
-            // ── Monthly Farm Savings Metric (Removed) ──
+            const SizedBox(height: 20),
+            
+            // ── Quick Recharge Chips ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _quickRechargeChip('₹500', 500),
+                const SizedBox(width: 8),
+                _quickRechargeChip('₹1,000', 1000),
+                const SizedBox(width: 8),
+                _quickRechargeChip('₹2,000', 2000),
+              ],
+            ),
 
             const SizedBox(height: 20),
 
@@ -445,19 +365,15 @@ class _WalletTabState extends State<WalletTab> {
                     child: Row(
                       children: [
                         Container(
-                          width: 36,
-                          height: 36,
+                          width: 36, height: 36,
                           decoration: BoxDecoration(
-                            color: isCredit
-                                ? AppTheme.primaryMint.withValues(alpha: 0.12)
-                                : UiTone.error.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(UiRadius.sm),
+                            color: isCredit ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
+                            shape: BoxShape.circle,
                           ),
-                          alignment: Alignment.center,
                           child: Icon(
                             isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                            color: isCredit ? AppTheme.primaryMint : UiTone.error,
-                            size: 18,
+                            size: 16,
+                            color: isCredit ? UiTone.success : UiTone.error,
                           ),
                         ),
                         const SizedBox(width: 12),
