@@ -271,20 +271,28 @@ class StorefrontConfigView(APIView):
         site_cfg = SiteConfig.get()
         has_site_cfg_changes = False
 
+        def _parse_decimal(val, default="0.00"):
+            if val is None or str(val).strip() == "":
+                return Decimal(default)
+            try:
+                return Decimal(str(val).strip())
+            except Exception:
+                return Decimal(default)
+
         if "platform_fee" in request.data:
-            config.platform_fee = Decimal(str(request.data.get("platform_fee", 0)))
+            config.platform_fee = _parse_decimal(request.data.get("platform_fee"), "0.00")
             site_cfg.customer_platform_fee = config.platform_fee
             has_site_cfg_changes = True
         if "tax_percentage" in request.data:
-            config.tax_percentage = Decimal(str(request.data.get("tax_percentage", 0)))
+            config.tax_percentage = _parse_decimal(request.data.get("tax_percentage"), "0.00")
             site_cfg.tax_percentage = config.tax_percentage
             has_site_cfg_changes = True
         if "delivery_fee" in request.data:
-            config.delivery_fee = Decimal(str(request.data.get("delivery_fee", 0)))
+            config.delivery_fee = _parse_decimal(request.data.get("delivery_fee"), "0.00")
             site_cfg.delivery_fee = config.delivery_fee
             has_site_cfg_changes = True
         if "free_delivery_threshold" in request.data:
-            config.free_delivery_threshold = Decimal(str(request.data.get("free_delivery_threshold", 0)))
+            config.free_delivery_threshold = _parse_decimal(request.data.get("free_delivery_threshold"), "0.00")
             site_cfg.free_delivery_threshold = config.free_delivery_threshold
             has_site_cfg_changes = True
         if has_site_cfg_changes:

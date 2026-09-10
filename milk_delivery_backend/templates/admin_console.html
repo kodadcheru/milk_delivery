@@ -2041,6 +2041,12 @@
                 <div style="font-weight: 800; font-size: 14px; color: #fff; display: flex; align-items: center; gap: 8px;">
                   <i class="fa-solid fa-receipt" style="color: #10B981;"></i> Platform Fees, Taxes & Delivery Surcharges
                 </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span id="sfFeeSyncBadge" style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.2); color: #10B981;">Live Synced</span>
+                  <button type="button" class="btn btn-primary" onclick="autoSaveStorefrontFees(event)" style="padding: 5px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Fees
+                  </button>
+                </div>
               </div>
               <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
                 Configure customer checkout fees and GST tax rates applied to mobile orders. Changes apply immediately in customer checkout.
@@ -2049,22 +2055,22 @@
               <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 16px;">
                 <div class="form-group" style="margin-bottom: 0;">
                   <label>Customer Platform Fee (₹)</label>
-                  <input type="number" step="0.5" min="0" id="sfPlatformFee" class="form-control" placeholder="0.00" oninput="updateStorefrontFeePreview()">
+                  <input type="number" step="0.5" min="0" id="sfPlatformFee" class="form-control" placeholder="0.00" oninput="updateStorefrontFeePreview()" onchange="autoSaveStorefrontFees()">
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">e.g. ₹2.00 or ₹3.00 platform charge per order</div>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label>Tax / GST Rate (%)</label>
-                  <input type="number" step="0.1" min="0" max="100" id="sfTaxPercentage" class="form-control" placeholder="0.0" oninput="updateStorefrontFeePreview()">
+                  <input type="number" step="0.1" min="0" max="100" id="sfTaxPercentage" class="form-control" placeholder="0.0" oninput="updateStorefrontFeePreview()" onchange="autoSaveStorefrontFees()">
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">e.g. 5.0% GST applied to items subtotal</div>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label>Standard Delivery Partner Fee (₹)</label>
-                  <input type="number" step="1" min="0" id="sfDeliveryFee" class="form-control" placeholder="0.00" oninput="updateStorefrontFeePreview()">
+                  <input type="number" step="1" min="0" id="sfDeliveryFee" class="form-control" placeholder="0.00" oninput="updateStorefrontFeePreview()" onchange="autoSaveStorefrontFees()">
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">e.g. ₹15.00 delivery fee (0 for Free Delivery)</div>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label>Free Delivery Order Threshold (₹)</label>
-                  <input type="number" step="10" min="0" id="sfFreeDeliveryThreshold" class="form-control" placeholder="0.00" oninput="updateStorefrontFeePreview()">
+                  <input type="number" step="10" min="0" id="sfFreeDeliveryThreshold" class="form-control" placeholder="0.00" oninput="updateStorefrontFeePreview()" onchange="autoSaveStorefrontFees()">
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Free delivery if subtotal exceeds this amount (0 to disable)</div>
                 </div>
               </div>
@@ -7769,6 +7775,66 @@
       }
     }
 
+    async function autoSaveStorefrontFees(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const pFee = parseFloat(document.getElementById('sfPlatformFee')?.value || 0).toFixed(2);
+      const taxPct = parseFloat(document.getElementById('sfTaxPercentage')?.value || 0).toFixed(2);
+      const dFee = parseFloat(document.getElementById('sfDeliveryFee')?.value || 0).toFixed(2);
+      const thresh = parseFloat(document.getElementById('sfFreeDeliveryThreshold')?.value || 0).toFixed(2);
+
+      const badge = document.getElementById('sfFeeSyncBadge');
+      if (badge) {
+        badge.innerText = 'Saving... ⏳';
+        badge.style.color = '#F59E0B';
+        badge.style.background = 'rgba(245, 158, 11, 0.2)';
+      }
+
+      showStorefrontToast(`Saving delivery fee (₹${dFee})...`, 'info');
+
+      try {
+        const payload = {
+          platform_fee: pFee,
+          tax_percentage: taxPct,
+          delivery_fee: dFee,
+          free_delivery_threshold: thresh
+        };
+
+        const res = await fetch(`${baseUrl}/storefront/config/`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: getAdminHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentStorefrontConfig = data;
+          if (badge) {
+            badge.innerText = 'Saved ✅';
+            badge.style.color = '#10B981';
+            badge.style.background = 'rgba(16, 185, 129, 0.2)';
+            setTimeout(() => { badge.innerText = 'Live Synced'; }, 2500);
+          }
+          showStorefrontToast(`✅ Standard Delivery Partner Fee set to ₹${dFee} successfully!`, 'success');
+          updateStorefrontFeePreview();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          if (badge) {
+            badge.innerText = 'Error ❌';
+            badge.style.color = '#EF4444';
+            badge.style.background = 'rgba(239, 68, 68, 0.2)';
+          }
+          showStorefrontToast(`❌ Failed to update fees: ${err.detail || 'Authorization required'}`, 'error');
+        }
+      } catch (err) {
+        if (badge) {
+          badge.innerText = 'Network Error ❌';
+          badge.style.color = '#EF4444';
+        }
+        showStorefrontToast('Network error saving delivery fees.', 'error');
+      }
+    }
+
     function resetStorefrontDefault() {
       document.getElementById('sfBannerUrl').value = 'https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80';
       document.getElementById('sfHeadline').value = 'Order by 11PM Tonight →';
@@ -7830,6 +7896,7 @@
       try {
         const res = await fetch(`${baseUrl}/storefront/config/`, {
           method: 'POST',
+          credentials: 'include',
           headers: headers,
           body: formData
         });
@@ -7838,7 +7905,7 @@
           const data = await res.json();
           currentStorefrontConfig = data;
           selectedStorefrontFile = null;
-          alert('✅ Storefront Banner & Branding published successfully to all customer mobile apps!');
+          alert('✅ Storefront Settings & Delivery Fees published successfully to all customer mobile apps!');
           loadStorefrontConfig();
         } else {
           const err = await res.json().catch(() => ({}));
