@@ -353,15 +353,24 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                  child: item.imageUrl.isNotEmpty
-                      ? Image.network(
-                          item.imageUrl,
-                          width: 64,
-                          height: 64,
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, error, stackTrace) => _heroFallback(item),
-                        )
-                      : _heroFallback(item),
+                  child: Hero(
+                    tag: 'product_image_${item.id}',
+                    flightShuttleBuilder: (_, animation, direction, fromContext, toContext) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: toContext.widget,
+                      );
+                    },
+                    child: item.imageUrl.isNotEmpty
+                        ? Image.network(
+                            item.imageUrl,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, error, stackTrace) => _heroFallback(item),
+                          )
+                        : _heroFallback(item),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

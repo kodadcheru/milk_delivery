@@ -13,7 +13,9 @@ import 'services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/in_app_chat_banner.dart';
 import 'services/crash_reporting_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/auth/phone_login_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/splash/pamba_splash_screen.dart';
 import 'screens/shells/customer_shell.dart';
 import 'screens/shells/driver_shell.dart';
@@ -108,6 +110,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   bool _isLoggedIn = false;
   bool _isInitializing = true;
   bool _showSplash = true;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -123,6 +126,12 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
   }
 
   Future<void> _checkExistingSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+    if (!hasSeenOnboarding) {
+      _showOnboarding = true;
+    }
+
     // Load cached addresses, catalog, and cached role FIRST (instant, zero network latency)
     await _appState.loadCachedAddresses();
     await _appState.loadCachedCatalog();
@@ -144,6 +153,16 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
       setState(() {
         _isLoggedIn = false;
         _isInitializing = false;
+      });
+    }
+  }
+
+  Future<void> _markOnboardingComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+    if (mounted) {
+      setState(() {
+        _showOnboarding = false;
       });
     }
   }
@@ -189,21 +208,26 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
                     }
                   },
                 )
-              : (!_isLoggedIn
-                  ? PhoneLoginScreen(
-                      key: const ValueKey('phone_login_screen_root'),
-                      state: _appState,
-                      onLoginSuccess: () {
-                        if (mounted) {
-                          setState(() => _isLoggedIn = true);
-                        }
-                      },
+              : (_showOnboarding
+                  ? OnboardingScreen(
+                      key: const ValueKey('onboarding_screen'),
+                      onComplete: _markOnboardingComplete,
                     )
-                  : MainAppShell(
-                      key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
-                      state: _appState,
-                      onLogout: _handleLogout,
-                    )),
+                  : (!_isLoggedIn
+                      ? PhoneLoginScreen(
+                          key: const ValueKey('phone_login_screen_root'),
+                          state: _appState,
+                          onLoginSuccess: () {
+                            if (mounted) {
+                              setState(() => _isLoggedIn = true);
+                            }
+                          },
+                        )
+                      : MainAppShell(
+                          key: ValueKey('main_app_shell_${_appState.currentRole}_${_appState.currentUser?.id ?? "session"}'),
+                          state: _appState,
+                          onLogout: _handleLogout,
+                        ))),
         ),
       ),
     );

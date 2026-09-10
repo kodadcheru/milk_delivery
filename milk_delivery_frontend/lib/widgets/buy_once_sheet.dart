@@ -250,13 +250,22 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
       child: SizedBox(
         width: 56,
         height: 56,
-        child: item.imageUrl.isNotEmpty
-            ? Image.network(
-                item.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _thumbFallback(item),
-              )
-            : _thumbFallback(item),
+        child: Hero(
+          tag: 'product_image_${item.id}',
+          flightShuttleBuilder: (_, animation, direction, fromContext, toContext) {
+            return FadeTransition(
+              opacity: animation,
+              child: toContext.widget,
+            );
+          },
+          child: item.imageUrl.isNotEmpty
+              ? Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _thumbFallback(item),
+                )
+              : _thumbFallback(item),
+        ),
       ),
     );
   }

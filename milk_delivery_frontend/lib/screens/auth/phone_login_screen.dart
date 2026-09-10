@@ -9,6 +9,7 @@ import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/orbit_otp_boxes.dart';
 import '../common/legal_terms_screen.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
   final AppState state;
@@ -104,15 +105,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
     final phoneRegex = RegExp(r'^[6-9]\d{9}$');
     if (!phoneRegex.hasMatch(clean10)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red.shade700,
-          content: Text(
-            widget.state.isTelugu
-                ? 'దయచేసి 6, 7, 8 లేదా 9 తో ప్రారంభమయ్యే సరైన 10 అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి'
-                : 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9',
-          ),
-        ),
+      PambaToast.show(
+        context,
+        message: widget.state.isTelugu
+            ? 'దయచేసి 6, 7, 8 లేదా 9 తో ప్రారంభమయ్యే సరైన 10 అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి'
+            : 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9',
+        type: ToastType.error,
       );
       return;
     }

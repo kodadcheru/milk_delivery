@@ -8,6 +8,7 @@ import '../buy_once_sheet.dart';
 import '../floating_cart_bar.dart';
 import '../product_detail_sheet.dart';
 import 'home_location_sheet.dart';
+import '../ui_kit/ui_kit.dart';
 
 /// Product card shared by the home grid and the category products screen.
 ///
@@ -47,13 +48,16 @@ class HomeProductCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // 1. Full-bleed image or emoji fallback
-                item.imageUrl.isNotEmpty
-                    ? Image.network(
-                        item.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _buildEmojiFallback(),
-                      )
-                    : _buildEmojiFallback(),
+                Hero(
+                  tag: 'product_image_${item.id}',
+                  child: item.imageUrl.isNotEmpty
+                      ? Image.network(
+                          item.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => _buildEmojiFallback(),
+                        )
+                      : _buildEmojiFallback(),
+                ),
 
                 // 2. Bottom gradient overlay — covers lower 55%
                 Positioned(
@@ -511,11 +515,10 @@ class HomeProductCard extends StatelessWidget {
                   Navigator.pop(ctx);
                   await state.requestCoverageExpansion();
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: UiTone.primary,
-                        content: Text('🔔 Interest recorded for ${state.currentCityOrTown}! We will notify you.'),
-                      ),
+                    PambaToast.show(
+                      context,
+                      message: '🔔 Interest recorded for ${state.currentCityOrTown}! We will notify you.',
+                      type: ToastType.info,
                     );
                   }
                 },

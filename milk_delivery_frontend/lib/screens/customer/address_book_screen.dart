@@ -7,6 +7,7 @@ import '../../services/location_service.dart';
 import '../../services/permission_service.dart';
 import '../../theme/app_theme.dart';
 import 'map_location_picker_screen.dart';
+import '../../widgets/ui_kit/ui_kit.dart';
 
 class AddressBookScreen extends StatefulWidget {
   final AppState state;
@@ -400,15 +401,12 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                       _openAddEditAddressSheet(context, appState, existing: addr);
                     } else if (value == 'default') {
                       appState.setDefaultCustomerAddress(addr.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            appState.isTelugu
-                                ? "⭐ '${addr.title}' ప్రాథమిక డెలివరీ చిరునామాగా సెట్ చేయబడింది"
-                                : "⭐ Set '${addr.title}' as primary delivery address",
-                          ),
-                          backgroundColor: const Color(0xFF0F172A),
-                        ),
+                      PambaToast.show(
+                        context,
+                        message: appState.isTelugu
+                            ? "⭐ '${addr.title}' ప్రాథమిక డెలివరీ చిరునామాగా సెట్ చేయబడింది"
+                            : "⭐ Set '${addr.title}' as primary delivery address",
+                        type: ToastType.success,
                       );
                     } else if (value == 'delete') {
                       _confirmDeleteAddress(context, appState, addr);
@@ -499,12 +497,10 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       appState.selectActiveAddress(addr);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("🚀 Delivering to '${addr.title}' (${addr.flatHouseNo.isNotEmpty ? addr.flatHouseNo : addr.streetAddress})"),
-                          backgroundColor: const Color(0xFF10B981),
-                          duration: const Duration(seconds: 2),
-                        ),
+                      PambaToast.show(
+                        context,
+                        message: "🚀 Delivering to '${addr.title}' (${addr.flatHouseNo.isNotEmpty ? addr.flatHouseNo : addr.streetAddress})",
+                        type: ToastType.success,
                       );
                       if (widget.isSelectingForCheckout || Navigator.canPop(context)) {
                         Navigator.pop(context, addr);
