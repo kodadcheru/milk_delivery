@@ -8048,10 +8048,26 @@
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const res = await fetch(`${baseUrl}/payments/admin/history/`, {
-          credentials: 'include',
-          headers: headers
-        });
+        let res = await fetch(`${baseUrl}/admin/payments/`, { headers: headers });
+        if (res.status === 404) {
+          res = await fetch(`${baseUrl}/payments/admin/history/`, { headers: headers });
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          const tbody = document.getElementById('rzpPaymentsTableBody');
+          if (tbody) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" style="padding: 32px; text-align: center; color: #F59E0B;">
+                  <i class="fa-solid fa-lock" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                  <div style="font-weight: 700; font-size: 14px; color: #F8FAFC;">Admin Authorization Required</div>
+                  <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Please sign in to the operations console to view payment records.</div>
+                </td>
+              </tr>
+            `;
+          }
+          return;
+        }
 
         if (res.ok) {
           const data = await res.json();
@@ -8081,16 +8097,17 @@
 
           renderRazorpayPaymentsTable();
         } else {
+          const errData = await res.json().catch(() => ({}));
           const tbody = document.getElementById('rzpPaymentsTableBody');
           if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="7" style="padding: 28px; text-align: center; color: #EF4444;"><i class="fa-solid fa-circle-exclamation"></i> Failed to load payments (Authorization required)</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="padding: 28px; text-align: center; color: #EF4444;"><i class="fa-solid fa-circle-exclamation"></i> ${errData.detail || 'Failed to load payments.'}</td></tr>`;
           }
         }
       } catch (err) {
         console.error('[AdminConsole] loadRazorpayPayments error:', err);
         const tbody = document.getElementById('rzpPaymentsTableBody');
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="7" style="padding: 28px; text-align: center; color: #EF4444;"><i class="fa-solid fa-triangle-exclamation"></i> Network error connecting to payments service.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" style="padding: 28px; text-align: center; color: #EF4444;"><i class="fa-solid fa-triangle-exclamation"></i> Could not connect to payments service (${err.message || 'Network error'}). Please click Refresh.</td></tr>`;
         }
       } finally {
         if (refreshIcon) refreshIcon.classList.remove('fa-spin');

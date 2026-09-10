@@ -114,6 +114,7 @@ from apps.products.views import (
     StorefrontConfigView,
     cross_sell_products,
 )
+from apps.payments.views import AdminRazorpayPaymentsListView
 from apps.subscriptions.views import (
     SubscriptionDetailView,
     SubscriptionListCreateView,
@@ -180,6 +181,7 @@ urlpatterns = [
     path("api/admin/reviews/", AdminReviewsListView.as_view(), name="admin_reviews"),
     path("api/admin/bottle-returns/", AdminBottleReturnsView.as_view(), name="admin_bottle_returns"),
     path("api/admin/payouts/", AdminPayoutsView.as_view(), name="admin_payouts"),
+    path("api/admin/payments/", AdminRazorpayPaymentsListView.as_view(), name="admin_payments_history"),
     # Service Area endpoints
     path("api/service-areas/", ServiceAreaListView.as_view(), name="service_areas_list"),
     path("api/service-areas/check/", ServiceAreaCheckView.as_view(), name="service_areas_check"),

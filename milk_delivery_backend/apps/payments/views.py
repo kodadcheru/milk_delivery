@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Q, Sum
 from django.utils.decorators import method_decorator
-from apps.core.permissions import IsAdminOrStaff
+from apps.core.permissions import IsAdminOrStaff, IsAdminOrHubManager
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
 from rest_framework.permissions import AllowAny
@@ -323,7 +323,7 @@ class RazorpayWebhookView(APIView):
 
 
 class AdminRazorpayPaymentsListView(APIView):
-    permission_classes = [IsAdminOrStaff]
+    permission_classes = [IsAdminOrHubManager]
 
     def get(self, request):
         qs = RazorpayPayment.objects.select_related("user", "order").all()
