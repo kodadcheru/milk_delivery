@@ -4537,6 +4537,9 @@
         loadRazorpayPayments();
       } else if (tabName === 'lab-batches') {
         loadDailyBatches();
+      } else if (tabName === 'products') {
+        loadCategories();
+        loadProducts();
       }
     }
 
@@ -7276,7 +7279,8 @@
       try {
         const res = await fetch(`${baseUrl}/categories/?all=true`);
         if (res.ok) {
-          rawCategories = await res.json();
+          const data = await res.json();
+          rawCategories = Array.isArray(data) ? data : (data.results || []);
           renderCategoriesGrid(rawCategories);
           renderCategoryFilterPills();
           populateCategoryDropdowns();
