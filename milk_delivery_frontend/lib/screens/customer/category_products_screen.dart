@@ -5,7 +5,8 @@ import '../../providers/app_state.dart';
 import '../../theme/category_catalog.dart';
 import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
-import '../../widgets/floating_cart_bar.dart';
+import '../../widgets/cart/floating_cart_bar.dart' as cart;
+import '../customer/cart_page.dart';
 import '../../widgets/home/home_product_card.dart';
 import '../../widgets/shimmer_loading.dart';
 
@@ -418,13 +419,31 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           ),
 
           // Floating Cart Bar
-          if (widget.state.totalCartItemCount > 0)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: FloatingCartBar(state: widget.state),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: AnimatedSlide(
+              offset: widget.state.totalCartItemCount > 0 ? Offset.zero : const Offset(0, 2),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: widget.state.totalCartItemCount > 0 ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: IgnorePointer(
+                  ignoring: widget.state.totalCartItemCount == 0,
+                  child: cart.FloatingCartBar(
+                    state: widget.state,
+                    onViewCart: () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => CartPage(state: widget.state),
+                      ));
+                    },
+                  ),
+                ),
+              ),
             ),
+          ),
         ],
       ),
     );

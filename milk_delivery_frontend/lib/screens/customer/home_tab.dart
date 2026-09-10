@@ -4,7 +4,8 @@ import '../../theme/ui_tokens.dart';
 
 import '../../providers/app_state.dart';
 import '../../models/product_model.dart';
-import '../../widgets/floating_cart_bar.dart';
+import '../../widgets/cart/floating_cart_bar.dart' as cart;
+import '../customer/cart_page.dart';
 import '../../widgets/shimmer_loading.dart';
 
 import '../../widgets/home/home_location_bar.dart';
@@ -252,15 +253,34 @@ class _CustomerHomeTabState extends State<CustomerHomeTab>
         ),
 
         // ── Persistent Floating Smart Cart ──
-        if (widget.state.totalCartItemCount > 0 && widget.state.isLocationCovered)
+        if (widget.state.isLocationCovered)
           Positioned(
             left: 16,
             right: 16,
             bottom: 16,
-            child: Semantics(
-              label: 'Shopping Cart: ${widget.state.totalCartItemCount} items, total ₹${widget.state.totalCartPrice.toStringAsFixed(0)}',
-              button: true,
-              child: FloatingCartBar(state: widget.state),
+            child: AnimatedSlide(
+              offset: widget.state.totalCartItemCount > 0 ? Offset.zero : const Offset(0, 2),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: widget.state.totalCartItemCount > 0 ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: IgnorePointer(
+                  ignoring: widget.state.totalCartItemCount == 0,
+                  child: Semantics(
+                    label: 'Shopping Cart: ${widget.state.totalCartItemCount} items, total ₹${widget.state.totalCartPrice.toStringAsFixed(0)}',
+                    button: true,
+                    child: cart.FloatingCartBar(
+                      state: widget.state,
+                      onViewCart: () {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => CartPage(state: widget.state),
+                        ));
+                      },
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
       ],

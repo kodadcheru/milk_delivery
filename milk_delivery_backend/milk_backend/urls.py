@@ -112,6 +112,7 @@ from apps.products.views import (
     ProductListView,
     HubInventoryListUpdateView,
     StorefrontConfigView,
+    cross_sell_products,
 )
 from apps.subscriptions.views import (
     SubscriptionDetailView,
@@ -215,6 +216,7 @@ urlpatterns = [
     path("api/categories/", CategoryListCreateView.as_view(), name="category_list"),
     path("api/categories/<int:pk>/", CategoryDetailView.as_view(), name="category_detail"),
     path("api/products/", ProductListView.as_view(), name="product_list"),
+    path("api/products/cross-sell/", cross_sell_products, name="cross-sell-products"),
     path("api/products/<int:pk>/", ProductDetailView.as_view(), name="product_detail"),
     path("api/storefront/config/", StorefrontConfigView.as_view(), name="storefront_config"),
     path("api/hub-inventory/", HubInventoryListUpdateView.as_view(), name="hub_inventory_list_update"),

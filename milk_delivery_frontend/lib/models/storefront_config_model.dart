@@ -9,6 +9,7 @@ class StorefrontConfigModel {
   final String ctaText;
   final bool isCodEnabled;
   final bool isWalletEnabled;
+  final bool isOnlinePaymentEnabled;
   final bool isActive;
   final double platformFee;
   final double taxPercentage;
@@ -26,6 +27,7 @@ class StorefrontConfigModel {
     this.ctaText = 'SUBSCRIBE NOW ➔',
     this.isCodEnabled = true,
     this.isWalletEnabled = true,
+    this.isOnlinePaymentEnabled = true,
     this.isActive = true,
     this.platformFee = 0.0,
     this.taxPercentage = 0.0,
@@ -47,6 +49,7 @@ class StorefrontConfigModel {
       ctaText: json['cta_text'] != null ? (json['cta_text'] as String) : 'SUBSCRIBE NOW ➔',
       isCodEnabled: json['is_cod_enabled'] as bool? ?? true,
       isWalletEnabled: json['is_wallet_enabled'] as bool? ?? true,
+      isOnlinePaymentEnabled: json['is_online_payment_enabled'] as bool? ?? true,
       isActive: json['is_active'] as bool? ?? true,
       platformFee: (json['platform_fee'] as num?)?.toDouble() ?? 0.0,
       taxPercentage: (json['tax_percentage'] as num?)?.toDouble() ?? 0.0,
@@ -66,6 +69,7 @@ class StorefrontConfigModel {
     'cta_text': ctaText,
     'is_cod_enabled': isCodEnabled,
     'is_wallet_enabled': isWalletEnabled,
+    'is_online_payment_enabled': isOnlinePaymentEnabled,
     'is_active': isActive,
     'platform_fee': platformFee,
     'tax_percentage': taxPercentage,
@@ -84,6 +88,7 @@ class StorefrontConfigModel {
     String? ctaText,
     bool? isCodEnabled,
     bool? isWalletEnabled,
+    bool? isOnlinePaymentEnabled,
     bool? isActive,
     double? platformFee,
     double? taxPercentage,
@@ -101,6 +106,7 @@ class StorefrontConfigModel {
       ctaText: ctaText ?? this.ctaText,
       isCodEnabled: isCodEnabled ?? this.isCodEnabled,
       isWalletEnabled: isWalletEnabled ?? this.isWalletEnabled,
+      isOnlinePaymentEnabled: isOnlinePaymentEnabled ?? this.isOnlinePaymentEnabled,
       isActive: isActive ?? this.isActive,
       platformFee: platformFee ?? this.platformFee,
       taxPercentage: taxPercentage ?? this.taxPercentage,

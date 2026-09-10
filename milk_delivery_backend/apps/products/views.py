@@ -300,3 +300,50 @@ class StorefrontConfigView(APIView):
         serializer = StorefrontConfigSerializer(config, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def cross_sell_products(request):
+    """
+    Returns 6-8 complementary products based on cart contents.
+    Query params: cart_ids=1,5,12 (comma-separated product IDs in cart)
+    """
+    cart_ids_str = request.query_params.get('cart_ids', '')
+    cart_ids = [int(x) for x in cart_ids_str.split(',') if x.strip().isdigit()]
+    
+    # Get categories of products in cart
+    cart_products = Product.objects.filter(id__in=cart_ids)
+    cart_categories = set(cart_products.values_list('category_ref_id', flat=True))
+    # Also get text categories for fallback
+    cart_text_categories = set(cart_products.values_list('category', flat=True))
+    
+    # Strategy:
+    # 1. Products from same categories (different items) - highest priority
+    # 2. Products from adjacent/complementary categories
+    # 3. Popular available products as fallback
+    
+    suggestions = Product.objects.filter(
+        is_available=True
+    ).exclude(
+        id__in=cart_ids
+    ).order_by('?')  # Random ordering for variety
+    
+    # Prioritize same-category products first
+    same_category = suggestions.filter(
+        category_ref_id__in=cart_categories
+    )[:4]
+    
+    # Then other categories
+    other_category = suggestions.exclude(
+        category_ref_id__in=cart_categories
+    )[:4]
+    
+    # Combine, limit to 8
+    combined_ids = list(same_category.values_list('id', flat=True)) + list(other_category.values_list('id', flat=True))
+    result = Product.objects.filter(id__in=combined_ids[:8], is_available=True)
+    
+    serializer = ProductSerializer(result, many=True)
+    return Response(serializer.data)

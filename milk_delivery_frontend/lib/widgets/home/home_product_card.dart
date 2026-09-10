@@ -5,7 +5,7 @@ import '../../providers/app_state.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 import '../buy_once_sheet.dart';
-import '../floating_cart_bar.dart';
+import '../floating_cart_bar.dart'; // ignore: unused_import
 import '../product_detail_sheet.dart';
 import 'home_location_sheet.dart';
 import '../ui_kit/ui_kit.dart';
@@ -411,7 +411,6 @@ class _HomeProductCardState extends State<HomeProductCard> with TickerProviderSt
                         HapticFeedback.selectionClick();
                         _addBounceController.forward().then((_) => _addBounceController.reverse());
                         state.addToCart(item);
-                        FloatingCartBar.showCheckoutSheet(context, state);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

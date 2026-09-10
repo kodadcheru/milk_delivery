@@ -542,6 +542,34 @@ class AppState extends ChangeNotifier {
   // In-memory Shopping Cart State
   final Map<String, MapEntry<ProductModel, int>> cartItems = {};
 
+  Future<void> _persistCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartJson = cartItems.map((key, entry) => MapEntry(key, {
+      'product': entry.key.toJson(),
+      'quantity': entry.value,
+    }));
+    await prefs.setString('pamba_cart_items', jsonEncode(cartJson));
+  }
+
+  Future<void> _restoreCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartStr = prefs.getString('pamba_cart_items');
+    if (cartStr != null && cartStr.isNotEmpty) {
+      try {
+        final Map<String, dynamic> cartJson = jsonDecode(cartStr);
+        cartItems.clear();
+        cartJson.forEach((key, value) {
+          final product = ProductModel.fromJson(value['product']);
+          final qty = value['quantity'] as int;
+          if (qty > 0) {
+            cartItems[key] = MapEntry(product, qty);
+          }
+        });
+        notifyListeners();
+      } catch (_) {}
+    }
+  }
+
   int get totalCartItemCount => cartItems.values.fold(0, (sum, entry) => sum + entry.value);
 
   double get totalCartPrice {
@@ -571,6 +599,7 @@ class AppState extends ChangeNotifier {
     final existingQty = cartItems[key]?.value ?? 0;
     cartItems[key] = MapEntry(product, existingQty + 1);
     notifyListeners();
+    _persistCart();
   }
 
   void decreaseCartQty(ProductModel product) {
@@ -584,6 +613,7 @@ class AppState extends ChangeNotifier {
       cartItems.remove(key);
     }
     notifyListeners();
+    _persistCart();
   }
 
   void updateCartQty(ProductModel product, int qty) {
@@ -594,16 +624,19 @@ class AppState extends ChangeNotifier {
       cartItems[key] = MapEntry(cartItems[key]?.key ?? product, qty);
     }
     notifyListeners();
+    _persistCart();
   }
 
   void removeFromCart(ProductModel product) {
     cartItems.remove(cartKey(product));
     notifyListeners();
+    _persistCart();
   }
 
   void clearCart() {
     cartItems.clear();
     notifyListeners();
+    _persistCart();
   }
 
   Future<LiveOrderModel> placeExpressOrder({
@@ -612,6 +645,7 @@ class AppState extends ChangeNotifier {
     String? deliveryAddress,
     String deliveryType = 'SCHEDULED',
     String paymentMethod = 'WALLET',
+    String? razorpayOrderId,
   }) async {
     HapticFeedback.mediumImpact();
     
@@ -653,6 +687,7 @@ class AppState extends ChangeNotifier {
       deliveryLongitude: targetLon,
       deliveryType: deliveryType,
       paymentMethod: paymentMethod,
+      razorpayOrderId: razorpayOrderId,
     );
 
     if (serverOrder != null) {
@@ -846,6 +881,7 @@ class AppState extends ChangeNotifier {
     await loadCustomBannerImage();
     await initDevicePermissionsAndLocation();
     storefrontConfig = await ApiService.fetchStorefrontConfig();
+    await _restoreCart();
     
     _storefrontHeartbeatTimer?.cancel();
     _storefrontHeartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) {
@@ -1978,21 +2014,24 @@ class AppState extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> togglePaymentMethod({bool? isCodEnabled, bool? isWalletEnabled}) async {
+  Future<bool> togglePaymentMethod({bool? isCodEnabled, bool? isWalletEnabled, bool? isOnlinePaymentEnabled}) async {
     final prev = storefrontConfig;
     final targetCod = isCodEnabled ?? prev.isCodEnabled;
     final targetWallet = isWalletEnabled ?? prev.isWalletEnabled;
+    final targetOnline = isOnlinePaymentEnabled ?? prev.isOnlinePaymentEnabled;
 
     // Optimistic UI update
     storefrontConfig = prev.copyWith(
       isCodEnabled: targetCod,
       isWalletEnabled: targetWallet,
+      isOnlinePaymentEnabled: targetOnline,
     );
     notifyListeners();
 
     final updated = await ApiService.updateStorefrontConfig(
       isCodEnabled: targetCod,
       isWalletEnabled: targetWallet,
+      isOnlinePaymentEnabled: targetOnline,
     );
 
     if (updated != null) {

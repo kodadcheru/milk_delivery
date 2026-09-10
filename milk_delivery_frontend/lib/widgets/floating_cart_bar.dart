@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../services/api_service.dart';
 import '../providers/app_state.dart';
 import 'home/home_location_sheet.dart';
 import 'booking_detail_sheet.dart';
@@ -129,9 +131,10 @@ class FloatingCartBar extends StatelessWidget {
     final initialWallet = state.currentUser?.walletBalance ?? 0.0;
     final isCodAllowed = state.storefrontConfig.isCodEnabled;
     final isWalletAllowed = state.storefrontConfig.isWalletEnabled;
+    final isOnlineAllowed = state.storefrontConfig.isOnlinePaymentEnabled;
     String _paymentMethod = (isWalletAllowed && initialWallet >= state.totalCartPrice && initialWallet > 0)
         ? 'WALLET'
-        : (isCodAllowed ? 'COD' : (isWalletAllowed ? 'WALLET' : 'COD'));
+        : (isOnlineAllowed ? 'RAZORPAY' : (isCodAllowed ? 'COD' : (isWalletAllowed ? 'WALLET' : 'COD')));
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -156,10 +159,12 @@ class FloatingCartBar extends StatelessWidget {
               state.refreshStorefrontConfig().then((cfg) {
                 if (ctx.mounted) {
                   setSheetState(() {
-                    if (_paymentMethod == 'WALLET' && !cfg.isWalletEnabled && cfg.isCodEnabled) {
-                      _paymentMethod = 'COD';
-                    } else if (_paymentMethod == 'COD' && !cfg.isCodEnabled && cfg.isWalletEnabled) {
-                      _paymentMethod = 'WALLET';
+                    if (_paymentMethod == 'WALLET' && !cfg.isWalletEnabled) {
+                      _paymentMethod = cfg.isOnlinePaymentEnabled ? 'RAZORPAY' : (cfg.isCodEnabled ? 'COD' : 'WALLET');
+                    } else if (_paymentMethod == 'RAZORPAY' && !cfg.isOnlinePaymentEnabled) {
+                      _paymentMethod = cfg.isWalletEnabled ? 'WALLET' : (cfg.isCodEnabled ? 'COD' : 'RAZORPAY');
+                    } else if (_paymentMethod == 'COD' && !cfg.isCodEnabled) {
+                      _paymentMethod = cfg.isOnlinePaymentEnabled ? 'RAZORPAY' : (cfg.isWalletEnabled ? 'WALLET' : 'COD');
                     }
                   });
                 }
@@ -173,13 +178,11 @@ class FloatingCartBar extends StatelessWidget {
               if (ctx.mounted) {
                 setSheetState(() {
                   if (_paymentMethod == 'WALLET' && !cfg.isWalletEnabled) {
-                    if (cfg.isCodEnabled) {
-                      _paymentMethod = 'COD';
-                    }
+                    _paymentMethod = cfg.isOnlinePaymentEnabled ? 'RAZORPAY' : (cfg.isCodEnabled ? 'COD' : 'WALLET');
+                  } else if (_paymentMethod == 'RAZORPAY' && !cfg.isOnlinePaymentEnabled) {
+                    _paymentMethod = cfg.isWalletEnabled ? 'WALLET' : (cfg.isCodEnabled ? 'COD' : 'RAZORPAY');
                   } else if (_paymentMethod == 'COD' && !cfg.isCodEnabled) {
-                    if (cfg.isWalletEnabled) {
-                      _paymentMethod = 'WALLET';
-                    }
+                    _paymentMethod = cfg.isOnlinePaymentEnabled ? 'RAZORPAY' : (cfg.isWalletEnabled ? 'WALLET' : 'COD');
                   }
                 });
               }
@@ -1243,6 +1246,151 @@ class FloatingCartBar extends StatelessWidget {
                               );
                             },
                           ),
+                          const SizedBox(height: 10),
+
+                          // Option 3: Online Payment via Razorpay (UPI, GPay, PhonePe, Cards, Netbanking)
+                          Builder(
+                            builder: (context) {
+                              final isOnlineEnabled = state.storefrontConfig.isOnlinePaymentEnabled;
+                              final isOnlineSelected = _paymentMethod == 'RAZORPAY' && isOnlineEnabled;
+
+                              return Opacity(
+                                opacity: isOnlineEnabled ? 1.0 : 0.45,
+                                child: InkWell(
+                                  onTap: isOnlineEnabled
+                                      ? () {
+                                          HapticFeedback.selectionClick();
+                                          setSheetState(() => _paymentMethod = 'RAZORPAY');
+                                        }
+                                      : () {
+                                          HapticFeedback.lightImpact();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(state.isTelugu
+                                                  ? 'ఆన్‌లైన్ చెల్లింపు ప్రస్తుతం స్టోర్ అడ్మిన్ ద్వారా నిలిపివేయబడింది.'
+                                                  : 'Online Payment is currently disabled by store admin.'),
+                                              duration: const Duration(seconds: 2),
+                                              backgroundColor: const Color(0xFFDC2626),
+                                            ),
+                                          );
+                                        },
+                                  borderRadius: BorderRadius.circular(UiRadius.md),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: !isOnlineEnabled
+                                          ? const Color(0xFFF1F5F9)
+                                          : (isOnlineSelected ? const Color(0xFFE6F5F0) : UiTone.surfaceMuted),
+                                      borderRadius: BorderRadius.circular(UiRadius.md),
+                                      border: Border.all(
+                                        color: !isOnlineEnabled
+                                            ? const Color(0xFFCBD5E1)
+                                            : (isOnlineSelected ? const Color(0xFF0D7C66) : UiTone.surfaceBorder),
+                                        width: isOnlineSelected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: !isOnlineEnabled
+                                                ? Colors.grey.shade400
+                                                : (isOnlineSelected ? const Color(0xFF0D7C66) : const Color(0xFF0284C7)),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 18),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    state.isTelugu ? 'ఆన్‌లైన్ చెల్లింపు (UPI / కార్డ్స్)' : 'Online Pay (UPI / Cards)',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 13,
+                                                      color: !isOnlineEnabled
+                                                          ? Colors.grey.shade500
+                                                          : (isOnlineSelected ? const Color(0xFF0D7C66) : UiTone.ink),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  if (!isOnlineEnabled)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFFEE2E2),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: const Text(
+                                                        'Disabled',
+                                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                                                      ),
+                                                    )
+                                                  else
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFE0F2FE),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: const Text(
+                                                        'Razorpay ⚡',
+                                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF0369A1)),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                !isOnlineEnabled
+                                                    ? (state.isTelugu ? 'స్టోర్ ద్వారా నిలిపివేయబడింది' : 'Temporarily disabled by store')
+                                                    : (state.isTelugu ? 'GPay, PhonePe, Paytm, డెబిట్/క్రెడిట్ కార్డ్స్' : 'GPay, PhonePe, Paytm, Cards & Netbanking'),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: !isOnlineEnabled ? Colors.grey.shade500 : const Color(0xFF64748B),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (!isOnlineEnabled)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade200,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.block_rounded, color: Colors.grey.shade500, size: 14),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  state.isTelugu ? 'అందుబాటులో లేదు' : 'Unavailable',
+                                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        else
+                                          Icon(
+                                            isOnlineSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                            color: isOnlineSelected ? const Color(0xFF0D7C66) : Colors.grey.shade400,
+                                            size: 20,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                           const SizedBox(height: 16),
 
                           // ── Itemized Bill Breakdown ──
@@ -1316,7 +1464,9 @@ class FloatingCartBar extends StatelessWidget {
                                       isBold: true,
                                       subtitle: _paymentMethod == 'WALLET' && walletBal >= total
                                           ? (state.isTelugu ? 'పూర్తిగా వాలెట్ ద్వారా చెల్లించబడుతుంది' : 'Fully covered by wallet')
-                                          : (_paymentMethod == 'COD' ? (state.isTelugu ? 'డోర్‌స్టెప్ వద్ద చెల్లించండి' : 'Pay at doorstep') : null),
+                                          : (_paymentMethod == 'COD'
+                                              ? (state.isTelugu ? 'డోర్‌స్టెప్ వద్ద చెల్లించండి' : 'Pay at doorstep')
+                                              : (state.isTelugu ? 'రేజర్‌పే ద్వారా ఆన్‌లైన్ చెల్లింపు' : 'Pay online via Razorpay')),
                                     ),
                                   ],
                                 ),
@@ -1361,8 +1511,9 @@ class FloatingCartBar extends StatelessWidget {
                               final walletBalance = state.currentUser?.walletBalance ?? 0.0;
                               final isCodAllowed = freshConfig.isCodEnabled;
                               final isWalletAllowed = freshConfig.isWalletEnabled;
+                              final isOnlineAllowed = freshConfig.isOnlinePaymentEnabled;
 
-                              if (!isCodAllowed && !isWalletAllowed) {
+                              if (!isCodAllowed && !isWalletAllowed && !isOnlineAllowed) {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: Text(state.isTelugu
                                       ? 'చెల్లింపు విధానాలు ప్రస్తుతం నిర్వహణలో ఉన్నాయి. దయచేసి సహాయాన్ని సంప్రదించండి.'
@@ -1376,7 +1527,7 @@ class FloatingCartBar extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: Text(state.isTelugu
                                       ? 'క్యాష్ ఆన్ డెలివరీ ప్రస్తుతం నిలిపివేయబడింది. దయచేసి వాలెట్ ఉపయోగించండి.'
-                                      : 'Cash on Delivery (COD) is currently disabled. Please use Pamba Wallet.'),
+                                      : 'Cash on Delivery (COD) is currently disabled. Please use Pamba Wallet or Online Pay.'),
                                   backgroundColor: const Color(0xFFDC2626),
                                 ));
                                 return;
@@ -1386,14 +1537,34 @@ class FloatingCartBar extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: Text(state.isTelugu
                                       ? 'వాలెట్ చెల్లింపు ప్రస్తుతం నిలిపివేయబడింది. దయచేసి క్యాష్ ఆన్ డెలివరీ ఎంచుకోండి.'
-                                      : 'Pamba Wallet is currently disabled. Please select Cash on Delivery.'),
+                                      : 'Pamba Wallet is currently disabled. Please select Cash on Delivery or Online Pay.'),
+                                  backgroundColor: const Color(0xFFDC2626),
+                                ));
+                                return;
+                              }
+
+                              if (effectivePaymentMethod == 'RAZORPAY' && !isOnlineAllowed) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text(state.isTelugu
+                                      ? 'ఆన్‌లైన్ చెల్లింపు ప్రస్తుతం నిలిపివేయబడింది. దయచేసి వాలెట్ లేదా క్యాష్ ఆన్ డెలివరీ ఎంచుకోండి.'
+                                      : 'Online Payment via Razorpay is currently disabled. Please choose Pamba Wallet or COD.'),
                                   backgroundColor: const Color(0xFFDC2626),
                                 ));
                                 return;
                               }
 
                               if (_paymentMethod == 'WALLET' && walletBalance < total) {
-                                if (isCodAllowed) {
+                                if (isOnlineAllowed) {
+                                  effectivePaymentMethod = 'RAZORPAY';
+                                  setSheetState(() => _paymentMethod = 'RAZORPAY');
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(state.isTelugu
+                                        ? 'వాలెట్ బ్యాలెన్స్ తక్కువగా ఉంది, ఆన్‌లైన్ చెల్లింపు ఎంచుకోబడింది.'
+                                        : 'Wallet balance insufficient (₹${walletBalance.toStringAsFixed(0)}). Switched to Online Pay (Razorpay).'),
+                                    backgroundColor: UiTone.primary,
+                                    duration: const Duration(seconds: 3),
+                                  ));
+                                } else if (isCodAllowed) {
                                   effectivePaymentMethod = 'COD';
                                   setSheetState(() => _paymentMethod = 'COD');
                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1415,6 +1586,136 @@ class FloatingCartBar extends StatelessWidget {
                                 }
                               }
 
+                              // ── Direct Razorpay Online Payment Flow ──
+                              if (effectivePaymentMethod == 'RAZORPAY') {
+                                setSheetState(() => _isSubmitting = true);
+                                final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
+                                try {
+                                  // 1. Create Razorpay Order
+                                  final orderResult = await ApiService.createRazorpayOrder(
+                                    total,
+                                    purpose: 'ORDER_PAYMENT',
+                                  );
+                                  if (orderResult['success'] != true) {
+                                    throw Exception(orderResult['error'] ?? 'Failed to initiate Razorpay online payment');
+                                  }
+
+                                  final rzpOrderId = orderResult['razorpay_order_id'] ?? '';
+                                  final keyId = orderResult['key_id'] ?? '';
+                                  final amountPaise = orderResult['amount_paise'] ?? (total * 100).toInt();
+
+                                  // 2. Open Native Razorpay Checkout
+                                  final razorpay = Razorpay();
+
+                                  razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) async {
+                                    try {
+                                      // 3. Verify Payment Signature
+                                      final verifyResult = await ApiService.verifyRazorpayPayment(
+                                        response.orderId ?? rzpOrderId,
+                                        response.paymentId ?? '',
+                                        response.signature ?? '',
+                                      );
+                                      if (verifyResult['success'] != true) {
+                                        throw Exception(verifyResult['detail'] ?? 'Razorpay signature verification failed');
+                                      }
+
+                                      // 4. Create Express Order with RAZORPAY
+                                      final order = await state.placeExpressOrder(
+                                        deliveryType: _deliveryMode,
+                                        deliveryDate: _deliveryMode == 'INSTANT' ? formatDate(DateTime.now()) : formatDate(selectedDate),
+                                        deliverySlot: _deliveryMode == 'INSTANT' ? 'Instant Delivery' : slot,
+                                        deliveryAddress: currentAddr,
+                                        paymentMethod: 'RAZORPAY',
+                                        razorpayOrderId: response.orderId ?? rzpOrderId,
+                                      );
+
+                                      if (ctx.mounted) {
+                                        Navigator.pop(ctx);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: UiTone.primary,
+                                            content: Text(
+                                              _deliveryMode == 'INSTANT'
+                                                  ? '⚡ Order #${order.id} Paid via Razorpay & Placed!'
+                                                  : '🎉 Order #${order.id} Paid via Razorpay & Scheduled!'
+                                            ),
+                                          ),
+                                        );
+                                        state.setTab(3); // Orders / Bookings Tab
+                                        BookingDetailSheet.showForExpressOrder(context, state, order);
+                                      }
+                                    } catch (e) {
+                                      if (ctx.mounted) {
+                                        final errorMsg = e.toString().replaceFirst('Exception: ', '');
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: const Color(0xFFDC2626),
+                                            content: Text('❌ $errorMsg'),
+                                          ),
+                                        );
+                                      }
+                                    } finally {
+                                      razorpay.clear();
+                                      if (ctx.mounted) {
+                                        setSheetState(() => _isSubmitting = false);
+                                      }
+                                    }
+                                  });
+
+                                  razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
+                                    razorpay.clear();
+                                    if (ctx.mounted) {
+                                      setSheetState(() => _isSubmitting = false);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: const Color(0xFFDC2626),
+                                          content: Text(state.isTelugu
+                                              ? 'చెల్లింపు రద్దు చేయబడింది లేదా విఫలమైంది: ${response.message ?? ''}'
+                                              : 'Payment cancelled or failed: ${response.message ?? 'User dismissed'}'),
+                                        ),
+                                      );
+                                    }
+                                  });
+
+                                  razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, (ExternalWalletResponse response) {
+                                    razorpay.clear();
+                                    if (ctx.mounted) {
+                                      setSheetState(() => _isSubmitting = false);
+                                    }
+                                  });
+
+                                  final options = <String, dynamic>{
+                                    'key': keyId.isNotEmpty ? keyId : 'rzp_test_TZqYcaKAOxoDP7',
+                                    'amount': amountPaise,
+                                    'name': 'Pamba Fresh',
+                                    'description': 'Express Order (₹${total.toStringAsFixed(0)})',
+                                    'prefill': {
+                                      'contact': state.currentUser?.phone ?? '',
+                                      'email': state.currentUser?.email ?? '',
+                                    },
+                                    'theme': {'color': '#0D7C66'},
+                                  };
+                                  if (rzpOrderId.isNotEmpty && !rzpOrderId.startsWith('order_test_')) {
+                                    options['order_id'] = rzpOrderId;
+                                  }
+
+                                  razorpay.open(options);
+                                } catch (e) {
+                                  if (ctx.mounted) {
+                                    setSheetState(() => _isSubmitting = false);
+                                    final errorMsg = e.toString().replaceFirst('Exception: ', '');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: const Color(0xFFDC2626),
+                                        content: Text('❌ $errorMsg'),
+                                      ),
+                                    );
+                                  }
+                                }
+                                return;
+                              }
+
+                              // ── Standard Wallet / COD Flow ──
                               setSheetState(() => _isSubmitting = true);
                               final currentAddr = state.activeAddress?.summaryAddress ?? state.currentDeliveryAddress;
                               try {
@@ -1474,19 +1775,25 @@ class FloatingCartBar extends StatelessWidget {
                                       Icon(
                                         _paymentMethod == 'COD'
                                             ? Icons.payments_rounded
-                                            : (_deliveryMode == 'INSTANT' ? Icons.flash_on_rounded : Icons.event_available_rounded),
+                                            : (_paymentMethod == 'RAZORPAY'
+                                                ? Icons.flash_on_rounded
+                                                : (_deliveryMode == 'INSTANT' ? Icons.flash_on_rounded : Icons.event_available_rounded)),
                                         color: Colors.white,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        _deliveryMode == 'INSTANT'
-                                            ? (_paymentMethod == 'COD'
-                                                ? (state.isTelugu ? 'తక్షణ COD ఆర్డర్ — ₹${total.toStringAsFixed(0)} 💵' : 'Place COD Instant Drop — ₹${total.toStringAsFixed(0)}')
-                                                : (state.isTelugu ? 'చెల్లించి తక్షణ ఆర్డర్ చేయండి — ₹${total.toStringAsFixed(0)} ⚡' : 'Pay & Place Instant Order — ₹${total.toStringAsFixed(0)}'))
-                                            : (_paymentMethod == 'COD'
-                                                ? (state.isTelugu ? 'రేపటికి ఆర్డర్ షెడ్యూల్ చేయండి — ₹${total.toStringAsFixed(0)} 💵' : 'Schedule COD for Tomorrow — ₹${total.toStringAsFixed(0)}')
-                                                : (state.isTelugu ? 'రేపటికి చెల్లించి షెడ్యూల్ చేయండి — ₹${total.toStringAsFixed(0)} 🌅' : 'Pay & Schedule for Tomorrow — ₹${total.toStringAsFixed(0)}')),
+                                        _paymentMethod == 'RAZORPAY'
+                                            ? (state.isTelugu
+                                                ? 'ఆన్‌లైన్ చెల్లింపు — ₹${total.toStringAsFixed(0)} ⚡'
+                                                : 'Pay Online via Razorpay — ₹${total.toStringAsFixed(0)} ⚡')
+                                            : (_deliveryMode == 'INSTANT'
+                                                ? (_paymentMethod == 'COD'
+                                                    ? (state.isTelugu ? 'తక్షణ COD ఆర్డర్ — ₹${total.toStringAsFixed(0)} 💵' : 'Place COD Instant Drop — ₹${total.toStringAsFixed(0)}')
+                                                    : (state.isTelugu ? 'చెల్లించి తక్షణ ఆర్డర్ చేయండి — ₹${total.toStringAsFixed(0)} ⚡' : 'Pay & Place Instant Order — ₹${total.toStringAsFixed(0)}'))
+                                                : (_paymentMethod == 'COD'
+                                                    ? (state.isTelugu ? 'రేపటికి ఆర్డర్ షెడ్యూల్ చేయండి — ₹${total.toStringAsFixed(0)} 💵' : 'Schedule COD for Tomorrow — ₹${total.toStringAsFixed(0)}')
+                                                    : (state.isTelugu ? 'రేపటికి చెల్లించి షెడ్యూల్ చేయండి — ₹${total.toStringAsFixed(0)} 🌅' : 'Pay & Schedule for Tomorrow — ₹${total.toStringAsFixed(0)}'))),
                                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                                       ),
                                     ],

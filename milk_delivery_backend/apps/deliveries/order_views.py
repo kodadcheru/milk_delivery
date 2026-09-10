@@ -537,10 +537,16 @@ class ExpressOrderListCreateView(APIView):
                     if rzp_order_id:
                         try:
                             from apps.payments.models import RazorpayPayment
-                            RazorpayPayment.objects.filter(
+                            rzp_payment = RazorpayPayment.objects.filter(
                                 razorpay_order_id=rzp_order_id,
                                 user=user,
-                            ).update(order=order)
+                            ).first()
+                            if rzp_payment:
+                                rzp_payment.order = order
+                                rzp_payment.save(update_fields=["order"])
+                                if rzp_payment.status == RazorpayPayment.Status.SUCCESS:
+                                    order.payment_status = "PAID (Razorpay Online)"
+                                    order.save(update_fields=["payment_status"])
                         except Exception as e:
                             logger.error(f"Failed to link RazorpayPayment {rzp_order_id} to order {order.id}: {e}")
 

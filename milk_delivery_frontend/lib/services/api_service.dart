@@ -518,6 +518,27 @@ class ApiService {
     return [];
   }
 
+  static Future<List<ProductModel>> fetchCrossSellProducts(List<int> cartProductIds) async {
+    try {
+      final idsParam = cartProductIds.join(',');
+      final res = await _executeWithRetry(() => http.get(
+        Uri.parse('$baseUrl/products/cross-sell/?cart_ids=$idsParam'),
+        headers: _headers,
+      ));
+      
+      if (res.statusCode == 200) {
+        final List<dynamic> data = _extractList(jsonDecode(res.body));
+        return data.map((json) => ProductModel.fromJson(json)).toList();
+      } else {
+        lastError = _extractErrorMsg(res);
+      }
+    } catch (e) {
+      debugPrint('Cross-sell fetch error: $e');
+      lastError = e.toString();
+    }
+    return [];
+  }
+
   static Future<ProductModel?> createProduct(
     String name,
     String description,
@@ -1364,6 +1385,7 @@ class ApiService {
     double? deliveryLongitude,
     String deliveryType = 'SCHEDULED',
     String paymentMethod = 'WALLET',
+    String? razorpayOrderId,
   }) async {
     try {
       final res = await _executeWithRetry(() => http.post(
@@ -1378,6 +1400,7 @@ class ApiService {
               'delivery_longitude': deliveryLongitude != null ? (double.tryParse(deliveryLongitude.toStringAsFixed(6)) ?? deliveryLongitude) : null,
               'delivery_type': deliveryType,
               'payment_method': paymentMethod,
+              if (razorpayOrderId != null) 'razorpay_order_id': razorpayOrderId,
             }),
           ));
       if (res.statusCode == 200 || res.statusCode == 201) {
@@ -1775,6 +1798,7 @@ class ApiService {
     String? ctaText,
     bool? isCodEnabled,
     bool? isWalletEnabled,
+    bool? isOnlinePaymentEnabled,
     double? platformFee,
     double? taxPercentage,
     double? deliveryFee,
@@ -1790,6 +1814,7 @@ class ApiService {
       if (ctaText != null) payload['cta_text'] = ctaText;
       if (isCodEnabled != null) payload['is_cod_enabled'] = isCodEnabled;
       if (isWalletEnabled != null) payload['is_wallet_enabled'] = isWalletEnabled;
+      if (isOnlinePaymentEnabled != null) payload['is_online_payment_enabled'] = isOnlinePaymentEnabled;
       if (platformFee != null) payload['platform_fee'] = platformFee;
       if (taxPercentage != null) payload['tax_percentage'] = taxPercentage;
       if (deliveryFee != null) payload['delivery_fee'] = deliveryFee;
