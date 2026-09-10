@@ -212,7 +212,7 @@ class _CartPageState extends State<CartPage> {
                   'Delivery to',
                   style: TextStyle(
                     fontSize: 11,
-                    color: UiTone.textMuted,
+                    color: UiTone.softText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -296,7 +296,7 @@ class _CartPageState extends State<CartPage> {
                 },
                 selectedColor: UiTone.primary.withOpacity(0.1),
                 labelStyle: TextStyle(
-                  color: isSelected ? UiTone.primary : UiTone.textMuted,
+                  color: isSelected ? UiTone.primary : UiTone.softText,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
                 shape: RoundedRectangleBorder(
@@ -321,7 +321,7 @@ class _CartPageState extends State<CartPage> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: CartItemCard(
-              item: entry.key,
+              product: entry.key,
               quantity: entry.value,
               state: widget.state,
               onRemoved: () {
@@ -342,7 +342,7 @@ class _CartPageState extends State<CartPage> {
         'Orders cannot be cancelled once placed. Items are non-refundable unless damaged.',
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: UiTone.textMuted,
+          color: UiTone.softText,
           fontSize: 11,
         ),
       ),
@@ -383,7 +383,7 @@ class _CartPageState extends State<CartPage> {
                     const Text(
                       'Grand Total',
                       style: TextStyle(
-                        color: UiTone.textMuted,
+                        color: UiTone.softText,
                         fontSize: 12,
                       ),
                     ),
@@ -446,7 +446,7 @@ class _ModeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? UiTone.primary.withOpacity(0.05) : Colors.white,
           borderRadius: BorderRadius.circular(UiRadius.md),
-          border: BorderSide(
+          border: Border.all(
             color: isSelected ? UiTone.primary : UiTone.surfaceBorder,
             width: isSelected ? 2 : 1,
           ),
@@ -467,7 +467,7 @@ class _ModeCard extends StatelessWidget {
               subtitle,
               style: TextStyle(
                 fontSize: 11,
-                color: isSelected ? UiTone.primary : UiTone.textMuted,
+                color: isSelected ? UiTone.primary : UiTone.softText,
               ),
             ),
           ],
