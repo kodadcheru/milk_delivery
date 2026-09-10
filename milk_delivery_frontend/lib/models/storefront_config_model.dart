@@ -51,10 +51,10 @@ class StorefrontConfigModel {
       isWalletEnabled: json['is_wallet_enabled'] as bool? ?? true,
       isOnlinePaymentEnabled: json['is_online_payment_enabled'] as bool? ?? true,
       isActive: json['is_active'] as bool? ?? true,
-      platformFee: (json['platform_fee'] as num?)?.toDouble() ?? 0.0,
-      taxPercentage: (json['tax_percentage'] as num?)?.toDouble() ?? 0.0,
-      deliveryFee: (json['delivery_fee'] as num?)?.toDouble() ?? 0.0,
-      freeDeliveryThreshold: (json['free_delivery_threshold'] as num?)?.toDouble() ?? 0.0,
+      platformFee: double.tryParse(json['platform_fee']?.toString() ?? '0') ?? 0.0,
+      taxPercentage: double.tryParse(json['tax_percentage']?.toString() ?? '0') ?? 0.0,
+      deliveryFee: double.tryParse(json['delivery_fee']?.toString() ?? '0') ?? 0.0,
+      freeDeliveryThreshold: double.tryParse(json['free_delivery_threshold']?.toString() ?? '0') ?? 0.0,
     );
   }
 

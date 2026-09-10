@@ -153,6 +153,16 @@ class _FloatingCartBarState extends State<FloatingCartBar> {
                         'Add ₹${(threshold - total).toStringAsFixed(0)} more for FREE delivery',
                         style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.w600),
                       )
+                    else if (threshold > 0 && total >= threshold)
+                      const Text(
+                        'FREE Delivery Unlocked 🎉',
+                        style: TextStyle(color: UiTone.success, fontSize: 11, fontWeight: FontWeight.w600),
+                      )
+                    else if (widget.state.storefrontConfig.deliveryFee > 0)
+                      Text(
+                        'Delivery Fee: ₹${widget.state.storefrontConfig.deliveryFee.toStringAsFixed(0)}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                      )
                     else
                       const Text(
                         'FREE Delivery ✓',
