@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../config/app_config.dart';
 import '../theme/ui_tokens.dart';
@@ -113,23 +114,41 @@ class DoorstepProofModal extends StatelessWidget {
                       minScale: 0.8,
                       maxScale: 3.0,
                       child: imageUrl.isNotEmpty
-                          ? Image.network(
-                              AppConfig.normalizeImageUrl(imageUrl),
-                              fit: BoxFit.cover,
-                              errorBuilder: (ctx, e, st) => Container(
-                                color: const Color(0xFF1E293B),
-                                child: const Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('🥛', style: TextStyle(fontSize: 48)),
-                                      SizedBox(height: 8),
-                                      Text('Doorstep Placement Verified', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                                    ],
+                          ? (imageUrl.startsWith('data:image')
+                              ? Image.memory(
+                                  base64Decode(imageUrl.split(',').last),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, e, st) => Container(
+                                    color: const Color(0xFF1E293B),
+                                    child: const Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('🥛', style: TextStyle(fontSize: 48)),
+                                          SizedBox(height: 8),
+                                          Text('Doorstep Placement Verified', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            )
+                                )
+                              : Image.network(
+                                  AppConfig.normalizeImageUrl(imageUrl),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, e, st) => Container(
+                                    color: const Color(0xFF1E293B),
+                                    child: const Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('🥛', style: TextStyle(fontSize: 48)),
+                                          SizedBox(height: 8),
+                                          Text('Doorstep Placement Verified', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ))
                           : Container(
                               color: const Color(0xFF1E293B),
                               child: const Center(

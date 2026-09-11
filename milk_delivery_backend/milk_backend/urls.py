@@ -266,11 +266,45 @@ urlpatterns = [
 from django.urls import re_path
 from django.views.static import serve
 
+from pathlib import Path
+from django.http import HttpResponse, Http404
+
 def cached_media_serve(request, path, document_root=None, show_indexes=False):
-    response = serve(request, path, document_root=document_root, show_indexes=show_indexes)
-    if response.status_code == 200:
-        response["Cache-Control"] = "public, max-age=2592000, immutable"
-    return response
+    clean_path = path.lstrip("/")
+    local_file = Path(document_root) / clean_path if document_root else None
+
+    # 1. Try local disk cache
+    if local_file and local_file.is_file():
+        response = serve(request, clean_path, document_root=document_root, show_indexes=show_indexes)
+        if response.status_code == 200:
+            response["Cache-Control"] = "public, max-age=2592000, immutable"
+            return response
+
+    # 2. Disk file missing (e.g. after container rebuild). Restore from PostgreSQL MediaAsset!
+    try:
+        from apps.core.models import MediaAsset
+        # Search by full relative path or filename suffix
+        asset = (
+            MediaAsset.objects.filter(file_path=clean_path).first()
+            or MediaAsset.objects.filter(file_path__endswith=clean_path).first()
+            or MediaAsset.objects.filter(file_path__endswith=Path(clean_path).name).first()
+        )
+        if asset and asset.data:
+            # Rehydrate local file on disk for future speed
+            if local_file:
+                try:
+                    local_file.parent.mkdir(parents=True, exist_ok=True)
+                    local_file.write_bytes(bytes(asset.data))
+                except Exception:
+                    pass
+
+            response = HttpResponse(bytes(asset.data), content_type=asset.content_type)
+            response["Cache-Control"] = "public, max-age=2592000, immutable"
+            return response
+    except Exception:
+        pass
+
+    return serve(request, clean_path, document_root=document_root, show_indexes=show_indexes)
 
 urlpatterns += [
     re_path(r"^media/(?P<path>.*)$", cached_media_serve, {"document_root": settings.MEDIA_ROOT}),

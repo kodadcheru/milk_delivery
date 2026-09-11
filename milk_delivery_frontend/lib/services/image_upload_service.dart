@@ -9,12 +9,13 @@ import 'api_service.dart';
 class ImageUploadService {
   static String get _uploadUrl => '${ApiService.baseUrl}/upload/image/';
 
-  /// Upload raw image bytes using multipart/form-data
+  /// Upload raw image bytes using multipart/form-data with auto-token refresh
   static Future<String?> uploadImageBytes({
     required Uint8List bytes,
     required String filename,
     String folder = 'proofs',
     Map<String, String>? extraFields,
+    bool isRetry = false,
   }) async {
     try {
       if (ApiService.authToken == null) {
@@ -54,6 +55,20 @@ class ImageUploadService {
       final streamedResponse = await request.send().timeout(AppConfig.imageUploadTimeout);
       final response = await http.Response.fromStream(streamedResponse);
 
+      // Auto-refresh token on 401
+      if (response.statusCode == 401 && !isRetry) {
+        final refreshed = await ApiService.refreshAuthToken();
+        if (refreshed) {
+          return await uploadImageBytes(
+            bytes: bytes,
+            filename: filename,
+            folder: folder,
+            extraFields: extraFields,
+            isRetry: true,
+          );
+        }
+      }
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final rawUrl = data['url'] as String?;
@@ -62,16 +77,17 @@ class ImageUploadService {
         throw Exception('Upload failed with status ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      debugPrint('[ImageUploadService] uploadImageBytes failed: $e');
+      debugPrint('[ImageUploadService] uploadImageBytes error: $e');
       rethrow;
     }
   }
 
-  /// Upload base64 encoded image string as JSON payload
+  /// Upload base64 encoded image string as JSON payload with auto-token refresh
   static Future<String?> uploadImageBase64({
     required String base64Image,
     required String filename,
     String folder = 'proofs',
+    bool isRetry = false,
   }) async {
     try {
       if (ApiService.authToken == null) {
@@ -91,6 +107,19 @@ class ImageUploadService {
         }),
       ).timeout(AppConfig.imageUploadTimeout);
 
+      // Auto-refresh token on 401
+      if (res.statusCode == 401 && !isRetry) {
+        final refreshed = await ApiService.refreshAuthToken();
+        if (refreshed) {
+          return await uploadImageBase64(
+            base64Image: base64Image,
+            filename: filename,
+            folder: folder,
+            isRetry: true,
+          );
+        }
+      }
+
       if (res.statusCode == 201 || res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final rawUrl = data['url'] as String?;
@@ -99,7 +128,7 @@ class ImageUploadService {
         throw Exception('Upload failed with status ${res.statusCode}: ${res.body}');
       }
     } catch (e) {
-      debugPrint('[ImageUploadService] uploadImageBase64 failed: $e');
+      debugPrint('[ImageUploadService] uploadImageBase64 error: $e');
       rethrow;
     }
   }

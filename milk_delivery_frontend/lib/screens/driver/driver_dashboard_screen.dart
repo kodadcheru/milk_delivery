@@ -14,6 +14,7 @@ import '../../theme/ui_text.dart';
 import '../../theme/ui_tokens.dart';
 import '../../widgets/ui_kit/ui_kit.dart';
 import '../../widgets/doorstep_camera_dialog.dart';
+import '../../widgets/doorstep_proof_modal.dart';
 import '../../widgets/driver_delivery_chat_sheet.dart';
 import '../../widgets/driver_order_details_sheet.dart';
 import '../common/day_wise_orders_screen.dart';
@@ -1554,26 +1555,72 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               ],
             ),
           ] else
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: UiTone.shellBackground,
-                borderRadius: BorderRadius.circular(UiRadius.sm),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.verified_rounded, color: UiTone.success, size: 16),
-                  const SizedBox(width: 6),
-                  Text(
-                    isDone ? 'Delivered & Doorstep Photo Proof Verified 📸' : 'Skipped by Delivery Partner',
-                    style: UiText.caption.copyWith(
-                      color: isDone ? UiTone.success : UiTone.softText,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+            Builder(
+              builder: (context) {
+                final proofUrl = group.tasks
+                    .firstWhere((t) => t.proofImageUrl.isNotEmpty, orElse: () => group.tasks.first)
+                    .proofImageUrl;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: UiTone.shellBackground,
+                    borderRadius: BorderRadius.circular(UiRadius.sm),
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_rounded, color: UiTone.success, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          isDone ? 'Delivered & Doorstep Verified 📸' : 'Skipped by Delivery Partner',
+                          style: UiText.caption.copyWith(
+                            color: isDone ? UiTone.success : UiTone.softText,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      if (isDone && proofUrl.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            DoorstepProofModal.show(
+                              context,
+                              imageUrl: proofUrl,
+                              orderId: 'Stop #${idx + 1}',
+                              deliveryDate: group.tasks.first.deliveryDate,
+                              slotTime: group.slotTime,
+                              address: group.deliveryAddress,
+                              driverName: widget.state.currentUser?.name ?? 'Delivery Partner',
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: UiTone.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(UiRadius.xs),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.photo_camera_rounded, size: 13, color: UiTone.primary),
+                                SizedBox(width: 4),
+                                Text(
+                                  'View Proof',
+                                  style: TextStyle(
+                                    color: UiTone.primary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
         ],
       ),
@@ -1806,7 +1853,54 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ),
                 ],
               ),
-          ],
+            if (isDelivered && order.proofImageUrl.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: UiTone.shellBackground,
+                  borderRadius: BorderRadius.circular(UiRadius.sm),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_rounded, color: UiTone.success, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Doorstep Photo Proof Saved',
+                      style: UiText.caption.copyWith(color: UiTone.success, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        DoorstepProofModal.show(
+                          context,
+                          imageUrl: order.proofImageUrl,
+                          orderId: order.id,
+                          deliveryDate: order.deliveryDate,
+                          slotTime: order.deliverySlot,
+                          address: order.deliveryAddress,
+                          driverName: widget.state.currentUser?.name ?? 'Delivery Partner',
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: UiTone.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(UiRadius.xs),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.photo_camera_rounded, size: 13, color: UiTone.primary),
+                            SizedBox(width: 4),
+                            Text('View Proof 📸', style: TextStyle(color: UiTone.primary, fontWeight: FontWeight.w800, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
         ),
       ),
     );

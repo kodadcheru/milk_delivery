@@ -708,16 +708,33 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateOrderStatus(String orderId, String newStatus, {String? deliveryOtp}) async {
+  Future<bool> updateOrderStatus(
+    String orderId,
+    String newStatus, {
+    String? deliveryOtp,
+    String? proofImageUrl,
+    double? deliveredLatitude,
+    double? deliveredLongitude,
+  }) async {
     final idx = liveOrders.indexWhere((o) => o.id == orderId);
     LiveOrderModel? old;
     if (idx != -1) {
       old = liveOrders[idx];
-      liveOrders[idx] = old.copyWith(status: newStatus);
+      liveOrders[idx] = old.copyWith(
+        status: newStatus,
+        proofImageUrl: proofImageUrl ?? old.proofImageUrl,
+      );
       notifyListeners();
     }
 
-    final updated = await ApiService.updateLiveOrderStatus(orderId, newStatus, deliveryOtp: deliveryOtp);
+    final updated = await ApiService.updateLiveOrderStatus(
+      orderId,
+      newStatus,
+      deliveryOtp: deliveryOtp,
+      proofImageUrl: proofImageUrl,
+      deliveredLatitude: deliveredLatitude,
+      deliveredLongitude: deliveredLongitude,
+    );
     if (updated != null) {
       if (idx != -1) {
         liveOrders[idx] = updated;

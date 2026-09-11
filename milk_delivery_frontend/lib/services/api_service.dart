@@ -1412,11 +1412,20 @@ class ApiService {
     return null;
   }
 
-  static Future<LiveOrderModel?> updateLiveOrderStatus(String orderId, String newStatus, {String? proofImageUrl, String? deliveryOtp}) async {
+  static Future<LiveOrderModel?> updateLiveOrderStatus(
+    String orderId,
+    String newStatus, {
+    String? proofImageUrl,
+    String? deliveryOtp,
+    double? deliveredLatitude,
+    double? deliveredLongitude,
+  }) async {
     try {
       final body = <String, dynamic>{'status': newStatus};
       if (proofImageUrl != null) body['proof_image_url'] = proofImageUrl;
       if (deliveryOtp != null) body['delivery_otp'] = deliveryOtp;
+      if (deliveredLatitude != null) body['delivered_latitude'] = deliveredLatitude;
+      if (deliveredLongitude != null) body['delivered_longitude'] = deliveredLongitude;
 
       final res = await _executeWithRetry(() => http.patch(
             Uri.parse('$baseUrl/orders/express/$orderId/'),

@@ -62,9 +62,25 @@ class FileUploadView(APIView):
             if ext not in ALLOWED_EXTENSIONS:
                 ext = ".jpg"
 
+            file_bytes = uploaded_file.read()
             filename = f"{folder}/proof_{timestamp}_{unique_id}{ext}"
-            saved_path = default_storage.save(filename, uploaded_file)
+            saved_path = default_storage.save(filename, ContentFile(file_bytes))
             file_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
+
+            try:
+                from apps.core.models import MediaAsset
+                clean_path = saved_path.lstrip("/")
+                mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+                MediaAsset.objects.update_or_create(
+                    file_path=clean_path,
+                    defaults={
+                        "content_type": mime,
+                        "data": file_bytes,
+                        "size_bytes": len(file_bytes),
+                    },
+                )
+            except Exception as e:
+                pass
 
             return Response(
                 {
@@ -72,7 +88,7 @@ class FileUploadView(APIView):
                     "url": file_url,
                     "relative_url": f"{settings.MEDIA_URL}{saved_path}",
                     "filename": Path(saved_path).name,
-                    "size_bytes": uploaded_file.size,
+                    "size_bytes": len(file_bytes),
                     "created_at": datetime.now().isoformat(),
                 },
                 status=status.HTTP_201_CREATED,
@@ -103,6 +119,21 @@ class FileUploadView(APIView):
                 filename = f"{folder}/proof_{timestamp}_{unique_id}{ext}"
                 saved_path = default_storage.save(filename, ContentFile(file_bytes))
                 file_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
+
+                try:
+                    from apps.core.models import MediaAsset
+                    clean_path = saved_path.lstrip("/")
+                    mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+                    MediaAsset.objects.update_or_create(
+                        file_path=clean_path,
+                        defaults={
+                            "content_type": mime,
+                            "data": file_bytes,
+                            "size_bytes": len(file_bytes),
+                        },
+                    )
+                except Exception:
+                    pass
 
                 return Response(
                     {

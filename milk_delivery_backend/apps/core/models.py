@@ -100,5 +100,23 @@ class SiteConfig(models.Model):
         config = cache.get('site_config')
         if config is None:
             config, _ = cls.objects.get_or_create(pk=1)
-            cache.set('site_config', config, timeout=300)  # Cache for 5 minutes
+            cache.set('site_config', config, timeout=300)
         return config
+
+
+class MediaAsset(models.Model):
+    """Persistent storage for uploaded images and delivery proofs, surviving ephemeral container rebuilds."""
+    file_path = models.CharField(max_length=500, unique=True, db_index=True)
+    content_type = models.CharField(max_length=100, default="image/jpeg")
+    data = models.BinaryField()
+    size_bytes = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Media Asset"
+        verbose_name_plural = "Media Assets"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.file_path} ({self.size_bytes} bytes)"
+

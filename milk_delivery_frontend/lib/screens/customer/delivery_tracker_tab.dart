@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1523,22 +1524,39 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                 child: InteractiveViewer(
                   minScale: 1.0,
                   maxScale: 4.0,
-                  child: Image.network(
-                    AppConfig.normalizeImageUrl(imageUrl),
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      padding: const EdgeInsets.all(32),
-                      color: const Color(0xFF1E293B),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.broken_image_rounded, color: Colors.white54, size: 48),
-                          SizedBox(height: 8),
-                          Text('Could not load photo proof', style: TextStyle(color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                  ),
+                  child: imageUrl.startsWith('data:image')
+                      ? Image.memory(
+                          base64Decode(imageUrl.split(',').last),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            padding: const EdgeInsets.all(32),
+                            color: const Color(0xFF1E293B),
+                            child: const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.broken_image_rounded, color: Colors.white54, size: 48),
+                                SizedBox(height: 8),
+                                Text('Could not load photo proof', style: TextStyle(color: Colors.white70)),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Image.network(
+                          AppConfig.normalizeImageUrl(imageUrl),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            padding: const EdgeInsets.all(32),
+                            color: const Color(0xFF1E293B),
+                            child: const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.broken_image_rounded, color: Colors.white54, size: 48),
+                                SizedBox(height: 8),
+                                Text('Could not load photo proof', style: TextStyle(color: Colors.white70)),
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
               ),
             ),

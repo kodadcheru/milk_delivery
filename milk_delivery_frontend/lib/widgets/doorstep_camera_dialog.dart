@@ -196,6 +196,8 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
 
   late int _selectedPresetIndex;
   bool _isCapturing = false;
+  Uint8List? _capturedImageBytes;
+  bool _isProcessingPhoto = false;
   double? _deviceLat;
   double? _deviceLng;
   bool _isLocating = true;
@@ -221,6 +223,75 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
     } catch (_) {}
     if (mounted) {
       setState(() => _isLocating = false);
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (photo == null) return;
+
+      setState(() => _isProcessingPhoto = true);
+      final rawBytes = await File(photo.path).readAsBytes();
+
+      // Fetch freshest high-accuracy GPS coordinates of delivery partner at capture instant
+      double finalLat = _deviceLat ?? widget.latitude;
+      double finalLng = _deviceLng ?? widget.longitude;
+      try {
+        final livePos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 4),
+          ),
+        );
+        finalLat = livePos.latitude;
+        finalLng = livePos.longitude;
+        _deviceLat = finalLat;
+        _deviceLng = finalLng;
+      } catch (_) {
+        try {
+          final lastPos = await PermissionService.getDeviceCoordinates();
+          if (lastPos != null) {
+            finalLat = lastPos.latitude;
+            finalLng = lastPos.longitude;
+            _deviceLat = finalLat;
+            _deviceLng = finalLng;
+          }
+        } catch (_) {}
+      }
+
+      // Stamp permanent timestamp, GPS coordinates & address onto photo pixels
+      final watermarkedBytes = await stampWatermarkOnImageBytes(
+        imageBytes: rawBytes,
+        latitude: finalLat,
+        longitude: finalLng,
+        address: widget.deliveryAddress,
+        customerName: widget.customerName,
+      );
+
+      if (mounted) {
+        setState(() {
+          _capturedImageBytes = watermarkedBytes;
+          _isProcessingPhoto = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[DoorstepCameraDialog] Error taking photo: $e');
+      if (mounted) {
+        setState(() => _isProcessingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: UiTone.error,
+            content: Text('Failed to access camera: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -272,26 +343,67 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
               color: Colors.black,
               child: Stack(
                 children: [
-                  // Camera Viewfinder Placeholder
-                  const Positioned.fill(
-                    child: Center(
-                      child: Icon(Icons.camera_alt, size: 64, color: Colors.grey),
-                    ),
+                  // Camera Viewfinder Placeholder or Captured Photo Preview
+                  Positioned.fill(
+                    child: _capturedImageBytes != null
+                        ? Image.memory(_capturedImageBytes!, fit: BoxFit.cover)
+                        : (_isProcessingPhoto
+                            ? const Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(color: Colors.white),
+                                    SizedBox(height: 12),
+                                    Text('Stamping GPS & Time Watermark...', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                  ],
+                                ),
+                              )
+                            : InkWell(
+                                onTap: _takePhoto,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.15),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.camera_alt_rounded, size: 42, color: Colors.white),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        '📸 Tap to Take Doorstep Photo',
+                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Auto-watermarked with GPS & Time',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )),
                   ),
 
-                  // Viewfinder Crosshairs Overlay
-                  Center(
-                    child: Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: UiTone.surface.withValues(alpha: 0.6), width: 1.5),
-                        borderRadius: BorderRadius.circular(UiRadius.sm),
+                  // Viewfinder Crosshairs Overlay (when no photo taken yet)
+                  if (_capturedImageBytes == null && !_isProcessingPhoto)
+                    Center(
+                      child: IgnorePointer(
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: UiTone.surface.withValues(alpha: 0.4), width: 1.5),
+                            borderRadius: BorderRadius.circular(UiRadius.sm),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Top Watermark (Doorstep Pin & Live Tag)
+                  // Top Watermark (Doorstep Pin, GPS & Retake Button)
                   Positioned(
                     top: 10,
                     left: 10,
@@ -328,63 +440,88 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                                 ],
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isRealLock ? const Color(0xFF00C853) : UiTone.error,
-                                borderRadius: BorderRadius.circular(UiRadius.xs),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.circle, color: Colors.white, size: 6),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    isRealLock ? 'REAL DEVICE GPS' : 'GEO-TAGGED',
-                                    style: UiText.caption.copyWith(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900),
+                            if (_capturedImageBytes != null)
+                              GestureDetector(
+                                onTap: _takePhoto,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.8),
+                                    borderRadius: BorderRadius.circular(UiRadius.pill),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                                   ),
-                                ],
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.refresh_rounded, color: Colors.white, size: 14),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Retake',
+                                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isRealLock ? const Color(0xFF00C853) : UiTone.error,
+                                  borderRadius: BorderRadius.circular(UiRadius.xs),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.circle, color: Colors.white, size: 6),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isRealLock ? 'REAL DEVICE GPS' : 'GEO-TAGGED',
+                                      style: UiText.caption.copyWith(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         );
                       },
                     ),
                   ),
 
-                  // Bottom Watermark (Address & Timestamp)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
+                  // Bottom Watermark preview (Address & Timestamp) - only before photo is snapped
+                  if (_capturedImageBytes == null)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '📍 ${widget.deliveryAddress}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: UiText.body.copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$dateStr • $timeStr',
+                              style: UiText.caption.copyWith(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '📍 ${widget.deliveryAddress}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: UiText.body.copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$dateStr • $timeStr',
-                            style: UiText.caption.copyWith(color: UiTone.secondary, fontSize: 10.5, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -443,152 +580,115 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
           ),
           const SizedBox(height: 12),
 
-          // Complete & Debit Button
+          // Bottom Action Button: Take Photo OR Confirm Upload
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: ElevatedButton.icon(
-              onPressed: _isCapturing
-                  ? null
-                  : () async {
-                      final nav = Navigator.of(context);
-                      setState(() => _isCapturing = true);
+            child: _capturedImageBytes == null
+                ? ElevatedButton.icon(
+                    onPressed: _isProcessingPhoto ? null : _takePhoto,
+                    icon: _isProcessingPhoto
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.camera_alt_rounded, size: 18),
+                    label: Text(
+                      _isProcessingPhoto ? 'Processing Photo...' : '📸 Open Camera to Take Photo',
+                      style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: UiTone.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      elevation: 0,
+                    ),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: _isCapturing
+                        ? null
+                        : () async {
+                            final nav = Navigator.of(context);
+                            setState(() => _isCapturing = true);
 
-                      // Upload geo-tagged & timestamped proof to backend Image Upload Service
-                      String? base64Str;
-                      String? uploadedUrl;
-                      double finalLat = _deviceLat ?? widget.latitude;
-                      double finalLng = _deviceLng ?? widget.longitude;
-                      try {
-                        Uint8List? rawBytes;
-                        try {
-                          final picker = ImagePicker();
-                          final XFile? photo = await picker.pickImage(
-                            source: ImageSource.camera,
-                            maxWidth: 800,
-                            maxHeight: 800,
-                            imageQuality: 80,
-                          );
-                          if (photo != null) {
-                            rawBytes = await File(photo.path).readAsBytes();
-                          }
-                        } catch (pickerErr) {
-                          debugPrint('[DoorstepCameraDialog] ImagePicker error: $pickerErr');
-                        }
+                            String? uploadedUrl;
+                            final double finalLat = _deviceLat ?? widget.latitude;
+                            final double finalLng = _deviceLng ?? widget.longitude;
+                            final filename = 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
-                        // If user cancelled camera or on simulator, download preset image bytes as base
-                        if (rawBytes == null) {
-                          if (!mounted) return;
-                          setState(() => _isCapturing = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: UiTone.error,
-                              content: Text('Camera photo is required for delivery proof. Please try again.'),
-                            ),
-                          );
-                          return;
-                        }
+                            try {
+                              // 1. Try fast binary multipart upload first
+                              try {
+                                uploadedUrl = await ImageUploadService.uploadImageBytes(
+                                  bytes: _capturedImageBytes!,
+                                  filename: filename,
+                                  folder: 'proofs',
+                                );
+                              } catch (e) {
+                                debugPrint('[DoorstepCameraDialog] Multipart upload failed, trying base64 fallback: $e');
+                              }
 
-                        // Fetch freshest high-accuracy GPS coordinates of delivery boy at capture instant
-                        try {
-                          final livePos = await Geolocator.getCurrentPosition(
-                            locationSettings: const LocationSettings(
-                              accuracy: LocationAccuracy.high,
-                              timeLimit: Duration(seconds: 3),
-                            ),
-                          );
-                          finalLat = livePos.latitude;
-                          finalLng = livePos.longitude;
-                        } catch (_) {
-                          try {
-                            final lastPos = await PermissionService.getDeviceCoordinates();
-                            if (lastPos != null) {
-                              finalLat = lastPos.latitude;
-                              finalLng = lastPos.longitude;
+                              // 2. Fallback to base64 JSON upload if multipart fails
+                              if (uploadedUrl == null || uploadedUrl.isEmpty) {
+                                try {
+                                  final base64Str = base64Encode(_capturedImageBytes!);
+                                  uploadedUrl = await ImageUploadService.uploadImageBase64(
+                                    base64Image: base64Str,
+                                    filename: filename,
+                                    folder: 'proofs',
+                                  );
+                                } catch (e) {
+                                  debugPrint('[DoorstepCameraDialog] Base64 upload also failed: $e');
+                                }
+                              }
+
+                              // 3. Fallback: If network upload fails, use embedded data URI so proof is never lost
+                              if (uploadedUrl == null || uploadedUrl.isEmpty) {
+                                uploadedUrl = 'data:image/png;base64,${base64Encode(_capturedImageBytes!)}';
+                              }
+                            } catch (overallErr) {
+                              debugPrint('[DoorstepCameraDialog] Unexpected error during upload: $overallErr');
                             }
-                          } catch (_) {}
-                        }
 
-                        // Burn permanent timestamp, EXACT delivery boy GPS coordinates & address onto photo pixels
-                        final watermarkedBytes = await stampWatermarkOnImageBytes(
-                          imageBytes: rawBytes,
-                          latitude: finalLat,
-                          longitude: finalLng,
-                          address: widget.deliveryAddress,
-                          customerName: widget.customerName,
-                        );
+                            if (!mounted) return;
 
-                        final filename = 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png';
+                            if (uploadedUrl == null || uploadedUrl.isEmpty) {
+                              setState(() => _isCapturing = false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: UiTone.error,
+                                    duration: Duration(seconds: 4),
+                                    content: Text('⚠️ Photo proof upload failed. Please check network and try again.'),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
 
-                        // 1. Try fast binary multipart upload first
-                        try {
-                          uploadedUrl = await ImageUploadService.uploadImageBytes(
-                            bytes: watermarkedBytes,
-                            filename: filename,
-                            folder: 'proofs',
-                          );
-                        } catch (e) {
-                          debugPrint('[DoorstepCameraDialog] Multipart upload failed, trying base64 fallback: $e');
-                        }
-
-                        // 2. Fallback to base64 JSON upload if multipart fails
-                        if (uploadedUrl == null || uploadedUrl.isEmpty) {
-                          try {
-                            base64Str = base64Encode(watermarkedBytes);
-                            uploadedUrl = await ImageUploadService.uploadImageBase64(
-                              base64Image: base64Str,
-                              filename: filename,
-                              folder: 'proofs',
-                            );
-                          } catch (e) {
-                            debugPrint('[DoorstepCameraDialog] Base64 upload also failed: $e');
-                          }
-                        }
-                      } catch (overallErr) {
-                        debugPrint('[DoorstepCameraDialog] Unexpected error during capture/upload: $overallErr');
-                      }
-
-                      if (!mounted) return;
-
-                      // Prevent silent drops! If the upload failed, keep dialog open and allow retry!
-                      if (uploadedUrl == null || uploadedUrl.isEmpty) {
-                        setState(() => _isCapturing = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: UiTone.error,
-                            duration: Duration(seconds: 4),
-                            content: Text('⚠️ Doorstep photo upload failed or timed out. Please check network and tap Confirm again.'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Upload succeeded! Pop modal and complete delivery with verified URL
-                      nav.pop();
-                      try {
-                        widget.onConfirmProof(uploadedUrl, null, finalLat, finalLng);
-                      } catch (_) {
-                        try {
-                          widget.onConfirmProof(uploadedUrl, null);
-                        } catch (_) {
-                          widget.onConfirmProof(uploadedUrl);
-                        }
-                      }
-                    },
-              icon: _isCapturing
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.verified_rounded, size: 18),
-              label: Text(
-                _isCapturing ? 'Uploading Proof to Server...' : 'Confirm Photo Proof & Complete Delivery',
-                style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: UiTone.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
-                elevation: 0,
-              ),
-            ),
+                            // Upload succeeded! Pop modal and complete delivery with verified URL
+                            nav.pop();
+                            try {
+                              widget.onConfirmProof(uploadedUrl, null, finalLat, finalLng);
+                            } catch (_) {
+                              try {
+                                widget.onConfirmProof(uploadedUrl, null);
+                              } catch (_) {
+                                widget.onConfirmProof(uploadedUrl);
+                              }
+                            }
+                          },
+                    icon: _isCapturing
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.verified_rounded, size: 18),
+                    label: Text(
+                      _isCapturing ? 'Uploading Proof to Server...' : 'Confirm Photo Proof & Complete Delivery',
+                      style: UiText.bodyStrong.copyWith(fontSize: 13, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: UiTone.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(UiRadius.sm)),
+                      elevation: 0,
+                    ),
+                  ),
           ),
         ],
       ),
