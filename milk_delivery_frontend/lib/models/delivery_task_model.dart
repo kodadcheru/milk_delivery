@@ -155,7 +155,7 @@ class DeliveryTaskModel {
       deliveryDate: json['delivery_date'] ?? '',
       slotTime: json['slot_time'] ?? (subDetail?.deliverySlot ?? AppConfig.defaultMorningSlot),
       status: json['status'] ?? 'PENDING',
-      proofImageUrl: json['proof_image_url'] ?? '',
+      proofImageUrl: AppConfig.normalizeImageUrl(json['proof_image_url']?.toString()),
       deliveredAt: json['delivered_at'],
       deliveredLatitude: json['delivered_latitude'] != null ? double.tryParse(json['delivered_latitude'].toString()) : null,
       deliveredLongitude: json['delivered_longitude'] != null ? double.tryParse(json['delivered_longitude'].toString()) : null,

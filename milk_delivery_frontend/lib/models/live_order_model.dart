@@ -184,7 +184,7 @@ class LiveOrderModel {
       paymentStatus: json['payment_status'] ?? 'PAID (Wallet)',
       createdAt: json['created_at'] ?? 'Today',
       deliveredAt: json['delivered_at'],
-      proofImageUrl: json['proof_image_url'] ?? '',
+      proofImageUrl: AppConfig.normalizeImageUrl(json['proof_image_url']?.toString()),
       fatPercentage: double.tryParse(json['fat_percentage']?.toString() ?? '0') ?? 0.0,
       snfPercentage: double.tryParse(json['snf_percentage']?.toString() ?? '0') ?? 0.0,
       waterPercentage: double.tryParse(json['water_percentage']?.toString() ?? '0') ?? 0.0,

@@ -16,6 +16,7 @@ import '../../widgets/bookings/active_booking_live_map_card.dart';
 import '../../widgets/ui_kit/ui_empty_state.dart';
 import 'live_driver_tracking_screen.dart';
 import '../../widgets/ui_kit/pamba_refresh_indicator.dart';
+import '../../config/app_config.dart';
 
 class DeliveryTrackerTab extends StatefulWidget {
   final AppState state;
@@ -40,7 +41,8 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    final initialTab = (widget.state.liveOrders.isEmpty && widget.state.deliveries.isNotEmpty) ? 1 : 0;
+    _tabController = TabController(length: 2, vsync: this, initialIndex: initialTab);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -985,7 +987,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                             onPressed: () {
                               _showDoorstepProofLightbox(
                                 context,
-                                order.proofImageUrl,
+                                AppConfig.normalizeImageUrl(order.proofImageUrl),
                                 'Order #${order.id.length > 8 ? order.id.substring(0, 8) : order.id}',
                                 'Verified Doorstep Photo Proof',
                               );
@@ -1426,7 +1428,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                             onTap: () {
                               _showDoorstepProofLightbox(
                                 context,
-                                task.proofImageUrl,
+                                AppConfig.normalizeImageUrl(task.proofImageUrl),
                                 'Daily Drop #${task.id}',
                                 '${task.productName} • ${task.deliveryDate}',
                               );
@@ -1434,7 +1436,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                task.proofImageUrl,
+                                AppConfig.normalizeImageUrl(task.proofImageUrl),
                                 width: 36,
                                 height: 36,
                                 fit: BoxFit.cover,
@@ -1522,7 +1524,7 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                   minScale: 1.0,
                   maxScale: 4.0,
                   child: Image.network(
-                    imageUrl,
+                    AppConfig.normalizeImageUrl(imageUrl),
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => Container(
                       padding: const EdgeInsets.all(32),

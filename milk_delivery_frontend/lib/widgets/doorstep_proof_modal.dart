@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import '../config/app_config.dart';
 import '../theme/ui_tokens.dart';
 
@@ -115,7 +114,7 @@ class DoorstepProofModal extends StatelessWidget {
                       maxScale: 3.0,
                       child: imageUrl.isNotEmpty
                           ? Image.network(
-                              imageUrl,
+                              AppConfig.normalizeImageUrl(imageUrl),
                               fit: BoxFit.cover,
                               errorBuilder: (ctx, e, st) => Container(
                                 color: const Color(0xFF1E293B),

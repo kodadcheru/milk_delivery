@@ -71,6 +71,21 @@ class AppConfig {
   }
 
   static const Duration requestTimeout = Duration(seconds: 12);
+  static const Duration imageUploadTimeout = Duration(seconds: 45);
+
+  /// Normalizes image URLs to absolute HTTPS URLs if relative or HTTP
+  static String normalizeImageUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return '';
+    final trimmed = url.trim();
+    if (trimmed.startsWith('http://')) {
+      return trimmed.replaceFirst('http://', 'https://');
+    }
+    if (trimmed.startsWith('/')) {
+      final base = baseUrl;
+      return '$base$trimmed';
+    }
+    return trimmed;
+  }
 
   // Delivery Slot Constants — should eventually be fetched from backend DeliverySlot model
   static const String defaultMorningSlot = '05:30 AM - 07:00 AM';

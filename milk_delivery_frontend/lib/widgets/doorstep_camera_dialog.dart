@@ -18,7 +18,7 @@ Future<Uint8List> stampWatermarkOnImageBytes({
   required String customerName,
 }) async {
   try {
-    final codec = await ui.instantiateImageCodec(imageBytes);
+    final codec = await ui.instantiateImageCodec(imageBytes, targetWidth: 800);
     final frameInfo = await codec.getNextFrame();
     final image = frameInfo.image;
 
@@ -465,14 +465,16 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           final picker = ImagePicker();
                           final XFile? photo = await picker.pickImage(
                             source: ImageSource.camera,
-                            maxWidth: 1024,
-                            maxHeight: 1024,
-                            imageQuality: 85,
+                            maxWidth: 800,
+                            maxHeight: 800,
+                            imageQuality: 80,
                           );
                           if (photo != null) {
                             rawBytes = await File(photo.path).readAsBytes();
                           }
-                        } catch (_) {}
+                        } catch (pickerErr) {
+                          debugPrint('[DoorstepCameraDialog] ImagePicker error: $pickerErr');
+                        }
 
                         // If user cancelled camera or on simulator, download preset image bytes as base
                         if (rawBytes == null) {
@@ -481,7 +483,7 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               backgroundColor: UiTone.error,
-                              content: Text('Camera is required for delivery proof. Please try again.'),
+                              content: Text('Camera photo is required for delivery proof. Please try again.'),
                             ),
                           );
                           return;
@@ -516,41 +518,52 @@ class _DoorstepCameraDialogState extends State<DoorstepCameraDialog> {
                           customerName: widget.customerName,
                         );
 
-                        base64Str = base64Encode(watermarkedBytes);
-                        uploadedUrl = await ImageUploadService.uploadImageBase64(
-                          base64Image: base64Str,
-                          filename: 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png',
-                          folder: 'proofs',
-                        );
-                      } catch (_) {}
+                        final filename = 'proof_${activePreset.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
-                      if (!mounted) return;
-                      
-                      // Offline Queue Fallback
-                      if (uploadedUrl == null && base64Str != null) {
-                        nav.pop();
+                        // 1. Try fast binary multipart upload first
                         try {
-                          widget.onConfirmProof(null, base64Str, finalLat, finalLng);
-                        } catch (_) {
+                          uploadedUrl = await ImageUploadService.uploadImageBytes(
+                            bytes: watermarkedBytes,
+                            filename: filename,
+                            folder: 'proofs',
+                          );
+                        } catch (e) {
+                          debugPrint('[DoorstepCameraDialog] Multipart upload failed, trying base64 fallback: $e');
+                        }
+
+                        // 2. Fallback to base64 JSON upload if multipart fails
+                        if (uploadedUrl == null || uploadedUrl.isEmpty) {
                           try {
-                            widget.onConfirmProof(null, base64Str);
-                          } catch (_) {
-                            widget.onConfirmProof(null);
+                            base64Str = base64Encode(watermarkedBytes);
+                            uploadedUrl = await ImageUploadService.uploadImageBase64(
+                              base64Image: base64Str,
+                              filename: filename,
+                              folder: 'proofs',
+                            );
+                          } catch (e) {
+                            debugPrint('[DoorstepCameraDialog] Base64 upload also failed: $e');
                           }
                         }
-                        return;
+                      } catch (overallErr) {
+                        debugPrint('[DoorstepCameraDialog] Unexpected error during capture/upload: $overallErr');
                       }
 
-                      if (uploadedUrl == null) {
+                      if (!mounted) return;
+
+                      // Prevent silent drops! If the upload failed, keep dialog open and allow retry!
+                      if (uploadedUrl == null || uploadedUrl.isEmpty) {
                         setState(() => _isCapturing = false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             backgroundColor: UiTone.error,
-                            content: Text('📷 Photo capture failed. Please try again.'),
+                            duration: Duration(seconds: 4),
+                            content: Text('⚠️ Doorstep photo upload failed or timed out. Please check network and tap Confirm again.'),
                           ),
                         );
                         return;
                       }
+
+                      // Upload succeeded! Pop modal and complete delivery with verified URL
                       nav.pop();
                       try {
                         widget.onConfirmProof(uploadedUrl, null, finalLat, finalLng);

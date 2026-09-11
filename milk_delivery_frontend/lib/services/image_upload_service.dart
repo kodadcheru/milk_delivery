@@ -17,6 +17,10 @@ class ImageUploadService {
     Map<String, String>? extraFields,
   }) async {
     try {
+      if (ApiService.authToken == null) {
+        await ApiService.initAuthToken();
+      }
+
       final uri = Uri.parse(_uploadUrl);
       final request = http.MultipartRequest('POST', uri);
 
@@ -47,14 +51,15 @@ class ImageUploadService {
         request.fields.addAll(extraFields);
       }
 
-      final streamedResponse = await request.send().timeout(AppConfig.requestTimeout);
+      final streamedResponse = await request.send().timeout(AppConfig.imageUploadTimeout);
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['url'] as String?;
+        final rawUrl = data['url'] as String?;
+        return AppConfig.normalizeImageUrl(rawUrl);
       } else {
-        throw Exception('Upload failed with status ${response.statusCode}');
+        throw Exception('Upload failed with status ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       debugPrint('[ImageUploadService] uploadImageBytes failed: $e');
@@ -69,6 +74,10 @@ class ImageUploadService {
     String folder = 'proofs',
   }) async {
     try {
+      if (ApiService.authToken == null) {
+        await ApiService.initAuthToken();
+      }
+
       final res = await http.post(
         Uri.parse(_uploadUrl),
         headers: {
@@ -80,13 +89,14 @@ class ImageUploadService {
           'filename': filename,
           'folder': folder,
         }),
-      ).timeout(AppConfig.requestTimeout);
+      ).timeout(AppConfig.imageUploadTimeout);
 
       if (res.statusCode == 201 || res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        return data['url'] as String?;
+        final rawUrl = data['url'] as String?;
+        return AppConfig.normalizeImageUrl(rawUrl);
       } else {
-        throw Exception('Upload failed with status ${res.statusCode}');
+        throw Exception('Upload failed with status ${res.statusCode}: ${res.body}');
       }
     } catch (e) {
       debugPrint('[ImageUploadService] uploadImageBase64 failed: $e');
