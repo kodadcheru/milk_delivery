@@ -1901,6 +1901,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ],
                 ),
               ),
+          ],
         ),
       ),
     );
