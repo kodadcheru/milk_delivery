@@ -9,6 +9,7 @@ import '../../models/delivery_batch_model.dart';
 import '../../models/delivery_task_model.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
+import '../../services/driver_location_service.dart';
 import '../../services/route_optimizer.dart';
 import '../../theme/ui_tokens.dart';
 import '../../theme/ui_text.dart';
@@ -156,24 +157,32 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
       }
 
       // Initial fast fix
-      final initialPos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      ).timeout(const Duration(seconds: 4), onTimeout: () => throw TimeoutException('GPS timeout'));
-
-      if (mounted) {
+      final currentPos = DriverLocationService.instance.currentPosition;
+      if (currentPos != null && mounted) {
         setState(() {
-          _driverLocation = LatLng(initialPos.latitude, initialPos.longitude);
+          _driverLocation = LatLng(currentPos.latitude, currentPos.longitude);
         });
         _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 15.0));
+      } else {
+        try {
+          final initialPos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+          ).timeout(const Duration(seconds: 4), onTimeout: () => throw TimeoutException('GPS timeout'));
+
+          if (mounted) {
+            setState(() {
+              _driverLocation = LatLng(initialPos.latitude, initialPos.longitude);
+            });
+            _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverLocation, 15.0));
+          }
+        } catch (_) {}
       }
 
-      // Continuous live updates with smooth heading rotation
-      const locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 3, // High precision 3-meter road movement
-      );
+      // Ensure background location tracking is active for the driver
+      await DriverLocationService.instance.startTracking();
 
-      _positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+      // Continuous live updates with smooth heading rotation
+      _positionSubscription = DriverLocationService.instance.positionStream.listen(
         (Position pos) {
           if (!mounted) return;
           final newLoc = LatLng(pos.latitude, pos.longitude);
@@ -183,12 +192,6 @@ class _DriverRouteMapScreenState extends State<DriverRouteMapScreen> {
             _driverLocation = newLoc;
             _driverHeading = bearing;
           });
-
-          // Sync real-time location to backend fleet dispatcher
-          ApiService.updateDriverLocation(
-            latitude: pos.latitude,
-            longitude: pos.longitude,
-          );
         },
         onError: (_) {},
       );

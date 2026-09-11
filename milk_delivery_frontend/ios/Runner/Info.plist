@@ -35,7 +35,9 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pamba Fresh requires access to your location to accurately deliver fresh morning milk and dairy to your doorstep.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Pamba Fresh uses your location to optimize live early morning delivery route dispatching.</string>
+	<string>Pamba Fresh uses your location to optimize live early morning delivery route dispatching and real-time customer tracking.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Pamba delivery partners share their live location with customers during active delivery runs even when the app is in the background.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -82,6 +84,7 @@
 	<array>
 		<string>fetch</string>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 </dict>
 </plist>

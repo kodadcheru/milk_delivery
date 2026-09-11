@@ -25,6 +25,7 @@ import '../services/image_upload_service.dart';
 import '../services/location_service.dart';
 import '../services/permission_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/driver_location_service.dart';
 
 class AppState extends ChangeNotifier {
   UserModel? currentUser;
@@ -44,6 +45,11 @@ class AppState extends ChangeNotifier {
     if (isDriverOnDuty != val) {
       isDriverOnDuty = val;
       notifyListeners();
+      if (val) {
+        DriverLocationService.instance.startTracking();
+      } else {
+        DriverLocationService.instance.stopTracking();
+      }
     }
   }
 
@@ -1458,6 +1464,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    DriverLocationService.instance.stopTracking();
     PushNotificationService.instance.unregisterDeviceToken();
     await ApiService.clearAuthToken();
     await _clearCachedAddresses(); // Clear local cache on logout
