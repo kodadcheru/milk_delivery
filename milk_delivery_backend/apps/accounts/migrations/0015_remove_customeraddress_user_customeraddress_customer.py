@@ -3,6 +3,35 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def migrate_address_customer_column(apps, schema_editor):
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+                DO $$ 
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_customeraddress' AND column_name='user_id') THEN
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_customeraddress' AND column_name='customer_id') THEN
+                            ALTER TABLE accounts_customeraddress RENAME COLUMN user_id TO customer_id;
+                        ELSE
+                            ALTER TABLE accounts_customeraddress DROP COLUMN user_id;
+                        END IF;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_customeraddress' AND column_name='customer_id') THEN
+                        ALTER TABLE accounts_customeraddress ADD COLUMN customer_id bigint NOT NULL DEFAULT 1 REFERENCES accounts_user(id) ON DELETE CASCADE;
+                    END IF;
+                END $$;
+            """)
+    elif schema_editor.connection.vendor == 'sqlite':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("PRAGMA table_info(accounts_customeraddress)")
+            cols = [c[1] for c in cursor.fetchall()]
+            if 'customer_id' not in cols:
+                if 'user_id' in cols:
+                    cursor.execute("ALTER TABLE accounts_customeraddress RENAME COLUMN user_id TO customer_id")
+                else:
+                    cursor.execute("ALTER TABLE accounts_customeraddress ADD COLUMN customer_id integer NOT NULL DEFAULT 1 REFERENCES accounts_user(id) ON DELETE CASCADE")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -30,24 +59,11 @@ class Migration(migrations.Migration):
                 ),
             ],
             database_operations=[
-                migrations.RunSQL(
-                    sql="""
-                    DO $$ 
-                    BEGIN
-                        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_customeraddress' AND column_name='user_id') THEN
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_customeraddress' AND column_name='customer_id') THEN
-                                ALTER TABLE accounts_customeraddress RENAME COLUMN user_id TO customer_id;
-                            ELSE
-                                ALTER TABLE accounts_customeraddress DROP COLUMN user_id;
-                            END IF;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_customeraddress' AND column_name='customer_id') THEN
-                            ALTER TABLE accounts_customeraddress ADD COLUMN customer_id bigint NOT NULL DEFAULT 1 REFERENCES accounts_user(id) ON DELETE CASCADE;
-                        END IF;
-                    END $$;
-                    """,
-                    reverse_sql=migrations.RunSQL.noop,
+                migrations.RunPython(
+                    migrate_address_customer_column,
+                    reverse_code=migrations.RunPython.noop,
                 )
             ]
         ),
     ]
+

@@ -807,39 +807,43 @@ class ExpressOrderDetailView(APIView):
                             )
                         )
 
-            # Refund wallet on cancellation (only if paid and not already refunded)
-            if new_status == LiveOrder.Statuses.CANCELLED and order.payment_status.startswith("PAID"):
-                customer = order.customer
-                refund_amount = order.total_amount
-
+            # Refund wallet on cancellation (atomic row-lock, only if paid and not already refunded)
+            if new_status == LiveOrder.Statuses.CANCELLED and old_status != LiveOrder.Statuses.CANCELLED:
                 with transaction.atomic():
-                    User.objects.filter(pk=customer.pk).update(
-                        wallet_balance=F("wallet_balance") + refund_amount
-                    )
-                    customer.refresh_from_db()
+                    locked_order = LiveOrder.objects.select_for_update().get(pk=order.pk)
+                    if locked_order.payment_status.startswith("PAID") and locked_order.payment_status != "REFUNDED":
+                        customer = locked_order.customer
+                        refund_amount = locked_order.total_amount
 
-                WalletTransaction.objects.create(
-                    user=customer,
-                    amount=refund_amount,
-                    transaction_type=WalletTransaction.Types.CREDIT,
-                    description=f"💰 Refund for cancelled order {order.id}",
-                )
+                        User.objects.filter(pk=customer.pk).update(
+                            wallet_balance=F("wallet_balance") + refund_amount
+                        )
+                        customer.refresh_from_db(fields=["wallet_balance"])
 
-                ref_t = f"💰 Order {order.id} Refunded"
-                ref_m = f"₹{refund_amount} has been refunded to your wallet for cancelled order {order.id}. New balance: ₹{customer.wallet_balance}"
-                Notification.objects.create(
-                    user=customer,
-                    title=ref_t,
-                    message=ref_m,
-                    notification_type=Notification.Types.WALLET,
-                    target_screen="WALLET",
-                )
-                try:
-                    send_push_to_user(customer, ref_t, ref_m, target_screen="WALLET")
-                except Exception as e:
-                    logger.warning(f"Notification failed for order refund push: {e}")
+                        WalletTransaction.objects.create(
+                            user=customer,
+                            amount=refund_amount,
+                            transaction_type=WalletTransaction.Types.CREDIT,
+                            description=f"💰 Refund for cancelled order {locked_order.id}",
+                        )
 
-                order.payment_status = "REFUNDED"
+                        ref_t = f"💰 Order {locked_order.id} Refunded"
+                        ref_m = f"₹{refund_amount} has been refunded to your wallet for cancelled order {locked_order.id}. New balance: ₹{customer.wallet_balance}"
+                        Notification.objects.create(
+                            user=customer,
+                            title=ref_t,
+                            message=ref_m,
+                            notification_type=Notification.Types.WALLET,
+                            target_screen="WALLET",
+                        )
+                        try:
+                            send_push_to_user(customer, ref_t, ref_m, target_screen="WALLET")
+                        except Exception as e:
+                            logger.warning(f"Notification failed for order refund push: {e}")
+
+                        locked_order.payment_status = "REFUNDED"
+                        locked_order.save(update_fields=["payment_status", "updated_at"])
+                        order.payment_status = "REFUNDED"
 
             order.save()
 

@@ -287,21 +287,26 @@ class RazorpayWebhookView(APIView):
                                 rp.status = 'SUCCESS'
                                 rp.save(update_fields=['razorpay_payment_id', 'status', 'updated_at'])
 
-                                # Credit wallet
-                                from django.contrib.auth import get_user_model
-                                User = get_user_model()
-                                User.objects.filter(pk=rp.user_id).update(
-                                    wallet_balance=F('wallet_balance') + rp.amount
-                                )
+                                if rp.purpose == RazorpayPayment.Purpose.WALLET_TOPUP:
+                                    # Credit wallet for wallet recharge
+                                    from django.contrib.auth import get_user_model
+                                    User = get_user_model()
+                                    User.objects.filter(pk=rp.user_id).update(
+                                        wallet_balance=F('wallet_balance') + rp.amount
+                                    )
 
-                                # Create wallet transaction
-                                from apps.accounts.models import WalletTransaction
-                                WalletTransaction.objects.create(
-                                    user=rp.user,
-                                    transaction_type=WalletTransaction.Types.CREDIT,
-                                    amount=rp.amount,
-                                    description=f'Razorpay payment {payment_id} (webhook)',
-                                )
+                                    # Create wallet transaction
+                                    from apps.accounts.models import WalletTransaction
+                                    WalletTransaction.objects.create(
+                                        user=rp.user,
+                                        transaction_type=WalletTransaction.Types.CREDIT,
+                                        amount=rp.amount,
+                                        description=f'Razorpay payment {payment_id} (webhook)',
+                                    )
+                                elif rp.purpose == RazorpayPayment.Purpose.ORDER_PAYMENT and rp.order:
+                                    rp.order.payment_method = "RAZORPAY"
+                                    rp.order.payment_status = "PAID"
+                                    rp.order.save(update_fields=["payment_method", "payment_status", "updated_at"])
                     except RazorpayPayment.DoesNotExist:
                         logger.warning(f"RazorpayPayment not found for order {order_id} in webhook")
                         pass

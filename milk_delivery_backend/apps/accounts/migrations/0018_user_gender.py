@@ -1,6 +1,25 @@
 from django.db import migrations, models
 
 
+def add_gender_column(apps, schema_editor):
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_user' AND column_name='gender') THEN
+                        ALTER TABLE accounts_user ADD COLUMN gender varchar(10) NOT NULL DEFAULT 'Male';
+                    END IF;
+                END $$;
+            """)
+    elif schema_editor.connection.vendor == 'sqlite':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("PRAGMA table_info(accounts_user)")
+            cols = [c[1] for c in cursor.fetchall()]
+            if 'gender' not in cols:
+                cursor.execute("ALTER TABLE accounts_user ADD COLUMN gender varchar(10) NOT NULL DEFAULT 'Male'")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -17,17 +36,11 @@ class Migration(migrations.Migration):
                 ),
             ],
             database_operations=[
-                migrations.RunSQL(
-                    sql="""
-                    DO $$ 
-                    BEGIN
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='accounts_user' AND column_name='gender') THEN
-                            ALTER TABLE accounts_user ADD COLUMN gender varchar(10) NOT NULL DEFAULT 'Male';
-                        END IF;
-                    END $$;
-                    """,
-                    reverse_sql=migrations.RunSQL.noop,
+                migrations.RunPython(
+                    add_gender_column,
+                    reverse_code=migrations.RunPython.noop,
                 )
             ]
         ),
     ]
+

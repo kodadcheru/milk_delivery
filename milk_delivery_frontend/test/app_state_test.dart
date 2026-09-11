@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:milk_delivery_frontend/models/product_model.dart';
 import 'package:milk_delivery_frontend/models/user_model.dart';
 import 'package:milk_delivery_frontend/models/delivery_task_model.dart';
@@ -9,6 +10,9 @@ import 'package:milk_delivery_frontend/providers/app_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
   group('ProductModel Tests', () {
     test('ProductModel parses JSON correctly', () {
@@ -61,6 +65,8 @@ void main() {
         'role': 'CUSTOMER',
         'phone': '+91 9876543210',
         'wallet_balance': '750.50',
+        'latitude': 17.4319,
+        'longitude': 78.4073,
       };
 
       final user = UserModel.fromJson(json);
@@ -141,7 +147,7 @@ void main() {
       expect(state.totalCartPrice, 0.0);
     });
 
-    test('LiveOrderModel and placeExpressOrder flow', () async {
+    test('LiveOrderModel and placeExpressOrder validation', () async {
       final p1 = ProductModel(
         id: 10,
         name: 'Fresh Chicken',
@@ -157,17 +163,19 @@ void main() {
       state.products = [p1];
       state.addToCart(p1);
 
-      final order = await state.placeExpressOrder(
-        deliveryDate: '21 Aug 2026',
-        deliverySlot: '05:30 AM - 07:00 AM',
+      // Should reject without a selected address
+      expect(
+        () => state.placeExpressOrder(
+          deliveryDate: '21 Aug 2026',
+          deliverySlot: '05:30 AM - 07:00 AM',
+          deliveryAddress: '',
+        ),
+        throwsA(isA<Exception>()),
       );
-      expect(order.id.startsWith('MD-'), true);
-      expect(order.deliveryDate, '21 Aug 2026');
-      expect(order.deliverySlot, '05:30 AM - 07:00 AM');
-      expect(order.totalAmount, 220.0);
-      expect(order.items.length, 1);
-      expect(state.liveOrders.first.id, order.id);
-      expect(state.totalCartItemCount, 0);
+
+      // Cart items should remain intact when order placement fails
+      expect(state.totalCartItemCount, 1);
+      expect(state.totalCartPrice, 220.0);
     });
 
     test('LiveOrderModel serializes and deserializes JSON correctly', () {

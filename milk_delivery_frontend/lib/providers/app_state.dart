@@ -696,29 +696,9 @@ class AppState extends ChangeNotifier {
       await reloadAllData();
       return serverOrder;
     } else {
-      final localOrder = LiveOrderModel(
-        id: 'MD-${DateTime.now().millisecondsSinceEpoch % 10000}',
-        items: cartProductsList
-            .map((e) => OrderItemModel(
-                  product: e.key,
-                  quantity: e.value,
-                  unitPrice: e.key.pricePerUnit,
-                ))
-            .toList(),
-        totalAmount: totalCartPrice,
-        status: 'PREPARING',
-        deliveryDate: dateStr,
-        deliverySlot: slotStr,
-        deliveryAddress: addr,
-        customerName: currentUser != null ? '${currentUser!.firstName} ${currentUser!.lastName}'.trim() : 'Customer',
-        customerPhone: currentUser?.phone ?? '',
-        paymentMethod: paymentMethod,
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      liveOrders.insert(0, localOrder);
-      cartItems.clear();
-      notifyListeners();
-      return localOrder;
+      final errMsg = ApiService.lastError ?? 'Failed to place order with server. Please check your connection and try again.';
+      debugPrint('❌ [Order Placement Error]: $errMsg');
+      throw Exception(errMsg);
     }
   }
 

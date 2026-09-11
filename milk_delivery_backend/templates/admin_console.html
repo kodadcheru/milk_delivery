@@ -4321,9 +4321,15 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          successEl.innerText = `OTP code sent to +91 ${phoneInput}. Default OTP: 1234`;
+          if (data.test_otp) {
+            successEl.innerText = `OTP code sent to +91 ${phoneInput}. Test OTP: ${data.test_otp}`;
+            document.getElementById('adminOtpCode').value = data.test_otp;
+          } else {
+            successEl.innerText = `OTP code sent to +91 ${phoneInput}. Please enter the 6-digit code received via SMS.`;
+            document.getElementById('adminOtpCode').value = '';
+            document.getElementById('adminOtpCode').placeholder = '• • • • • •';
+          }
           successEl.style.display = 'block';
-          document.getElementById('adminOtpCode').value = '1234';
           document.getElementById('adminOtpCode').focus();
         } else {
           alertEl.innerText = data.error || data.detail || 'Could not send OTP code.';
@@ -4381,7 +4387,7 @@
           }
           loadAllData();
         } else {
-          alertEl.innerText = data.detail || data.message || 'Invalid OTP code. Please enter 1234.';
+          alertEl.innerText = data.detail || data.message || 'Invalid OTP code. Please check the code sent to your phone.';
           alertEl.style.display = 'block';
         }
       } catch (err) {
