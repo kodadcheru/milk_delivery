@@ -15,7 +15,7 @@ class PackPricing {
     final cat = product.category.toUpperCase();
 
     if (cat == 'MILK' || name.contains('milk')) {
-      return const ['500 ml', '1 Litre', '2 Litres'];
+      return const ['500 ml', '1 Litre'];
     } else if (cat == 'EGGS' || name.contains('egg')) {
       return const ['6 Eggs', '12 Eggs', '30 Tray'];
     } else if (cat == 'WATER_CAN' || name.contains('water')) {
@@ -52,16 +52,29 @@ class PackPricing {
   /// Per-unit price for [packSize] given the product's base [pricePerUnit].
   static double effectiveUnitPrice(double pricePerUnit, String packSize) {
     final clean = packSize.toLowerCase().trim();
+
+    // 20L Water Can is the base product (₹80)
+    if (clean.contains('20')) {
+      return pricePerUnit;
+    }
+    // 10L Water Can is half-can (₹40)
+    if (clean.contains('10') && (clean.contains('litre') || clean.contains('liter') || clean.contains('l'))) {
+      return (pricePerUnit * 0.5).roundToDouble();
+    }
+    // 500ml / 500g is half size
     if (clean.contains('500')) {
       return (pricePerUnit * 0.5).roundToDouble();
-    } else if (clean.contains('2') && (clean.contains('litre') || clean.contains('liter') || clean.contains('kg'))) {
+    }
+    // Eggs
+    if (clean.contains('12')) {
       return (pricePerUnit * 2.0).roundToDouble();
-    } else if (clean.contains('12')) {
-      return (pricePerUnit * 2.0).roundToDouble();
-    } else if (clean.contains('30')) {
+    }
+    if (clean.contains('30')) {
       return (pricePerUnit * 5.0).roundToDouble();
-    } else if (clean.contains('10') && (clean.contains('litre') || clean.contains('liter'))) {
-      return (pricePerUnit * 0.5).roundToDouble();
+    }
+    // 2 kg (e.g. meat/curd, using word boundary so '20' is never matched)
+    if (RegExp(r'\b2(\.0)?\s*(kg|kilo)\b').hasMatch(clean)) {
+      return (pricePerUnit * 2.0).roundToDouble();
     }
     return pricePerUnit;
   }

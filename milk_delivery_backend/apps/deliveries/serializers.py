@@ -1,4 +1,5 @@
 import logging
+import re
 from rest_framework import serializers
 from apps.accounts.serializers import UserSerializer
 from apps.deliveries.models import DeliveryTask, LocationHub, ServiceArea
@@ -236,9 +237,13 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
             if obj.subscription.product:
                 base = float(obj.subscription.product.price_per_unit)
                 p_size = (obj.subscription.pack_size or '').lower()
-                if '500' in p_size:
+                if '20' in p_size:
+                    return str(round(base, 2))
+                elif '10' in p_size and ('litre' in p_size or 'liter' in p_size or 'l' in p_size):
                     return str(round(base * 0.5, 2))
-                elif '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
+                elif '500' in p_size:
+                    return str(round(base * 0.5, 2))
+                elif re.search(r'\b2(\.0)?\s*(litre|liter|kg)\b', p_size):
                     return str(round(base * 2.0, 2))
                 return str(round(base, 2))
         if obj.order:

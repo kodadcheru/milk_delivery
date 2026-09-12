@@ -102,12 +102,20 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
 
   String _formatDeliveryVolume(int qty, String packSize, {required bool isTelugu}) {
     final clean = packSize.toLowerCase().trim();
+    if (clean.contains('20')) {
+      final totalL = qty * 20;
+      return isTelugu ? '$totalL లీటర్లు' : '$totalL Litres';
+    }
+    if (clean.contains('10') && (clean.contains('litre') || clean.contains('liter') || clean.contains('l'))) {
+      final totalL = qty * 10;
+      return isTelugu ? '$totalL లీటర్లు' : '$totalL Litres';
+    }
     if (clean.contains('500')) {
       final totalL = qty * 0.5;
       final lStr = totalL == totalL.roundToDouble() ? totalL.toInt().toString() : totalL.toStringAsFixed(1);
       return isTelugu ? '$lStr లీటర్లు' : '$lStr Litres';
     }
-    if (clean.contains('2') && (clean.contains('litre') || clean.contains('liter'))) {
+    if (RegExp(r'\b2(\.0)?\s*(litre|liter|l\b)').hasMatch(clean)) {
       final totalL = qty * 2;
       return isTelugu ? '$totalL లీటర్లు' : '$totalL Litres';
     }

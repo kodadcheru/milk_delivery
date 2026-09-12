@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import date
 from decimal import Decimal
 from django.db import models, transaction
@@ -167,9 +168,13 @@ class DeliveryTaskCompleteView(APIView):
             elif task.subscription.product:
                 base = task.subscription.product.price_per_unit
                 p_size = (task.subscription.pack_size or '').lower()
-                if '500' in p_size:
+                if '20' in p_size:
+                    unit_price = base
+                elif '10' in p_size and ('litre' in p_size or 'liter' in p_size or 'l' in p_size):
                     unit_price = base * Decimal("0.5")
-                elif '2' in p_size and ('litre' in p_size or 'liter' in p_size or 'kg' in p_size):
+                elif '500' in p_size:
+                    unit_price = base * Decimal("0.5")
+                elif re.search(r'\b2(\.0)?\s*(litre|liter|kg)\b', p_size):
                     unit_price = base * Decimal("2.0")
                 else:
                     unit_price = base

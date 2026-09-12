@@ -1532,9 +1532,14 @@ class AdminSubscriptionCreateView(APIView):
 
         base_price = float(product.price_per_unit)
         pack_size_val = request.data.get('pack_size', '1 Litre') or '1 Litre'
-        if '500' in pack_size_val.lower():
+        p_clean = pack_size_val.lower()
+        if '20' in p_clean:
+            effective_price = base_price
+        elif '10' in p_clean and ('litre' in p_clean or 'liter' in p_clean or 'l' in p_clean):
             effective_price = round(base_price * 0.5, 2)
-        elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+        elif '500' in p_clean:
+            effective_price = round(base_price * 0.5, 2)
+        elif re.search(r'\b2(\.0)?\s*(litre|liter|kg)\b', p_clean):
             effective_price = round(base_price * 2.0, 2)
         else:
             effective_price = base_price

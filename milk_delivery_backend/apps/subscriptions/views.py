@@ -1,4 +1,5 @@
 import logging
+import re
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -138,15 +139,22 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
         # Calculate effective unit price based on pack_size
         base_price = float(prod_obj.price_per_unit)
         pack_size_val = self.request.data.get('pack_size', '1 Litre') or '1 Litre'
-        if '500' in pack_size_val.lower():
+        p_clean = pack_size_val.lower()
+        if '20' in p_clean:
+            effective_price = base_price
+            volume_multiplier = 20.0
+        elif '10' in p_clean and ('litre' in p_clean or 'liter' in p_clean or 'l' in p_clean):
+            effective_price = round(base_price * 0.5, 2)
+            volume_multiplier = 10.0
+        elif '500' in p_clean:
             effective_price = round(base_price * 0.5, 2)
             volume_multiplier = 0.5
-        elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+        elif re.search(r'\b2(\.0)?\s*(litre|liter|kg)\b', p_clean):
             effective_price = round(base_price * 2.0, 2)
-            volume_multiplier = 2
+            volume_multiplier = 2.0
         else:
             effective_price = base_price
-            volume_multiplier = 1
+            volume_multiplier = 1.0
 
         if hub:
             from apps.products.models import HubProductInventory
@@ -304,9 +312,14 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
                 from django.db.models import F
                 req_qty = instance.quantity or 1
                 pack_size_val = instance.pack_size or '1 Litre'
-                if '500' in pack_size_val.lower():
+                p_clean = pack_size_val.lower()
+                if '20' in p_clean:
+                    vol_mult = 20.0
+                elif '10' in p_clean:
+                    vol_mult = 10.0
+                elif '500' in p_clean:
                     vol_mult = 0.5
-                elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+                elif re.search(r'\b2(\.0)?\s*(litre|liter|kg)\b', p_clean):
                     vol_mult = 2.0
                 else:
                     vol_mult = 1.0
@@ -344,9 +357,14 @@ class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         if instance.hub and instance.product:
             req_qty = instance.quantity or 1
             pack_size_val = instance.pack_size or '1 Litre'
-            if '500' in pack_size_val.lower():
+            p_clean = pack_size_val.lower()
+            if '20' in p_clean:
+                vol_mult = 20.0
+            elif '10' in p_clean:
+                vol_mult = 10.0
+            elif '500' in p_clean:
                 vol_mult = 0.5
-            elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+            elif re.search(r'\b2(\.0)?\s*(litre|liter|kg)\b', p_clean):
                 vol_mult = 2.0
             else:
                 vol_mult = 1.0

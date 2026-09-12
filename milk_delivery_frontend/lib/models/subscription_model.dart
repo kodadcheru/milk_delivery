@@ -1,5 +1,6 @@
 import 'product_model.dart';
 import '../config/app_config.dart';
+import '../services/pack_pricing.dart';
 
 class SubscriptionModel {
   final int id;
@@ -9,6 +10,7 @@ class SubscriptionModel {
   final int quantity;
   final String scheduleType; // DAILY, ALTERNATE, CUSTOM, ONCE
   final String startDate;
+  final String? endDate;
   final String status; // ACTIVE, PAUSED, CANCELLED
   final String deliveryAddress;
   final String deliverySlot;
@@ -39,12 +41,7 @@ class SubscriptionModel {
   double get displayPrice {
     if (effectiveUnitPrice > 0) return effectiveUnitPrice;
     final basePrice = productDetail?.pricePerUnit ?? 0;
-    final pSize = packSize.toLowerCase().trim();
-    if (pSize.contains('500')) return (basePrice * 0.5).roundToDouble();
-    if (pSize.contains('2') && (pSize.contains('litre') || pSize.contains('liter') || pSize.contains('kg'))) {
-      return (basePrice * 2.0).roundToDouble();
-    }
-    return basePrice.toDouble();
+    return PackPricing.effectiveUnitPrice(basePrice.toDouble(), packSize);
   }
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {

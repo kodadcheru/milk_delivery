@@ -396,9 +396,13 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
       // Real Litres Calculation
       double itemLitres = 0.0;
       final packStr = (task.packSize.isNotEmpty ? task.packSize : (sub?.packSize ?? prod?.unitQuantity ?? '1 Litre')).toLowerCase();
-      if (packStr.contains('500') || packStr.contains('half')) {
+      if (packStr.contains('20')) {
+        itemLitres = 20.0 * qty;
+      } else if (packStr.contains('10')) {
+        itemLitres = 10.0 * qty;
+      } else if (packStr.contains('500') || packStr.contains('half')) {
         itemLitres = 0.5 * qty;
-      } else if (packStr.contains('2') || packStr.contains('2l')) {
+      } else if (RegExp(r'\b2(\.0)?\s*(l|litre|liter|kg)?\b').hasMatch(packStr)) {
         itemLitres = 2.0 * qty;
       } else {
         itemLitres = 1.0 * qty;
