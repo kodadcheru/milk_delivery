@@ -1,0 +1,15 @@
+# Android Release Keystore Configuration Template
+# Copy this file to `android/key.properties` (which is gitignored) and fill in your values.
+#
+# To generate a new upload keystore, run:
+# keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# Place `upload-keystore.jks` in the `android/app/` directory or specify its relative path below.
+
+keyAlias=upload
+keyPassword=YOUR_KEY_PASSWORD
+storeFile=upload-keystore.jks
+storePassword=YOUR_KEYSTORE_PASSWORD
+
+# Optional: Google Maps Android API Key
+# GOOGLE_MAPS_API_KEY=AIzaSy...
