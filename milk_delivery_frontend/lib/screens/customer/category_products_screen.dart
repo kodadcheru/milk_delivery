@@ -174,7 +174,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cat = activeCategory;
+    return ListenableBuilder(
+      listenable: widget.state,
+      builder: (context, _) {
+        final cat = activeCategory;
     final (accent, gradient) = _resolveTheme(cat);
 
     // All products matching this category
@@ -469,6 +472,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 

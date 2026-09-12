@@ -26,7 +26,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   final ScrollController _scrollController = ScrollController();
-  String _deliveryMode = 'SCHEDULED';
+  String _deliveryMode = 'INSTANT';
   String _selectedSlot = '06:00 AM - 08:00 AM';
   List<String> _deliveryInstructions = [];
   List<ProductModel> _crossSellProducts = [];
@@ -314,6 +314,64 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  Future<bool?> _showScheduleConfirmationDialog(BuildContext context) {
+    final isTe = widget.state.isTelugu;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text('🌅', style: TextStyle(fontSize: 20)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isTe ? 'రేపటి డెలివరీకి మారాలా?' : 'Switch to Next-Day?',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: UiTone.ink),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          isTe
+              ? 'ఈ ఆర్డర్ ~25 నిమిషాల్లో కాకుండా రేపు ఉదయం (06:00 AM - 08:00 AM) డెలివరీ చేయబడుతుంది. మీరు షెడ్యూల్ చేయాలనుకుంటున్నారా?'
+              : 'Your order will be scheduled for tomorrow morning (06:00 AM - 08:00 AM) instead of arriving in ~25 minutes. Would you like to proceed?',
+          style: const TextStyle(fontSize: 13, color: UiTone.softText, height: 1.4),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: UiTone.softText,
+              side: const BorderSide(color: UiTone.surfaceBorder),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(isTe ? 'ఇప్పుడే డెలివరీ (ఇన్‌స్టంట్)' : 'Keep Instant (~25m)'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: UiTone.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isTe ? 'అవును, రేపటి డెలివరీ' : 'Yes, Next-Day'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDeliveryModeSelector() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -336,9 +394,13 @@ class _CartPageState extends State<CartPage> {
               title: widget.state.isTelugu ? '🌅 రేపటి ఉదయం డెలివరీ' : '🌅 Morning Drop',
               subtitle: widget.state.isTelugu ? 'రేపు ఉదయం 06:00 గంటలకు' : 'Tomorrow by 06:00 AM',
               isSelected: _deliveryMode == 'SCHEDULED',
-              onTap: () {
+              onTap: () async {
+                if (_deliveryMode == 'SCHEDULED') return;
                 HapticFeedback.selectionClick();
-                setState(() => _deliveryMode = 'SCHEDULED');
+                final confirm = await _showScheduleConfirmationDialog(context);
+                if (confirm == true && mounted) {
+                  setState(() => _deliveryMode = 'SCHEDULED');
+                }
               },
             ),
           ),
