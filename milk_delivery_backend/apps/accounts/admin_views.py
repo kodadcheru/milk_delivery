@@ -1528,6 +1528,12 @@ class AdminSubscriptionCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if not product.is_subscription_enabled:
+            return Response(
+                {"detail": f"Subscriptions are disabled for {product.name}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         delivery_slot = request.data.get("delivery_slot") or customer.delivery_slot_preference or "05:30 AM - 07:00 AM"
 
         base_price = float(product.price_per_unit)

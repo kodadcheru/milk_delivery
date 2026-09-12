@@ -108,6 +108,26 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
             pass
 
 
+class ProductToggleSubscriptionView(APIView):
+    authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAdminOrReadOnly]
+
+    def post(self, request, pk):
+        try:
+            prod = Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        prod.is_subscription_enabled = not prod.is_subscription_enabled
+        prod.save(update_fields=["is_subscription_enabled"])
+        return Response({
+            "id": prod.id,
+            "name": prod.name,
+            "is_subscription_enabled": prod.is_subscription_enabled,
+            "message": f"Subscriptions {'enabled' if prod.is_subscription_enabled else 'disabled'} for {prod.name}."
+        })
+
+
 class HubInventoryListUpdateView(APIView):
     authentication_classes = [JWTAuthentication, CsrfExemptSessionAuthentication, BasicAuthentication]
     permission_classes = [IsAdminOrReadOnly]

@@ -584,6 +584,17 @@ class ApiService {
     return false;
   }
 
+  static Future<bool> toggleProductSubscription(int productId) async {
+    try {
+      final res = await _executeWithRetry(() => http.post(
+            Uri.parse('$baseUrl/products/$productId/toggle-subscription/'),
+            headers: _headers,
+          ));
+      return res.statusCode == 200;
+    } catch (e) { lastError = e.toString(); }
+    return false;
+  }
+
   // ── 5. Subscriptions ──
   static Future<List<SubscriptionModel>> fetchSubscriptions({String? phone, int? customerId, String? hubCode}) async {
     try {

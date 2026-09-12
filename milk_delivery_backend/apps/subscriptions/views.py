@@ -134,6 +134,11 @@ class SubscriptionListCreateView(generics.ListCreateAPIView):
 
         # Capacity slot enforcement check for hub & product
         prod_obj = serializer.validated_data.get("product")
+        if prod_obj and not prod_obj.is_subscription_enabled:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                {"product": f"Subscriptions are disabled for {prod_obj.name}. This product can only be purchased via one-time order."}
+            )
         req_qty = serializer.validated_data.get("quantity", 1)
         
         # Calculate effective unit price based on pack_size

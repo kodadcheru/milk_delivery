@@ -3761,9 +3761,19 @@
     <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-title"><i class="fa-solid fa-tags" style="color: var(--primary-accent);"></i> Create New Product Category</div>
       <input type="hidden" id="catIcon" value="">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Category Name</label>
+          <input type="text" id="catName" class="form-control" placeholder="e.g. Fresh Milk">
+        </div>
+        <div class="form-group">
+          <label>Telugu Name (తెలుగు పేరు)</label>
+          <input type="text" id="catNameTe" class="form-control" placeholder="ఉదా: తాజా పాలు">
+        </div>
+      </div>
       <div class="form-group">
-        <label>Category Name</label>
-        <input type="text" id="catName" class="form-control" placeholder="e.g. Milk & Dairy, Organic Eggs">
+        <label>Telugu Subtitle (తెలుగు సబ్‌టైటిల్)</label>
+        <input type="text" id="catSubtitleTe" class="form-control" placeholder="ఉదా: స్వచ్ఛమైన వేద దేశీ ఆవు మరియు గేదె పాలు">
       </div>
       
       <!-- Category Image Upload & Live Preview -->
@@ -3814,9 +3824,19 @@
       <div class="modal-title"><i class="fa-solid fa-pen-to-square" style="color: #38BDF8;"></i> Edit Product Category</div>
       <input type="hidden" id="editCatId">
       <input type="hidden" id="editCatIcon" value="">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Category Name</label>
+          <input type="text" id="editCatName" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Telugu Name (తెలుగు పేరు)</label>
+          <input type="text" id="editCatNameTe" class="form-control">
+        </div>
+      </div>
       <div class="form-group">
-        <label>Category Name</label>
-        <input type="text" id="editCatName" class="form-control">
+        <label>Telugu Subtitle (తెలుగు సబ్‌టైటిల్)</label>
+        <input type="text" id="editCatSubtitleTe" class="form-control">
       </div>
 
       <!-- Category Image Upload & Live Preview -->
@@ -3875,6 +3895,19 @@
           <select id="prodCategorySelect" class="form-control">
             <!-- Dynamically populated from live categories -->
           </select>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Telugu Name (తెలుగు పేరు)</label>
+          <input type="text" id="prodNameTe" class="form-control" placeholder="ఉదా: స్వచ్ఛమైన ఆవు పాలు">
+        </div>
+        <div class="form-group">
+          <label>Allow Subscriptions? 🔁</label>
+          <div style="display: flex; align-items: center; height: 38px; gap: 8px;">
+            <input type="checkbox" id="prodIsSubEnabled" checked style="width: 18px; height: 18px; accent-color: #10B981; cursor: pointer;">
+            <label for="prodIsSubEnabled" style="margin: 0; cursor: pointer; font-size: 13px; color: #FFF;">Enable Daily/Custom Subscriptions</label>
+          </div>
         </div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -3953,6 +3986,19 @@
           <select id="editProdCategorySelect" class="form-control">
             <!-- Dynamically populated -->
           </select>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Telugu Name (తెలుగు పేరు)</label>
+          <input type="text" id="editProdNameTe" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Allow Subscriptions? 🔁</label>
+          <div style="display: flex; align-items: center; height: 38px; gap: 8px;">
+            <input type="checkbox" id="editProdIsSubEnabled" style="width: 18px; height: 18px; accent-color: #10B981; cursor: pointer;">
+            <label for="editProdIsSubEnabled" style="margin: 0; cursor: pointer; font-size: 13px; color: #FFF;">Enable Daily/Custom Subscriptions</label>
+          </div>
         </div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -7418,6 +7464,8 @@
 
     function openAddCategoryModal() {
       document.getElementById('catName').value = '';
+      if (document.getElementById('catNameTe')) document.getElementById('catNameTe').value = '';
+      if (document.getElementById('catSubtitleTe')) document.getElementById('catSubtitleTe').value = '';
       document.getElementById('catDesc').value = '';
       document.getElementById('catIcon').value = '';
       document.getElementById('catImage').value = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80';
@@ -7428,6 +7476,8 @@
 
     async function submitAddCategory() {
       const name = document.getElementById('catName').value.trim();
+      const name_te = document.getElementById('catNameTe') ? document.getElementById('catNameTe').value.trim() : '';
+      const subtitle_te = document.getElementById('catSubtitleTe') ? document.getElementById('catSubtitleTe').value.trim() : '';
       const icon = document.getElementById('catIcon').value.trim();
       const image_url = document.getElementById('catImage').value.trim();
       const desc = document.getElementById('catDesc').value.trim();
@@ -7442,7 +7492,7 @@
         const res = await fetch(`${baseUrl}/categories/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
-          body: JSON.stringify({ name, icon, image_url, description: desc, display_order: order, is_active: true })
+          body: JSON.stringify({ name, name_te, subtitle_te, icon, image_url, description: desc, display_order: order, is_active: true })
         });
 
         if (res.ok) {
@@ -7463,6 +7513,8 @@
 
       document.getElementById('editCatId').value = cat.id;
       document.getElementById('editCatName').value = cat.name;
+      if (document.getElementById('editCatNameTe')) document.getElementById('editCatNameTe').value = cat.name_te || '';
+      if (document.getElementById('editCatSubtitleTe')) document.getElementById('editCatSubtitleTe').value = cat.subtitle_te || '';
       document.getElementById('editCatIcon').value = '';
       document.getElementById('editCatImage').value = cat.image_url || '';
       updateImagePreview('editCatImage', 'editCatImagePreview');
@@ -7475,6 +7527,8 @@
     async function submitUpdateCategory() {
       const catId = document.getElementById('editCatId').value;
       const name = document.getElementById('editCatName').value.trim();
+      const name_te = document.getElementById('editCatNameTe') ? document.getElementById('editCatNameTe').value.trim() : '';
+      const subtitle_te = document.getElementById('editCatSubtitleTe') ? document.getElementById('editCatSubtitleTe').value.trim() : '';
       const icon = document.getElementById('editCatIcon').value.trim();
       const image_url = document.getElementById('editCatImage').value.trim();
       const desc = document.getElementById('editCatDesc').value.trim();
@@ -7484,7 +7538,7 @@
         const res = await fetch(`${baseUrl}/categories/${catId}/`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('milkdrop_admin_token') },
-          body: JSON.stringify({ name, icon, image_url, description: desc, display_order: order })
+          body: JSON.stringify({ name, name_te, subtitle_te, icon, image_url, description: desc, display_order: order })
         });
 
         if (res.ok) {
@@ -8413,6 +8467,7 @@
                 ${imgHtml}
                 <div>
                   <strong style="font-size:14px; color:#FFF;">${p.name}</strong> ${p.badge_text ? `<span style="font-size:10px; background:rgba(16,185,129,0.2); color:#34D399; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:4px;">${p.badge_text}</span>` : ''}
+                  ${p.name_te ? `<br><small style="color:#38BDF8; font-weight:700; font-size:12px;">${p.name_te}</small>` : ''}
                   <br><small style="color:var(--text-muted);">${p.description || ''}</small>
                 </div>
               </div>
@@ -8435,9 +8490,14 @@
             <td><strong>${p.unit_quantity || p.unit}</strong></td>
             <td><small style="color:var(--text-muted);">${p.farm_origin || 'Local Farm'}</small></td>
             <td>
-              <button class="btn ${p.is_available ? 'btn-primary' : 'btn-danger'}" style="padding: 4px 10px; font-size: 11px;" onclick="toggleProductStock(${p.id})">
-                ${p.is_available ? '🟢 In Stock' : '🔴 Out of Stock'}
-              </button>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <button class="btn ${p.is_available ? 'btn-primary' : 'btn-danger'}" style="padding: 3px 8px; font-size: 11px;" onclick="toggleProductStock(${p.id})">
+                  ${p.is_available ? '🟢 In Stock' : '🔴 Out of Stock'}
+                </button>
+                <button class="btn" style="padding: 3px 8px; font-size: 11px; font-weight:700; ${p.is_subscription_enabled !== false ? 'background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3);' : 'background:rgba(239,68,68,0.15); color:#EF4444; border:1px solid rgba(239,68,68,0.3);'}" onclick="toggleProductSubscription(${p.id})" title="Toggle subscription availability for this product">
+                  ${p.is_subscription_enabled !== false ? '🔁 Sub: ON' : '🚫 Sub: OFF'}
+                </button>
+              </div>
             </td>
             <td>
               <div style="display:flex; gap:6px;">
@@ -8478,6 +8538,8 @@
     function openAddProductModal() {
       populateCategoryDropdowns();
       document.getElementById('prodName').value = '';
+      if (document.getElementById('prodNameTe')) document.getElementById('prodNameTe').value = '';
+      if (document.getElementById('prodIsSubEnabled')) document.getElementById('prodIsSubEnabled').checked = true;
       document.getElementById('prodDesc').value = '';
       document.getElementById('prodPrice').value = '85.00';
       document.getElementById('prodUnitQty').value = '1 Litre Glass Bottle';
@@ -8491,6 +8553,8 @@
 
     async function submitAddProduct() {
       const name = document.getElementById('prodName').value.trim();
+      const name_te = document.getElementById('prodNameTe') ? document.getElementById('prodNameTe').value.trim() : '';
+      const is_subscription_enabled = document.getElementById('prodIsSubEnabled') ? document.getElementById('prodIsSubEnabled').checked : true;
       const catSelect = document.getElementById('prodCategorySelect');
       const category_id = parseInt(catSelect.value) || null;
       const category = catSelect.options[catSelect.selectedIndex]?.dataset?.name || catSelect.options[catSelect.selectedIndex]?.text?.replace(/^[^\s]+\s+/, '') || 'Milk';
@@ -8512,6 +8576,8 @@
           headers: getAdminHeaders(),
           body: JSON.stringify({
             name,
+            name_te,
+            is_subscription_enabled,
             category_id,
             category,
             description: desc,
@@ -8549,6 +8615,8 @@
       populateCategoryDropdowns();
       document.getElementById('editProdId').value = p.id;
       document.getElementById('editProdName').value = p.name;
+      if (document.getElementById('editProdNameTe')) document.getElementById('editProdNameTe').value = p.name_te || '';
+      if (document.getElementById('editProdIsSubEnabled')) document.getElementById('editProdIsSubEnabled').checked = p.is_subscription_enabled !== false;
       
       const editSelect = document.getElementById('editProdCategorySelect');
       const matchedCat = rawCategories.find(c => (p.category_detail && c.id === p.category_detail.id) || (p.category && c.name.toLowerCase() === p.category.toLowerCase()) || (p.category && c.slug.toLowerCase() === p.category.toLowerCase()));
@@ -8572,6 +8640,8 @@
     async function submitUpdateProduct() {
       const id = document.getElementById('editProdId').value;
       const name = document.getElementById('editProdName').value.trim();
+      const name_te = document.getElementById('editProdNameTe') ? document.getElementById('editProdNameTe').value.trim() : '';
+      const is_subscription_enabled = document.getElementById('editProdIsSubEnabled') ? document.getElementById('editProdIsSubEnabled').checked : true;
       const catSelect = document.getElementById('editProdCategorySelect');
       const category_id = parseInt(catSelect.value) || null;
       const category = catSelect.options[catSelect.selectedIndex]?.dataset?.name || catSelect.options[catSelect.selectedIndex]?.text?.replace(/^[^\s]+\s+/, '') || '';
@@ -8594,6 +8664,8 @@
           headers: getAdminHeaders(),
           body: JSON.stringify({
             name,
+            name_te,
+            is_subscription_enabled,
             category_id,
             category,
             description: desc,
@@ -8646,6 +8718,21 @@
           loadDashboard();
         }
       } catch (e) { console.error('[AdminConsole]', e); }
+    }
+
+    async function toggleProductSubscription(id) {
+      try {
+        const res = await fetch(`${baseUrl}/products/${id}/toggle-subscription/`, { method: 'POST', headers: getAdminHeaders() });
+        if (res.ok) {
+          loadProducts();
+          loadDashboard();
+        } else {
+          alert('Failed to toggle subscription status.');
+        }
+      } catch (e) {
+        console.error('[AdminConsole]', e);
+        alert('Network error while toggling subscription: ' + e.message);
+      }
     }
 
     async function quickUpdateProductPrice(id) {

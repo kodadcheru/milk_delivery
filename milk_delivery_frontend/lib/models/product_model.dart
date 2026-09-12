@@ -12,6 +12,12 @@ class ProductModel {
   final String imageUrl;
   final String badgeText;
   final String nutritionInfo;
+  final String nameTe;
+  final String descriptionTe;
+  final String subtitleTe;
+  final String badgeTextTe;
+  final bool isSubscriptionEnabled;
+  final List<dynamic> packSizes;
   final String farmOrigin;
   final bool isAvailable;
   final int availableSlots;
@@ -27,8 +33,14 @@ class ProductModel {
     required this.id,
     this.categoryId,
     required this.name,
+    this.nameTe = '',
     this.category = 'MILK',
     required this.description,
+    this.descriptionTe = '',
+    this.subtitleTe = '',
+    this.badgeTextTe = '',
+    this.isSubscriptionEnabled = true,
+    this.packSizes = const [],
     required this.pricePerUnit,
     required this.unit,
     required this.unitQuantity,
@@ -93,13 +105,33 @@ class ProductModel {
   String get displaySubtitle => subtitle.isNotEmpty ? subtitle : categorySubtitle;
 
   String localizedName(String lang) {
+    if (lang == 'te' && nameTe.trim().isNotEmpty) {
+      return nameTe.trim();
+    }
     if (lang != 'te') return name;
     return AppTranslations.translateProduct(name, lang: lang);
   }
 
   String localizedDescription(String lang) {
+    if (lang == 'te' && descriptionTe.trim().isNotEmpty) {
+      return descriptionTe.trim();
+    }
     if (lang != 'te') return description;
     return AppTranslations.translateDescription(name, description, lang: lang);
+  }
+
+  String localizedSubtitle(String lang) {
+    if (lang == 'te' && subtitleTe.trim().isNotEmpty) {
+      return subtitleTe.trim();
+    }
+    return displaySubtitle;
+  }
+
+  String localizedBadgeText(String lang) {
+    if (lang == 'te' && badgeTextTe.trim().isNotEmpty) {
+      return badgeTextTe.trim();
+    }
+    return badgeText;
   }
 
   String localizedCategory(String lang) {
@@ -187,8 +219,14 @@ class ProductModel {
       id: json['id'] ?? 0,
       categoryId: catId,
       name: nameStr,
+      nameTe: json['name_te']?.toString() ?? '',
       category: cat,
       description: json['description'] ?? '',
+      descriptionTe: json['description_te']?.toString() ?? '',
+      subtitleTe: json['subtitle_te']?.toString() ?? '',
+      badgeTextTe: json['badge_text_te']?.toString() ?? '',
+      isSubscriptionEnabled: json['is_subscription_enabled'] as bool? ?? true,
+      packSizes: (json['pack_sizes'] is List) ? (json['pack_sizes'] as List) : const [],
       pricePerUnit: double.tryParse(json['price_per_unit']?.toString() ?? '0') ?? 0.0,
       unit: json['unit'] ?? 'PACKET',
       unitQuantity: json['unit_quantity'] ?? '1 L',
@@ -213,8 +251,14 @@ class ProductModel {
       'id': id,
       if (categoryId != null && categoryId! > 0) 'category_id': categoryId,
       'name': name,
+      'name_te': nameTe,
       'category': category,
       'description': description,
+      'description_te': descriptionTe,
+      'subtitle_te': subtitleTe,
+      'badge_text_te': badgeTextTe,
+      'is_subscription_enabled': isSubscriptionEnabled,
+      'pack_sizes': packSizes,
       'price_per_unit': pricePerUnit.toStringAsFixed(2),
       'unit': unit,
       'unit_quantity': unitQuantity,
@@ -236,8 +280,14 @@ class ProductModel {
     int? id,
     int? categoryId,
     String? name,
+    String? nameTe,
     String? category,
     String? description,
+    String? descriptionTe,
+    String? subtitleTe,
+    String? badgeTextTe,
+    bool? isSubscriptionEnabled,
+    List<dynamic>? packSizes,
     double? pricePerUnit,
     String? unit,
     String? unitQuantity,
@@ -259,8 +309,14 @@ class ProductModel {
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
       name: name ?? this.name,
+      nameTe: nameTe ?? this.nameTe,
       category: category ?? this.category,
       description: description ?? this.description,
+      descriptionTe: descriptionTe ?? this.descriptionTe,
+      subtitleTe: subtitleTe ?? this.subtitleTe,
+      badgeTextTe: badgeTextTe ?? this.badgeTextTe,
+      isSubscriptionEnabled: isSubscriptionEnabled ?? this.isSubscriptionEnabled,
+      packSizes: packSizes ?? this.packSizes,
       pricePerUnit: pricePerUnit ?? this.pricePerUnit,
       unit: unit ?? this.unit,
       unitQuantity: unitQuantity ?? this.unitQuantity,

@@ -132,7 +132,9 @@ class _HomeProductCardState extends State<HomeProductCard> with TickerProviderSt
                       borderRadius: BorderRadius.circular(UiRadius.xs),
                     ),
                     child: Text(
-                      item.badgeText.isNotEmpty ? item.badgeText : item.category,
+                      item.localizedBadgeText(state.currentLanguage).isNotEmpty
+                          ? item.localizedBadgeText(state.currentLanguage)
+                          : item.localizedCategory(state.currentLanguage),
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
@@ -143,10 +145,11 @@ class _HomeProductCardState extends State<HomeProductCard> with TickerProviderSt
                 ),
 
                 // 4. Top-right prominent Quick Subscribe / Out of Zone Badge
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
+                if (item.isSubscriptionEnabled)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
                     onTap: isCovered
                         ? () => ProductDetailSheet.show(context, item, state)
                         : () => _showOutOfZoneSheet(context),
@@ -349,7 +352,7 @@ class _HomeProductCardState extends State<HomeProductCard> with TickerProviderSt
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (inCartQty == 0)
+        if (inCartQty == 0 && item.isSubscriptionEnabled)
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: GestureDetector(

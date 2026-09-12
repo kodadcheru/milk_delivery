@@ -149,6 +149,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
 
   /// Select a harmonious visual palette based on category theme.
   (Color accent, List<Color> gradient) _resolveTheme(CategoryModel cat) {
+    if (cat.parsedGradientColors.length >= 2) {
+      final accent = cat.parsedTileFgColor ?? cat.parsedGradientColors.first;
+      return (accent, cat.parsedGradientColors);
+    }
     final slug = cat.slug.toLowerCase().replaceAll('-', '_');
     if (slug.contains('water')) {
       return (const Color(0xFF0D9488), [const Color(0xFF0F766E), const Color(0xFF0D9488)]);
@@ -176,8 +180,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     // All products matching this category
     final matchingProducts = widget.state.products.where((p) => _matchesCategory(p, cat)).toList();
 
-    // Dynamically derived subtags from actual product data
-    final subtags = _deriveSubtags(matchingProducts);
+    // Dynamically derived subtags from actual product data or backend Category definition
+    final subtags = cat.subtags.isNotEmpty ? cat.subtags : _deriveSubtags(matchingProducts);
 
     // Filter products dynamically for this category + search + subtag
     final categoryProducts = matchingProducts.where((p) {
@@ -194,10 +198,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       return matchesQuery && matchesTag;
     }).toList();
 
-    final categoryName = widget.state.translateCategory(cat.name);
-    final bannerHeadline = cat.description.isNotEmpty ? cat.description : cat.name;
-    final bannerSubtitle = cat.subtitle.isNotEmpty
-        ? cat.subtitle
+    final categoryName = cat.localizedName(widget.state.currentLanguage);
+    final bannerHeadline = cat.localizedBanner(widget.state.currentLanguage).isNotEmpty
+        ? cat.localizedBanner(widget.state.currentLanguage)
+        : (cat.description.isNotEmpty ? cat.description : cat.name);
+    final bannerSubtitle = cat.localizedSubtitle(widget.state.currentLanguage).isNotEmpty
+        ? cat.localizedSubtitle(widget.state.currentLanguage)
         : (widget.state.isTelugu
             ? '⚡ నాణ్యమైన ఉత్పత్తులు • ఉదయం 6 గంటలకు డెలివరీ'
             : '⚡ Milked/Harvested Fresh • Delivered by 6 AM');

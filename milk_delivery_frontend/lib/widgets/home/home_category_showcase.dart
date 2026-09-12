@@ -50,9 +50,9 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
               context: context,
               category: bCat,
               categoryKey: bCat.slug,
-              title: bCat.name,
+              title: bCat.localizedName(widget.state.currentLanguage),
               imageUrl: effectiveImageUrl,
-              bgColor: catalogMeta.tileBg,
+              bgColor: bCat.parsedTileBgColor ?? catalogMeta.tileBg,
             ),
           ),
         );
@@ -98,10 +98,10 @@ class _HomeCategoryShowcaseState extends State<HomeCategoryShowcase> {
               String label;
               
               if (index == 0) {
-                label = 'All';
+                label = widget.state.currentLanguage == 'te' ? 'అన్నీ' : 'All';
               } else {
                 if (backendCategories.isNotEmpty) {
-                  label = backendCategories[index - 1].name;
+                  label = backendCategories[index - 1].localizedName(widget.state.currentLanguage);
                 } else {
                   final meta = categoryMetaFor(kHomeCategoryKeys[index - 1]);
                   label = meta.shortTitle;

@@ -959,8 +959,91 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     child: Text(p.icon, style: const TextStyle(fontSize: 24)),
                   ),
-                  title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A))),
-                  subtitle: Text('${p.category.replaceAll('_', ' ')} • ₹${p.pricePerUnit.toStringAsFixed(0)} / ${p.unitQuantity}', style: TextStyle(fontSize: 11.5, color: Colors.grey[700])),
+                  title: Text(
+                    p.nameTe.isNotEmpty ? '${p.name} (${p.nameTe})' : p.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${p.category.replaceAll('_', ' ')} • ₹${p.pricePerUnit.toStringAsFixed(0)} / ${p.unitQuantity}',
+                        style: TextStyle(fontSize: 11.5, color: Colors.grey[700]),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: p.isAvailable ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: p.isAvailable ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              p.isAvailable ? 'In Stock' : 'Out of Stock',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: p.isAvailable ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () async {
+                              final ok = await ApiService.toggleProductSubscription(p.id);
+                              if (ok) {
+                                await widget.state.reloadAllData();
+                              }
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(ok
+                                        ? '${p.name} subscriptions ${!p.isSubscriptionEnabled ? "ENABLED" : "DISABLED"}'
+                                        : '❌ Failed to toggle subscription status.'),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: p.isSubscriptionEnabled ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: p.isSubscriptionEnabled ? const Color(0xFF3B82F6) : const Color(0xFF94A3B8),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.repeat_rounded,
+                                    size: 11,
+                                    color: p.isSubscriptionEnabled ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    p.isSubscriptionEnabled ? 'Sub: ON' : 'Sub: OFF',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: p.isSubscriptionEnabled ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   trailing: Switch(
                     value: p.isAvailable,
                     activeThumbColor: const Color(0xFF10B981),

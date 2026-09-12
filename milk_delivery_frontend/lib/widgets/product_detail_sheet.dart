@@ -22,6 +22,15 @@ class ProductDetailSheet extends StatefulWidget {
   });
 
   static void show(BuildContext context, ProductModel product, AppState state) {
+    if (!product.isSubscriptionEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.localizedName(state.currentLanguage)} is available for one-time order only.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
