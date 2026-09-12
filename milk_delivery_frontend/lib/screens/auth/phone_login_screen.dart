@@ -421,15 +421,26 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Frosted brand mark
+          // Premium brand emblem
           Container(
-            padding: const EdgeInsets.all(18),
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: const Text('🥛', style: TextStyle(fontSize: 40)),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/icons/pamba_logo.png',
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           const Text(

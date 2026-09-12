@@ -156,41 +156,33 @@ class _PambaSplashScreenState extends State<PambaSplashScreen> with TickerProvid
                   child: ScaleTransition(
                     scale: _logoScale,
                     child: Container(
-                      width: 130,
-                      height: 130,
+                      width: 140,
+                      height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.25),
+                            color: Colors.black.withValues(alpha: 0.35),
                             blurRadius: 30,
-                            offset: const Offset(0, 10),
+                            offset: const Offset(0, 12),
                           ),
                           BoxShadow(
-                            color: const Color(0xFF34D399).withValues(alpha: 0.25),
-                            blurRadius: 20,
+                            color: const Color(0xFF10B766).withValues(alpha: 0.3),
+                            blurRadius: 36,
                             spreadRadius: 2,
                           ),
                         ],
-                        border: Border.all(
-                          color: const Color(0xFFFDE68A).withValues(alpha: 0.4),
-                          width: 2.5,
-                        ),
                       ),
                       child: ClipOval(
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Image.asset(
-                            'assets/icons/pamba_logo.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/icons/app_icon.png',
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          ),
+                        child: Image.asset(
+                          'assets/icons/pamba_logo.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/icons/app_icon.png',
+                              fit: BoxFit.cover,
+                            );
+                          },
                         ),
                       ),
                     ),
