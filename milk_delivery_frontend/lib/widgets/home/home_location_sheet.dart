@@ -52,22 +52,22 @@ class HomeLocationSheet {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Select Service Location 📍',
-                          style: TextStyle(
+                          state.isTelugu ? 'డెలివరీ స్థానాన్ని ఎంచుకోండి 📍' : 'Select Service Location 📍',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
                             color: UiTone.ink,
                             letterSpacing: -0.4,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Search any town, village, colony, or area',
-                          style: TextStyle(
+                          state.isTelugu ? 'పట్టణం, గ్రామం, కాలనీ లేదా ఏరియా వెతకండి' : 'Search any town, village, colony, or area',
+                          style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF64748B),
@@ -91,7 +91,7 @@ class HomeLocationSheet {
                   controller: searchCtrl,
                   autofocus: false,
                   decoration: InputDecoration(
-                    hintText: 'Search town, village, colony, or area...',
+                    hintText: state.isTelugu ? 'గ్రామం, కాలనీ లేదా ప్రాంతం వెతకండి...' : 'Search town, village, colony, or area...',
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                     prefixIcon: isSearching
                         ? const Padding(
@@ -173,7 +173,7 @@ class HomeLocationSheet {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: UiTone.primary,
-                                content: Text("🎯 Located doorstep: $addrStr"),
+                                content: Text(state.isTelugu ? "🎯 ఇంటి చిరునామా గుర్తించబడింది: $addrStr" : "🎯 Located doorstep: $addrStr"),
                               ),
                             );
                           }
@@ -205,22 +205,22 @@ class HomeLocationSheet {
                               : const Icon(Icons.my_location_rounded, color: Colors.white, size: 16),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Use Current GPS Location 🎯',
-                                style: TextStyle(
+                                state.isTelugu ? 'ప్రస్తుత GPS స్థానాన్ని ఉపయోగించండి 🎯' : 'Use Current GPS Location 🎯',
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                   color: UiTone.primaryDark,
                                 ),
                               ),
-                              SizedBox(height: 1),
+                              const SizedBox(height: 1),
                               Text(
-                                'Auto-detect precise doorstep coordinates',
-                                style: TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w500),
+                                state.isTelugu ? 'ఖచ్చితమైన డోర్‌స్టెప్ కోఆర్డినేట్‌లను ఆటో-డిటెక్ట్ చేయండి' : 'Auto-detect precise doorstep coordinates',
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF047857), fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -257,26 +257,26 @@ class HomeLocationSheet {
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.map_rounded, color: Colors.white, size: 20),
-                        SizedBox(width: 12),
+                        const Icon(Icons.map_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Pick location on interactive map 🗺️',
-                                style: TextStyle(
+                                state.isTelugu ? 'మ్యాప్‌లో స్థానాన్ని ఎంచుకోండి 🗺️' : 'Pick location on interactive map 🗺️',
+                                style: const TextStyle(
                                   fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w900,
                                   color: Colors.white,
                                 ),
                               ),
-                              SizedBox(height: 1),
+                              const SizedBox(height: 1),
                               Text(
-                                'Drag pin over your delivery doorstep in town',
-                                style: TextStyle(
+                                state.isTelugu ? 'మీ ఇంటి వద్ద పిన్ ఉంచండి' : 'Drag pin over your delivery doorstep in town',
+                                style: const TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFFE6F5F0),
@@ -285,7 +285,7 @@ class HomeLocationSheet {
                             ],
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Colors.white),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Colors.white),
                       ],
                     ),
                   ),
@@ -297,9 +297,9 @@ class HomeLocationSheet {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'SAVED ADDRESSES',
-                        style: TextStyle(
+                      Text(
+                        state.isTelugu ? 'సేవ్ చేసిన చిరునామాలు' : 'SAVED ADDRESSES',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                           color: Color(0xFF64748B),
@@ -318,7 +318,9 @@ class HomeLocationSheet {
                         },
                         icon: const Icon(Icons.add_location_alt_rounded, size: 14, color: UiTone.primary),
                         label: Text(
-                          state.savedAddresses.isNotEmpty ? 'Manage Book' : '+ Add Address',
+                          state.savedAddresses.isNotEmpty
+                              ? (state.isTelugu ? 'చిరునామాలు' : 'Manage Book')
+                              : (state.isTelugu ? '+ చిరునామా' : '+ Add Address'),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -345,7 +347,7 @@ class HomeLocationSheet {
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("🚀 Delivering to '${addr.title}'"),
+                                content: Text(state.isTelugu ? "🚀 డెలివరీ స్థానం '${addr.title}'" : "🚀 Delivering to '${addr.title}'"),
                                 backgroundColor: UiTone.primary,
                               ),
                             );
@@ -452,9 +454,9 @@ class HomeLocationSheet {
 
                 // ── 4. Search Results or Popular Localities ──
                 if (searchResults.isNotEmpty) ...[
-                  const Text(
-                    'Search Suggestions:',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.ink),
+                  Text(
+                    state.isTelugu ? 'శోధన ఫలితాలు:' : 'Search Suggestions:',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: UiTone.ink),
                   ),
                   const SizedBox(height: 6),
                   ConstrainedBox(
@@ -511,7 +513,7 @@ class HomeLocationSheet {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   backgroundColor: UiTone.primary,
-                                  content: Text('📍 Delivery address updated to: $chosenAddr'),
+                                  content: Text(state.isTelugu ? '📍 డెలివరీ చిరునామా మార్చబడింది: $chosenAddr' : '📍 Delivery address updated to: $chosenAddr'),
                                 ),
                               );
                             }
@@ -528,9 +530,9 @@ class HomeLocationSheet {
                   child: TextButton.icon(
                     onPressed: () => ServiceAreaSheet.show(context, state),
                     icon: const Icon(Icons.verified_user_outlined, size: 13, color: Color(0xFF64748B)),
-                    label: const Text(
-                      'Check Active Kodad Hub Delivery Zones ⚡',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w700),
+                    label: Text(
+                      state.isTelugu ? 'యాక్టివ్ కోదాడ డెలివరీ జోన్‌లను తనిఖీ చేయండి ⚡' : 'Check Active Kodad Hub Delivery Zones ⚡',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

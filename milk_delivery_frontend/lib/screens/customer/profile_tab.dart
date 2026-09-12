@@ -53,7 +53,10 @@ class ProfileTab extends StatelessWidget {
                 // a. Top row
                 Row(
                   children: [
-                    const Text('Profile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text(
+                      state.isTelugu ? 'ప్రొఫైల్' : 'Profile',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
                     const Spacer(),
                     GestureDetector(
                       onTap: () {
@@ -67,7 +70,10 @@ class ProfileTab extends StatelessWidget {
                           border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        child: const Text('Edit profile', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
+                        child: Text(
+                          state.isTelugu ? 'ప్రొఫైల్ మార్చండి' : 'Edit profile',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -212,7 +218,7 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.calendar_today_rounded,
                     iconBg: const Color(0xFFE8F2FE),
                     iconFg: const Color(0xFF2563EB),
-                    label: 'Your orders',
+                    label: state.isTelugu ? 'మీ ఆర్డర్లు' : 'Your orders',
                     onTap: () => state.setTab(3),
                   ),
                   _buildDivider(),
@@ -220,7 +226,7 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.location_on_rounded,
                     iconBg: const Color(0xFFE6F5F0),
                     iconFg: const Color(0xFF0D7C66),
-                    label: 'Address book',
+                    label: state.isTelugu ? 'చిరునామాల పుస్తకం' : 'Address book',
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddressBookScreen(state: state))),
                   ),
                   _buildDivider(),
@@ -228,7 +234,7 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.schedule_rounded,
                     iconBg: const Color(0xFFE0F7F3),
                     iconFg: const Color(0xFF0D9488),
-                    label: 'Delivery preferences',
+                    label: state.isTelugu ? 'డెలివరీ ప్రాధాన్యతలు' : 'Delivery preferences',
                     onTap: () {
                       final slot = user?.deliverySlotPreference.isNotEmpty == true
                           ? user!.deliverySlotPreference
@@ -337,7 +343,7 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.headset_mic_rounded,
                     iconBg: const Color(0xFFFFF3E6),
                     iconFg: const Color(0xFFE67E22),
-                    label: 'Help & FAQs',
+                    label: state.isTelugu ? 'సహాయం & తరచుగా అడిగే ప్రశ్నలు' : 'Help & FAQs',
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HelpSupportScreen(state: state))),
                   ),
                   _buildDivider(),
@@ -345,11 +351,11 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.share_rounded,
                     iconBg: const Color(0xFFE8F2FE),
                     iconFg: const Color(0xFF2563EB),
-                    label: 'Share App',
+                    label: state.isTelugu ? 'యాప్‌ను షేర్ చేయండి' : 'Share App',
                     onTap: () async {
                       await Clipboard.setData(const ClipboardData(text: 'https://pamba.in/app'));
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied!')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.isTelugu ? 'లింక్ కాపీ చేయబడింది!' : 'Link copied!')));
                       }
                     },
                   ),
@@ -407,7 +413,7 @@ class ProfileTab extends StatelessWidget {
                 
                 // Logout Button
                 GestureDetector(
-                  onTap: () => _confirmLogout(context, onLogout),
+                  onTap: () => _confirmLogout(context, state, onLogout),
                   child: Container(
                     height: 52,
                     decoration: BoxDecoration(
@@ -415,12 +421,15 @@ class ProfileTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [BoxShadow(color: Color(0x28E11D48), blurRadius: 16, offset: Offset(0, 6))],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout_rounded, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text('Log out', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+                        const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          state.isTelugu ? 'లాగ్ అవుట్' : 'Log out',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
                       ],
                     ),
                   ),
@@ -774,16 +783,16 @@ void _showEditProfileDialog(
                         child: const Icon(Icons.person_rounded, color: Color(0xFF0D7C66), size: 22),
                       ),
                       const SizedBox(width: 12),
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Edit Profile Details',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                            state.isTelugu ? 'ప్రొఫైల్ వివరాలను మార్చండి' : 'Edit Profile Details',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                           ),
                           Text(
-                            'Keep your delivery contact details up to date',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                            state.isTelugu ? 'మీ డెలివరీ సంప్రదింపు వివరాలను అప్‌డేట్ చేయండి' : 'Keep your delivery contact details up to date',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -848,8 +857,8 @@ void _showEditProfileDialog(
                             Expanded(
                               child: _buildStyledInput(
                                 controller: firstNameCtrl,
-                                label: 'First Name',
-                                hint: 'e.g. Rahul',
+                                label: state.isTelugu ? 'మొదటి పేరు' : 'First Name',
+                                hint: state.isTelugu ? 'ఉదా. రాహుల్' : 'e.g. Rahul',
                                 icon: Icons.badge_outlined,
                                 onChanged: (_) => setSheetState(() {}),
                               ),
@@ -858,8 +867,8 @@ void _showEditProfileDialog(
                             Expanded(
                               child: _buildStyledInput(
                                 controller: lastNameCtrl,
-                                label: 'Last Name',
-                                hint: 'e.g. Reddy',
+                                label: state.isTelugu ? 'చివరి పేరు' : 'Last Name',
+                                hint: state.isTelugu ? 'ఉదా. రెడ్డి' : 'e.g. Reddy',
                                 icon: Icons.person_outline_rounded,
                                 onChanged: (_) => setSheetState(() {}),
                               ),
@@ -869,7 +878,7 @@ void _showEditProfileDialog(
                         const SizedBox(height: 14),
                         _buildStyledInput(
                           controller: phoneCtrl,
-                          label: 'Phone Number (Primary Contact)',
+                          label: state.isTelugu ? 'ఫోన్ నంబర్ (ప్రధాన సంప్రదింపు)' : 'Phone Number (Primary Contact)',
                           hint: '+91 9876543210',
                           icon: Icons.phone_iphone_rounded,
                           keyboardType: TextInputType.phone,
@@ -880,14 +889,14 @@ void _showEditProfileDialog(
                               color: const Color(0xFFE6F5F0),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF0D7C66)),
-                                SizedBox(width: 4),
+                                const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF0D7C66)),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'OTP Verified',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
+                                  state.isTelugu ? 'OTP ధృవీకరించబడింది' : 'OTP Verified',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0D7C66)),
                                 ),
                               ],
                             ),
@@ -896,15 +905,15 @@ void _showEditProfileDialog(
                         const SizedBox(height: 14),
                         _buildStyledInput(
                           controller: emailCtrl,
-                          label: 'Email Address (Invoices & Receipts)',
+                          label: state.isTelugu ? 'ఇమెయిల్ చిరునామా (బిల్లులు & రసీదులు)' : 'Email Address (Invoices & Receipts)',
                           hint: 'name@example.com',
                           icon: Icons.alternate_email_rounded,
                           keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Default Morning Delivery Slot ☀️',
-                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                        Text(
+                          state.isTelugu ? 'డిఫాల్ట్ ఉదయం డెలివరీ సమయం ☀️' : 'Default Morning Delivery Slot ☀️',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -962,9 +971,9 @@ void _showEditProfileDialog(
 
                               if (first.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     backgroundColor: Colors.redAccent,
-                                    content: Text('⚠️ Please enter your First Name.'),
+                                    content: Text(state.isTelugu ? '⚠️ దయచేసి మీ మొదటి పేరు నమోదు చేయండి.' : '⚠️ Please enter your First Name.'),
                                   ),
                                 );
                                 return;
@@ -983,9 +992,9 @@ void _showEditProfileDialog(
                                 Navigator.pop(ctx);
                                 HapticFeedback.mediumImpact();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Color(0xFF0D7C66),
-                                    content: Text('✅ Profile details updated successfully!'),
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF0D7C66),
+                                    content: Text(state.isTelugu ? '✅ ప్రొఫైల్ విజయవంతంగా అప్‌డేట్ చేయబడింది!' : '✅ Profile details updated successfully!'),
                                   ),
                                 );
                               }
@@ -998,14 +1007,14 @@ void _showEditProfileDialog(
                             ),
                             child: isSaving
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Row(
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.check_circle_rounded, size: 20),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.check_circle_rounded, size: 20),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        'Save Profile Changes',
-                                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                                        state.isTelugu ? 'వివరాలను భద్రపరచు' : 'Save Profile Changes',
+                                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                                       ),
                                     ],
                                   ),
@@ -1120,22 +1129,28 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      Icon(Icons.schedule_rounded, color: Color(0xFF0D7C66), size: 24),
-                      SizedBox(width: 10),
-                      Text('Delivery Time Slot Preference ⏰', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      const Icon(Icons.schedule_rounded, color: Color(0xFF0D7C66), size: 24),
+                      const SizedBox(width: 10),
+                      Text(
+                        state.isTelugu ? 'డెలివరీ సమయ ప్రాధాన్యత ⏰' : 'Delivery Time Slot Preference ⏰',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Choose when you want our delivery executive to arrive:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    child: Text(
+                      state.isTelugu ? 'మా డెలివరీ ఎగ్జిక్యూటివ్ ఏ సమయంలో రావాలో ఎంచుకోండి:' : 'Choose when you want our delivery executive to arrive:',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1187,7 +1202,7 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
                         const SizedBox(height: 16),
                         _buildStyledInput(
                           controller: customCtrl,
-                          label: 'Or Specify Custom Slot Window',
+                          label: state.isTelugu ? 'లేదా నిర్దిష్ట సమయాన్ని పేర్కొనండి' : 'Or Specify Custom Slot Window',
                           hint: 'e.g. 06:00 AM - 07:30 AM',
                           icon: Icons.edit_calendar_rounded,
                           onChanged: (val) {
@@ -1211,10 +1226,18 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
                               state.updateUserProfile(slotPreference: finalSlot);
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(backgroundColor: const Color(0xFF0D7C66), content: Text('⏱️ Preferred slot saved: $finalSlot')),
+                                SnackBar(
+                                  backgroundColor: const Color(0xFF0D7C66),
+                                  content: Text(
+                                    state.isTelugu ? '⏱️ ప్రాధాన్య సమయం భద్రపరచబడింది: $finalSlot' : '⏱️ Preferred slot saved: $finalSlot',
+                                  ),
+                                ),
                               );
                             },
-                            child: const Text('Save Slot Preference', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              state.isTelugu ? 'సమయాన్ని భద్రపరచు' : 'Save Slot Preference',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],
@@ -1230,27 +1253,35 @@ void _showSlotPreferenceDialog(BuildContext context, AppState state, String curr
   );
 }
 
-void _confirmLogout(BuildContext context, VoidCallback onLogout) {
+void _confirmLogout(BuildContext context, AppState state, VoidCallback onLogout) {
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.logout_rounded, color: Color(0xFFE11D48)),
-          SizedBox(width: 10),
-          Text('Log Out', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          const Icon(Icons.logout_rounded, color: Color(0xFFE11D48)),
+          const SizedBox(width: 10),
+          Text(
+            state.isTelugu ? 'లాగ్ అవుట్' : 'Log Out',
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
         ],
       ),
-      content: const Text(
-        'Are you sure you want to log out of your account? You can log back in anytime with your phone number.',
-        style: TextStyle(fontSize: 13.5, color: Color(0xFF475569), height: 1.4),
+      content: Text(
+        state.isTelugu
+            ? 'మీరు మీ ఖాతా నుండి లాగ్ అవుట్ అవ్వాలనుకుంటున్నారా? మీరు ఎప్పుడైనా మీ ఫోన్ నంబర్‌తో తిరిగి లాగిన్ అవ్వవచ్చు.'
+            : 'Are you sure you want to log out of your account? You can log back in anytime with your phone number.',
+        style: const TextStyle(fontSize: 13.5, color: Color(0xFF475569), height: 1.4),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+          child: Text(
+            state.isTelugu ? 'రద్దు' : 'Cancel',
+            style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+          ),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -1262,7 +1293,10 @@ void _confirmLogout(BuildContext context, VoidCallback onLogout) {
             Navigator.of(ctx).pop();
             onLogout();
           },
-          child: const Text('Yes, Log Out', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            state.isTelugu ? 'అవును, లాగ్ అవుట్ చేయి' : 'Yes, Log Out',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     ),
@@ -1318,18 +1352,18 @@ void _confirmDeleteAccountSheet(BuildContext context, AppState state, VoidCallba
                   child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 26),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Delete Account',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                        state.isTelugu ? 'ఖాతా తొలగించండి' : 'Delete Account',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'This action is irreversible',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                        state.isTelugu ? 'ఈ చర్యను వెనక్కి తీసుకోలేరు' : 'This action is irreversible',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
                       ),
                     ],
                   ),
@@ -1346,18 +1380,27 @@ void _confirmDeleteAccountSheet(BuildContext context, AppState state, VoidCallba
               ),
               child: Column(
                 children: [
-                  _deletionPoint(Icons.cancel_outlined, 'All active milk subscriptions will be cancelled immediately.'),
+                  _deletionPoint(
+                    Icons.cancel_outlined,
+                    state.isTelugu ? 'అన్ని యాక్టివ్ పాల సభ్యత్వాలు వెంటనే రద్దు చేయబడతాయి.' : 'All active milk subscriptions will be cancelled immediately.',
+                  ),
                   const SizedBox(height: 10),
-                  _deletionPoint(Icons.account_balance_wallet_outlined, 'Any remaining wallet balance will be permanently forfeited.'),
+                  _deletionPoint(
+                    Icons.account_balance_wallet_outlined,
+                    state.isTelugu ? 'మిగిలిన వాలెట్ నిల్వ శాశ్వతంగా కోల్పోతారు.' : 'Any remaining wallet balance will be permanently forfeited.',
+                  ),
                   const SizedBox(height: 10),
-                  _deletionPoint(Icons.location_off_outlined, 'Saved delivery addresses, order history, and personal details will be wiped.'),
+                  _deletionPoint(
+                    Icons.location_off_outlined,
+                    state.isTelugu ? 'భద్రపరచబడిన చిరునామాలు, ఆర్డర్ చరిత్ర మరియు వ్యక్తిగత వివరాలు తుడిచివేయబడతాయి.' : 'Saved delivery addresses, order history, and personal details will be wiped.',
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Type DELETE to confirm permanent account deletion:',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+            Text(
+              state.isTelugu ? 'ఖాతా శాశ్వతంగా తొలగించడానికి DELETE అని టైప్ చేయండి:' : 'Type DELETE to confirm permanent account deletion:',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -1390,7 +1433,10 @@ void _confirmDeleteAccountSheet(BuildContext context, AppState state, VoidCallba
                       side: BorderSide(color: Colors.grey.shade300),
                     ),
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Keep Account', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF475569))),
+                    child: Text(
+                      state.isTelugu ? 'ఖాతాను ఉంచు' : 'Keep Account',
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF475569)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1421,9 +1467,9 @@ void _confirmDeleteAccountSheet(BuildContext context, AppState state, VoidCallba
                                     if (success) {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Account successfully deleted.'),
-                                            backgroundColor: Color(0xFFDC2626),
+                                          SnackBar(
+                                            content: Text(state.isTelugu ? 'ఖాతా విజయవంతంగా తొలగించబడింది.' : 'Account successfully deleted.'),
+                                            backgroundColor: const Color(0xFFDC2626),
                                           ),
                                         );
                                       }
@@ -1432,7 +1478,11 @@ void _confirmDeleteAccountSheet(BuildContext context, AppState state, VoidCallba
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: Text(state.lastError ?? 'Failed to delete account. Please contact support.'),
+                                            content: Text(
+                                              state.isTelugu
+                                                  ? 'ఖాతా తొలగించడం విఫలమైంది. దయచేసి సపోర్ట్‌ను సంప్రదించండి.'
+                                                  : (state.lastError ?? 'Failed to delete account. Please contact support.'),
+                                            ),
                                             backgroundColor: const Color(0xFFDC2626),
                                           ),
                                         );
@@ -1446,7 +1496,10 @@ void _confirmDeleteAccountSheet(BuildContext context, AppState state, VoidCallba
                                     height: 20,
                                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                   )
-                                : const Text('Delete', style: TextStyle(fontWeight: FontWeight.w900)),
+                                : Text(
+                                    state.isTelugu ? 'తొలగించు' : 'Delete',
+                                    style: const TextStyle(fontWeight: FontWeight.w900),
+                                  ),
                           );
                         },
                       );

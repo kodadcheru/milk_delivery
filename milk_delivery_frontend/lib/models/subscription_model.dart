@@ -154,4 +154,16 @@ class SubscriptionModel {
     }
     return false;
   }
+
+  String localizedScheduleType(bool isTelugu) {
+    final s = scheduleType.toUpperCase();
+    if (s.contains('DAILY')) {
+      return isTelugu ? 'ప్రతిరోజూ' : 'Daily';
+    } else if (s.contains('ALTERNATE')) {
+      return isTelugu ? 'రోజు విడిచి రోజు' : 'Alternate Days';
+    } else if (s.contains('CUSTOM')) {
+      return isTelugu ? 'కస్టమ్' : 'Custom';
+    }
+    return scheduleType;
+  }
 }

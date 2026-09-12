@@ -4,11 +4,13 @@ import '../../theme/ui_tokens.dart';
 class FreeDeliveryBar extends StatelessWidget {
   final double cartTotal;
   final double threshold;
+  final bool isTelugu;
 
   const FreeDeliveryBar({
     super.key,
     required this.cartTotal,
     required this.threshold,
+    this.isTelugu = false,
   });
 
   @override
@@ -54,8 +56,10 @@ class FreeDeliveryBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   isFree
-                      ? 'FREE Delivery unlocked on this order!'
-                      : 'Add ₹${deficit.toStringAsFixed(0)} more for FREE Delivery',
+                      ? (isTelugu ? 'ఈ ఆర్డర్‌పై ఉచిత డెలివరీ లభించింది!' : 'FREE Delivery unlocked on this order!')
+                      : (isTelugu
+                          ? 'ఉచిత డెలివరీ కోసం ఇంకో ₹${deficit.toStringAsFixed(0)} జోడించండి'
+                          : 'Add ₹${deficit.toStringAsFixed(0)} more for FREE Delivery'),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,

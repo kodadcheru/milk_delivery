@@ -69,7 +69,7 @@ class _CartPageState extends State<CartPage> {
     final addr = widget.state.activeAddress?.summaryAddress ?? widget.state.currentDeliveryAddress;
     if (addr == 'Select Delivery Location' || addr.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a valid delivery location')),
+        SnackBar(content: Text(widget.state.isTelugu ? 'దయచేసి సరైన డెలివరీ స్థానాన్ని ఎంచుకోండి' : 'Please select a valid delivery location')),
       );
       return;
     }
@@ -89,6 +89,9 @@ class _CartPageState extends State<CartPage> {
     if (result != null) {
       setState(() => _isSubmitting = true);
       try {
+        if (_deliveryInstructions.isNotEmpty) {
+          debugPrint('Customer delivery instructions: ${_deliveryInstructions.join(", ")}');
+        }
         final order = await widget.state.placeExpressOrder(
           deliveryDate: _deliveryMode == 'SCHEDULED' ? 'Tomorrow' : null,
           deliverySlot: _deliveryMode == 'SCHEDULED' ? _selectedSlot : null,
@@ -99,14 +102,14 @@ class _CartPageState extends State<CartPage> {
         );
 
         if (mounted) {
-          await OrderSuccessSheet.show(context, orderId: order.id.toString());
+          await OrderSuccessSheet.show(context, orderId: order.id.toString(), isTelugu: widget.state.isTelugu);
           widget.state.setTab(3);
           if (mounted) Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Order failed: $e')),
+            SnackBar(content: Text(widget.state.isTelugu ? 'ఆర్డర్ విఫలమైంది: $e' : 'Order failed: $e')),
           );
         }
       } finally {
@@ -147,7 +150,9 @@ class _CartPageState extends State<CartPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Your Cart (${widget.state.totalCartItemCount} items)',
+                  widget.state.isTelugu
+                      ? 'మీ కార్ట్ (${widget.state.totalCartItemCount} వస్తువులు)'
+                      : 'Your Cart (${widget.state.totalCartItemCount} items)',
                   style: const TextStyle(
                     color: UiTone.ink,
                     fontSize: 16,
@@ -155,7 +160,9 @@ class _CartPageState extends State<CartPage> {
                   ),
                 ),
                 Text(
-                  _deliveryMode == 'SCHEDULED' ? 'Arriving Tomorrow by 06:00 AM' : 'Arriving in ~25 mins',
+                  _deliveryMode == 'SCHEDULED'
+                      ? (widget.state.isTelugu ? 'రేపు ఉదయం 06:00 గంటలకు డెలివరీ' : 'Arriving Tomorrow by 06:00 AM')
+                      : (widget.state.isTelugu ? '~25 నిమిషాల్లో డెలివరీ' : 'Arriving in ~25 mins'),
                   style: const TextStyle(
                     color: UiTone.success,
                     fontSize: 11.5,
@@ -170,7 +177,10 @@ class _CartPageState extends State<CartPage> {
             ),
           ),
           body: widget.state.totalCartItemCount == 0
-              ? CartEmptyState(onBrowse: () => Navigator.pop(context))
+              ? CartEmptyState(
+                  onBrowse: () => Navigator.pop(context),
+                  isTelugu: widget.state.isTelugu,
+                )
               : Stack(
                   children: [
                     SingleChildScrollView(
@@ -182,6 +192,7 @@ class _CartPageState extends State<CartPage> {
                           FreeDeliveryBar(
                             cartTotal: subtotal,
                             threshold: config.freeDeliveryThreshold,
+                            isTelugu: widget.state.isTelugu,
                           ),
                           _buildAddressStrip(),
                           _buildDeliveryModeSelector(),
@@ -192,6 +203,7 @@ class _CartPageState extends State<CartPage> {
                             state: widget.state,
                           ),
                           DeliveryInstructions(
+                            isTelugu: widget.state.isTelugu,
                             onChanged: (instructions) {
                               setState(() => _deliveryInstructions = instructions);
                             },
@@ -199,6 +211,7 @@ class _CartPageState extends State<CartPage> {
                           BillBreakdown(
                             subtotal: subtotal,
                             config: config,
+                            isTelugu: widget.state.isTelugu,
                           ),
                           _buildPolicyNote(),
                         ],
@@ -250,9 +263,9 @@ class _CartPageState extends State<CartPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Delivering to',
-                  style: TextStyle(
+                Text(
+                  widget.state.isTelugu ? 'డెలివరీ స్థానం' : 'Delivering to',
+                  style: const TextStyle(
                     fontSize: 11,
                     color: UiTone.softText,
                     fontWeight: FontWeight.w600,
@@ -286,9 +299,9 @@ class _CartPageState extends State<CartPage> {
                 borderRadius: BorderRadius.circular(UiRadius.pill),
                 border: Border.all(color: UiTone.primary.withValues(alpha: 0.3), width: 0.8),
               ),
-              child: const Text(
-                'Change',
-                style: TextStyle(
+              child: Text(
+                widget.state.isTelugu ? 'మార్చండి' : 'Change',
+                style: const TextStyle(
                   color: UiTone.primaryDark,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -308,8 +321,8 @@ class _CartPageState extends State<CartPage> {
         children: [
           Expanded(
             child: _ModeCard(
-              title: '⚡ Instant Express',
-              subtitle: '~25 mins delivery',
+              title: widget.state.isTelugu ? '⚡ ఇన్‌స్టంట్ ఎక్స్‌ప్రెస్' : '⚡ Instant Express',
+              subtitle: widget.state.isTelugu ? '~25 నిమిషాల్లో డెలివరీ' : '~25 mins delivery',
               isSelected: _deliveryMode == 'INSTANT',
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -320,8 +333,8 @@ class _CartPageState extends State<CartPage> {
           const SizedBox(width: 10),
           Expanded(
             child: _ModeCard(
-              title: '🌅 Morning Drop',
-              subtitle: 'Tomorrow by 06:00 AM',
+              title: widget.state.isTelugu ? '🌅 రేపటి ఉదయం డెలివరీ' : '🌅 Morning Drop',
+              subtitle: widget.state.isTelugu ? 'రేపు ఉదయం 06:00 గంటలకు' : 'Tomorrow by 06:00 AM',
               isSelected: _deliveryMode == 'SCHEDULED',
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -336,9 +349,21 @@ class _CartPageState extends State<CartPage> {
 
   Widget _buildSlotSelector() {
     final slots = [
-      {'label': '06:00 AM - 08:00 AM', 'icon': '🌅'},
-      {'label': '08:00 AM - 10:00 AM', 'icon': '☀️'},
-      {'label': '06:00 PM - 08:00 PM', 'icon': '🌇'},
+      {
+        'id': '06:00 AM - 08:00 AM',
+        'label': widget.state.isTelugu ? 'ఉదయం 06:00 - 08:00' : '06:00 AM - 08:00 AM',
+        'icon': '🌅'
+      },
+      {
+        'id': '08:00 AM - 10:00 AM',
+        'label': widget.state.isTelugu ? 'ఉదయం 08:00 - 10:00' : '08:00 AM - 10:00 AM',
+        'icon': '☀️'
+      },
+      {
+        'id': '06:00 PM - 08:00 PM',
+        'label': widget.state.isTelugu ? 'సాయంత్రం 06:00 - 08:00' : '06:00 PM - 08:00 PM',
+        'icon': '🌇'
+      },
     ];
 
     return Container(
@@ -353,13 +378,13 @@ class _CartPageState extends State<CartPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.schedule_rounded, size: 16, color: UiTone.primary),
-              SizedBox(width: 6),
+              const Icon(Icons.schedule_rounded, size: 16, color: UiTone.primary),
+              const SizedBox(width: 6),
               Text(
-                'Select Delivery Slot',
-                style: TextStyle(
+                widget.state.isTelugu ? 'డెలివరీ సమయాన్ని ఎంచుకోండి' : 'Select Delivery Slot',
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: UiTone.ink,
@@ -372,14 +397,15 @@ class _CartPageState extends State<CartPage> {
             spacing: 8,
             runSpacing: 8,
             children: slots.map((item) {
-              final slot = item['label']!;
+              final slotId = item['id']!;
+              final displayLabel = item['label']!;
               final icon = item['icon']!;
-              final isSelected = _selectedSlot == slot;
+              final isSelected = _selectedSlot == slotId;
 
               return InkWell(
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  setState(() => _selectedSlot = slot);
+                  setState(() => _selectedSlot = slotId);
                 },
                 borderRadius: BorderRadius.circular(UiRadius.pill),
                 child: AnimatedContainer(
@@ -399,7 +425,7 @@ class _CartPageState extends State<CartPage> {
                       Text(icon, style: const TextStyle(fontSize: 13)),
                       const SizedBox(width: 6),
                       Text(
-                        slot,
+                        displayLabel,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
@@ -441,7 +467,9 @@ class _CartPageState extends State<CartPage> {
                     const Icon(Icons.shopping_bag_outlined, size: 16, color: UiTone.primary),
                     const SizedBox(width: 8),
                     Text(
-                      'Items in Cart (${widget.state.totalCartItemCount})',
+                      widget.state.isTelugu
+                          ? 'కార్ట్‌లోని వస్తువులు (${widget.state.totalCartItemCount})'
+                          : 'Items in Cart (${widget.state.totalCartItemCount})',
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
@@ -495,12 +523,12 @@ class _CartPageState extends State<CartPage> {
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.add_circle_outline_rounded, size: 16, color: UiTone.primary),
-                  SizedBox(width: 6),
+                children: [
+                  const Icon(Icons.add_circle_outline_rounded, size: 16, color: UiTone.primary),
+                  const SizedBox(width: 6),
                   Text(
-                    'Add more items',
-                    style: TextStyle(
+                    widget.state.isTelugu ? '+ మరిన్ని వస్తువులు చేర్చండి' : 'Add more items',
+                    style: const TextStyle(
                       color: UiTone.primary,
                       fontWeight: FontWeight.w800,
                       fontSize: 13,
@@ -524,15 +552,17 @@ class _CartPageState extends State<CartPage> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: UiTone.surfaceBorder, width: 0.8),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.shield_outlined, size: 16, color: UiTone.softText),
-          SizedBox(width: 8),
+          const Icon(Icons.shield_outlined, size: 16, color: UiTone.softText),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Orders cannot be cancelled once packed. Farm-fresh items are non-refundable unless damaged upon arrival.',
-              style: TextStyle(
+              widget.state.isTelugu
+                  ? 'ప్యాకింగ్ పూర్తయిన తర్వాత ఆర్డర్ రద్దు చేయలేము. డెలివరీ సమయంలో దెబ్బతింటే తప్ప తాజా డెయిరీ ఉత్పత్తులను వాపసు తీసుకోలేము.'
+                  : 'Orders cannot be cancelled once packed. Farm-fresh items are non-refundable unless damaged upon arrival.',
+              style: const TextStyle(
                 color: UiTone.softText,
                 fontSize: 11,
                 height: 1.35,
@@ -579,7 +609,7 @@ class _CartPageState extends State<CartPage> {
                     const Icon(Icons.location_on, size: 14, color: UiTone.primary),
                     const SizedBox(width: 4),
                     Text(
-                      'Delivering to: ',
+                      widget.state.isTelugu ? 'డెలివరీ: ' : 'Delivering to: ',
                       style: TextStyle(
                         fontSize: 11,
                         color: UiTone.softText.withValues(alpha: 0.8),
@@ -649,18 +679,18 @@ class _CartPageState extends State<CartPage> {
                             ),
                           ),
                           Row(
-                            children: const [
+                            children: [
                               Text(
-                                'TOTAL • VIEW BILL',
-                                style: TextStyle(
+                                widget.state.isTelugu ? 'మొత్తం • బిల్లు చూడండి' : 'TOTAL • VIEW BILL',
+                                style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white70,
                                   letterSpacing: 0.3,
                                 ),
                               ),
-                              SizedBox(width: 2),
-                              Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: Colors.white70),
+                              const SizedBox(width: 2),
+                              const Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: Colors.white70),
                             ],
                           ),
                         ],
@@ -669,18 +699,18 @@ class _CartPageState extends State<CartPage> {
 
                     // Right: Proceed to Pay CTA
                     Row(
-                      children: const [
+                      children: [
                         Text(
-                          'Proceed to Pay',
-                          style: TextStyle(
+                          widget.state.isTelugu ? 'చెల్లింపుకి వెళ్లండి' : 'Proceed to Pay',
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                             letterSpacing: -0.2,
                           ),
                         ),
-                        SizedBox(width: 6),
-                        Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
                       ],
                     ),
                   ],

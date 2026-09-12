@@ -29,12 +29,9 @@ class HomeProductCard extends StatefulWidget {
   State<HomeProductCard> createState() => _HomeProductCardState();
 }
 
-class _HomeProductCardState extends State<HomeProductCard> with TickerProviderStateMixin {
+class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProviderStateMixin {
   late AnimationController _addBounceController;
   late Animation<double> _addBounceAnimation;
-
-  late AnimationController _morphController;
-  late Animation<double> _morphWidth;
 
   @override
   void initState() {
@@ -46,20 +43,11 @@ class _HomeProductCardState extends State<HomeProductCard> with TickerProviderSt
     _addBounceAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
       CurvedAnimation(parent: _addBounceController, curve: Curves.easeInOut),
     );
-
-    _morphController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _morphWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _morphController, curve: Curves.easeOutCubic),
-    );
   }
 
   @override
   void dispose() {
     _addBounceController.dispose();
-    _morphController.dispose();
     super.dispose();
   }
 

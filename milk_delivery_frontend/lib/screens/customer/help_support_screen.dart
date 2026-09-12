@@ -302,12 +302,14 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Help & Live Support',
-                  style: TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.bold),
+                Text(
+                  widget.state.isTelugu ? 'సహాయం & లైవ్ సపోర్ట్' : 'Help & Live Support',
+                  style: const TextStyle(color: UiTone.surface, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  _isOnline ? '🟢 Live WebSocket Active • 2 min response' : '🟡 Offline Bot Assistant Ready',
+                  widget.state.isTelugu
+                      ? (_isOnline ? '🟢 లైవ్ సపోర్ట్ అందుబాటులో ఉంది • 2 నిమి' : '🟡 బోట్ సహాయం సిద్ధంగా ఉంది')
+                      : (_isOnline ? '🟢 Live WebSocket Active • 2 min response' : '🟡 Offline Bot Assistant Ready'),
                   style: const TextStyle(color: Colors.white70, fontSize: 10.5),
                 ),
               ],
@@ -316,12 +318,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
         ),
         actions: [
           IconButton(
-            tooltip: 'Call Support 24/7',
+            tooltip: widget.state.isTelugu ? '24/7 కాల్ సపోర్ట్' : 'Call Support 24/7',
             icon: const Icon(Icons.call_rounded, color: UiTone.secondary, size: 22),
             onPressed: _callSupportHotline,
           ),
           IconButton(
-            tooltip: 'WhatsApp Help',
+            tooltip: widget.state.isTelugu ? 'వాట్సాప్ సహాయం' : 'WhatsApp Help',
             icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white70, size: 20),
             onPressed: _openWhatsAppSupport,
           ),
@@ -332,9 +334,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
           indicatorWeight: 3,
           labelColor: UiTone.secondary,
           unselectedLabelColor: Colors.white60,
-          tabs: const [
-            Tab(icon: Icon(Icons.forum_rounded, size: 18), text: 'Live Chat (WebSocket)'),
-            Tab(icon: Icon(Icons.help_outline_rounded, size: 18), text: 'Quick FAQs'),
+          tabs: [
+            Tab(icon: const Icon(Icons.forum_rounded, size: 18), text: widget.state.isTelugu ? 'లైవ్ చాట్' : 'Live Chat (WebSocket)'),
+            Tab(icon: const Icon(Icons.help_outline_rounded, size: 18), text: widget.state.isTelugu ? 'తరచుగా అడిగే ప్రశ్నలు' : 'Quick FAQs'),
           ],
         ),
       ),
@@ -363,10 +365,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
             children: [
               const Icon(Icons.verified_user_rounded, color: UiTone.primary, size: 16),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Connected to Pamba Priority Care Desk',
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: UiTone.primary),
+                  widget.state.isTelugu ? 'పాంబ కేర్ డెస్క్‌కు కనెక్ట్ చేయబడింది' : 'Connected to Pamba Priority Care Desk',
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: UiTone.primary),
                 ),
               ),
               InkWell(
@@ -520,12 +522,15 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
               borderRadius: BorderRadius.circular(UiRadius.md),
               border: Border.all(color: UiTone.surfaceBorder),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary)),
-                SizedBox(width: 8),
-                Text('Support Agent is typing...', style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic)),
+                const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary)),
+                const SizedBox(width: 8),
+                Text(
+                  widget.state.isTelugu ? 'సపోర్ట్ ఏజెంట్ టైప్ చేస్తున్నారు...' : 'Support Agent is typing...',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+                ),
               ],
             ),
           ),
@@ -555,9 +560,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                 child: TextField(
                   controller: _messageController,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    hintText: 'Type your question here...',
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 13.5),
+                  decoration: InputDecoration(
+                    hintText: widget.state.isTelugu ? 'మీ ప్రశ్నను ఇక్కడ టైప్ చేయండి...' : 'Type your question here...',
+                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 13.5),
                     border: InputBorder.none,
                   ),
                   onSubmitted: _sendMessage,

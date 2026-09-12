@@ -18,8 +18,9 @@ class HomeTomorrowPreviewCard extends StatelessWidget {
 
     // Calculate tomorrow's delivery items
     final tomorrow = DateTime.now().add(const Duration(days: 1));
-    final dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tomorrow.weekday - 1];
-    final dateStr = '${tomorrow.day}/${tomorrow.month}';
+    final daysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final daysTe = ['సోమ', 'మంగళ', 'బుధ', 'గురు', 'శుక్ర', 'శని', 'ఆది'];
+    final dayName = (state.isTelugu ? daysTe : daysEn)[tomorrow.weekday - 1];
     
     int totalItems = 0;
     double totalCost = 0;
@@ -67,7 +68,7 @@ class HomeTomorrowPreviewCard extends StatelessWidget {
                     children: [
                       Text(
                         dayName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           color: UiTone.primary,
@@ -76,7 +77,7 @@ class HomeTomorrowPreviewCard extends StatelessWidget {
                       ),
                       Text(
                         '${tomorrow.day}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: UiTone.primary,
@@ -92,9 +93,9 @@ class HomeTomorrowPreviewCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Tomorrow\'s Delivery',
-                        style: TextStyle(
+                      Text(
+                        state.isTelugu ? 'రేపటి డెలివరీ' : 'Tomorrow\'s Delivery',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: UiTone.ink,
@@ -102,8 +103,10 @@ class HomeTomorrowPreviewCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '$totalItems items • ₹${totalCost.toStringAsFixed(0)} estimated',
-                        style: TextStyle(
+                        state.isTelugu
+                            ? '$totalItems వస్తువులు • సుమారు ₹${totalCost.toStringAsFixed(0)}'
+                            : '$totalItems items • ₹${totalCost.toStringAsFixed(0)} estimated',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: UiTone.softText,
@@ -119,14 +122,14 @@ class HomeTomorrowPreviewCard extends StatelessWidget {
                     color: const Color(0xFFD1FAE5),
                     borderRadius: BorderRadius.circular(UiRadius.pill),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF059669)),
-                      SizedBox(width: 4),
+                      const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF059669)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Scheduled',
-                        style: TextStyle(
+                        state.isTelugu ? 'షెడ్యూల్డ్' : 'Scheduled',
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF059669),

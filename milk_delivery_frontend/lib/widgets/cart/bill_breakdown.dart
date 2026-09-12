@@ -6,12 +6,14 @@ class BillBreakdown extends StatelessWidget {
   final double subtotal;
   final StorefrontConfigModel config;
   final double walletDeduction;
+  final bool isTelugu;
 
   const BillBreakdown({
     super.key,
     required this.subtotal,
     required this.config,
     this.walletDeduction = 0.0,
+    this.isTelugu = false,
   });
 
   Widget _buildRow(
@@ -79,6 +81,7 @@ class BillBreakdown extends StatelessWidget {
     final taxAmount = subtotal * (config.taxPercentage / 100.0);
     final grandTotal = subtotal + actualDeliveryFee + platformFee + taxAmount - walletDeduction;
     final totalSavings = isFreeDelivery ? deliveryFee : 0.0;
+    final freeLabel = isTelugu ? 'ఉచితం' : 'FREE';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -107,9 +110,9 @@ class BillBreakdown extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
-                'Bill Summary',
-                style: TextStyle(
+              Text(
+                isTelugu ? 'బిల్లు వివరాలు' : 'Bill Summary',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: UiTone.ink,
@@ -120,27 +123,30 @@ class BillBreakdown extends StatelessWidget {
           const SizedBox(height: 12),
           const Divider(height: 1, color: UiTone.surfaceBorder),
           const SizedBox(height: 8),
-          _buildRow('Item Total', '₹${subtotal.toStringAsFixed(0)}'),
+          _buildRow(isTelugu ? 'వస్తువుల మొత్తం' : 'Item Total', '₹${subtotal.toStringAsFixed(0)}'),
           _buildRow(
-            'Delivery Fee',
-            isFreeDelivery ? 'FREE' : (deliveryFee > 0 ? '₹${deliveryFee.toStringAsFixed(0)}' : 'FREE'),
+            isTelugu ? 'డెలివరీ ఛార్జీ' : 'Delivery Fee',
+            isFreeDelivery ? freeLabel : (deliveryFee > 0 ? '₹${deliveryFee.toStringAsFixed(0)}' : freeLabel),
             valueColor: isFreeDelivery || deliveryFee == 0 ? UiTone.success : null,
             strikethrough: isFreeDelivery && deliveryFee > 0 ? '₹${deliveryFee.toStringAsFixed(0)}' : null,
           ),
           _buildRow(
-            'Platform Fee',
-            platformFee > 0 ? '₹${platformFee.toStringAsFixed(0)}' : 'FREE',
+            isTelugu ? 'ప్లాట్‌ఫామ్ ఫీజు' : 'Platform Fee',
+            platformFee > 0 ? '₹${platformFee.toStringAsFixed(0)}' : freeLabel,
             valueColor: platformFee == 0 ? UiTone.success : null,
           ),
           if (taxAmount > 0)
-            _buildRow('Taxes & Charges (${config.taxPercentage}%)', '₹${taxAmount.toStringAsFixed(1)}'),
+            _buildRow(
+              isTelugu ? 'జీఎస్టీ & పన్నులు (${config.taxPercentage}%)' : 'Taxes & Charges (${config.taxPercentage}%)',
+              '₹${taxAmount.toStringAsFixed(1)}',
+            ),
           if (walletDeduction > 0)
-            _buildRow('Wallet Applied', '-₹${walletDeduction.toStringAsFixed(0)}', valueColor: UiTone.success),
+            _buildRow(isTelugu ? 'వాలెట్ తగ్గింపు' : 'Wallet Applied', '-₹${walletDeduction.toStringAsFixed(0)}', valueColor: UiTone.success),
           const SizedBox(height: 6),
           const Divider(height: 1, color: UiTone.surfaceBorder),
           const SizedBox(height: 6),
           _buildRow(
-            'Grand Total',
+            isTelugu ? 'చెల్లించాల్సిన మొత్తం' : 'Grand Total',
             '₹${grandTotal.toStringAsFixed(0)}',
             isBold: true,
             fontSize: 15.5,
@@ -161,7 +167,9 @@ class BillBreakdown extends StatelessWidget {
                   const Text('🎉', style: TextStyle(fontSize: 14)),
                   const SizedBox(width: 6),
                   Text(
-                    'You saved ₹${totalSavings.toStringAsFixed(0)} on this order!',
+                    isTelugu
+                        ? 'ఈ ఆర్డర్‌పై మీరు ₹${totalSavings.toStringAsFixed(0)} ఆదా చేశారు!'
+                        : 'You saved ₹${totalSavings.toStringAsFixed(0)} on this order!',
                     style: const TextStyle(
                       color: Color(0xFF15803D),
                       fontSize: 12,

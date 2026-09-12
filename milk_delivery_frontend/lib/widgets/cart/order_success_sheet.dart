@@ -4,14 +4,16 @@ import '../../theme/ui_tokens.dart';
 class OrderSuccessSheet extends StatefulWidget {
   final String orderId;
   final String? deliveryEta;
+  final bool isTelugu;
 
   const OrderSuccessSheet({
     super.key,
     required this.orderId,
     this.deliveryEta,
+    this.isTelugu = false,
   });
 
-  static Future<void> show(BuildContext context, {required String orderId, String? deliveryEta}) {
+  static Future<void> show(BuildContext context, {required String orderId, String? deliveryEta, bool isTelugu = false}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -23,7 +25,7 @@ class OrderSuccessSheet extends StatefulWidget {
       ),
       builder: (ctx) => SizedBox(
         height: MediaQuery.of(ctx).size.height * 0.85,
-        child: OrderSuccessSheet(orderId: orderId, deliveryEta: deliveryEta),
+        child: OrderSuccessSheet(orderId: orderId, deliveryEta: deliveryEta, isTelugu: isTelugu),
       ),
     );
   }
@@ -70,19 +72,19 @@ class _OrderSuccessSheetState extends State<OrderSuccessSheet> with SingleTicker
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Order Placed! 🎉',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: UiTone.ink),
+          Text(
+            widget.isTelugu ? 'ఆర్డర్ విజయవంతంగా నమోదయింది! 🎉' : 'Order Placed! 🎉',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: UiTone.ink),
           ),
           const SizedBox(height: 8),
           Text(
-            'Order #${widget.orderId}',
+            widget.isTelugu ? 'ఆర్డర్ సంఖ్య #${widget.orderId}' : 'Order #${widget.orderId}',
             style: const TextStyle(fontSize: 14, color: UiTone.softText),
           ),
           if (widget.deliveryEta != null) ...[
             const SizedBox(height: 16),
             Text(
-              'Arriving ${widget.deliveryEta}',
+              widget.isTelugu ? 'చేరుకునే సమయం: ${widget.deliveryEta}' : 'Arriving ${widget.deliveryEta}',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: UiTone.ink),
             ),
           ],
@@ -96,18 +98,18 @@ class _OrderSuccessSheetState extends State<OrderSuccessSheet> with SingleTicker
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               ),
-              child: const Text(
-                'Track Order',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              child: Text(
+                widget.isTelugu ? 'ఆర్డర్ ట్రాక్ చేయండి' : 'Track Order',
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Continue Shopping',
-              style: TextStyle(color: UiTone.softText, fontSize: 16),
+            child: Text(
+              widget.isTelugu ? 'షాపింగ్ కొనసాగించండి' : 'Continue Shopping',
+              style: const TextStyle(color: UiTone.softText, fontSize: 16),
             ),
           ),
         ],

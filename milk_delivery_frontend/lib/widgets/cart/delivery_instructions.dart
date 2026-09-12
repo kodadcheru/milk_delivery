@@ -4,10 +4,12 @@ import '../../theme/ui_tokens.dart';
 
 class DeliveryInstructions extends StatefulWidget {
   final ValueChanged<List<String>> onChanged;
+  final bool isTelugu;
 
   const DeliveryInstructions({
     super.key,
     required this.onChanged,
+    this.isTelugu = false,
   });
 
   @override
@@ -16,10 +18,10 @@ class DeliveryInstructions extends StatefulWidget {
 
 class _DeliveryInstructionsState extends State<DeliveryInstructions> {
   final List<Map<String, dynamic>> _options = [
-    {'label': "Don't ring bell", 'icon': Icons.notifications_off_outlined},
-    {'label': 'Leave at door', 'icon': Icons.door_front_door_outlined},
-    {'label': 'Avoid calling', 'icon': Icons.phone_disabled_outlined},
-    {'label': 'Leave with security', 'icon': Icons.shield_outlined},
+    {'key': "dont_ring_bell", 'en': "Don't ring bell", 'te': "డోర్‌బెల్ మోగించవద్దు", 'icon': Icons.notifications_off_outlined},
+    {'key': 'leave_at_door', 'en': 'Leave at door', 'te': 'తలుపు వద్ద ఉంచండి', 'icon': Icons.door_front_door_outlined},
+    {'key': 'avoid_calling', 'en': 'Avoid calling', 'te': 'కాల్ చేయవద్దు', 'icon': Icons.phone_disabled_outlined},
+    {'key': 'leave_with_guard', 'en': 'Leave with security', 'te': 'సెక్యూరిటీ గార్డు వద్ద ఉంచండి', 'icon': Icons.shield_outlined},
   ];
   final Set<String> _selected = {};
 
@@ -52,20 +54,20 @@ class _DeliveryInstructionsState extends State<DeliveryInstructions> {
                 ),
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Delivery Instructions',
-                    style: TextStyle(
+                    widget.isTelugu ? 'డెలివరీ సూచనలు' : 'Delivery Instructions',
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: UiTone.ink,
                     ),
                   ),
                   Text(
-                    'Guidance for your delivery partner at doorstep',
-                    style: TextStyle(
+                    widget.isTelugu ? 'డోర్‌స్టెప్ వద్ద డెలివరీ పార్టనర్‌కు సూచనలు' : 'Guidance for your delivery partner at doorstep',
+                    style: const TextStyle(
                       fontSize: 10.5,
                       color: UiTone.softText,
                     ),
@@ -79,18 +81,19 @@ class _DeliveryInstructionsState extends State<DeliveryInstructions> {
             spacing: 8,
             runSpacing: 8,
             children: _options.map((opt) {
-              final label = opt['label'] as String;
+              final key = opt['key'] as String;
+              final label = widget.isTelugu ? (opt['te'] as String) : (opt['en'] as String);
               final icon = opt['icon'] as IconData;
-              final isSelected = _selected.contains(label);
+              final isSelected = _selected.contains(key);
 
               return InkWell(
                 onTap: () {
                   HapticFeedback.selectionClick();
                   setState(() {
                     if (isSelected) {
-                      _selected.remove(label);
+                      _selected.remove(key);
                     } else {
-                      _selected.add(label);
+                      _selected.add(key);
                     }
                   });
                   widget.onChanged(_selected.toList());

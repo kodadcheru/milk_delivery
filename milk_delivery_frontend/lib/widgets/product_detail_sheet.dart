@@ -25,7 +25,9 @@ class ProductDetailSheet extends StatefulWidget {
     if (!product.isSubscriptionEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${product.localizedName(state.currentLanguage)} is available for one-time order only.'),
+          content: Text(state.isTelugu
+              ? '${product.localizedName(state.currentLanguage)} ఒకేసారి ఆర్డర్ చేయడానికి మాత్రమే అందుబాటులో ఉంది.'
+              : '${product.localizedName(state.currentLanguage)} is available for one-time order only.'),
           behavior: SnackBarBehavior.floating,
         ),
       );

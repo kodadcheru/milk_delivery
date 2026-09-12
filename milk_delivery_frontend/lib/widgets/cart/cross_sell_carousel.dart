@@ -22,13 +22,13 @@ class CrossSellCarousel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
             children: [
               Text(
-                '✨ Frequently Added Together',
-                style: TextStyle(
+                state.isTelugu ? '✨ ఎక్కువగా కొనుగోలు చేసేవి' : '✨ Frequently Added Together',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: UiTone.ink,
@@ -88,7 +88,7 @@ class CrossSellCarousel extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      product.name,
+                      product.localizedName(state.currentLanguage),
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -131,7 +131,9 @@ class CrossSellCarousel extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              inCartQty > 0 ? '$inCartQty IN' : '+ ADD',
+                              inCartQty > 0
+                                  ? (state.isTelugu ? '$inCartQty చేర్చబడింది' : '$inCartQty IN')
+                                  : (state.isTelugu ? '+ చేర్చండి' : '+ ADD'),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,

@@ -3,10 +3,12 @@ import '../../theme/ui_tokens.dart';
 
 class CartEmptyState extends StatelessWidget {
   final VoidCallback onBrowse;
+  final bool isTelugu;
 
   const CartEmptyState({
     super.key,
     required this.onBrowse,
+    this.isTelugu = false,
   });
 
   @override
@@ -21,18 +23,20 @@ class CartEmptyState extends StatelessWidget {
             color: Colors.grey,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Your cart is empty',
-            style: TextStyle(
+          Text(
+            isTelugu ? 'మీ కార్ట్ ఖాళీగా ఉంది' : 'Your cart is empty',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: UiTone.ink,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Browse our fresh dairy, eggs & groceries',
-            style: TextStyle(
+          Text(
+            isTelugu
+                ? 'తాజా పాలు, గుడ్లు మరియు నిత్యావసరాలను ఎంచుకోండి'
+                : 'Browse our fresh dairy, eggs & groceries',
+            style: const TextStyle(
               fontSize: 14,
               color: UiTone.softText,
             ),
@@ -48,9 +52,9 @@ class CartEmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
               ),
             ),
-            child: const Text(
-              'Start Shopping',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            child: Text(
+              isTelugu ? 'షాపింగ్ ప్రారంభించండి' : 'Start Shopping',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
         ],

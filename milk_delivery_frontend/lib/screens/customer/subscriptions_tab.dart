@@ -318,8 +318,10 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                   hasScrollBody: false,
                   child: UiEmptyState(
                     emoji: '🥛',
-                    title: 'No Active Subscriptions',
-                    message: 'Subscribe to fresh milk or groceries and never miss your morning delivery.',
+                    title: isTelugu ? 'యాక్టివ్ సభ్యత్వాలు లేవు' : 'No Active Subscriptions',
+                    message: isTelugu
+                        ? 'తాజా పాలు లేదా సరుకులకు సభ్యత్వం తీసుకోండి, మీ ఉదయం డెలివరీని ఎప్పటికీ మిస్ అవ్వకండి.'
+                        : 'Subscribe to fresh milk or groceries and never miss your morning delivery.',
                     action: ElevatedButton.icon(
                       onPressed: () => widget.state.setTab(0),
                       icon: const Icon(Icons.storefront_rounded, size: 20),
@@ -623,40 +625,6 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
     return (month >= 1 && month <= 12) ? names[month] : '';
   }
 
-  Future<void> _confirmTogglePauseSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
-    final isPaused = sub.status == 'PAUSED';
-    final titleText = isTelugu
-        ? (isPaused ? 'సభ్యత్వాన్ని పునఃప్రారంభించాలా?' : 'సభ్యత్వాన్ని పాజ్ చేయాలా?')
-        : (isPaused ? 'Resume Subscription?' : 'Pause Subscription?');
-    final contentText = isTelugu
-        ? (isPaused
-            ? 'రేపటి నుండి మీ రోజువారీ డెలివరీలు పునఃప్రారంభించబడతాయి.'
-            : 'మీరు పునఃప్రారంభించే వరకు మీ రోజువారీ డెలివరీలు ఆగిపోతాయి.')
-        : (isPaused
-            ? 'Your daily deliveries will resume tomorrow.'
-            : 'Your daily deliveries will stop until you resume.');
-    final confirmBtnText = isTelugu
-        ? (isPaused ? 'పునఃప్రారంభించు' : 'పాజ్')
-        : (isPaused ? 'Resume' : 'Pause');
-    final cancelBtnText = isTelugu ? 'రద్దు' : 'Cancel';
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(titleText),
-        content: Text(contentText),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(cancelBtnText)),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(confirmBtnText)),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    HapticFeedback.mediumImpact();
-    await widget.state.toggleSubscriptionStatus(sub.id);
-  }
-
   Future<void> _confirmDeleteSubscription(BuildContext context, SubscriptionModel sub, bool isTelugu) async {
     HapticFeedback.mediumImpact();
     final pName = sub.productDetail?.name ?? 'Subscription';
@@ -676,11 +644,17 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
               ),
               const SizedBox(height: 16),
-              ...['Too expensive', 'Quality issues', 'Going out of town', 'Switched to another brand', 'Other'].map(
+              ...[
+                {'en': 'Too expensive', 'te': 'ధర ఎక్కువగా ఉంది'},
+                {'en': 'Quality issues', 'te': 'నాణ్యత సమస్యలు'},
+                {'en': 'Going out of town', 'te': 'ఊరికి వెళ్తున్నాను'},
+                {'en': 'Switched to another brand', 'te': 'వేరే బ్రాండ్‌కు మారాను'},
+                {'en': 'Other', 'te': 'ఇతర కారణం'},
+              ].map(
                 (r) => ListTile(
-                  title: Text(r, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(isTelugu ? r['te']! : r['en']!, style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-                  onTap: () => Navigator.pop(ctx, r),
+                  onTap: () => Navigator.pop(ctx, r['en']),
                 ),
               ),
             ],

@@ -233,7 +233,7 @@ class _SubscriptionCardState extends State<SubscriptionCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${sub.packSize} • ${sub.scheduleType}',
+                      '${sub.packSize} • ${sub.localizedScheduleType(isTelugu)}',
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5),
                     ),
                   ],

@@ -19,19 +19,11 @@ class FloatingCartBar extends StatefulWidget {
 
 class _FloatingCartBarState extends State<FloatingCartBar> {
   double _priceScale = 1.0;
-  double _lastPrice = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _lastPrice = widget.state.totalCartPrice;
-  }
 
   @override
   void didUpdateWidget(covariant FloatingCartBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state.totalCartPrice != widget.state.totalCartPrice) {
-      _lastPrice = widget.state.totalCartPrice;
       _pulsePrice();
     }
   }
@@ -141,7 +133,7 @@ class _FloatingCartBarState extends State<FloatingCartBar> {
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: Text(
-                          '$count Items · ₹${total.toStringAsFixed(0)}',
+                          '$count ${widget.state.isTelugu ? "వస్తువులు" : "Items"} · ₹${total.toStringAsFixed(0)}',
                           key: ValueKey('$count-$total'),
                           style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                         ),
@@ -150,23 +142,27 @@ class _FloatingCartBarState extends State<FloatingCartBar> {
                     const SizedBox(height: 2),
                     if (threshold > 0 && total < threshold)
                       Text(
-                        'Add ₹${(threshold - total).toStringAsFixed(0)} more for FREE delivery',
+                        widget.state.isTelugu
+                            ? 'ఉచిత డెలివరీ కోసం ఇంకో ₹${(threshold - total).toStringAsFixed(0)} జోడించండి'
+                            : 'Add ₹${(threshold - total).toStringAsFixed(0)} more for FREE delivery',
                         style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.w600),
                       )
                     else if (threshold > 0 && total >= threshold)
-                      const Text(
-                        'FREE Delivery Unlocked 🎉',
-                        style: TextStyle(color: UiTone.success, fontSize: 11, fontWeight: FontWeight.w600),
+                      Text(
+                        widget.state.isTelugu ? 'ఉచిత డెలివరీ లభించింది 🎉' : 'FREE Delivery Unlocked 🎉',
+                        style: const TextStyle(color: UiTone.success, fontSize: 11, fontWeight: FontWeight.w600),
                       )
                     else if (widget.state.storefrontConfig.deliveryFee > 0)
                       Text(
-                        'Delivery Fee: ₹${widget.state.storefrontConfig.deliveryFee.toStringAsFixed(0)}',
+                        widget.state.isTelugu
+                            ? 'డెలివరీ ఛార్జీ: ₹${widget.state.storefrontConfig.deliveryFee.toStringAsFixed(0)}'
+                            : 'Delivery Fee: ₹${widget.state.storefrontConfig.deliveryFee.toStringAsFixed(0)}',
                         style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
                       )
                     else
-                      const Text(
-                        'FREE Delivery ✓',
-                        style: TextStyle(color: UiTone.success, fontSize: 11, fontWeight: FontWeight.w600),
+                      Text(
+                        widget.state.isTelugu ? 'ఉచిత డెలివరీ ✓' : 'FREE Delivery ✓',
+                        style: const TextStyle(color: UiTone.success, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                   ],
                 ),
@@ -179,9 +175,9 @@ class _FloatingCartBarState extends State<FloatingCartBar> {
                   color: UiTone.primary,
                   borderRadius: BorderRadius.circular(16), // Pill shape
                 ),
-                child: const Text(
-                  'View Cart >',
-                  style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                child: Text(
+                  widget.state.isTelugu ? 'కార్ట్ చూడండి >' : 'View Cart >',
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

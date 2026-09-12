@@ -858,10 +858,12 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                             final clean = order.driverPhone.replaceAll(RegExp(r'[^0-9+]'), '');
                             if (clean.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   backgroundColor: Colors.orange,
-                                  content: Text('Delivery partner phone number is not available yet.'),
-                                  duration: Duration(seconds: 2),
+                                  content: Text(isTelugu
+                                      ? 'డెలివరీ భాగస్వామి ఫోన్ నంబర్ ఇంకా అందుబాటులో లేదు.'
+                                      : 'Delivery partner phone number is not available yet.'),
+                                  duration: const Duration(seconds: 2),
                                 ),
                               );
                               return;
@@ -906,10 +908,12 @@ class _DeliveryTrackerTabState extends State<DeliveryTrackerTab> with TickerProv
                             String clean = order.driverPhone.replaceAll(RegExp(r'\D'), '');
                             if (clean.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   backgroundColor: Colors.orange,
-                                  content: Text('Delivery partner WhatsApp number is not available yet.'),
-                                  duration: Duration(seconds: 2),
+                                  content: Text(isTelugu
+                                      ? 'డెలివరీ భాగస్వామి వాట్సాప్ నంబర్ ఇంకా అందుబాటులో లేదు.'
+                                      : 'Delivery partner WhatsApp number is not available yet.'),
+                                  duration: const Duration(seconds: 2),
                                 ),
                               );
                               return;

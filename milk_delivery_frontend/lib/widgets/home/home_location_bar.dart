@@ -37,13 +37,21 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   // Search hint rotator
   Timer? _hintTimer;
   int _currentHintIndex = 0;
-  final List<String> _hints = const [
+  static const List<String> _hintsEn = [
     'A2 Fresh Cow Milk',
     'Organic Farm Eggs',
     'Thick Buffalo Curd',
     'Mineral Water 20L',
     'Pure Cow Ghee',
     'Farm Fresh Paneer',
+  ];
+  static const List<String> _hintsTe = [
+    'స్వచ్ఛమైన ఆవు పాలు',
+    'నాటు కోడి గుడ్లు',
+    'చిక్కటి గేదె పెరుగు',
+    'మినరల్ వాటర్ 20L',
+    'స్వచ్ఛమైన నెయ్యి',
+    'తాజా పనీర్',
   ];
 
   @override
@@ -72,7 +80,7 @@ class _HomeLocationBarState extends State<HomeLocationBar>
     _hintTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted) {
         setState(() {
-          _currentHintIndex = (_currentHintIndex + 1) % _hints.length;
+          _currentHintIndex = (_currentHintIndex + 1) % _hintsEn.length;
         });
       }
     });
@@ -106,6 +114,8 @@ class _HomeLocationBarState extends State<HomeLocationBar>
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
     final state = widget.state;
+    final isTe = state.isTelugu;
+    final hints = isTe ? _hintsTe : _hintsEn;
     final cityOrTown = state.currentCityOrTown;
     
     // Extract clean, concise area/locality name
@@ -127,9 +137,11 @@ class _HomeLocationBarState extends State<HomeLocationBar>
       areaName = parts.isNotEmpty ? parts.first : state.currentDeliveryAddress;
     }
 
+    final dropText = isTe ? '⚡ ఉదయం 5:30 డెలివరీ' : '⚡ 5:30 AM Drop';
+    final hubText = isTe ? '$cityOrTown కేంద్రం' : '$cityOrTown Central Hub';
     final subtitleText = areaName.isNotEmpty && areaName.toLowerCase() != cityOrTown.toLowerCase()
-        ? '$areaName • ⚡ 5:30 AM Drop'
-        : '$cityOrTown Central Hub • ⚡ 5:30 AM Drop';
+        ? '$areaName • $dropText'
+        : '$hubText • $dropText';
 
     final unreadNotifs = state.unreadNotificationCount;
     final sf = state.storefrontConfig;
@@ -232,9 +244,9 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text(
-                                  'DELIVERY LOCATION',
-                                  style: TextStyle(
+                                Text(
+                                  isTe ? 'డెలివరీ స్థానం' : 'DELIVERY LOCATION',
+                                  style: const TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w800,
                                     color: Color(0xFFDFF7EA),
@@ -248,9 +260,9 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                                     color: Colors.white.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Text(
-                                    'LIVE 📍',
-                                    style: TextStyle(
+                                  child: Text(
+                                    isTe ? 'లైవ్ 📍' : 'LIVE 📍',
+                                    style: const TextStyle(
                                       fontSize: 8,
                                       fontWeight: FontWeight.w900,
                                       color: Colors.white,
@@ -284,19 +296,19 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                                     color: Colors.white.withValues(alpha: 0.22),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'CHANGE',
-                                        style: TextStyle(
+                                        isTe ? 'మార్చండి' : 'CHANGE',
+                                        style: const TextStyle(
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w900,
                                           color: Colors.white,
                                         ),
                                       ),
-                                      SizedBox(width: 2),
-                                      Icon(
+                                      const SizedBox(width: 2),
+                                      const Icon(
                                         Icons.keyboard_arrow_down_rounded,
                                         color: Colors.white,
                                         size: 13,
@@ -433,7 +445,9 @@ class _HomeLocationBarState extends State<HomeLocationBar>
                       color: Colors.white,
                     ),
                     decoration: InputDecoration(
-                      hintText: "Search '${_hints[_currentHintIndex]}'...",
+                      hintText: isTe
+                          ? "వెతకండి '${hints[_currentHintIndex]}'..."
+                          : "Search '${hints[_currentHintIndex]}'...",
                       hintStyle: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,

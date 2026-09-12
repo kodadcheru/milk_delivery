@@ -51,10 +51,12 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
             child: const Text('🚚', style: TextStyle(fontSize: 40)),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'We are Serving Soon in Your Area! 🚀',
+          Text(
+            widget.state.isTelugu
+                ? 'త్వరలో మీ ప్రాంతంలో సేవలందిస్తాము! 🚀'
+                : 'We are Serving Soon in Your Area! 🚀',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
               color: UiTone.ink,
@@ -63,7 +65,9 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Doorstep 05:30 AM delivery is not yet operational at "$areaName". You can still browse our products below, or select an active hub zone.',
+            widget.state.isTelugu
+                ? '"$areaName" వద్ద ఉదయం 05:30 డెలివరీ ఇంకా ప్రారంభం కాలేదు. మీరు మా ఉత్పత్తులను క్రింద చూడవచ్చు లేదా యాక్టివ్ హబ్ జోన్‌ను ఎంచుకోవచ్చు.'
+                : 'Doorstep 05:30 AM delivery is not yet operational at "$areaName". You can still browse our products below, or select an active hub zone.',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
           ),
@@ -81,9 +85,9 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '📍 Active Operational Delivery Hubs:',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
+                Text(
+                  widget.state.isTelugu ? '📍 ప్రస్తుతం పనిచేస్తున్న డెలివరీ హబ్‌లు:' : '📍 Active Operational Delivery Hubs:',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
                 ),
                 const SizedBox(height: 6),
                 if (widget.state.locationHubs.isNotEmpty)
@@ -141,14 +145,14 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
                 ],
               ),
               alignment: Alignment.center,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.location_on_rounded, size: 16, color: Colors.white),
-                  SizedBox(width: 8),
+                  const Icon(Icons.location_on_rounded, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    '📍 Switch to Operational Hub Area',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.white),
+                    widget.state.isTelugu ? '📍 యాక్టివ్ హబ్ ప్రాంతానికి మారండి' : '📍 Switch to Operational Hub Area',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.white),
                   ),
                 ],
               ),
@@ -166,16 +170,18 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFF86EFAC)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
-                      SizedBox(width: 8),
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFF166534), size: 18),
+                      const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'Interest Recorded! We\'ll notify you when early morning drops start here.',
+                          widget.state.isTelugu
+                              ? 'మీ ఆసక్తి నమోదు చేయబడింది! ఇక్కడ డెలివరీలు ప్రారంభమైనప్పుడు మీకు తెలియజేస్తాము.'
+                              : 'Interest Recorded! We\'ll notify you when early morning drops start here.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF166534)),
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF166534)),
                         ),
                       ),
                     ],
@@ -196,7 +202,9 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: UiTone.primary,
-                                content: Text('🔔 Thanks! We recorded your interest for $cityOrTown.'),
+                                content: Text(widget.state.isTelugu
+                                    ? '🔔 ధన్యవాదాలు! $cityOrTown కోసం మీ ఆసక్తి నమోదైంది.'
+                                    : '🔔 Thanks! We recorded your interest for $cityOrTown.'),
                               ),
                             );
                           }
@@ -216,14 +224,16 @@ class _HomeServingSoonViewState extends State<HomeServingSoonView> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2, color: UiTone.primary),
                           )
-                        : const Row(
+                        : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.notifications_active_rounded, size: 16, color: UiTone.primary),
-                              SizedBox(width: 8),
+                              const Icon(Icons.notifications_active_rounded, size: 16, color: UiTone.primary),
+                              const SizedBox(width: 8),
                               Text(
-                                'Notify Me When Delivery Launches Here',
-                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: UiTone.primary),
+                                widget.state.isTelugu
+                                    ? 'ఇక్కడ డెలివరీ ప్రారంభమైనప్పుడు తెలియజేయండి'
+                                    : 'Notify Me When Delivery Launches Here',
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: UiTone.primary),
                               ),
                             ],
                           ),

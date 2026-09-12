@@ -434,7 +434,7 @@ class _PaymentSheetState extends State<PaymentSheet> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Bal: ₹${walletBal.toStringAsFixed(0)}',
+                            (state.isTelugu ? 'నిల్వ: ₹' : 'Bal: ₹') + walletBal.toStringAsFixed(0),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -456,9 +456,9 @@ class _PaymentSheetState extends State<PaymentSheet> {
                             color: const Color(0xFF0D7C66),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'Top Up',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                          child: Text(
+                            state.isTelugu ? 'టాప్ అప్' : 'Top Up',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                           ),
                         ),
                       ),
@@ -614,7 +614,10 @@ class _PaymentSheetState extends State<PaymentSheet> {
               ),
               child: _isSubmitting 
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text('Pay ₹${total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                : Text(
+                    state.isTelugu ? '₹${total.toStringAsFixed(0)} చెల్లించండి' : 'Pay ₹${total.toStringAsFixed(0)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
             ),
           ),
         ],
