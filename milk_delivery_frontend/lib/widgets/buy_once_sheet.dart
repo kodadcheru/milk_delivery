@@ -45,7 +45,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
   }
 
   double get _unitPrice =>
-      PackPricing.effectiveUnitPrice(widget.product.pricePerUnit, _packSize);
+      PackPricing.effectivePriceForProduct(widget.product, _packSize);
 
   double get _lineTotal => _unitPrice * _qty;
 
@@ -417,7 +417,7 @@ class _BuyOnceSheetState extends State<BuyOnceSheet> {
 
   Widget _packChip(String pack) {
     final selected = pack == _packSize;
-    final price = PackPricing.effectiveUnitPrice(widget.product.pricePerUnit, pack);
+    final price = PackPricing.effectivePriceForProduct(widget.product, pack);
     return GestureDetector(
       onTap: () => setState(() => _packSize = pack),
       child: AnimatedContainer(

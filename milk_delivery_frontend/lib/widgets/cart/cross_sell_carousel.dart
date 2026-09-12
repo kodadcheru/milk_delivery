@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../theme/ui_tokens.dart';
 import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/pack_pricing.dart';
+import 'pack_size_selector_sheet.dart';
 
 class CrossSellCarousel extends StatelessWidget {
   final List<ProductModel> products;
@@ -47,7 +49,11 @@ class CrossSellCarousel extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final product = products[index];
-              final inCartQty = state.cartQtyOf(product);
+              final packOptions = PackPricing.packOptionsFor(product);
+              final hasMultipleSizes = packOptions.length > 1;
+              final inCartQty = hasMultipleSizes
+                  ? state.totalCartQtyForProductId(product.id)
+                  : state.cartQtyOf(product);
 
               return Container(
                 width: 120,
@@ -117,7 +123,11 @@ class CrossSellCarousel extends StatelessWidget {
                         InkWell(
                           onTap: () {
                             HapticFeedback.selectionClick();
-                            state.addToCart(product);
+                            if (hasMultipleSizes) {
+                              PackSizeSelectorSheet.show(context, product: product, state: state);
+                            } else {
+                              state.addToCart(product);
+                            }
                           },
                           borderRadius: BorderRadius.circular(UiRadius.pill),
                           child: Container(

@@ -84,7 +84,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   List<String> get _availablePackSizes => PackPricing.sizesFor(widget.product);
 
   double get _effectiveUnitPrice =>
-      PackPricing.effectiveUnitPrice(widget.product.pricePerUnit, _selectedPackSize);
+      PackPricing.effectivePriceForProduct(widget.product, _selectedPackSize);
 
   int get _totalDeliveryDays {
     if (_schedule == 'DAILY') {
@@ -486,7 +486,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           Row(
             children: _availablePackSizes.map((size) {
               final isSelected = _selectedPackSize == size;
-              final priceForSize = PackPricing.effectiveUnitPrice(item.pricePerUnit, size);
+              final priceForSize = PackPricing.effectivePriceForProduct(item, size);
               final isRecommended = size.contains('1');
 
               return Expanded(

@@ -111,6 +111,27 @@ class ProductSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def validate_pack_sizes(self, value):
+        import json
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except Exception:
+                value = []
+        if not isinstance(value, list):
+            return []
+        cleaned = []
+        for item in value:
+            if isinstance(item, dict) and "size" in item and "price" in item:
+                try:
+                    s = str(item["size"]).strip()
+                    p = float(item["price"])
+                    if s:
+                        cleaned.append({"size": s, "price": p})
+                except (ValueError, TypeError):
+                    continue
+        return cleaned
+
     def _resolve_hub(self):
         request = self.context.get("request")
         hub = None

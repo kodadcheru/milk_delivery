@@ -3920,6 +3920,19 @@
           <input type="text" id="prodUnitQty" class="form-control" placeholder="1 Litre Glass Bottle / 6 Eggs Pack">
         </div>
       </div>
+      <!-- Explicit Pack Sizes & Custom Prices (Optional Variants) -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <label style="font-weight: 700; font-size: 12px; margin: 0; color: #FFF;"><i class="fa-solid fa-cubes-stacked" style="color: #10B981;"></i> Pack Size Variants & Custom Prices</label>
+            <div style="font-size: 11px; color: var(--text-muted);">Set explicit prices for each quantity (e.g. 500 ml -> ₹40, 1 Litre -> ₹75). No automatic halving.</div>
+          </div>
+          <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="addPackSizeRow('addProdPackSizesContainer')">
+            <i class="fa-solid fa-plus"></i> Add Size
+          </button>
+        </div>
+        <div id="addProdPackSizesContainer"></div>
+      </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
           <label>Badge Highlight</label>
@@ -4010,6 +4023,19 @@
           <label>Quantity Spec</label>
           <input type="text" id="editProdUnitQty" class="form-control">
         </div>
+      </div>
+      <!-- Explicit Pack Sizes & Custom Prices (Optional Variants) -->
+      <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <label style="font-weight: 700; font-size: 12px; margin: 0; color: #FFF;"><i class="fa-solid fa-cubes-stacked" style="color: #38BDF8;"></i> Pack Size Variants & Custom Prices</label>
+            <div style="font-size: 11px; color: var(--text-muted);">Set explicit prices for each quantity (e.g. 500 ml -> ₹40, 1 Litre -> ₹75). No automatic halving.</div>
+          </div>
+          <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="addPackSizeRow('editProdPackSizesContainer')">
+            <i class="fa-solid fa-plus"></i> Add Size
+          </button>
+        </div>
+        <div id="editProdPackSizesContainer"></div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
@@ -8484,10 +8510,13 @@
                   <input type="number" step="0.5" id="price-input-${p.id}" value="${p.price_per_unit}" style="width: 72px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: #FFF; font-weight: bold; font-size: 13px;" oninput="updatePriceHintInRow(${p.id}, '${(p.unit_quantity || p.unit || '').replace(/'/g, "\\'")}')" onchange="quickUpdateProductPrice(${p.id})">
                   <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="quickUpdateProductPrice(${p.id})" title="Save Price 💾"><i class="fa-solid fa-floppy-disk"></i></button>
                 </div>
-                <div id="price-hint-${p.id}">${getProportionalPriceHint(p.unit_quantity || p.unit, p.price_per_unit)}</div>
+                <div id="price-hint-${p.id}">${getProportionalPriceHint(p.unit_quantity || p.unit, p.price_per_unit, p)}</div>
               </div>
             </td>
-            <td><strong>${p.unit_quantity || p.unit}</strong></td>
+            <td>
+              <strong>${p.unit_quantity || p.unit}</strong>
+              ${p.pack_sizes && p.pack_sizes.length > 0 ? `<br><small style="color:#10B981; font-weight:700;">📦 ${p.pack_sizes.length} sizes configured</small>` : ''}
+            </td>
             <td><small style="color:var(--text-muted);">${p.farm_origin || 'Local Farm'}</small></td>
             <td>
               <div style="display:flex; flex-direction:column; gap:4px;">
@@ -8535,6 +8564,52 @@
       renderProductsTable(filtered);
     }
 
+    function addPackSizeRow(containerId, size = '', price = '') {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const row = document.createElement('div');
+      row.className = 'pack-size-row';
+      row.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 6px;';
+      row.innerHTML = `
+        <input type="text" class="form-control ps-size" placeholder="Size (e.g. 500 ml, 1 Litre)" value="${size.replace(/"/g, '&quot;')}" style="flex: 1.2; font-size: 12px; padding: 6px 10px;">
+        <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+          <span style="color: var(--primary-accent); font-weight: bold; font-size: 13px;">₹</span>
+          <input type="number" step="0.5" min="0" class="form-control ps-price" placeholder="Price" value="${price}" style="font-size: 12px; padding: 6px 10px;">
+        </div>
+        <button type="button" class="btn btn-danger" style="padding: 5px 8px; font-size: 11px;" onclick="this.parentElement.remove()" title="Remove size">✕</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function getPackSizesFromContainer(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return [];
+      const rows = container.querySelectorAll('.pack-size-row');
+      const packSizes = [];
+      rows.forEach(r => {
+        const size = (r.querySelector('.ps-size')?.value || '').trim();
+        const priceVal = r.querySelector('.ps-price')?.value;
+        const price = parseFloat(priceVal);
+        if (size && !isNaN(price) && price >= 0) {
+          packSizes.push({ size, price });
+        }
+      });
+      return packSizes;
+    }
+
+    function renderPackSizesInContainer(containerId, packSizes) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+      if (Array.isArray(packSizes) && packSizes.length > 0) {
+        packSizes.forEach(ps => {
+          if (ps && ps.size) {
+            addPackSizeRow(containerId, ps.size || '', ps.price != null ? ps.price : '');
+          }
+        });
+      }
+    }
+
     function openAddProductModal() {
       populateCategoryDropdowns();
       document.getElementById('prodName').value = '';
@@ -8547,6 +8622,7 @@
       document.getElementById('prodOrigin').value = 'Heritage Source, Hyderabad';
       document.getElementById('prodImage').value = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80';
       updateImagePreview('prodImage', 'prodImagePreview');
+      renderPackSizesInContainer('addProdPackSizesContainer', []);
       
       document.getElementById('addProductModal').style.display = 'flex';
     }
@@ -8564,6 +8640,7 @@
       const badge = document.getElementById('prodBadge').value.trim();
       const origin = document.getElementById('prodOrigin').value.trim();
       const img = document.getElementById('prodImage').value.trim();
+      const pack_sizes = getPackSizesFromContainer('addProdPackSizesContainer');
 
       if (!name || !price) {
         alert('Please enter Item Name and Price.');
@@ -8583,6 +8660,7 @@
             description: desc,
             price_per_unit: price,
             unit_quantity: unitQty,
+            pack_sizes,
             badge_text: badge,
             farm_origin: origin,
             image_url: img,
@@ -8633,6 +8711,7 @@
       document.getElementById('editProdImage').value = p.image_url || '';
       updateImagePreview('editProdImage', 'editProdImagePreview');
       document.getElementById('editProdDesc').value = p.description || '';
+      renderPackSizesInContainer('editProdPackSizesContainer', p.pack_sizes || []);
 
       document.getElementById('editProductModal').style.display = 'flex';
     }
@@ -8652,6 +8731,7 @@
       const origin = document.getElementById('editProdOrigin').value.trim();
       const img = document.getElementById('editProdImage').value.trim();
       const desc = document.getElementById('editProdDesc').value.trim();
+      const pack_sizes = getPackSizesFromContainer('editProdPackSizesContainer');
 
       if (isNaN(price) || price < 0) {
         alert('Please enter a valid price.');
@@ -8671,6 +8751,7 @@
             description: desc,
             price_per_unit: price,
             unit_quantity: unitQty,
+            pack_sizes,
             badge_text: badge,
             farm_origin: origin,
             image_url: img
@@ -8769,40 +8850,25 @@
       }
     }
 
-    function getProportionalPriceHint(unitQtyStr, priceVal) {
-      if (!unitQtyStr || priceVal === '' || isNaN(priceVal)) return '';
-      const s = unitQtyStr.toLowerCase();
-      const p = parseFloat(priceVal);
-      if (isNaN(p) || p <= 0) return '';
-
-      if (s.includes('1 liter') || s.includes('1 litre') || s.includes('1 l') || s.includes('1000 ml') || s.includes('1 kg') || s.includes('1000 g') || s.includes('12 egg') || s.includes('1 dozen')) {
-        const half = (p / 2).toFixed(2);
-        let label = '500 mL';
-        if (s.includes('kg') || s.includes('g')) label = '500 g';
-        if (s.includes('egg') || s.includes('dozen')) label = '6 Eggs';
-        return `<div style="font-size: 10px; color: #34D399; margin-top: 2px; font-weight: 600;">💡 Half Price (${label}): ₹${half}</div>`;
-      }
-
-      if (s.includes('500 ml') || s.includes('500 g') || s.includes('6 egg')) {
-        const full = (p * 2).toFixed(2);
-        let label = '1 Litre';
-        if (s.includes('g')) label = '1 kg';
-        if (s.includes('egg')) label = '12 Eggs';
-        return `<div style="font-size: 10px; color: #38BDF8; margin-top: 2px; font-weight: 600;">💡 Full Unit (${label}): ₹${full}</div>`;
+    function getProportionalPriceHint(unitQtyStr, priceVal, productObj) {
+      if (productObj && Array.isArray(productObj.pack_sizes) && productObj.pack_sizes.length > 0) {
+        return `<div style="font-size: 10px; color: #10B981; margin-top: 2px; font-weight: 600;">📦 Sizes: ${productObj.pack_sizes.map(x => x.size + ' (₹' + x.price + ')').join(', ')}</div>`;
       }
       return '';
     }
 
     function updatePriceHintInRow(id, unitQty) {
+      const p = rawProducts.find(item => item.id === id);
       const val = document.getElementById(`price-input-${id}`)?.value;
       const hintEl = document.getElementById(`price-hint-${id}`);
-      if (hintEl) hintEl.innerHTML = getProportionalPriceHint(unitQty, val);
+      if (hintEl) hintEl.innerHTML = getProportionalPriceHint(unitQty, val, p);
     }
 
     function updateBatchPriceHint(id, unitQty) {
+      const p = rawProducts.find(item => item.id === id);
       const val = document.getElementById(`batch-price-${id}`)?.value;
       const hintEl = document.getElementById(`batch-price-hint-${id}`);
-      if (hintEl) hintEl.innerHTML = getProportionalPriceHint(unitQty, val);
+      if (hintEl) hintEl.innerHTML = getProportionalPriceHint(unitQty, val, p);
     }
 
     function openQuickPriceEditorModal() {

@@ -41,8 +41,10 @@ class SubscriptionModel {
 
   double get displayPrice {
     if (effectiveUnitPrice > 0) return effectiveUnitPrice;
-    final basePrice = productDetail?.pricePerUnit ?? 0;
-    return PackPricing.effectiveUnitPrice(basePrice.toDouble(), packSize);
+    if (productDetail != null) {
+      return PackPricing.effectivePriceForProduct(productDetail!, packSize);
+    }
+    return 0.0;
   }
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {

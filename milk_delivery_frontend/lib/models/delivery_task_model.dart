@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import '../config/app_config.dart';
 import 'subscription_model.dart';
 import 'user_model.dart';

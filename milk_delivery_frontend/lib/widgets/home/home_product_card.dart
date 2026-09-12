@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/product_model.dart';
 import '../../providers/app_state.dart';
+import '../../services/pack_pricing.dart';
 import '../../theme/ui_format.dart';
 import '../../theme/ui_tokens.dart';
 import '../buy_once_sheet.dart';
+import '../cart/pack_size_selector_sheet.dart';
 import '../floating_cart_bar.dart'; // ignore: unused_import
 import '../product_detail_sheet.dart';
 import 'home_location_sheet.dart';
@@ -56,7 +58,11 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
     final state = widget.state;
     final item = widget.item;
     final isCovered = state.isLocationCovered;
-    final inCartQty = state.cartQtyOf(item);
+    final packOptions = PackPricing.packOptionsFor(item);
+    final hasMultipleSizes = packOptions.length > 1;
+    final inCartQty = hasMultipleSizes
+        ? state.totalCartQtyForProductId(item.id)
+        : state.cartQtyOf(item);
 
     Widget card = Container(
       decoration: BoxDecoration(
@@ -275,7 +281,7 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
                             ),
 
                             // Controls: Subscribe + ADD
-                            if (!item.isOutOfStock) _buildCartControl(context, inCartQty),
+                            if (!item.isOutOfStock) _buildCartControl(context, inCartQty, hasMultipleSizes),
                           ],
                         ),
                       ],
@@ -304,7 +310,7 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
     return card;
   }
 
-  Widget _buildCartControl(BuildContext context, int inCartQty) {
+  Widget _buildCartControl(BuildContext context, int inCartQty, bool hasMultipleSizes) {
     final state = widget.state;
     final item = widget.item;
     if (!state.isLocationCovered) {
@@ -401,7 +407,11 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
                       onTap: () async {
                         HapticFeedback.selectionClick();
                         _addBounceController.forward().then((_) => _addBounceController.reverse());
-                        state.addToCart(item);
+                        if (hasMultipleSizes) {
+                          PackSizeSelectorSheet.show(context, product: item, state: state);
+                        } else {
+                          state.addToCart(item);
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -417,30 +427,57 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
                       ),
                     ),
                   )
-                : Row(
-                    key: ValueKey('stepper_$inCartQty'),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _stepButton(Icons.remove_rounded, () => state.decreaseCartQty(item)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-                          child: Text(
-                            '$inCartQty',
-                            key: ValueKey<int>(inCartQty),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
+                : (hasMultipleSizes
+                    ? GestureDetector(
+                        key: ValueKey('in_cart_multi_$inCartQty'),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          PackSizeSelectorSheet.show(context, product: item, state: state);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '$inCartQty',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              const Icon(Icons.arrow_drop_down_rounded, size: 14, color: Colors.white),
+                            ],
                           ),
                         ),
-                      ),
-                      _stepButton(Icons.add_rounded, () => state.addToCart(item)),
-                    ],
-                  ),
+                      )
+                    : Row(
+                        key: ValueKey('stepper_$inCartQty'),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _stepButton(Icons.remove_rounded, () => state.decreaseCartQty(item)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                              child: Text(
+                                '$inCartQty',
+                                key: ValueKey<int>(inCartQty),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          _stepButton(Icons.add_rounded, () => state.addToCart(item)),
+                        ],
+                      )),
           ),
         ),
       ],

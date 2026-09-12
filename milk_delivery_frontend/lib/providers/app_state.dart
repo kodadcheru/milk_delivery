@@ -598,6 +598,16 @@ class AppState extends ChangeNotifier {
   /// what a per-line stepper/badge should display so shown == changed.
   int cartQtyOf(ProductModel product) => cartItems[cartKey(product)]?.value ?? 0;
 
+  /// Total quantity of all variants/sizes of a product in the cart.
+  int totalCartQtyForProductId(int productId) {
+    var count = 0;
+    for (final entry in cartItems.values) {
+      if (entry.key.id == productId) {
+        count += entry.value;
+      }
+    }
+    return count;
+  }
 
   void addToCart(ProductModel product) {
     HapticFeedback.lightImpact();
@@ -629,6 +639,34 @@ class AppState extends ChangeNotifier {
     } else {
       cartItems[key] = MapEntry(cartItems[key]?.key ?? product, qty);
     }
+    notifyListeners();
+    _persistCart();
+  }
+
+  /// Updates an existing cart item's pack size and unit price dynamically from the cart dropdown.
+  void updateCartItemPackSize(ProductModel oldProduct, String newSize, double newPrice) {
+    final oldKey = cartKey(oldProduct);
+    final existingEntry = cartItems[oldKey];
+    if (existingEntry == null) return;
+
+    HapticFeedback.selectionClick();
+    final qty = existingEntry.value;
+    final updatedProduct = oldProduct.copyWith(
+      unitQuantity: newSize,
+      pricePerUnit: newPrice,
+    );
+    final newKey = cartKey(updatedProduct);
+
+    if (oldKey == newKey) return;
+
+    cartItems.remove(oldKey);
+    if (cartItems.containsKey(newKey)) {
+      final existingTargetQty = cartItems[newKey]!.value;
+      cartItems[newKey] = MapEntry(updatedProduct, existingTargetQty + qty);
+    } else {
+      cartItems[newKey] = MapEntry(updatedProduct, qty);
+    }
+
     notifyListeners();
     _persistCart();
   }

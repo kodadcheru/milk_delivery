@@ -101,11 +101,7 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         elif cat_name is not None and str(cat_name).strip():
             save_kwargs["category"] = str(cat_name).strip()
 
-        updated_instance = serializer.save(**save_kwargs)
-        try:
-            update_sibling_product_prices(updated_instance)
-        except Exception:
-            pass
+        serializer.save(**save_kwargs)
 
 
 class ProductToggleSubscriptionView(APIView):
