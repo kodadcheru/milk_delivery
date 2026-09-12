@@ -818,7 +818,7 @@ class _LegalTermsScreenState extends State<LegalTermsScreen> with SingleTickerPr
             ),
             const SizedBox(width: 10),
             ElevatedButton.icon(
-              onPressed: () => _launchEmail('grievance@pambamilk.com', 'Legal/Privacy Query - Pamba Milk App'),
+              onPressed: () => _launchEmail('grievance@pambamilk.com', 'Legal/Privacy Query - Pamba App'),
               icon: const Icon(Icons.mail_outline_rounded, size: 16),
               label: Text(isTe ? 'ఈమెయిల్' : 'Email Legal'),
               style: ElevatedButton.styleFrom(

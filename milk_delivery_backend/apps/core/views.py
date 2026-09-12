@@ -55,7 +55,7 @@ class HealthCheckView(APIView):
 
         payload = {
             "status": "UP" if is_healthy else "DEGRADED",
-            "service": "Pamba Fresh Delivery API",
+            "service": "Pamba Delivery API",
             "version": "1.0.0-production",
             "timestamp": timezone.now().isoformat(),
             "uptime": uptime_human,
@@ -114,7 +114,7 @@ def privacy_policy_view(request):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Pamba Fresh</title>
+    <title>Privacy Policy - Pamba</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1e293b; }
         h1 { color: #059669; }
@@ -124,7 +124,7 @@ def privacy_policy_view(request):
 <body>
     <h1>Privacy Policy</h1>
     <p><em>Last updated: September 2026</em></p>
-    <p>Welcome to <strong>Pamba Fresh</strong> ("we", "our", or "us"). We provide daily morning fresh milk and dairy doorstep delivery services. This Privacy Policy explains how we collect, use, and protect your information when you use our mobile application and services.</p>
+    <p>Welcome to <strong>Pamba</strong> ("we", "our", or "us"). We provide daily morning fresh milk and dairy doorstep delivery services. This Privacy Policy explains how we collect, use, and protect your information when you use our mobile application and services.</p>
     
     <h2>1. Information We Collect</h2>
     <ul>
@@ -154,7 +154,7 @@ def terms_of_service_view(request):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - Pamba Fresh</title>
+    <title>Terms of Service - Pamba</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1e293b; }
         h1 { color: #059669; }
@@ -164,7 +164,7 @@ def terms_of_service_view(request):
 <body>
     <h1>Terms of Service</h1>
     <p><em>Last updated: September 2026</em></p>
-    <p>Welcome to <strong>Pamba Fresh</strong>. By using our application, you agree to these Terms of Service.</p>
+    <p>Welcome to <strong>Pamba</strong>. By using our application, you agree to these Terms of Service.</p>
 
     <h2>1. Subscriptions & Morning Delivery</h2>
     <p>Daily farm-fresh milk deliveries are carried out between 5:30 AM and 7:00 AM. Any vacation pause or subscription change must be made prior to the evening cutoff time.</p>

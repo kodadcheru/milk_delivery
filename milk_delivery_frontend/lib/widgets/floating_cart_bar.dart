@@ -1687,7 +1687,7 @@ class FloatingCartBar extends StatelessWidget {
                                   final options = <String, dynamic>{
                                     'key': keyId.isNotEmpty ? keyId : 'rzp_test_TZqYcaKAOxoDP7',
                                     'amount': amountPaise,
-                                    'name': 'Pamba Fresh',
+                                    'name': 'Pamba',
                                     'description': 'Express Order (₹${total.toStringAsFixed(0)})',
                                     'prefill': {
                                       'contact': state.currentUser?.phone ?? '',

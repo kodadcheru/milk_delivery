@@ -99,7 +99,7 @@ class OrderInvoiceSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Pamba Fresh', style: UiText.h2.copyWith(fontSize: 18, color: UiTone.primaryDark)),
+                          Text('Pamba', style: UiText.h2.copyWith(fontSize: 18, color: UiTone.primaryDark)),
                           Text('Official Delivery Receipt & Tax Invoice', style: UiText.caption.copyWith(color: UiTone.softText)),
                         ],
                       ),

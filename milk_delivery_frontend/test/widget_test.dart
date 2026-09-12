@@ -3,8 +3,8 @@ import 'package:milk_delivery_frontend/main.dart';
 
 void main() {
   testWidgets('App boots with Pamba branding smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const MilkDeliveryApp());
-    expect(find.byType(MilkDeliveryApp), findsOneWidget);
+    await tester.pumpWidget(const PambaApp());
+    expect(find.byType(PambaApp), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
   });
 }

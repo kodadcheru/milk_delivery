@@ -117,7 +117,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                                 const Text('🥛', style: TextStyle(fontSize: 12)),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Pamba Daily',
+                                  'Pamba',
                                   style: TextStyle(color: UiTone.primary, fontSize: 11, fontWeight: FontWeight.w800),
                                 ),
                               ],

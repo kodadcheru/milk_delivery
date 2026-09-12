@@ -5,6 +5,8 @@ import 'package:milk_delivery_frontend/models/subscription_model.dart';
 import 'package:milk_delivery_frontend/providers/app_state.dart';
 import 'package:milk_delivery_frontend/widgets/subscriptions/subscription_card.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() {
   group('Subscription Pause and Resume Tests', () {
     late AppState state;
@@ -12,6 +14,7 @@ void main() {
     late SubscriptionModel activeSub;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       state = AppState();
       product = ProductModel(
         id: 1,

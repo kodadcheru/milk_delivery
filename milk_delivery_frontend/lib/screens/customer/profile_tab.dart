@@ -605,7 +605,7 @@ class ProfileTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Pamba Fresh Dairy',
+                        'Pamba',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                       ),
                       Text(
@@ -631,8 +631,8 @@ class ProfileTab extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               isTe
-                  ? 'పాంబ ఫ్రెష్ అనేది స్వచ్ఛమైన, రసాయనాలు లేని పాలను తెల్లవారుజామునే మీ ఇంటి గుమ్మానికి చేర్చే ఆధునిక డైరీ సేవ. మేము పాలను సేకరించిన 12 గంటల లోపే కచ్చితమైన కోల్డ్ చైన్ పద్ధతిలో మీకు అందిస్తాము.'
-                  : 'Pamba Fresh is a farm-to-doorstep dairy platform committed to delivering pure, unadulterated milk and fresh breakfast essentials to your family within 12 hours of milking, preserved in a continuous chilled cold chain (<4°C).',
+                  ? 'పాంబ అనేది స్వచ్ఛమైన, రసాయనాలు లేని పాలను తెల్లవారుజామునే మీ ఇంటి గుమ్మానికి చేర్చే ఆధునిక సేవ. మేము పాలను సేకరించిన 12 గంటల లోపే కచ్చితమైన కోల్డ్ చైన్ పద్ధతిలో మీకు అందిస్తాము.'
+                  : 'Pamba is a farm-to-doorstep platform committed to delivering pure, unadulterated milk and fresh essentials to your family within 12 hours of milking, preserved in a continuous chilled cold chain (<4°C).',
               style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), height: 1.45),
             ),
             const SizedBox(height: 16),

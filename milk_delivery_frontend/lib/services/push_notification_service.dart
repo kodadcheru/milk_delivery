@@ -211,7 +211,7 @@ class PushNotificationService {
   }
 
   void _showForegroundNotification(RemoteMessage message) {
-    final title = message.notification?.title ?? message.data['title'] ?? 'Pamba Milk Delivery';
+    final title = message.notification?.title ?? message.data['title'] ?? 'Pamba';
     final body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? '';
 
     const androidDetails = AndroidNotificationDetails(

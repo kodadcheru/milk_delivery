@@ -1695,7 +1695,7 @@ class AppState extends ChangeNotifier {
       final options = <String, dynamic>{
         'key': keyId.isNotEmpty ? keyId : 'rzp_test_TZqYcaKAOxoDP7',
         'amount': amountPaise,
-        'name': 'Pamba Fresh',
+        'name': 'Pamba',
         'description': 'Wallet Top-Up ₹${amount.toStringAsFixed(0)}',
         'prefill': {
           'contact': currentUser?.phone ?? '',

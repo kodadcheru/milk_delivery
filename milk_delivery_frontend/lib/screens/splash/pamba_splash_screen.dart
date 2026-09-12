@@ -227,7 +227,7 @@ class _PambaSplashScreenState extends State<PambaSplashScreen>
                           child: Opacity(
                             opacity: wordmarkAnim.clamp(0.0, 1.0),
                             child: const Text(
-                              'Pamba Fresh',
+                              'Pamba',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white,

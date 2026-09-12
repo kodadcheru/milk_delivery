@@ -108,17 +108,17 @@ void main() async {
     };
   }
 
-  runApp(const MilkDeliveryApp());
+  runApp(const PambaApp());
 }
 
-class MilkDeliveryApp extends StatefulWidget {
-  const MilkDeliveryApp({super.key});
+class PambaApp extends StatefulWidget {
+  const PambaApp({super.key});
 
   @override
-  State<MilkDeliveryApp> createState() => _MilkDeliveryAppState();
+  State<PambaApp> createState() => _PambaAppState();
 }
 
-class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
+class _PambaAppState extends State<PambaApp> {
   static final GlobalKey<NavigatorState> _navigatorKey = PushNotificationService.navigatorKey;
   late final AppState _appState;
   bool _isLoggedIn = false;
@@ -204,7 +204,7 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
         if (Firebase.apps.isNotEmpty)
           FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
       ],
-      title: '${AppConfig.appName} 🥛',
+      title: 'Pamba',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,

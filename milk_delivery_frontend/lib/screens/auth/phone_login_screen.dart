@@ -286,7 +286,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: UiTone.primary,
-            content: Text('🎉 Registration Complete! Welcome to Pamba Fresh.'),
+            content: Text('🎉 Registration Complete! Welcome to Pamba.'),
           ),
         );
       }
@@ -449,7 +449,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Pamba Fresh',
+            'Pamba',
             style: TextStyle(
               color: Colors.white,
               fontSize: 28,

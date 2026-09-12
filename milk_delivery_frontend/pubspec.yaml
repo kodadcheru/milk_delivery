@@ -1,5 +1,5 @@
 name: milk_delivery_frontend
-description: "Pamba Fresh — Farm Fresh Milk & Morning Grocery Delivery App."
+description: "Pamba — Daily Milk & Grocery Delivery App."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

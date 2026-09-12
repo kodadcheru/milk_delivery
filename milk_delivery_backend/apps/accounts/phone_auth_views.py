@@ -312,16 +312,16 @@ class RegisterMobileUserView(APIView):
             # Welcome Notification with bonus
             Notification.objects.create(
                 user=user,
-                title="🥛 Welcome to Pamba Fresh!",
-                message=f"Hello {first_name}! ₹{bonus_amount} welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
+                title="🥛 Welcome to Pamba!",
+                message=f"Hello {first_name}! ₹{bonus_amount} welcome bonus credited to your prepaid wallet. Browse our catalog to subscribe or order.",
                 notification_type=Notification.Types.WALLET,
             )
         else:
             # Standard Welcome Notification without bonus
             Notification.objects.create(
                 user=user,
-                title="🥛 Welcome to Pamba Fresh!",
-                message=f"Hello {first_name}! Welcome to Pamba Fresh. Browse our farm fresh catalog to subscribe or order.",
+                title="🥛 Welcome to Pamba!",
+                message=f"Hello {first_name}! Welcome to Pamba. Browse our catalog to subscribe or order.",
                 notification_type=Notification.Types.SYSTEM,
             )
 
@@ -528,15 +528,15 @@ class FirebaseRegisterView(APIView):
             )
             Notification.objects.create(
                 user=user,
-                title="🥛 Welcome to Pamba Fresh!",
-                message=f"Hello {first_name}! ₹{bonus_amount} welcome bonus credited to your prepaid wallet. Browse our farm fresh catalog to subscribe or order.",
+                title="🥛 Welcome to Pamba!",
+                message=f"Hello {first_name}! ₹{bonus_amount} welcome bonus credited to your prepaid wallet. Browse our catalog to subscribe or order.",
                 notification_type=Notification.Types.WALLET,
             )
         else:
             Notification.objects.create(
                 user=user,
-                title="🥛 Welcome to Pamba Fresh!",
-                message=f"Hello {first_name}! Welcome to Pamba Fresh. Browse our farm fresh catalog to subscribe or order.",
+                title="🥛 Welcome to Pamba!",
+                message=f"Hello {first_name}! Welcome to Pamba. Browse our catalog to subscribe or order.",
                 notification_type=Notification.Types.SYSTEM,
             )
 
