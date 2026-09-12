@@ -327,7 +327,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         final sub = task.subscriptionDetail;
         final prod = sub?.productDetail;
         final fallbackPrice = widget.state.products.isNotEmpty ? widget.state.products.first.pricePerUnit : 0.0;
-        final price = prod?.pricePerUnit ?? sub?.effectiveUnitPrice ?? fallbackPrice;
+        final price = (sub?.displayPrice ?? 0) > 0 
+            ? sub!.displayPrice 
+            : (prod?.pricePerUnit ?? fallbackPrice);
         final qty = sub?.quantity ?? 1;
         final date = task.deliveryDate.isNotEmpty ? task.deliveryDate : 'Today';
         revenueByDay[date] = (revenueByDay[date] ?? 0) + (price * qty);

@@ -239,7 +239,7 @@ class AdminCustomerDetailView(APIView):
                 "hub_name": assigned_hub.name if assigned_hub else "Kodad Depot",
                 "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-KDD-01",
                 "start_date": str(s.start_date),
-                "monthly_value": float(s.product.price_per_unit * s.quantity * 30),
+                "monthly_value": float((s.effective_unit_price if s.effective_unit_price else s.product.price_per_unit) * s.quantity * 30),
                 "created_at": s.created_at.strftime("%d %b %Y"),
             })
 
@@ -926,7 +926,7 @@ class AdminSubscriptionsListView(APIView):
                 "hub_code": assigned_hub.hub_code if assigned_hub else "HUB-KOD-01",
                 "start_date": str(s.start_date),
                 "created_at": s.created_at.strftime("%d %b %Y"),
-                "estimated_monthly_value": float(s.product.price_per_unit * s.quantity * 30),
+                "estimated_monthly_value": float((s.effective_unit_price if s.effective_unit_price else s.product.price_per_unit) * s.quantity * 30),
             })
         return Response(data)
 
@@ -974,7 +974,8 @@ class AdminSubscriptionDetailView(APIView):
                 "created_at": v.created_at.strftime("%d %b %Y") if hasattr(v, "created_at") else "",
             })
 
-        daily_cost = float(s.product.price_per_unit * s.quantity)
+        effective_price = s.effective_unit_price if s.effective_unit_price else s.product.price_per_unit
+        daily_cost = float(effective_price * s.quantity)
         data = {
             "id": s.id,
             "status": s.status,
@@ -1529,11 +1530,22 @@ class AdminSubscriptionCreateView(APIView):
 
         delivery_slot = request.data.get("delivery_slot") or customer.delivery_slot_preference or "05:30 AM - 07:00 AM"
 
+        base_price = float(product.price_per_unit)
+        pack_size_val = request.data.get('pack_size', '1 Litre') or '1 Litre'
+        if '500' in pack_size_val.lower():
+            effective_price = round(base_price * 0.5, 2)
+        elif '2' in pack_size_val.lower() and ('litre' in pack_size_val.lower() or 'liter' in pack_size_val.lower() or 'kg' in pack_size_val.lower()):
+            effective_price = round(base_price * 2.0, 2)
+        else:
+            effective_price = base_price
+
         sub = Subscription.objects.create(
             customer=customer,
             product=product,
             hub=hub,
             quantity=quantity,
+            pack_size=pack_size_val,
+            effective_unit_price=effective_price,
             schedule_type=schedule_type,
             start_date=start_date_str,
             delivery_slot=delivery_slot,

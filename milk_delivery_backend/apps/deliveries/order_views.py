@@ -371,8 +371,29 @@ class ExpressOrderListCreateView(APIView):
             if not pack_size:
                 pack_size = getattr(prod, "unit_quantity", "1 Litre")
 
-            # Always use server-side product price
-            unit_price = prod.price_per_unit
+            from apps.products.pricing import calculate_proportional_price
+            frontend_price = item_entry.get("unit_price")
+            if frontend_price is not None:
+                try:
+                    unit_price = Decimal(str(frontend_price))
+                except Exception:
+                    unit_price = None
+            else:
+                unit_price = None
+
+            if unit_price is None:
+                if pack_size and pack_size != prod.unit_quantity:
+                    calculated_price = calculate_proportional_price(
+                        source_price=float(prod.price_per_unit),
+                        source_unit_qty=prod.unit_quantity,
+                        target_unit_qty=pack_size
+                    )
+                    if calculated_price is not None:
+                        unit_price = Decimal(str(calculated_price))
+                    else:
+                        unit_price = prod.price_per_unit
+                else:
+                    unit_price = prod.price_per_unit
 
             total_amount += unit_price * qty
             parsed_items.append({

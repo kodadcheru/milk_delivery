@@ -1926,7 +1926,15 @@ class AppState extends ChangeNotifier {
 
       if (currentUser != null && currentUser!.role == 'CUSTOMER') {
         final completedTask = deliveries.where((d) => d.id == taskId).firstOrNull;
-        double debitAmount = completedTask?.subscriptionDetail?.productDetail?.pricePerUnit ?? 0.0;
+        final sub = completedTask?.subscriptionDetail;
+        double debitAmount = 0.0;
+        if (sub != null) {
+          // Use effective unit price (pack-size adjusted), fallback to base price
+          final unitPrice = sub.displayPrice > 0 
+              ? sub.displayPrice 
+              : (sub.productDetail?.pricePerUnit ?? 0.0);
+          debitAmount = unitPrice * sub.quantity;
+        }
         if (debitAmount > 0) {
           double newBal = currentUser!.walletBalance - debitAmount;
           currentUser = currentUser!.copyWith(walletBalance: newBal > 0 ? newBal : 0.0);
@@ -1982,8 +1990,15 @@ class AppState extends ChangeNotifier {
     double total = 0;
     for (var d in deliveries) {
       if (d.status == 'DELIVERED') {
-        double price = d.subscriptionDetail?.productDetail?.pricePerUnit ?? 72.0;
-        int qty = d.subscriptionDetail?.quantity ?? 1;
+        final sub = d.subscriptionDetail;
+        double price = DeliveryTaskModel.kDefaultMilkPrice;
+        int qty = 1;
+        if (sub != null) {
+          price = sub.displayPrice > 0 
+              ? sub.displayPrice 
+              : (sub.productDetail?.pricePerUnit ?? DeliveryTaskModel.kDefaultMilkPrice);
+          qty = sub.quantity;
+        }
         total += price * qty;
       }
     }

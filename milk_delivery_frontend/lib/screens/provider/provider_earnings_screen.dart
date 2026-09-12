@@ -385,7 +385,9 @@ class _ProviderEarningsScreenState extends State<ProviderEarningsScreen> {
       final sub = task.subscriptionDetail;
       final prod = sub?.productDetail;
       final pName = prod?.name ?? (task.productName.isNotEmpty ? task.productName : 'Farm Fresh Milk');
-      final pPrice = (prod?.pricePerUnit ?? (sub?.displayPrice ?? task.pricePerUnit)).toDouble();
+      final pPrice = ((sub?.displayPrice ?? 0) > 0 
+          ? sub!.displayPrice 
+          : (prod?.pricePerUnit ?? task.pricePerUnit)).toDouble();
       final qty = (sub?.quantity ?? task.quantity).toDouble();
       final itemRev = pPrice * qty;
 

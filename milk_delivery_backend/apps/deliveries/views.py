@@ -1034,10 +1034,15 @@ class GenerateTodayTasksView(APIView):
 
                 # Update product unit price (Milk products only - protect ghee, honey, paneer)
                 first_w = product_name.split()[0] if product_name else "Milk"
-                Product.objects.filter(
+                matching_products = Product.objects.filter(
                     Q(name__iexact=product_name) |
                     (Q(name__icontains=first_w) & Q(name__icontains="milk"))
-                ).update(price_per_unit=float(price_val))
+                )
+                from apps.products.pricing import update_sibling_product_prices
+                for p in matching_products:
+                    p.price_per_unit = float(price_val)
+                    p.save(update_fields=['price_per_unit'])
+                    update_sibling_product_prices(p)
             except Exception as batch_err:
                 logger.warning(f"Batch certification warning: {batch_err}")
 
@@ -1425,6 +1430,7 @@ class DailyMilkBatchListCreateView(APIView):
 
         # Sync/Update matching product's unit price in database (Milk products only!)
         try:
+            from apps.products.pricing import update_sibling_product_prices
             first_word = product_name.split()[0] if product_name.split() else "Milk"
             matching_products = Product.objects.filter(
                 models.Q(name__iexact=product_name) |
@@ -1433,6 +1439,7 @@ class DailyMilkBatchListCreateView(APIView):
             for p in matching_products:
                 p.price_per_unit = litre_price
                 p.save(update_fields=["price_per_unit"])
+                update_sibling_product_prices(p)
         except Exception as e:
             logger.warning(f"Failed to update matching product unit price for batch {batch.batch_code}: {e}")
 

@@ -4,6 +4,8 @@ import 'subscription_model.dart';
 import 'user_model.dart';
 
 class DeliveryTaskModel {
+  static const double kDefaultMilkPrice = 72.0;
+
   final int id;
   final int subscriptionId;
   final SubscriptionModel? subscriptionDetail;
@@ -69,7 +71,7 @@ class DeliveryTaskModel {
     this.productImage = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&q=80',
     this.quantity = 1,
     this.packSize = '1 Litre',
-    this.pricePerUnit = 72.0,
+    this.pricePerUnit = kDefaultMilkPrice,
     this.fatPercentage = 6.8,
     this.snfPercentage = 9.0,
     this.waterPercentage = 0.0,
@@ -127,7 +129,7 @@ class DeliveryTaskModel {
     }
 
     final rawPrice = json['price_per_unit'] ?? (subDetail?.productDetail?.pricePerUnit);
-    final parsedPrice = double.tryParse(rawPrice?.toString() ?? '72.0') ?? 72.0;
+    final parsedPrice = double.tryParse(rawPrice?.toString() ?? '$kDefaultMilkPrice') ?? kDefaultMilkPrice;
 
     final parsedFat = double.tryParse(json['fat_percentage']?.toString() ?? '6.8') ?? 6.8;
     final parsedSnf = double.tryParse(json['snf_percentage']?.toString() ?? '9.0') ?? 9.0;

@@ -133,11 +133,12 @@ class SubscriptionModel {
   }
 
   double get monthlySavings {
-    if (effectiveUnitPrice > 0 && productDetail != null) {
-      final mrp = productDetail!.pricePerUnit;
-      if (effectiveUnitPrice < mrp) {
-        return (mrp - effectiveUnitPrice) * quantity * 30.0;
-      }
+    // Only calculate savings based on the cosmetic markup (12%)
+    // Not from pack-size price differences
+    final displayP = displayPrice;
+    if (displayP > 0) {
+      final cosmeticMrp = displayP * 1.12;  // Matches UiFormat._strikeMarkup
+      return (cosmeticMrp - displayP) * quantity * 30.0;
     }
     return 0.0;
   }

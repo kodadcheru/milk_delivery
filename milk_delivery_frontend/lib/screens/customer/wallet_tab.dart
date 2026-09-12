@@ -188,12 +188,14 @@ class _WalletTabState extends State<WalletTab> {
     );
   }
 
+  static const double _kDefaultDailyMilkCost = 68.0;
+
   @override
   Widget build(BuildContext context) {
     final bal = widget.state.currentUser?.walletBalance ?? 0.0;
     final allTxs = widget.state.transactions;
-    // Assuming a base price of 68.0 for 1L of milk as a fallback
-    int estDays = (bal / 68.0).floor();
+    // Estimated days based on default milk cost
+    int estDays = (bal / _kDefaultDailyMilkCost).floor();
 
     final filteredTxs = allTxs.where((t) {
       if (_selectedFilter == 'CREDIT') return t.transactionType == 'CREDIT';

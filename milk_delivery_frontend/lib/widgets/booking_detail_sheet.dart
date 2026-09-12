@@ -171,7 +171,7 @@ class BookingDetailSheet extends StatelessWidget {
     if (isExpress) {
       totalAmount = liveOrder!.totalAmount;
     } else if (subscriptionTask != null) {
-      totalAmount = (subscriptionTask!.pricePerUnit > 0 ? subscriptionTask!.pricePerUnit : 40.0) *
+      totalAmount = (subscriptionTask!.pricePerUnit > 0 ? subscriptionTask!.pricePerUnit : DeliveryTaskModel.kDefaultMilkPrice) *
           (subscriptionTask!.quantity > 0 ? subscriptionTask!.quantity : 1);
     }
 
