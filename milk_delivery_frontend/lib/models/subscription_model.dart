@@ -28,6 +28,7 @@ class SubscriptionModel {
     required this.quantity,
     required this.scheduleType,
     required this.startDate,
+    this.endDate,
     required this.status,
     this.deliveryAddress = 'Doorstep Drop',
     this.deliverySlot = AppConfig.defaultMorningSlot,
