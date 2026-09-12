@@ -10,7 +10,7 @@ class AppTheme {
   // ColorScheme seed matches the teal painted on custom surfaces app-wide.
   static const Color primaryTeal = UiTone.primary;
   static const Color primaryMint = UiTone.secondary;
-  static const Color primaryDark = Color(0xFF0D5C56); // Rich Forest Teal
+  static const Color primaryDark = Color(0xFF074B3E); // Rich Forest Teal
   static const Color accentAmber = Color(0xFFF59E0B); // Solar Amber Glow
   static const Color accentCyan = Color(0xFF06B6D4);  // Pure Spring Cyan
   static const Color accentViolet = Color(0xFF8B5CF6); // Lavender Frost

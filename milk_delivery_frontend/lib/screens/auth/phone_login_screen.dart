@@ -429,9 +429,14 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
                   color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+                  blurRadius: 48,
+                  offset: const Offset(0, 16),
                 ),
               ],
             ),
@@ -444,7 +449,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Pamba',
+            'Pamba Fresh',
             style: TextStyle(
               color: Colors.white,
               fontSize: 28,

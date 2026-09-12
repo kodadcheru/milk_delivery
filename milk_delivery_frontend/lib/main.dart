@@ -211,9 +211,26 @@ class _MilkDeliveryAppState extends State<MilkDeliveryApp> {
       home: ListenableBuilder(
         listenable: _appState,
         builder: (context, child) => AnimatedSwitcher(
-          duration: const Duration(milliseconds: 450),
-          switchInCurve: Curves.easeIn,
-          switchOutCurve: Curves.easeOut,
+          duration: const Duration(milliseconds: 550),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            // For the incoming screen (new child), just fade in
+            // For the outgoing screen (splash), slide up slightly + fade out
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.02),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              ),
+            );
+          },
           child: (_showSplash || _isInitializing)
               ? PambaSplashScreen(
                   key: const ValueKey('pamba_splash_screen'),

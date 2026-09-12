@@ -10,7 +10,15 @@ class UiTone {
   static const Color ink = Color(0xFF0F172A);
   static const Color softText = Color(0xFF475569);
   static const Color primary = Color(0xFF0D7C66);
-  static const Color primaryDark = Color(0xFF0A5C4C);
+  static const Color primaryDark = Color(0xFF074B3E);
+
+  // Brand Identity — Single Source of Truth
+  static const Color brandDeepTeal = Color(0xFF074B3E);
+  static const Color brandGroundTeal = Color(0xFF085445);
+  static const Color brandMintGlow = Color(0xFF34D399);
+  static const Color brandGoldAccent = Color(0xFFFDE68A);
+  static const Color brandCream = Color(0xFFFAFBF8);
+  
   static const Color primarySoft = Color(0xFFE6F5F0);
   static const Color secondary = Color(0xFF10B766);
   static const Color accentBlue = Color(0xFF2563EB);
