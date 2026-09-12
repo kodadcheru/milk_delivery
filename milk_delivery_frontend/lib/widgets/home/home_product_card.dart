@@ -407,11 +407,7 @@ class _HomeProductCardState extends State<HomeProductCard> with SingleTickerProv
                       onTap: () async {
                         HapticFeedback.selectionClick();
                         _addBounceController.forward().then((_) => _addBounceController.reverse());
-                        if (hasMultipleSizes) {
-                          PackSizeSelectorSheet.show(context, product: item, state: state);
-                        } else {
-                          state.addToCart(item);
-                        }
+                        PackSizeSelectorSheet.show(context, product: item, state: state);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

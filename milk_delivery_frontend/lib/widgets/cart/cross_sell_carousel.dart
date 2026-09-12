@@ -123,11 +123,7 @@ class CrossSellCarousel extends StatelessWidget {
                         InkWell(
                           onTap: () {
                             HapticFeedback.selectionClick();
-                            if (hasMultipleSizes) {
-                              PackSizeSelectorSheet.show(context, product: product, state: state);
-                            } else {
-                              state.addToCart(product);
-                            }
+                            PackSizeSelectorSheet.show(context, product: product, state: state);
                           },
                           borderRadius: BorderRadius.circular(UiRadius.pill),
                           child: Container(
